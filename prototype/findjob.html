@@ -186,6 +186,8 @@ button{font-family:inherit;color:inherit;border:none;background:none;cursor:poin
 input,textarea{font-family:inherit;color:var(--ink)}
 :focus-visible{outline:2.5px solid var(--brand);outline-offset:2px;border-radius:10px}
 .num{font-variant-numeric:tabular-nums}
+.vh{position:fixed;left:0;top:0;width:1px;height:1px;opacity:0;overflow:hidden;clip-path:inset(50%);pointer-events:none}
+label.btn,label.drop{cursor:pointer}
 
 /* glass primitive */
 .glass{background:var(--glass);-webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur);border:1px solid var(--glass-brd);box-shadow:var(--g-shadow)}
@@ -756,7 +758,7 @@ body.pg-jobs #toasts{bottom:calc(120px + env(safe-area-inset-bottom,0px))}
     <div class="onb-foot" id="onbFoot"></div>
   </div>
 </div>
-<input type="file" id="cvFile" accept=".pdf,.txt,.doc,.docx,.md" hidden onchange="onCvFile(this)">
+<input type="file" id="cvFile" class="vh" accept=".pdf,.txt,.doc,.docx,.md,application/pdf,text/plain" tabindex="-1" aria-hidden="true" onchange="onCvFile(this)">
 
 <!-- CHAT -->
 <button id="chatBtn" aria-label="שאל את העוזר" onclick="toggleChat()"><svg viewBox="0 0 24 24"><path d="M21 12a8 8 0 01-11.6 7.1L4 20l1-4.6A8 8 0 1121 12z"/></svg></button>
@@ -1643,7 +1645,7 @@ function renderProfile(){
 
     <div class="card glass"><div class="card-h">קורות חיים</div>
       <div class="row"><span class="ri">${ROW_IC.doc}</span><span class="rl"><b>${esc(p.cvName||(p.cv?'הודבק כטקסט':'עוד לא הועלו'))}</b><span>${p.cv||p.cvName?'כל הסוכנים עובדים מהקובץ הזה':'בלי קורות חיים אין ציון התאמה'}</span></span>${p.cv||p.cvName?'<span class="pill-ok">פעיל</span>':'<span class="pill-warn">חסר</span>'}</div>
-      <div style="display:flex;gap:8px;margin-top:6px"><button class="btn btn-sm btn-ghost" style="flex:1" onclick="$('cvFile').click()">העלה קובץ</button><button class="btn btn-sm btn-ghost" style="flex:1" onclick="editCvText()">ערוך כטקסט</button></div></div>
+      <div style="display:flex;gap:8px;margin-top:6px"><label for="cvFile" class="btn btn-sm btn-ghost" style="flex:1">העלה קובץ</label><button class="btn btn-sm btn-ghost" style="flex:1" onclick="editCvText()">ערוך כטקסט</button></div></div>
 
     <div class="card glass"><div class="card-h">מה אני מחפש</div>
       <button class="row" onclick="openOnb(2)"><span class="ri">${ROW_IC.target}</span><span class="rl"><b>${esc(p.role)}</b><span>${esc(p.level)}</span></span><span class="chev"></span></button>
@@ -1683,19 +1685,13 @@ function renderOnb(){
   let body='',foot='';
   if(onbStep===0){
     body=`<div class="logo-mark" style="margin-bottom:22px"><svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21"/><path d="M8 10.8l1.8 1.8L13.3 9"/></svg></div>
-      <h1>שישה סוכנים מחפשים לך עבודה. אתה רק מחליט.</h1><p class="lead">findjob סורק משרות כל לילה, מדרג כל אחת מול קורות החיים שלך ומכין מכתב פנייה. ההגשה עצמה תמיד בידיים שלך.</p>
-      <div class="onb-hero">
-        <div class="onb-li glass"><span class="ic">🔍</span><span><b>סריקה לילית</b><span>LinkedIn, Indeed ואתרי החברות</span></span></div>
-        <div class="onb-li glass"><span class="ic">🎯</span><span><b>ציון 1–5 עם הסבר</b><span>רק מה שמתאים לרמה שלך</span></span></div>
-        <div class="onb-li glass"><span class="ic">✍️</span><span><b>מכתב לכל משרה</b><span>רק עובדות מקורות החיים שלך</span></span></div>
-      </div>`;
+      <h1>משרד מלא שמחפש לך עבודה, ואתה רק מחליט.</h1><p class="lead">findjob סורק משרות ביום ובלילה, מדרג כל אחת מול קורות החיים והפרופיל האישי שלך ומכין מכתב פנייה.</p>`;
     foot=`<button class="btn btn-primary btn-block" onclick="onbGo(1)">בוא נתחיל</button>`;
   }else if(onbStep===1){
-    const has=p.cvName||(p.cv&&p.cv.length>40);
     body=`<h1>קודם, קורות החיים שלך</h1><p class="lead">מהם הסוכנים לומדים מה אתה יודע לעשות. הקובץ נשאר שלך ואפשר למחוק אותו בכל רגע.</p>
-      <button class="drop${p.cvName?' has':''}" onclick="$('cvFile').click()"><span style="font-size:30px">${p.cvName?'✓':'📄'}</span><b>${p.cvName?esc(p.cvName):'בחר קובץ'}</b><span>${p.cvName?'לחץ להחלפה':'PDF, Word או טקסט'}</span></button>
-      <div class="field" style="margin-top:18px"><label for="onbCv">או הדבק את הטקסט</label><textarea id="onbCv" rows="6" placeholder="סטודנט שנה ג׳ למדעי המחשב…" oninput="prof().cv=this.value;save();$('onbNext').disabled=!(prof().cvName||this.value.trim().length>40)">${esc(p.cv)}</textarea></div>`;
-    foot=`<button class="btn btn-primary btn-block" id="onbNext" ${has?'':'disabled'} onclick="onbGo(1)">המשך</button>`;
+      <label for="cvFile" class="drop${p.cvName?' has':''}" role="button" tabindex="0"><span style="font-size:30px">${p.cvName?'✓':'📄'}</span><b>${p.cvName?esc(p.cvName):'בחר קובץ'}</b><span>${p.cvName?'לחץ להחלפה':'PDF, Word או טקסט'}</span></label>
+      <div class="field" style="margin-top:18px"><label for="onbCv">או הדבק את הטקסט</label><textarea id="onbCv" rows="6" placeholder="סטודנט שנה ג׳ למדעי המחשב…" oninput="onbCvTyped(this)" onchange="onbCvTyped(this)" onkeyup="onbCvTyped(this)" onpaste="setTimeout(()=>onbCvTyped(this),0)">${esc(p.cv)}</textarea><div class="help" id="onbCvHelp"></div></div>`;
+    foot=`<button class="btn btn-primary btn-block" id="onbNext" onclick="onbCvNext()">המשך</button><button class="link-btn" onclick="onbGo(1)">אוסיף אחר כך</button>`;
   }else if(onbStep===2){
     body=`<h1>מה אתה מחפש?</h1><p class="lead">Dwight מסנן לפי זה כל לילה. אפשר לשנות בכל רגע מהפרופיל.</p>
       <div class="field"><label for="onbRole">תפקיד</label><input id="onbRole" value="${esc(p.role)}" oninput="onbDraft.role=this.value"></div>
@@ -1715,6 +1711,10 @@ function renderOnb(){
   }
   $('onbBody').innerHTML=body;$('onbFoot').innerHTML=foot;$('onbBody').scrollTop=0;
 }
+function onbCvTyped(t){prof().cv=t.value;save();const h=$('onbCvHelp');if(h)h.textContent=''}
+function onbCvNext(){const t=$('onbCv');if(t)prof().cv=t.value;save();
+  if(prof().cvName||prof().cv.trim().length>=15){onbGo(1);return}
+  const h=$('onbCvHelp');if(h){h.textContent='בחר קובץ או הדבק לפחות כמה שורות מקורות החיים. אפשר גם להוסיף אחר כך.';h.style.color='var(--rose)'}}
 function onbNext(){commitOnb();if(onbSingle){$('onb').classList.remove('open');renderProfile();toast('נשמר')}else onbGo(1)}
 function onbToggleLoc(l){const a=onbDraft.locs;const i=a.indexOf(l);i>=0?a.splice(i,1):a.push(l);renderOnb()}
 function commitOnb(){const keep={cv:prof().cv,cvName:prof().cvName};S.profile=Object.assign({},onbDraft,keep);save();syncChrome()}
