@@ -1,0 +1,1753 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#EEF1FA">
+<title>findjob</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* ══════════════════════════════
+   OFFICE SCREEN — v15 layout
+══════════════════════════════ */
+#pg-office{background:var(--bg);overflow-y:auto;}
+#pg-office::-webkit-scrollbar{display:none}
+
+.off-body{display:flex;flex-direction:column;padding:8px 10px 0;gap:8px;}
+
+/* Canvas — full width, 16:9 aspect */
+.canvas-wrap{
+  width:100%;aspect-ratio:16/9;
+  border-radius:var(--r);overflow:hidden;background:#05091A;
+  position:relative;box-shadow:var(--shadow-lg);
+  flex-shrink:0;
+}
+.canvas-wrap canvas{display:block;position:absolute;inset:0;width:100%;height:100%;}
+.canvas-bar{position:absolute;bottom:0;left:0;right:0;padding:6px 9px;background:linear-gradient(transparent,rgba(5,9,26,.88));display:flex;align-items:center;justify-content:space-between;}
+.canvas-bar-txt{font-size:9px;color:rgba(255,255,255,.55);}
+.canvas-bar-badge{font-size:8px;font-weight:600;padding:2px 7px;border-radius:9px;background:rgba(79,70,229,.5);color:#fff;}
+
+/* Workflow — Thinking-state card style */
+.wf-panel{
+  background:var(--surf);border-radius:var(--r);
+  overflow:hidden;box-shadow:var(--shadow);
+  border:1px solid var(--brd);
+}
+.wf-panel-titlebar{
+  display:flex;align-items:center;gap:8px;
+  padding:11px 14px 10px;
+  border-bottom:1px solid var(--brd);
+  direction:rtl;
+}
+.wf-panel-title{
+  font-size:11px;font-weight:700;color:var(--fg);
+  letter-spacing:-.01em;flex:1;text-align:right;
+}
+.wf-thinking-dot{
+  width:7px;height:7px;border-radius:50%;background:#5B6CF9;
+  animation:wfThink 1.4s ease-in-out infinite;
+}
+.wf-thinking-dot:nth-child(2){animation-delay:.18s;}
+.wf-thinking-dot:nth-child(3){animation-delay:.36s;}
+@keyframes wfThink{0%,80%,100%{transform:scale(1);opacity:.4}40%{transform:scale(1.3);opacity:1}}
+.wf-scroll{max-height:240px;overflow-y:auto;display:flex;flex-direction:column;padding:4px 6px 6px;gap:1px;}
+.wf-scroll::-webkit-scrollbar{width:3px;}
+.wf-scroll::-webkit-scrollbar-track{background:transparent;}
+.wf-scroll::-webkit-scrollbar-thumb{background:var(--brd);border-radius:3px;}
+/* Each step row */
+.wf-item{
+  display:flex;align-items:flex-start;gap:7px;
+  padding:5px 7px;border-radius:8px;
+  direction:rtl;text-align:right;
+  transition:background .18s;
+}
+.wf-item:hover{background:var(--surf2);}
+/* step icon circle */
+.wf-step-icon{
+  width:20px;height:20px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;margin-top:1px;
+  font-size:9px;
+}
+.wf-step-icon.done{background:#E8FAF0;color:#22C55E;}
+.wf-step-icon.running{background:#EDEFFE;color:#5B6CF9;}
+.wf-step-icon.pending{background:var(--surf2);color:var(--fg3);}
+/* step content */
+.wf-step-content{flex:1;min-width:0;}
+.wf-agent{font-size:11px;font-weight:600;color:var(--fg);line-height:1.3;}
+.wf-out{font-size:9.5px;color:var(--fg2);line-height:1.4;margin-top:1px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.wf-state{font-size:9px;font-weight:600;padding:1px 7px;border-radius:8px;margin-top:3px;display:inline-block;}
+.wf-state.done{background:#E8FAF0;color:#16A34A;}
+.wf-state.running{background:#EDEFFE;color:#5B6CF9;}
+.wf-state.pending{background:var(--surf2);color:var(--fg3);}
+/* running shimmer */
+.wf-running-bar{height:2px;border-radius:1px;background:linear-gradient(90deg,var(--surf2) 0%,#5B6CF9 50%,var(--surf2) 100%);background-size:200% 100%;animation:wfShimmer 1.6s linear infinite;margin-top:4px;}
+@keyframes wfShimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+.wf-cursor{display:inline-block;width:1px;height:10px;background:#5B6CF9;animation:wfblink 1.1s step-end infinite;vertical-align:middle;margin-right:2px;}
+@keyframes wfblink{0%,100%{opacity:1}50%{opacity:0}}
+.wf-tag{display:inline-block;font-size:8px;font-weight:600;padding:1px 5px;border-radius:7px;margin-top:2px;}
+
+/* Agents — horizontal row below canvas */
+.ag-row-panel{background:var(--surf);border-radius:var(--r);padding:9px 10px;box-shadow:var(--shadow);border:1px solid var(--brd);}
+.ag-row-title{font-size:9px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--fg3);margin-bottom:8px;}
+.ag-faces-row{display:flex;gap:8px;overflow-x:auto;padding-bottom:2px;}
+.ag-faces-row::-webkit-scrollbar{display:none}
+.ag-face-slot{
+  display:flex;flex-direction:column;align-items:center;gap:4px;
+  cursor:pointer;flex-shrink:0;width:52px;
+  transition:transform .15s;
+}
+.ag-face-slot:active{transform:scale(.93);}
+.ag-face-canvas{
+  width:48px;height:48px;border-radius:14px;overflow:hidden;
+  background:#E8EBF5;position:relative;
+  border:2px solid transparent;transition:border-color .18s;
+}
+.ag-face-canvas.working{border-color:#34C759;}
+.ag-face-canvas.idle{border-color:#FF9F0A;}
+.ag-face-canvas.sleeping{border-color:#AEB1BB;}
+.ag-face-canvas canvas{display:block;width:100%;height:100%;}
+.ag-face-role{font-size:8px;color:var(--fg2);text-align:center;line-height:1.2;max-width:52px;word-break:break-word;}
+
+/* Agent detail bottom sheet */
+#agSheet{
+  position:fixed;inset:0;z-index:250;
+  background:rgba(0,0,0,0);pointer-events:none;
+  transition:background .25s;
+  display:flex;align-items:flex-end;justify-content:center;
+}
+#agSheet.open{background:rgba(0,0,0,0.42);pointer-events:all;}
+#agSheetPanel{
+  width:100%;max-width:430px;
+  background:var(--surf);border-radius:22px 22px 0 0;
+  max-height:72vh;display:flex;flex-direction:column;
+  transform:translateY(100%);
+  transition:transform .3s cubic-bezier(.22,.68,0,1.15);
+  overflow:hidden;
+}
+#agSheet.open #agSheetPanel{transform:translateY(0);}
+.ags-drag{width:36px;height:4px;border-radius:2px;background:var(--fg3);margin:10px auto 0;flex-shrink:0;}
+.ags-body{padding:14px 18px 28px;overflow-y:auto;flex:1;}
+.ags-top{display:flex;align-items:center;gap:12px;margin-bottom:12px;}
+.ags-face{width:54px;height:54px;border-radius:16px;overflow:hidden;background:#E8EBF5;flex-shrink:0;}
+.ags-face canvas{display:block;width:100%;height:100%;}
+.ags-name{font-size:18px;font-weight:700;}
+.ags-role{font-size:12px;color:var(--fg2);margin-top:2px;}
+.ags-state{font-size:11px;font-weight:600;margin-top:3px;}
+.ags-section{margin-bottom:12px;}
+.ags-sec-lbl{font-size:9px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--fg3);margin-bottom:5px;}
+.ags-sec-body{font-size:12px;color:var(--fg2);line-height:1.6;}
+.ags-sched{display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--fg2);background:var(--surf2);padding:5px 10px;border-radius:10px;}
+
+.off-car-wrap{display:none;}
+
+
+/* ═══════════ findjob — design tokens ═══════════ */
+:root{
+  /* legacy tokens — kept identical so the Office screen renders exactly as before */
+  --bg:#EEF0F8;--surf:#FFFFFF;--surf2:#E8EBF5;
+  --fg:#1A1A2E;--fg2:#5A5A7A;--fg3:#9999BB;
+  --brd:rgba(90,90,150,0.10);
+  --shadow:0 2px 12px rgba(90,90,180,0.08);
+  --shadow-lg:0 8px 32px rgba(90,90,180,0.13);
+  --r:18px;--r-sm:12px;
+  --accent:#5B6CF9;--accent-lt:#EDEFFE;
+
+  /* findjob */
+  --ink:#171A33;--ink2:#4A4F72;--ink3:#8B90B3;
+  --brand:#4E5BF2;--brand2:#7B5CF5;--brand-lt:rgba(78,91,242,.10);
+  --mint:#14B884;--mint-lt:rgba(20,184,132,.12);
+  --amber:#E8912D;--amber-lt:rgba(232,145,45,.14);
+  --rose:#E5484D;--rose-lt:rgba(229,72,77,.10);
+  --canvas:#EEF1FA;
+  --glass:rgba(255,255,255,.58);
+  --glass-strong:rgba(255,255,255,.80);
+  --glass-brd:rgba(255,255,255,.78);
+  --glass-edge:rgba(70,80,150,.10);
+  --blur:saturate(180%) blur(22px);
+  --g-shadow:inset 0 1px 0 rgba(255,255,255,.95),0 12px 32px -14px rgba(40,50,130,.28),0 2px 6px rgba(40,50,130,.05);
+  --g-shadow-lg:inset 0 1px 0 rgba(255,255,255,.95),0 24px 60px -20px rgba(40,50,130,.38),0 4px 12px rgba(40,50,130,.08);
+  --rad-xl:26px;--rad-l:20px;--rad-m:14px;--rad-s:10px;
+  --topbar:58px;
+  --font:'Rubik',system-ui,-apple-system,'Segoe UI',sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){--canvas:#12142A;--glass:rgba(30,34,66,.55);--glass-strong:rgba(30,34,66,.82);--glass-brd:rgba(255,255,255,.10);--ink:#ECEEFF;--ink2:#B4B8DA;--ink3:#7C81A8;}
+}
+:root[data-theme="dark"]{--canvas:#12142A;--glass:rgba(30,34,66,.55);--glass-strong:rgba(30,34,66,.82);--glass-brd:rgba(255,255,255,.10);--ink:#ECEEFF;--ink2:#B4B8DA;--ink3:#7C81A8;}
+
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html{height:100%;height:100dvh;overflow:hidden}
+body{font-family:var(--font);background:var(--canvas);color:var(--ink);height:100%;height:100dvh;overflow:hidden;font-size:14px;line-height:1.45;-webkit-font-smoothing:antialiased}
+button{font-family:inherit;color:inherit;border:none;background:none;cursor:pointer}
+input,textarea{font-family:inherit;color:var(--ink)}
+:focus-visible{outline:2.5px solid var(--brand);outline-offset:2px;border-radius:10px}
+.num{font-variant-numeric:tabular-nums}
+
+/* glass primitive */
+.glass{background:var(--glass);-webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur);border:1px solid var(--glass-brd);box-shadow:var(--g-shadow)}
+@media (prefers-reduced-transparency:reduce){.glass,#topbar,#drawer,.sheet-panel{background:#fff!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}}
+
+/* ── mesh background ── */
+#mesh{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;background:var(--canvas)}
+#mesh i{position:absolute;border-radius:50%;filter:blur(60px);opacity:.75;animation:drift 38s ease-in-out infinite alternate}
+#mesh i:nth-child(1){width:62vmax;height:62vmax;left:-22vmax;top:-26vmax;background:radial-gradient(circle,#A9B4FF 0%,transparent 68%)}
+#mesh i:nth-child(2){width:54vmax;height:54vmax;right:-24vmax;top:6vmax;background:radial-gradient(circle,#D6C8FF 0%,transparent 66%);animation-duration:46s}
+#mesh i:nth-child(3){width:48vmax;height:48vmax;left:-12vmax;bottom:-22vmax;background:radial-gradient(circle,#A8EDE3 0%,transparent 66%);animation-duration:52s}
+#mesh i:nth-child(4){width:34vmax;height:34vmax;right:-6vmax;bottom:-8vmax;background:radial-gradient(circle,#FFD9C2 0%,transparent 66%);opacity:.55;animation-duration:60s}
+@keyframes drift{from{transform:translate3d(0,0,0) scale(1)}to{transform:translate3d(4vmax,3vmax,0) scale(1.08)}}
+@media (prefers-reduced-motion:reduce){#mesh i{animation:none}*{transition-duration:.01ms!important;animation-duration:.01ms!important}}
+
+/* ── splash ── */
+#splash{position:fixed;inset:0;z-index:9999;background:var(--canvas);display:flex;align-items:center;justify-content:center;transition:opacity .45s ease,visibility .45s}
+#splash.hide{opacity:0;visibility:hidden}
+.splash-in{display:flex;flex-direction:column;align-items:center;gap:14px;animation:splashUp .7s cubic-bezier(.2,.9,.3,1) both}
+@keyframes splashUp{from{opacity:0;transform:translateY(10px) scale(.96)}to{opacity:1;transform:none}}
+.logo-mark{width:64px;height:64px;border-radius:20px;background:linear-gradient(140deg,var(--brand) 0%,var(--brand2) 100%);display:grid;place-items:center;box-shadow:0 14px 40px -10px rgba(78,91,242,.6),inset 0 1px 0 rgba(255,255,255,.35)}
+.logo-mark svg{width:32px;height:32px;stroke:#fff;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.wordmark{font-weight:800;letter-spacing:-.035em;color:var(--ink);direction:ltr;display:inline-flex;align-items:baseline}
+.wordmark::after{content:'';width:.22em;height:.22em;border-radius:50%;background:var(--mint);margin-inline-start:.06em;transform:translateY(-.02em)}
+.splash-in .wordmark{font-size:30px}
+.splash-tag{font-size:13px;color:var(--ink3)}
+
+/* ── shell ── */
+#app{position:relative;z-index:1;height:100vh;height:100dvh;max-width:430px;margin:0 auto;display:flex;overflow:hidden}
+#pages{flex:1;display:flex;flex-direction:column;min-width:0;overflow:hidden;padding-top:calc(var(--topbar) + env(safe-area-inset-top,0px))}
+.pg{display:none;flex:1;flex-direction:column;overflow:hidden;min-height:0}
+.pg.on{display:flex}
+.scroll{flex:1;overflow-y:auto;overscroll-behavior:contain;padding:6px 14px 110px;display:flex;flex-direction:column;gap:12px;direction:rtl}
+.scroll::-webkit-scrollbar{display:none}
+.scroll>*{flex-shrink:0}
+
+/* ── top bar ── */
+#topbar{position:fixed;top:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;z-index:300;
+  height:calc(var(--topbar) + env(safe-area-inset-top,0px));padding:env(safe-area-inset-top,0px) 12px 0;
+  display:grid;grid-template-columns:44px 1fr 44px;align-items:center;direction:ltr;
+  background:linear-gradient(to bottom,rgba(238,241,250,.82),rgba(238,241,250,.42));
+  -webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur);
+  border-bottom:1px solid transparent;transition:border-color .25s,box-shadow .25s}
+#topbar.scrolled{border-bottom-color:var(--glass-edge);box-shadow:0 6px 20px -14px rgba(40,50,130,.35)}
+.tb-btn{width:42px;height:42px;border-radius:14px;display:grid;place-items:center;position:relative;transition:transform .15s,background .2s}
+.tb-btn:active{transform:scale(.92)}
+.tb-menu{background:var(--glass-strong);border:1px solid var(--glass-brd);box-shadow:var(--g-shadow)}
+.burger{width:18px;height:14px;position:relative}
+.burger span{position:absolute;left:0;height:2px;border-radius:2px;background:var(--ink);transition:transform .3s cubic-bezier(.2,.9,.3,1.2),opacity .2s,width .3s,top .3s}
+.burger span:nth-child(1){top:0;width:18px}
+.burger span:nth-child(2){top:6px;width:12px}
+.burger span:nth-child(3){top:12px;width:18px}
+body.drawer-open .burger span:nth-child(1){top:6px;transform:rotate(45deg)}
+body.drawer-open .burger span:nth-child(2){opacity:0;width:0}
+body.drawer-open .burger span:nth-child(3){top:6px;transform:rotate(-45deg)}
+.tb-dot{position:absolute;top:8px;right:8px;width:9px;height:9px;border-radius:50%;background:var(--rose);box-shadow:0 0 0 2px #fff}
+.tb-dot[hidden]{display:none}
+.tb-title{text-align:center;font-size:16px;font-weight:600;letter-spacing:-.01em;direction:rtl;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tb-title .wordmark{font-size:21px}
+.avatar{width:38px;height:38px;border-radius:50%;background:linear-gradient(140deg,var(--brand),var(--brand2));color:#fff;font-weight:700;font-size:14px;display:grid;place-items:center;box-shadow:0 4px 14px -4px rgba(78,91,242,.55),0 0 0 2px rgba(255,255,255,.9)}
+
+/* ── drawer ── */
+#drawerOverlay{position:fixed;inset:0;z-index:400;background:rgba(23,26,51,0);pointer-events:none;transition:background .3s}
+#drawerOverlay.open{background:rgba(23,26,51,.32);pointer-events:auto}
+#drawer{position:absolute;top:0;bottom:0;left:max(0px,calc(50% - 215px));width:min(300px,84vw);
+  background:var(--glass-strong);-webkit-backdrop-filter:saturate(180%) blur(28px);backdrop-filter:saturate(180%) blur(28px);
+  border-right:1px solid var(--glass-brd);box-shadow:24px 0 60px -20px rgba(40,50,130,.35);
+  transform:translateX(-104%);transition:transform .38s cubic-bezier(.22,.9,.25,1.05);
+  display:flex;flex-direction:column;direction:rtl;padding:calc(14px + env(safe-area-inset-top,0px)) 14px calc(14px + env(safe-area-inset-bottom,0px))}
+#drawerOverlay.open #drawer{transform:none}
+.dr-head{display:flex;align-items:center;justify-content:space-between;padding:4px 4px 14px}
+.dr-head .wordmark{font-size:22px}
+.dr-x{width:36px;height:36px;border-radius:12px;display:grid;place-items:center;color:var(--ink2);background:rgba(23,26,51,.05)}
+.dr-x svg{width:16px;height:16px;stroke:currentColor;stroke-width:2.2;fill:none;stroke-linecap:round}
+.dr-user{display:flex;align-items:center;gap:11px;padding:12px;border-radius:var(--rad-l);background:rgba(255,255,255,.6);border:1px solid var(--glass-brd);margin-bottom:14px;text-align:right;width:100%}
+.dr-user .avatar{width:40px;height:40px;flex-shrink:0}
+.dr-user-name{display:block;font-weight:600;font-size:14px}
+.dr-user-goal{display:block;font-size:12px;color:var(--ink3);margin-top:1px}
+.dr-group{font-size:12px;color:var(--ink3);padding:10px 10px 6px;font-weight:500}
+.dr-item{display:flex;align-items:center;gap:12px;width:100%;padding:11px 12px;border-radius:var(--rad-m);font-size:15px;font-weight:500;color:var(--ink2);position:relative;transition:background .18s,color .18s;text-align:right}
+.dr-item svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+.dr-item:hover{background:rgba(23,26,51,.04)}
+.dr-item.active{background:var(--brand-lt);color:var(--brand);font-weight:600}
+.dr-item.active{box-shadow:inset -3px 0 0 var(--brand)}
+.dr-item .lbl{flex:1}
+.dr-badge{min-width:22px;height:22px;padding:0 7px;border-radius:11px;background:var(--brand);color:#fff;font-size:12px;font-weight:600;display:grid;place-items:center}
+.dr-badge.soft{background:rgba(23,26,51,.07);color:var(--ink2)}
+.dr-badge[hidden]{display:none}
+.dr-foot{margin-top:auto;padding:14px 12px 4px;border-top:1px solid var(--glass-edge)}
+.quota-row{display:flex;justify-content:space-between;font-size:12px;color:var(--ink2);margin-bottom:7px}
+.quota-row b{font-weight:600;color:var(--ink)}
+.quota-bar{height:6px;border-radius:4px;background:rgba(23,26,51,.07);overflow:hidden}
+.quota-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--mint),#3CC9A0);transition:width .6s}
+.quota-note{font-size:11.5px;color:var(--ink3);margin-top:7px}
+
+/* ── shared pieces ── */
+.card{border-radius:var(--rad-l);padding:16px}
+.h-sec{display:flex;align-items:baseline;justify-content:space-between;padding:6px 4px 0}
+.h-sec h2{font-size:15px;font-weight:600}
+.h-sec .link{font-size:13px;color:var(--brand);font-weight:500}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;height:46px;padding:0 18px;border-radius:15px;font-size:15px;font-weight:600;transition:transform .15s,box-shadow .2s,opacity .2s}
+.btn:active{transform:scale(.97)}
+.btn-primary{background:linear-gradient(140deg,var(--brand),var(--brand2));color:#fff;box-shadow:0 10px 24px -10px rgba(78,91,242,.7),inset 0 1px 0 rgba(255,255,255,.25)}
+.btn-ghost{background:rgba(255,255,255,.7);border:1px solid var(--glass-brd);color:var(--ink);box-shadow:var(--g-shadow)}
+.btn-block{width:100%}
+.btn[disabled]{opacity:.45;pointer-events:none}
+.btn-sm{height:36px;padding:0 13px;font-size:13px;border-radius:12px}
+.chip{display:inline-flex;align-items:center;gap:5px;height:28px;padding:0 11px;border-radius:14px;font-size:12.5px;font-weight:500;background:rgba(23,26,51,.06);color:var(--ink2);white-space:nowrap}
+.chip.sel{background:var(--ink);color:#fff}
+.logo-tile{width:46px;height:46px;border-radius:14px;display:grid;place-items:center;color:#fff;font-weight:700;font-size:17px;flex-shrink:0;box-shadow:inset 0 1px 0 rgba(255,255,255,.3),0 6px 14px -6px rgba(0,0,0,.3);direction:ltr}
+.muted{color:var(--ink3)}
+.empty{text-align:center;padding:40px 20px;color:var(--ink2)}
+.empty h3{font-size:17px;font-weight:600;color:var(--ink);margin:12px 0 6px}
+.empty p{font-size:14px;margin-bottom:18px}
+.empty-ic{width:64px;height:64px;border-radius:22px;margin:0 auto;display:grid;place-items:center;background:var(--glass-strong);border:1px solid var(--glass-brd);box-shadow:var(--g-shadow);font-size:28px}
+
+/* ── home ── */
+.greet{padding:8px 4px 2px}
+.greet h1{font-size:25px;font-weight:700;letter-spacing:-.02em}
+.greet p{font-size:14px;color:var(--ink2);margin-top:3px}
+.brief{position:relative;border-radius:var(--rad-xl);padding:18px;color:#fff;overflow:hidden;cursor:pointer;text-align:right;width:100%;
+  background:linear-gradient(150deg,rgba(38,40,110,.94) 0%,rgba(66,56,170,.90) 55%,rgba(110,80,220,.86) 100%);
+  box-shadow:0 22px 46px -22px rgba(52,44,160,.75),inset 0 1px 0 rgba(255,255,255,.22);border:1px solid rgba(255,255,255,.14)}
+.brief::before{content:'';position:absolute;width:220px;height:220px;left:-70px;top:-110px;border-radius:50%;background:radial-gradient(circle,rgba(168,237,227,.35),transparent 65%)}
+.brief>*{position:relative}
+.brief-top{display:flex;justify-content:space-between;align-items:center;font-size:12.5px;color:rgba(255,255,255,.7);margin-bottom:10px}
+.brief-top .new{background:rgba(255,255,255,.16);padding:3px 9px;border-radius:10px;color:#fff;font-weight:500}
+.brief h2{font-size:19px;font-weight:700;line-height:1.35;letter-spacing:-.01em;margin-bottom:12px;text-wrap:balance}
+.brief-chips{display:flex;flex-wrap:wrap;gap:6px}
+.brief-chips span{font-size:12px;font-weight:500;padding:4px 10px;border-radius:12px;background:rgba(255,255,255,.14);color:#fff}
+.brief-chips span.warn{background:rgba(255,190,110,.24);color:#FFE2B8}
+.brief-chips span.ok{background:rgba(120,230,190,.2);color:#C9F7E5}
+.brief-more{display:flex;align-items:center;gap:6px;margin-top:14px;font-size:13px;color:rgba(255,255,255,.78)}
+.brief-more svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2.2;transform:scaleX(-1)}
+
+.today{display:flex;align-items:center;gap:14px;border-radius:var(--rad-xl);padding:16px;width:100%;text-align:right}
+.stack-prev{position:relative;width:62px;height:58px;flex-shrink:0}
+.stack-prev .logo-tile{position:absolute;width:44px;height:44px;border:2px solid #fff}
+.stack-prev .logo-tile:nth-child(1){right:0;top:0;transform:rotate(-8deg)}
+.stack-prev .logo-tile:nth-child(2){right:9px;top:6px;transform:rotate(3deg)}
+.stack-prev .logo-tile:nth-child(3){right:18px;top:12px;transform:rotate(-2deg)}
+.today-txt{flex:1;min-width:0}
+.today-txt b{display:block;font-size:16px;font-weight:600}
+.today-txt span{font-size:13px;color:var(--ink2)}
+.go-round{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(140deg,var(--brand),var(--brand2));box-shadow:0 8px 18px -8px rgba(78,91,242,.8);flex-shrink:0}
+.go-round svg{width:18px;height:18px;stroke:#fff;fill:none;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+
+.todo{border-radius:var(--rad-l);padding:6px 0 4px;overflow:hidden}
+.todo-head{display:flex;justify-content:space-between;align-items:center;padding:10px 16px 6px}
+.todo-head h2{font-size:15px;font-weight:600}
+.todo-head span{font-size:12.5px;color:var(--ink3)}
+.todo-item{display:flex;align-items:center;gap:12px;padding:11px 16px;border-top:1px solid var(--glass-edge);background:transparent;transition:background .15s}
+.todo-item.dragging{background:rgba(255,255,255,.9);box-shadow:0 10px 24px -10px rgba(40,50,130,.4);position:relative;z-index:2}
+.tcheck{width:22px;height:22px;border-radius:50%;border:2px solid rgba(23,26,51,.22);display:grid;place-items:center;flex-shrink:0;transition:all .2s}
+.tcheck.done{background:var(--mint);border-color:var(--mint)}
+.tcheck.done::after{content:'';width:9px;height:5px;border:2px solid #fff;border-top:0;border-right:0;transform:rotate(-45deg) translate(1px,-1px)}
+.ttext{flex:1;font-size:14px;line-height:1.4}
+.ttext.done{color:var(--ink3);text-decoration:line-through;text-decoration-color:rgba(23,26,51,.25)}
+.thandle{width:28px;height:28px;display:grid;place-items:center;color:var(--ink3);touch-action:none;cursor:grab;flex-shrink:0}
+.thandle svg{width:16px;height:16px;fill:currentColor}
+.todo-foot{display:flex;gap:8px;padding:8px 12px 10px;border-top:1px solid var(--glass-edge);align-items:center}
+.todo-foot input{flex:1;height:38px;border-radius:12px;border:1px solid var(--glass-edge);background:rgba(255,255,255,.65);padding:0 12px;font-size:14px;direction:rtl;outline:none}
+.todo-foot input:focus{border-color:var(--brand)}
+.todo-more{font-size:13px;color:var(--brand);font-weight:500;padding:0 6px;white-space:nowrap}
+
+.agents-row{display:flex;gap:10px;overflow-x:auto;padding:2px 2px 8px;margin:0 -14px;padding-inline:14px;scroll-snap-type:x mandatory}
+.agents-row::-webkit-scrollbar{display:none}
+.ag-card{flex-shrink:0;width:172px;border-radius:var(--rad-l);padding:13px;text-align:right;scroll-snap-align:start;display:flex;flex-direction:column}
+.ag-top{display:flex;align-items:center;gap:9px;margin-bottom:9px}
+.ag-face{width:38px;height:38px;border-radius:12px;overflow:hidden;background:#E8EBF5;flex-shrink:0}
+.ag-face canvas{width:100%;height:100%;display:block;image-rendering:pixelated}
+.ag-name{font-size:13.5px;font-weight:600}
+.ag-role{font-size:11.5px;color:var(--ink3)}
+.ag-body{font-size:13px;color:var(--ink2);line-height:1.45;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;flex:1}
+.ag-time{font-size:11.5px;color:var(--ink3);margin-top:8px}
+
+/* ── jobs (swipe) ── */
+.jobs-wrap{flex:1;display:flex;flex-direction:column;padding:4px 16px 0;direction:rtl;min-height:0}
+.jobs-meta{display:flex;justify-content:space-between;align-items:center;padding:2px 4px 10px;font-size:13px;color:var(--ink2)}
+.jobs-meta .filtered{font-size:12px;color:var(--ink3)}
+.deck-progress{display:flex;gap:4px;padding:0 4px 12px}
+.deck-progress i{flex:1;height:4px;border-radius:3px;background:rgba(23,26,51,.08)}
+.deck-progress i.done{background:var(--brand)}
+.deck-progress i.cur{background:rgba(78,91,242,.35)}
+.deck{position:relative;flex:1;min-height:360px;max-height:540px}
+.jcard{position:absolute;inset:0;border-radius:var(--rad-xl);padding:20px;display:flex;flex-direction:column;
+  background:var(--glass-strong);-webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur);border:1px solid var(--glass-brd);box-shadow:var(--g-shadow-lg);
+  touch-action:pan-y;user-select:none;-webkit-user-select:none;will-change:transform;cursor:grab;overflow:hidden}
+.jcard.behind{transform:translateY(14px) scale(.95);opacity:.7;pointer-events:none;box-shadow:var(--g-shadow)}
+.jcard.behind2{transform:translateY(26px) scale(.9);opacity:.4;pointer-events:none;box-shadow:none}
+.jcard.fly{transition:transform .36s cubic-bezier(.3,.6,.4,1),opacity .36s}
+.jc-top{display:flex;gap:13px;align-items:flex-start}
+.jc-title{font-size:19px;font-weight:700;line-height:1.25;letter-spacing:-.015em}
+.jc-co{font-size:13.5px;color:var(--ink2);margin-top:3px}
+.fit{display:flex;align-items:center;gap:14px;margin:18px 0 14px;padding:13px 14px;border-radius:var(--rad-m);background:rgba(78,91,242,.06);border:1px solid rgba(78,91,242,.10)}
+.fit-num{font-size:34px;font-weight:800;letter-spacing:-.04em;line-height:1;color:var(--brand);direction:ltr}
+.fit-num small{font-size:14px;font-weight:600;color:var(--ink3);letter-spacing:0}
+.fit-right{flex:1}
+.fit-lbl{font-size:12.5px;color:var(--ink2);margin-bottom:7px}
+.pills{display:flex;gap:4px;direction:ltr}
+.pills i{flex:1;height:8px;border-radius:5px;background:rgba(23,26,51,.08);overflow:hidden;position:relative}
+.pills i b{position:absolute;inset:0;background:linear-gradient(90deg,var(--brand),var(--brand2));border-radius:5px}
+.jc-reasons{display:flex;flex-direction:column;gap:7px;margin-bottom:12px}
+.jc-r{display:flex;gap:8px;font-size:13.5px;line-height:1.4;align-items:flex-start}
+.jc-r .ic{width:18px;height:18px;border-radius:50%;display:grid;place-items:center;flex-shrink:0;margin-top:1px;font-size:11px;font-weight:700}
+.jc-r .ic.ok{background:var(--mint-lt);color:var(--mint)}
+.jc-r .ic.gap{background:var(--amber-lt);color:var(--amber)}
+.jc-desc{font-size:13.5px;line-height:1.6;color:var(--ink2);display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;margin:2px 0 12px;padding-top:12px;border-top:1px solid var(--glass-edge)}
+.jc-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:auto}
+.jc-foot{display:flex;justify-content:space-between;font-size:12px;color:var(--ink3);margin-top:12px;padding-top:11px;border-top:1px solid var(--glass-edge)}
+.stamp{position:absolute;top:22px;padding:6px 14px;border-radius:12px;font-size:16px;font-weight:700;border:2.5px solid;opacity:0;pointer-events:none;background:rgba(255,255,255,.85)}
+.stamp.save{left:22px;color:var(--mint);border-color:var(--mint);transform:rotate(-10deg)}
+.stamp.skip{right:22px;color:var(--rose);border-color:var(--rose);transform:rotate(10deg)}
+.deck-actions{display:flex;justify-content:center;align-items:center;gap:20px;padding:18px 0 calc(22px + env(safe-area-inset-bottom,0px))}
+.act{width:58px;height:58px;border-radius:50%;display:grid;place-items:center;background:var(--glass-strong);border:1px solid var(--glass-brd);box-shadow:var(--g-shadow);transition:transform .15s}
+.act:active{transform:scale(.88)}
+.act svg{width:24px;height:24px;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+.act.skip svg{stroke:var(--rose)}
+.act.info{width:46px;height:46px}
+.act.info svg{stroke:var(--ink2);width:20px;height:20px}
+.act.save{width:68px;height:68px;background:linear-gradient(140deg,#19C590,#0FA877);border:none;box-shadow:0 14px 28px -12px rgba(20,184,132,.8),inset 0 1px 0 rgba(255,255,255,.3)}
+.act.save svg{stroke:#fff;width:28px;height:28px}
+.swipe-hint{text-align:center;font-size:12px;color:var(--ink3);margin-top:-6px}
+
+/* ── tracker ── */
+.seg{display:flex;gap:7px;overflow-x:auto;margin:0 -14px;padding:2px 14px 4px}
+.seg::-webkit-scrollbar{display:none}
+.seg .chip{height:34px;padding:0 13px;font-size:13.5px;background:var(--glass-strong);border:1px solid var(--glass-brd)}
+.seg .chip.sel{background:var(--ink);border-color:var(--ink);color:#fff}
+.seg .chip b{font-weight:600;opacity:.6}
+.app{border-radius:var(--rad-l);padding:14px}
+.app-top{display:flex;gap:12px;align-items:center}
+.app-top .logo-tile{width:42px;height:42px;font-size:15px}
+.app-info{flex:1;min-width:0}
+.app-title{font-size:15px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.app-sub{font-size:12.5px;color:var(--ink3);margin-top:1px}
+.status{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 11px;border-radius:15px;font-size:12.5px;font-weight:600;flex-shrink:0}
+.status::before{content:'';width:7px;height:7px;border-radius:50%;background:currentColor}
+.st-saved{background:rgba(23,26,51,.06);color:var(--ink2)}
+.st-applied{background:var(--brand-lt);color:var(--brand)}
+.st-interview{background:var(--amber-lt);color:#C2701A}
+.st-offer{background:var(--mint-lt);color:#0E9A6E}
+.st-rejected{background:var(--rose-lt);color:var(--rose)}
+.st-ghosted{background:rgba(23,26,51,.05);color:var(--ink3)}
+.follow{display:flex;align-items:center;gap:10px;margin-top:12px;padding:10px 12px;border-radius:var(--rad-m);background:var(--amber-lt);font-size:13px;color:#8A4E0E}
+.follow span{flex:1}
+.app-actions{display:flex;gap:8px;margin-top:12px}
+.app-actions .btn{flex:1}
+details.letter{margin-top:12px;border-top:1px solid var(--glass-edge);padding-top:10px}
+details.letter summary{font-size:13px;color:var(--ink2);cursor:pointer;list-style:none;display:flex;align-items:center;gap:6px;font-weight:500}
+details.letter summary::-webkit-details-marker{display:none}
+details.letter summary::before{content:'';width:7px;height:7px;border-left:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(-45deg);transition:transform .2s;margin-left:4px}
+details.letter[open] summary::before{transform:rotate(135deg)}
+details.letter textarea{width:100%;min-height:150px;margin-top:10px;border-radius:12px;border:1px solid var(--glass-edge);background:rgba(255,255,255,.7);padding:11px 12px;font-size:13.5px;line-height:1.6;resize:vertical;direction:rtl;outline:none}
+details.letter textarea:focus{border-color:var(--brand)}
+.prov{font-size:12px;color:var(--mint);margin-top:6px;display:flex;gap:5px;align-items:center}
+
+/* ── interview ── */
+.iv-jobs{display:flex;gap:8px;overflow-x:auto;margin:0 -14px;padding:2px 14px 4px}
+.iv-jobs::-webkit-scrollbar{display:none}
+.iv-job{display:flex;align-items:center;gap:9px;padding:8px 13px 8px 8px;border-radius:16px;background:var(--glass-strong);border:1px solid var(--glass-brd);flex-shrink:0}
+.iv-job .logo-tile{width:32px;height:32px;font-size:12px;border-radius:10px}
+.iv-job.sel{border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-lt)}
+.iv-job b{font-size:13px;font-weight:600;display:block}
+.iv-job span{font-size:11.5px;color:var(--ink3)}
+.iv-when{display:flex;align-items:center;gap:12px}
+.iv-when .big{font-size:26px;font-weight:700;letter-spacing:-.02em}
+.q{border-top:1px solid var(--glass-edge)}
+.q:first-of-type{border-top:0}
+.q summary{list-style:none;display:flex;gap:10px;padding:12px 0;cursor:pointer;align-items:flex-start}
+.q summary::-webkit-details-marker{display:none}
+.q .qtag{font-size:11.5px;font-weight:600;padding:3px 8px;border-radius:8px;background:var(--brand-lt);color:var(--brand);white-space:nowrap;flex-shrink:0;margin-top:1px}
+.q .qtxt{flex:1;font-size:14px;line-height:1.45}
+.q .hint{font-size:13px;color:var(--ink2);line-height:1.6;padding:0 0 12px;background:none}
+.q .hint b{color:var(--ink);font-weight:600}
+.tip{display:flex;gap:9px;font-size:13.5px;line-height:1.5;padding:5px 0}
+.tip i{color:var(--mint);font-style:normal;font-weight:700}
+.skills{display:flex;flex-wrap:wrap;gap:7px}
+.skill{font-size:12.5px;padding:5px 11px;border-radius:12px;background:rgba(255,255,255,.75);border:1px solid var(--glass-edge);font-weight:500}
+.skill.gap{background:var(--amber-lt);border-color:transparent;color:#9A5510}
+
+/* ── profile ── */
+.p-hero{border-radius:var(--rad-xl);padding:22px 18px 18px;text-align:center}
+.p-hero .avatar{width:68px;height:68px;font-size:24px;margin:0 auto 10px}
+.p-name{font-size:19px;font-weight:700}
+.p-goal{font-size:13.5px;color:var(--ink2);margin-top:2px}
+.p-stats{display:grid;grid-template-columns:repeat(3,1fr);margin-top:16px;padding-top:14px;border-top:1px solid var(--glass-edge)}
+.p-stats div b{display:block;font-size:20px;font-weight:700}
+.p-stats div span{font-size:12px;color:var(--ink3)}
+.row{display:flex;align-items:center;gap:12px;padding:13px 2px;border-top:1px solid var(--glass-edge);width:100%;text-align:right}
+.row:first-child{border-top:0}
+.row .ri{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;background:rgba(23,26,51,.05);flex-shrink:0}
+.row .ri svg{width:18px;height:18px;stroke:var(--ink2);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.row .rl{flex:1;min-width:0}
+.row .rl b{display:block;font-size:14px;font-weight:500}
+.row .rl span{font-size:12.5px;color:var(--ink3);display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row .rv{font-size:13px;color:var(--ink2)}
+.row .chev{width:8px;height:8px;border-left:2px solid var(--ink3);border-bottom:2px solid var(--ink3);transform:rotate(45deg);margin-left:4px}
+.card-h{font-size:15px;font-weight:600;margin-bottom:4px}
+.card-sub{font-size:13px;color:var(--ink2);margin-bottom:10px}
+.pill-ok{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;color:#0E9A6E;background:var(--mint-lt);padding:4px 10px;border-radius:10px}
+.pill-ok::before{content:'';width:7px;height:7px;border-radius:50%;background:currentColor}
+.pill-warn{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;color:#B0640F;background:var(--amber-lt);padding:4px 10px;border-radius:10px}
+.switch{width:46px;height:28px;border-radius:14px;background:rgba(23,26,51,.14);position:relative;flex-shrink:0;transition:background .2s}
+.switch::after{content:'';position:absolute;top:3px;right:3px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 2px 6px rgba(0,0,0,.2);transition:transform .25s cubic-bezier(.3,.9,.3,1.2)}
+.switch.on{background:var(--mint)}
+.switch.on::after{transform:translateX(-18px)}
+.danger{color:var(--rose)!important}
+
+/* ── generic sheet ── */
+.sheet{position:fixed;inset:0;z-index:500;display:flex;align-items:flex-end;justify-content:center;background:rgba(23,26,51,0);pointer-events:none;transition:background .28s}
+.sheet.open{background:rgba(23,26,51,.34);pointer-events:auto}
+.sheet-panel{width:100%;max-width:430px;max-height:86vh;display:flex;flex-direction:column;border-radius:28px 28px 0 0;
+  background:rgba(250,251,255,.9);-webkit-backdrop-filter:saturate(180%) blur(30px);backdrop-filter:saturate(180%) blur(30px);
+  border:1px solid var(--glass-brd);border-bottom:0;box-shadow:0 -20px 60px -20px rgba(40,50,130,.4);
+  transform:translateY(102%);transition:transform .38s cubic-bezier(.22,.9,.25,1.05);direction:rtl}
+.sheet.open .sheet-panel{transform:none}
+.sheet-grab{width:40px;height:5px;border-radius:3px;background:rgba(23,26,51,.16);margin:10px auto 2px;flex-shrink:0}
+.sheet-body{overflow-y:auto;padding:12px 20px calc(24px + env(safe-area-inset-bottom,0px))}
+.sheet-body h3{font-size:19px;font-weight:700;letter-spacing:-.01em}
+.sheet-sub{font-size:13px;color:var(--ink3);margin-top:3px}
+.s-sec{margin-top:18px}
+.s-sec h4{font-size:13px;font-weight:600;color:var(--ink2);margin-bottom:8px}
+.bullet{display:flex;gap:10px;padding:11px 12px;border-radius:var(--rad-m);margin-bottom:8px;font-size:14px;line-height:1.5;background:rgba(255,255,255,.7);border:1px solid var(--glass-edge)}
+.bullet .dot{width:8px;height:8px;border-radius:50%;margin-top:7px;flex-shrink:0}
+.opt{display:flex;align-items:center;gap:12px;width:100%;padding:14px 4px;border-top:1px solid var(--glass-edge);font-size:15px;text-align:right}
+.opt:first-child{border-top:0}
+.opt .status{pointer-events:none}
+.opt .radio{margin-right:auto;width:22px;height:22px;border-radius:50%;border:2px solid rgba(23,26,51,.2)}
+.opt.sel .radio{border:7px solid var(--brand)}
+
+/* ── onboarding ── */
+#onb{position:fixed;inset:0;z-index:800;display:none;direction:rtl}
+#onb.open{display:block}
+#onb .mesh-copy{position:absolute;inset:0;background:var(--canvas)}
+.onb-in{position:relative;height:100%;max-width:430px;margin:0 auto;display:flex;flex-direction:column;padding:calc(20px + env(safe-area-inset-top,0px)) 22px calc(22px + env(safe-area-inset-bottom,0px))}
+.onb-steps{display:flex;gap:6px;direction:ltr;justify-content:center;margin-bottom:8px}
+.onb-steps i{width:8px;height:8px;border-radius:4px;background:rgba(23,26,51,.14);transition:width .3s,background .3s}
+.onb-steps i.on{width:24px;background:var(--brand)}
+.onb-steps i.done{background:var(--brand2)}
+.onb-top{display:flex;justify-content:space-between;align-items:center;min-height:40px}
+.onb-back{font-size:14px;color:var(--ink2);padding:8px 4px}
+.onb-body{flex:1;overflow-y:auto;padding-top:18px}
+.onb-body h1{font-size:28px;font-weight:700;letter-spacing:-.025em;line-height:1.2;margin-bottom:10px;text-wrap:balance}
+.onb-body p.lead{font-size:15.5px;color:var(--ink2);line-height:1.6;margin-bottom:22px}
+.onb-hero{margin:8px 0 26px;display:flex;flex-direction:column;gap:10px}
+.onb-li{display:flex;gap:13px;align-items:center;padding:13px 14px;border-radius:var(--rad-l)}
+.onb-li .ic{width:40px;height:40px;border-radius:13px;display:grid;place-items:center;font-size:19px;flex-shrink:0;background:rgba(255,255,255,.8)}
+.onb-li b{display:block;font-size:14.5px;font-weight:600}
+.onb-li span{font-size:13px;color:var(--ink2)}
+.drop{display:flex;flex-direction:column;align-items:center;gap:8px;padding:26px 16px;border-radius:var(--rad-l);border:2px dashed rgba(78,91,242,.3);background:rgba(255,255,255,.55);text-align:center;cursor:pointer;width:100%;transition:border-color .2s,background .2s}
+.drop.has{border-style:solid;border-color:var(--mint);background:rgba(20,184,132,.06)}
+.drop b{font-size:15px;font-weight:600}
+.drop span{font-size:13px;color:var(--ink3)}
+.field{margin-bottom:16px}
+.field label{display:block;font-size:13.5px;font-weight:600;margin-bottom:7px}
+.field input,.field textarea{width:100%;border-radius:14px;border:1px solid var(--glass-edge);background:rgba(255,255,255,.78);padding:12px 14px;font-size:15px;outline:none;direction:rtl}
+.field input.ltr{direction:ltr;text-align:left;font-family:ui-monospace,Menlo,monospace;font-size:14px}
+.field input:focus,.field textarea:focus{border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-lt)}
+.field .help{font-size:12.5px;color:var(--ink3);margin-top:6px;line-height:1.5}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chips .chip{height:36px;padding:0 14px;font-size:14px;background:rgba(255,255,255,.75);border:1px solid var(--glass-edge)}
+.chips .chip.sel{background:var(--ink);color:#fff;border-color:var(--ink)}
+.key-steps{counter-reset:k;display:flex;flex-direction:column;gap:9px;margin-bottom:18px}
+.key-steps div{counter-increment:k;display:flex;gap:11px;font-size:14px;line-height:1.5;align-items:flex-start}
+.key-steps div::before{content:counter(k);width:24px;height:24px;border-radius:8px;background:var(--brand-lt);color:var(--brand);font-weight:700;font-size:13px;display:grid;place-items:center;flex-shrink:0}
+.key-steps a{color:var(--brand);font-weight:500}
+.onb-foot{display:flex;flex-direction:column;gap:8px;padding-top:12px}
+.link-btn{font-size:14px;color:var(--ink2);padding:10px;font-weight:500}
+
+/* ── chat ── */
+#chatBtn{position:fixed;bottom:calc(20px + env(safe-area-inset-bottom,0px));right:max(16px,calc(50% - 215px + 16px));z-index:250;width:54px;height:54px;border-radius:18px;
+  background:linear-gradient(140deg,var(--brand),var(--brand2));display:grid;place-items:center;box-shadow:0 14px 30px -12px rgba(78,91,242,.8),inset 0 1px 0 rgba(255,255,255,.3);transition:transform .2s}
+#chatBtn:active{transform:scale(.92)}
+#chatBtn svg{width:22px;height:22px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+body.pg-jobs #chatBtn,body.pg-office #chatBtn{display:none}
+#chatPop{position:fixed;bottom:calc(86px + env(safe-area-inset-bottom,0px));right:max(12px,calc(50% - 215px + 12px));z-index:260;width:min(330px,calc(100vw - 24px));max-height:min(460px,64vh);border-radius:24px;display:flex;flex-direction:column;overflow:hidden;
+  background:rgba(250,251,255,.88);-webkit-backdrop-filter:saturate(180%) blur(28px);backdrop-filter:saturate(180%) blur(28px);border:1px solid var(--glass-brd);box-shadow:var(--g-shadow-lg);
+  transform-origin:bottom right;transform:scale(.9) translateY(14px);opacity:0;pointer-events:none;transition:transform .26s cubic-bezier(.3,1.3,.5,1),opacity .2s;direction:rtl}
+#chatPop.open{transform:none;opacity:1;pointer-events:auto}
+.chat-h{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--glass-edge)}
+.chat-h .ag-face{width:34px;height:34px;border-radius:11px}
+.chat-h b{font-size:14px;font-weight:600;display:block}
+.chat-h span{font-size:12px;color:var(--mint)}
+.chat-h .dr-x{margin-right:auto}
+.chat-msgs{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px;min-height:120px}
+.msg{max-width:84%;padding:9px 12px;border-radius:16px;font-size:14px;line-height:1.5;white-space:pre-wrap;word-break:break-word}
+.msg.bot{background:#fff;border:1px solid var(--glass-edge);align-self:flex-start;border-bottom-right-radius:5px}
+.msg.me{background:linear-gradient(140deg,var(--brand),var(--brand2));color:#fff;align-self:flex-end;border-bottom-left-radius:5px}
+.chat-sugs{display:flex;gap:6px;padding:0 12px 8px;overflow-x:auto}
+.chat-sugs::-webkit-scrollbar{display:none}
+.chat-sugs button{font-size:12.5px;padding:6px 11px;border-radius:12px;background:var(--brand-lt);color:var(--brand);white-space:nowrap;font-weight:500}
+.chat-in{display:flex;gap:8px;padding:10px 12px;border-top:1px solid var(--glass-edge)}
+.chat-in input{flex:1;height:40px;border-radius:14px;border:1px solid var(--glass-edge);background:#fff;padding:0 13px;font-size:14px;outline:none}
+.chat-in input:focus{border-color:var(--brand)}
+.chat-in button{width:40px;height:40px;border-radius:14px;background:var(--brand);display:grid;place-items:center}
+.chat-in button svg{width:17px;height:17px;stroke:#fff;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;transform:scaleX(-1)}
+
+/* ── toast ── */
+#toasts{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(96px + env(safe-area-inset-bottom,0px));z-index:900;width:min(400px,calc(100vw - 24px));display:flex;flex-direction:column;gap:8px;pointer-events:none;direction:rtl}
+body.pg-jobs #toasts{bottom:calc(120px + env(safe-area-inset-bottom,0px))}
+.toast{pointer-events:auto;background:rgba(23,26,51,.92);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);color:#fff;border-radius:18px;padding:12px 14px;font-size:14px;box-shadow:0 16px 36px -14px rgba(0,0,0,.5);animation:tIn .32s cubic-bezier(.3,1.3,.5,1) both}
+.toast.out{animation:tOut .22s ease both}
+@keyframes tIn{from{opacity:0;transform:translateY(12px) scale(.96)}to{opacity:1;transform:none}}
+@keyframes tOut{to{opacity:0;transform:translateY(8px)}}
+.toast-row{display:flex;align-items:center;gap:10px}
+.toast-row span{flex:1}
+.toast button.undo{color:#A8B4FF;font-weight:600;font-size:14px;padding:2px 4px}
+.toast-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.toast-chips button{font-size:12.5px;padding:6px 11px;border-radius:12px;background:rgba(255,255,255,.12);color:#fff}
+
+/* layering: Office sheet above top bar */
+#agSheet{z-index:450!important}
+
+</style>
+</head>
+<body>
+<div id="mesh" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+
+<div id="splash" aria-hidden="true">
+  <div class="splash-in">
+    <div class="logo-mark"><svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21"/><path d="M8 10.8l1.8 1.8L13.3 9"/></svg></div>
+    <div class="wordmark">findjob</div>
+    <div class="splash-tag">הסוכנים שלך כבר מחפשים</div>
+  </div>
+</div>
+
+<!-- TOP BAR: menu left (drawer opens from the same side) · title · avatar right -->
+<header id="topbar">
+  <button class="tb-btn tb-menu" id="menuBtn" aria-label="פתח תפריט" aria-controls="drawer" aria-expanded="false" onclick="toggleDrawer()">
+    <span class="burger" aria-hidden="true"><span></span><span></span><span></span></span>
+    <span class="tb-dot" id="menuDot" hidden></span>
+  </button>
+  <div class="tb-title" id="tbTitle"></div>
+  <button class="tb-btn" aria-label="פרופיל" onclick="goPage('profile')"><span class="avatar" id="tbAvatar">Or</span></button>
+</header>
+
+<!-- DRAWER -->
+<div id="drawerOverlay" onclick="if(event.target===this)closeDrawer()">
+  <nav id="drawer" aria-label="תפריט ראשי">
+    <div class="dr-head">
+      <span class="wordmark">findjob</span>
+      <button class="dr-x" aria-label="סגור תפריט" onclick="closeDrawer()"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </div>
+    <button class="dr-user" onclick="goPage('profile')">
+      <span class="avatar" id="drAvatar">Or</span>
+      <span><span class="dr-user-name" id="drName"></span><span class="dr-user-goal" id="drGoal"></span></span>
+    </button>
+    <div class="dr-group">חיפוש עבודה</div>
+    <button class="dr-item" data-pg="main" onclick="goPage('main')"><svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-5h4v5"/></svg><span class="lbl">לוח</span></button>
+    <button class="dr-item" data-pg="jobs" onclick="goPage('jobs')"><svg viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="3"/><path d="M9 8h6M9 12h6M9 16h3"/></svg><span class="lbl">משרות חדשות</span><span class="dr-badge" id="bdJobs" hidden></span></button>
+    <button class="dr-item" data-pg="tracker" onclick="goPage('tracker')"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h10M4 18h6"/><circle cx="18" cy="16" r="3"/></svg><span class="lbl">מעקב הגשות</span><span class="dr-badge soft" id="bdApps" hidden></span></button>
+    <button class="dr-item" data-pg="interview" onclick="goPage('interview')"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H8l-5 4V5a2 2 0 012-2h14a2 2 0 012 2z"/><path d="M8 9h8M8 13h5"/></svg><span class="lbl">הכנה לראיון</span></button>
+    <button class="dr-item" data-pg="office" onclick="goPage('office')"><svg viewBox="0 0 24 24"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 21v-4h6v4"/></svg><span class="lbl">המשרד</span></button>
+    <div class="dr-group">החשבון שלי</div>
+    <button class="dr-item" data-pg="profile" onclick="goPage('profile')"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg><span class="lbl">פרופיל וקורות חיים</span></button>
+    <div class="dr-foot">
+      <div class="quota-row"><span>מכסת AI חינמית היום</span><b class="num" id="qPct"></b></div>
+      <div class="quota-bar"><div class="quota-fill" id="qFill"></div></div>
+      <div class="quota-note" id="qNote"></div>
+    </div>
+  </nav>
+</div>
+
+<div id="app">
+  <div id="pages">
+
+    <!-- HOME -->
+    <section class="pg on" id="pg-main">
+      <div class="scroll">
+        <div class="greet"><h1 id="greetH"></h1><p id="greetP"></p></div>
+        <button class="brief" id="briefCard" onclick="openBrief()"></button>
+        <button class="today glass" id="todayCard" onclick="goPage('jobs')"></button>
+        <div class="todo glass" id="todoBox"></div>
+        <div class="h-sec"><h2>מה הסוכנים עשו</h2><button class="link" onclick="goPage('office')">למשרד</button></div>
+        <div class="agents-row" id="agentsRow"></div>
+      </div>
+    </section>
+
+    <!-- JOBS -->
+    <section class="pg" id="pg-jobs">
+      <div class="jobs-wrap">
+        <div class="jobs-meta"><span id="jobsCount" class="num"></span><span class="filtered" id="jobsFiltered"></span></div>
+        <div class="deck-progress" id="deckProg"></div>
+        <div class="deck" id="deck"></div>
+        <div class="deck-actions" id="deckActions">
+          <button class="act skip" aria-label="דלג" onclick="decide('skip')"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+          <button class="act save" aria-label="שמור למעקב" onclick="decide('save')"><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg></button>
+          <button class="act info" aria-label="פרטים מלאים" onclick="openJobInfo()"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg></button>
+        </div>
+      </div>
+    </section>
+
+    <!-- TRACKER -->
+    <section class="pg" id="pg-tracker">
+      <div class="scroll">
+        <div class="seg" id="seg"></div>
+        <div id="appsList" style="display:flex;flex-direction:column;gap:10px"></div>
+      </div>
+    </section>
+
+    <!-- INTERVIEW -->
+    <section class="pg" id="pg-interview">
+      <div class="scroll" id="ivScroll"></div>
+    </section>
+
+    <!-- OFFICE -->
+    <div class="pg" id="pg-office">
+      <div class="off-body">
+        <!-- Full-width canvas -->
+        <div class="canvas-wrap" id="offWrap">
+          <canvas id="cvOff"></canvas>
+          <div class="canvas-bar">
+            <span class="canvas-bar-txt" id="canvasTxt">6 סוכנים</span>
+            <span class="canvas-bar-badge" id="canvasBadge">קריירה</span>
+          </div>
+        </div>
+        <!-- Agents horizontal row -->
+        <div class="ag-row-panel">
+          <div class="ag-row-title">סוכנים</div>
+          <div class="ag-faces-row" id="agFacesRow"></div>
+        </div>
+        <!-- Workflow — Thinking state card -->
+        <div class="wf-panel">
+          <div class="wf-panel-titlebar">
+            <div class="wf-thinking-dot"></div>
+            <div class="wf-thinking-dot"></div>
+            <div class="wf-thinking-dot"></div>
+            <span class="wf-panel-title">תהליך עבודה</span>
+          </div>
+          <div class="wf-scroll" id="wfList"></div>
+        </div>
+        <div class="off-car-wrap"><div class="car-track" id="dcarOff"></div></div>
+      </div>
+    </div>
+
+    
+
+    <!-- PROFILE -->
+    <section class="pg" id="pg-profile">
+      <div class="scroll" id="profScroll"></div>
+    </section>
+
+  </div>
+</div>
+
+<!-- Agent detail bottom sheet -->
+    <div id="agSheet" onclick="closeAgSheet(event)">
+      <div id="agSheetPanel">
+        <div class="ags-drag"></div>
+        <div class="ags-body" id="agSheetBody"></div>
+      </div>
+    </div>
+
+    
+
+<!-- GENERIC SHEET -->
+<div class="sheet" id="sheet" onclick="if(event.target===this)closeSheet()" role="dialog" aria-modal="true">
+  <div class="sheet-panel"><div class="sheet-grab"></div><div class="sheet-body" id="sheetBody"></div></div>
+</div>
+
+<!-- ONBOARDING -->
+<div id="onb" role="dialog" aria-modal="true" aria-label="היכרות">
+  <div class="mesh-copy"></div>
+  <div class="onb-in">
+    <div class="onb-top"><button class="onb-back" id="onbBack" onclick="onbGo(-1)">חזרה</button><div class="onb-steps" id="onbSteps"></div><span style="width:44px"></span></div>
+    <div class="onb-body" id="onbBody"></div>
+    <div class="onb-foot" id="onbFoot"></div>
+  </div>
+</div>
+<input type="file" id="cvFile" accept=".pdf,.txt,.doc,.docx,.md" hidden onchange="onCvFile(this)">
+
+<!-- CHAT -->
+<button id="chatBtn" aria-label="שאל את העוזר" onclick="toggleChat()"><svg viewBox="0 0 24 24"><path d="M21 12a8 8 0 01-11.6 7.1L4 20l1-4.6A8 8 0 1121 12z"/></svg></button>
+<div id="chatPop" role="dialog" aria-label="צ'אט עם העוזר">
+  <div class="chat-h"><div class="ag-face"><canvas id="chatFace" width="96" height="96"></canvas></div><div><b>Stanley, העוזר שלך</b><span>זמין</span></div>
+    <button class="dr-x" aria-label="סגור" onclick="toggleChat()"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+  <div class="chat-msgs" id="chatMsgs"></div>
+  <div class="chat-sugs" id="chatSugs"></div>
+  <div class="chat-in"><input id="chatInput" placeholder="שאל משהו על החיפוש שלך" onkeydown="if(event.key==='Enter')sendChat()"><button aria-label="שלח" onclick="sendChat()"><svg viewBox="0 0 24 24"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/></svg></button></div>
+</div>
+
+<div id="toasts" aria-live="polite"></div>
+
+<script>
+document.documentElement.setAttribute('data-theme','light');
+
+/* ═════════ helpers ═════════ */
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const LS={
+  get(k,d){try{const v=localStorage.getItem('findjob_'+k);return v?JSON.parse(v):d}catch(e){return d}},
+  set(k,v){try{localStorage.setItem('findjob_'+k,JSON.stringify(v))}catch(e){}},
+  clear(){try{Object.keys(localStorage).filter(k=>k.startsWith('findjob_')).forEach(k=>localStorage.removeItem(k))}catch(e){}}
+};
+const DAY=864e5;
+const daysAgoISO=n=>new Date(Date.now()-n*DAY).toISOString();
+const daysSince=iso=>Math.max(0,Math.floor((Date.now()-new Date(iso).getTime())/DAY));
+const agoTxt=n=>n===0?'היום':n===1?'אתמול':n===2?'לפני יומיים':`לפני ${n} ימים`;
+const IC={
+  arrow:'<svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>',
+  check:'✓'
+};
+
+/* ═════════ data — agents (single registry shared with the Office) ═════════ */
+// index → Office character. key → backend node in agent_core.
+const CAREER={id:'career',icon:'💼',lbl:'קריירה',color:'#4F46E5',lt:'#EEF2FF',desc:'חיפוש עבודה ופיתוח קריירה',prog:72,
+  workflow:[
+    {cmd:'Dwight.scan',out:'14 משרות חדשות · 3 בהתאמה גבוהה · זמן ריצה: 2.4 דק',tag:'עובד',state:'working'},
+    {cmd:'Dwight.analyze',out:'Google Backend — שכר ממוצע ₪42K · Glassdoor 4.2 · Remote חלקי',tag:'הושלם',state:'working'},
+    {cmd:'Pam.write',out:'Cover Letter ל-Monday.com — TypeScript + React · מוכן תוך 40 שניות',tag:'עובד',state:'working'},
+    {cmd:'Pam.prep',out:'הכנה לראיון System Design — 5 שאלות נוצרו · DB, API, Scale',tag:'הושלם',state:'idle'},
+    {cmd:'Kevin.update',out:'LinkedIn — ניסיון ומיומנויות · ממתין לאישורך',tag:'ממתין',state:'idle'},
+    {cmd:'Stanley.follow',out:'3 חברות ללא מענה · Reminder יישלח מחר ב-09:00',tag:'מתוזמן',state:'idle'},
+  ],
+  agents:[
+    {name:'Michael',role:'אסטרטגיה',e:'🎯',state:'working',sched:'ראשון בשבוע, 09:00',key:'manager',desc:'מגדיר את מטרות הקריירה, מכוון את כל הסוכנים לעבוד בסנכרון מלא. בונה תוכנית פעולה שבועית, עוקב אחר KPIים ומוודא שהכיוון תמיד ממוקד ב-ROI הגבוה ביותר.'},
+    {name:'Dwight',role:'סריקת משרות',e:'🔍',state:'working',sched:'כל 6 שעות, 24/7',key:'job_finder',desc:'סורק LinkedIn, Indeed, Glassdoor, Geektime ועוד 12 מקורות. מסנן לפי ניסיון, טכנולוגיה, שכר וגיאוגרפיה. מתעדף לפי ציון התאמה ומעביר הלאה רק הזדמנויות איכותיות.'},
+    {name:'Jim',role:'מודיעין חברות',e:'🕵️',state:'idle',sched:'לפי בקשת Dwight',key:'market_scout',desc:'חוקר כל חברה לעומק: שכר ממוצע, תרבות ארגונית, ביקורות עובדים, מבנה צוות, Glassdoor ו-LinkedIn. מוצא אנשי קשר רלוונטיים ונתיבי כניסה חמים.'},
+    {name:'Pam',role:'ראיונות ופיתוח',e:'🧭',state:'idle',sched:'רביעי, 19:00',key:'mentor',desc:'מכינה לראיונות טכניים ו-Behavioral. מזהה פערי ידע, ממליצה על קורסים ממוקדים, מדמה שאלות System Design ו-STAR. עוקבת אחר התקדמות הלמידה לאורך זמן.'},
+    {name:'Kevin',role:'LinkedIn + CV',e:'📋',state:'sleeping',sched:'ראשון בחודש',key:'cover_letter',desc:'מתחזק את פרופיל LinkedIn בצורה שתשיג חשיפה מקסימלית. מתאים את ה-CV לכל משרה ספציפית, מנסח כתבי כיסוי מותאמים אישית ומייעל לפי כלי ATS.'},
+    {name:'Stanley',role:'שיווק אישי',e:'🤝',state:'working',sched:'09:00 יומי',key:'daily_assistant',desc:'מסנן את כל הדיווחים ומעביר אליך רק את מה שדורש תשומת לב אמיתית. מנהל תקשורת ראשונית עם מגייסים, מתזמן שיחות ומוודא שאף הזדמנות לא נופלת בין הכיסאות.'},
+  ]};
+// The Office engine reads DOMS[selDom]; findjob has exactly one domain.
+const DOMS=[CAREER]; let selDom=0, selAg=0;
+
+const UPDATES=[
+  {a:1,time:'לפני 12 דק׳',body:'סרקתי 41 משרות הלילה. 6 עברו את הסף (ציון 3.5 ומעלה), 3 בכירות מדי סוננו.'},
+  {a:3,time:'לפני שעה',body:'הכנתי 5 שאלות System Design לראיון ב-Monday.com ביום רביעי.'},
+  {a:2,time:'לפני 3 שעות',body:'Guardz מגייסים כמה ג׳וניורים אחרי סבב גיוס. כדאי לפנות השבוע.'},
+  {a:4,time:'אתמול',body:'המכתב ל-Wix מוכן. כל העובדות בו לקוחות מקורות החיים שלך.'},
+  {a:0,time:'ראשון',body:'יעד השבוע: 5 הגשות איכותיות במקום 15 מהירות. כרגע 2 מתוך 5.'},
+];
+
+/* ═════════ data — jobs ═════════ */
+const JOBS={
+  'j-mobileye':{co:'Mobileye',ini:'Me',c:['#0E7C86','#19A7A6'],title:'Computer Vision Student',loc:'ירושלים · משרת סטודנט',fit:4.5,
+    reasons:['OpenCV ו-TensorFlow — אותו stack של AI Smart Crosswalk','משרת סטודנט, מתאים לשנה ג׳','צוות מחקר שעובד עם Python ו-C++'],
+    gaps:['C++ מודרני (17/20) מופיע כדרישה'],tags:['Python','OpenCV','Deep Learning'],src:'אתר החברה',posted:1,salary:'₪60–75 לשעה (הערכה)',
+    desc:'הצטרפות לצוות אלגוריתמים בתחום זיהוי אובייקטים בזמן אמת. 24 שעות שבועיות לפחות, גמישות בתקופת מבחנים.',deck:true},
+  'j-guardz':{co:'Guardz',ini:'Gz',c:['#2B2D42','#4A4E78'],title:'Junior Software Engineer',loc:'תל אביב',fit:4.4,
+    reasons:['Python ו-Backend הם הליבה של המשרה','מוגדרת לג׳וניורים, ללא דרישת שנות ניסיון','סטארט-אפ סייבר בצמיחה עם צוות קטן'],
+    gaps:['Kubernetes — יתרון, לא חובה'],tags:['Python','AWS','REST'],src:'LinkedIn',posted:2,salary:'₪17–21K (הערכה)',
+    desc:'פיתוח שירותי backend לפלטפורמת אבטחה לעסקים קטנים. עבודה צמודה עם צוות המוצר.',deck:true},
+  'j-riskified':{co:'Riskified',ini:'Rf',c:['#3B5BDB','#5C7CFA'],title:'Junior Backend Engineer',loc:'תל אביב · היברידי',fit:4.1,
+    reasons:['Python ו-SQL מופיעים בראש הדרישות','תוכנית קליטה מסודרת לג׳וניורים'],
+    gaps:['Kafka','מערכות מבוזרות'],tags:['Python','SQL','Microservices'],src:'Greenhouse',posted:3,salary:'₪18–22K (הערכה)',
+    desc:'צוות Data Platform מחפש מהנדס backend לבניית pipelines של עיבוד עסקאות בזמן אמת.',deck:true},
+  'j-vhive':{co:'vHive',ini:'vH',c:['#F08C00','#FFA94D'],title:'Full Stack Developer',loc:'פתח תקווה',fit:4.0,
+    reasons:['React ו-Socket.IO — כמו המערכות בזמן אמת שבנית','Computer Vision ברחפנים, מתחבר לפרויקט שלך'],
+    gaps:['Docker','בסיסי נתונים גאוגרפיים'],tags:['React','Node.js','Real-time'],src:'Indeed',posted:4,salary:'₪16–20K (הערכה)',
+    desc:'פיתוח ממשק ניהול לצי רחפנים אוטונומיים, מהשרת ועד התצוגה.',deck:true},
+  'j-checkpoint':{co:'Check Point',ini:'CP',c:['#C2255C','#E64980'],title:'Software Engineer Student',loc:'תל אביב · משרת סטודנט',fit:3.9,
+    reasons:['C++ ו-Linux מהקורסים ומהפרויקטים','משרת סטודנט עם מסלול להמשך'],
+    gaps:['Networking','Reversing — יתרון'],tags:['C++','Linux'],src:'Comeet',posted:5,salary:'₪55–65 לשעה (הערכה)',
+    desc:'פיתוח רכיבי אבטחה בצוות Threat Prevention. נדרשות 20 שעות שבועיות.',deck:true},
+  'j-earnix':{co:'Earnix',ini:'Ex',c:['#2F9E44','#51CF66'],title:'Automation Engineer',loc:'רמת גן',fit:3.6,
+    reasons:['Python לאוטומציה ובדיקות'],gaps:['CI/CD','Selenium / Playwright'],tags:['Python','QA Automation'],src:'Indeed',posted:6,salary:'₪15–18K (הערכה)',
+    desc:'בניית תשתית בדיקות אוטומטיות למערכת תמחור ביטוחית.',deck:true},
+  'j-monday':{co:'Monday.com',ini:'mo',c:['#6741D9','#9775FA'],title:'Full-Stack Developer',loc:'תל אביב · היברידי',fit:4.6,
+    reasons:['React ו-TypeScript','צוות פלטפורמה עם Node.js'],gaps:['GraphQL'],tags:['React','TypeScript','Node.js'],src:'Greenhouse',posted:12,salary:'₪19–24K (הערכה)',
+    desc:'פיתוח full-stack בצוות פלטפורמה של Work OS.',deck:false},
+  'j-wix':{co:'Wix',ini:'Wx',c:['#1C1C1C','#495057'],title:'Frontend Engineer',loc:'תל אביב · היברידי',fit:4.2,
+    reasons:['React ו-TypeScript','רכיבי drag & drop מורכבים'],gaps:['בדיקות E2E'],tags:['React','TypeScript'],src:'אתר החברה',posted:14,salary:'₪18–23K (הערכה)',
+    desc:'פיתוח רכיבי עורך מתקדמים בצוות Editor.',deck:false},
+};
+const DECK=Object.keys(JOBS).filter(k=>JOBS[k].deck);
+const FILTERED_OUT=3;
+
+const STATUSES={saved:'שמור',applied:'הוגש',interview:'ראיון',offer:'הצעה',rejected:'נדחה',ghosted:'אין מענה'};
+
+/* ═════════ state ═════════ */
+function defaultState(){return{
+  onboarded:false,
+  profile:{name:'Or Smolarchik',first:'Or',role:'Junior Backend Developer',locs:['תל אביב','היברידי'],level:'סטודנט / ג׳וניור',cv:'',cvName:'',key:''},
+  decisions:{},skipReasons:{},
+  apps:[
+    {id:'a-monday',jobId:'j-monday',status:'interview',date:daysAgoISO(6),iv:'רביעי, 14:00'},
+    {id:'a-wix',jobId:'j-wix',status:'applied',date:daysAgoISO(9)},
+  ],
+  todos:[
+    {id:'t1',text:'לעבור על 6 המשרות החדשות',done:false},
+    {id:'t2',text:'לתרגל 2 שאלות System Design לראיון ב-Monday.com',done:false},
+    {id:'t3',text:'לשלוח follow-up ל-Wix, 9 ימים בלי תשובה',done:false},
+    {id:'t4',text:'להוסיף את Lifeboard לפרויקטים ב-LinkedIn',done:true},
+    {id:'t5',text:'לעדכן את קורות החיים עם ה-Deploy ל-Vercel',done:false},
+  ],
+  claude:false,notif:true,quota:18,todoOpen:false,
+}}
+let S=Object.assign(defaultState(),LS.get('state',{}));
+function save(){LS.set('state',S)}
+const prof=()=>S.profile;
+const goalTxt=()=>`${prof().role} · ${prof().locs.join(', ')||'כל הארץ'}`;
+const queue=()=>DECK.filter(id=>!S.decisions[id]);
+const letterFor=(j)=>`שלום,
+
+אני ${prof().name}, סטודנט שנה שלישית למדעי המחשב ב-HIT. ראיתי את משרת ה-${j.title} ב-${j.co} והיא מתאימה בדיוק לכיוון שאני בונה.
+
+${j.reasons[0]}. בנוסף פיתחתי את Lifeboard, מערכת Full-Stack עם סוכני AI ב-Next.js ו-Python, שמריצה pipeline יומי של איסוף וניתוח נתונים.
+
+אשמח לשיחה קצרה כדי לשמוע עוד על הצוות.
+
+תודה,
+${prof().name}`;
+
+/* ═════════ OFFICE — copied verbatim from Life Building (unchanged) ═════════ */
+// ── OFFICE CHARACTERS (The Office cast) — 6 palettes ──
+const OFF_CHARS=[
+  // Michael Scott: dark brown slicked-back, charcoal-navy suit, light-blue shirt, blue-grey tie
+  {skin:'#f1c27d',hair:'#3b2209',shirt:'#ddeaff',tie:'#6b83a8',pants:'#2c3448',suit:'#2e3448',name:'Michael'},
+  // Dwight Schrute: light-brown curtain bangs, glasses, mustard shirt, brown tie
+  {skin:'#f5d5a8',hair:'#9b7a4a',shirt:'#f0c040',tie:'#7a5c30',pants:'#5a4a32',glasses:true,name:'Dwight'},
+  // Jim Halpert: medium-brown shaggy, light-blue rolled shirt, black tie
+  {skin:'#ffdbac',hair:'#7a5030',shirt:'#b8d8f0',tie:'#1a1a1a',pants:'#c8b890',rolled:true,name:'Jim'},
+  // Pam Beesly: strawberry-blonde half-up, pink cardigan, white blouse
+  {skin:'#f6cfa6',hair:'#d4896a',shirt:'#f5f5f5',cardigan:'#dba8c8',woman:true,name:'Pam'},
+  // Kevin Malone: dark-brown balding, boxy grey-brown suit, white shirt, brown tie
+  {skin:'#e8b88a',hair:'#2a1a0e',shirt:'#f8f8f8',tie:'#8a6a4a',pants:'#4a4040',suit:'#6a6258',balding:true,name:'Kevin'},
+  // Stanley Hudson: black+grey buzz+mustache, navy suit, bold red tie
+  {skin:'#8d5524',hair:'#1a1a1a',shirt:'#f8f8f8',tie:'#cc2222',pants:'#2a3060',suit:'#1e2a4a',mustache:true,glasses2:true,name:'Stanley'},
+];
+// map domain agents to character indices
+const CHAR_MAP=[0,1,2,3,4,5];
+
+// ── MINI FACE CANVAS ──
+function drawFace(canvas, charIdx, state){
+  const cv=canvas;
+  cv.width=96;cv.height=96;
+  const ctx=cv.getContext('2d');
+  const S=3;
+  ctx.setTransform(S,0,0,S,0,0);
+  ctx.imageSmoothingEnabled=false;
+  const W=32,H=32;
+  const p=OFF_CHARS[charIdx%OFF_CHARS.length];
+  const cx=16,cy=20;
+  // background
+  ctx.fillStyle='#E8EBF5';ctx.fillRect(0,0,W,H);
+  // body / torso
+  const topC=p.cardigan||p.shirt;
+  ctx.fillStyle=topC;ctx.fillRect(cx-6,cy+5,12,10);
+  if(p.suit){ctx.fillStyle=p.suit;ctx.fillRect(cx-6,cy+5,3,10);ctx.fillRect(cx+3,cy+5,3,10);}
+  if(p.cardigan){ctx.fillStyle=p.shirt;ctx.fillRect(cx-2,cy+5,4,3);}
+  if(p.tie){ctx.fillStyle=p.tie;ctx.fillRect(cx-1,cy+5,2,8);}
+  // neck
+  ctx.fillStyle=p.skin;ctx.fillRect(cx-2,cy+3,4,4);
+  // head
+  ctx.fillStyle=p.skin;ctx.fillRect(cx-5,cy-8,10,10);
+  // ears
+  ctx.fillStyle=p.skin;ctx.fillRect(cx-6,cy-5,1,3);ctx.fillRect(cx+5,cy-5,1,3);
+  // hair
+  ctx.fillStyle=p.hair;
+  if(p.woman){
+    ctx.fillRect(cx-6,cy-9,12,4);ctx.fillRect(cx-6,cy-9,2,12);ctx.fillRect(cx+4,cy-9,2,12);
+  } else if(p.balding){
+    ctx.fillRect(cx-5,cy-9,4,3);ctx.fillRect(cx+1,cy-9,4,3);ctx.fillRect(cx-5,cy-9,2,4);ctx.fillRect(cx+3,cy-9,2,4);
+  } else if(p.glasses){
+    ctx.fillRect(cx-5,cy-9,4,3);ctx.fillRect(cx+1,cy-9,4,3);ctx.fillRect(cx-5,cy-9,2,6);ctx.fillRect(cx+3,cy-9,2,6);
+  } else if(p.rolled){
+    ctx.fillRect(cx-5,cy-9,10,4);ctx.fillRect(cx-6,cy-8,2,7);ctx.fillRect(cx+4,cy-8,2,6);ctx.fillRect(cx-4,cy-10,2,2);ctx.fillRect(cx+2,cy-10,2,2);
+  } else if(p.mustache){
+    // buzz cut
+    ctx.fillRect(cx-5,cy-9,10,3);ctx.fillRect(cx-4,cy-9,8,2);
+  } else {
+    // slicked back
+    ctx.fillRect(cx-5,cy-9,10,2);ctx.fillRect(cx-5,cy-9,2,5);ctx.fillRect(cx-4,cy-9,8,1);
+  }
+  // mustache
+  if(p.mustache){ctx.fillStyle=p.hair;ctx.fillRect(cx-3,cy-3,6,2);}
+  // eyes
+  const stateT=performance.now()/1000;
+  const blink=((stateT+(charIdx*.31))%4)<.14;
+  ctx.fillStyle='#111';
+  ctx.fillRect(cx-3,cy-4,1,blink?1:2);ctx.fillRect(cx+2,cy-4,1,blink?1:2);
+  if(state==='sleeping'){ctx.fillStyle='#555';ctx.fillRect(cx-3,cy-4,2,1);ctx.fillRect(cx+2,cy-4,2,1);}
+  // glasses
+  if(p.glasses||p.glasses2){
+    ctx.strokeStyle='#8a7a60';ctx.lineWidth=0.5;
+    ctx.strokeRect(cx-4,cy-5,3,3);ctx.strokeRect(cx+1,cy-5,3,3);
+    ctx.beginPath();ctx.moveTo(cx-1,cy-4);ctx.lineTo(cx+1,cy-4);ctx.stroke();
+  }
+  // mouth (state-based)
+  ctx.fillStyle='#8a4a3a';
+  if(state==='working'){ctx.fillRect(cx-2,cy-1,4,1);}
+  else if(state==='idle'){ctx.fillRect(cx-1,cy-1,2,1);}
+  else{ctx.fillRect(cx-1,cy,2,1);}
+  // state dot badge
+  const stC={working:'#34C759',idle:'#FF9F0A',sleeping:'#AEB1BB'};
+  ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(W-5,H-5,3,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle=stC[state]||'#ccc';ctx.beginPath();ctx.arc(W-5,H-5,2,0,Math.PI*2);ctx.fill();
+}
+
+// ── OFFICE ──
+function renderOffice(){
+  const d=DOMS[selDom];
+  document.getElementById('canvasBadge').textContent=d.lbl;
+  // Only active agents (working or idle)
+  const activeAgents=d.agents.filter(a=>a.state==='working'||a.state==='idle');
+  const total=d.agents.length;
+  document.getElementById('canvasTxt').textContent=`${activeAgents.length} פעילים מתוך ${total}`;
+  // Workflow — Thinking state panel, RTL Hebrew
+  document.getElementById('wfList').innerHTML=(d.workflow.length?d.workflow:[]).map((w,i)=>{
+    const isLast=i===d.workflow.length-1;
+    const st=w.state==='working'?'running':(w.state==='idle'?'done':'pending');
+    const icon=st==='done'?'✓':(st==='running'?'◉':'○');
+    const rawAgent=w.cmd?w.cmd.split('.')[0]:'';
+    const action=w.cmd&&w.cmd.includes('.')?w.cmd.split('.').slice(1).join('.'):''
+    const runBar=st==='running'?`<div class="wf-running-bar"></div>`:'';
+    const cursor=isLast&&st==='running'?`<span class="wf-cursor"></span>`:'';
+    return`<div class="wf-item">
+      <div class="wf-step-icon ${st}">${icon}</div>
+      <div class="wf-step-content">
+        <div class="wf-agent">${rawAgent?`<b>${rawAgent}</b>${action?' · '+action:''}`:w.cmd||''}</div>
+        <div class="wf-out">${w.out||w.s||''}${cursor}</div>
+        ${runBar}
+        <span class="wf-state ${st}">${w.tag||''}</span>
+      </div>
+    </div>`;
+  }).join('')||`<div class="wf-item"><div class="wf-step-icon running">◉</div><div class="wf-step-content"><div class="wf-out">מאתחל סוכנים...<span class="wf-cursor"></span></div></div></div>`;
+  // Agents horizontal faces row — all agents (with state indicator)
+  document.getElementById('agFacesRow').innerHTML=d.agents.map((a,i)=>{
+    const ci=CHAR_MAP[i%CHAR_MAP.length];
+    return`<div class="ag-face-slot" onclick="openAgSheet(${i})">
+      <div class="ag-face-canvas ${a.state}" id="fc-${i}">
+        <canvas id="fcc-${i}" width="96" height="96"></canvas>
+      </div>
+      <div class="ag-face-role">${a.role}</div>
+    </div>`;
+  }).join('');
+  // Draw faces
+  d.agents.forEach((a,i)=>{
+    const cv=document.getElementById('fcc-'+i);
+    if(cv) drawFace(cv, CHAR_MAP[i%CHAR_MAP.length], a.state);
+  });
+}
+
+function openAgSheet(i){
+  selAg=i;
+  const d=DOMS[selDom];
+  const a=d.agents[i];
+  const ci=CHAR_MAP[i%CHAR_MAP.length];
+  const stLbl={working:'עובד כעת 🟢',idle:'ממתין 🟡',sleeping:'ישן 🔘'};
+  const stC={working:'#34C759',idle:'#D97706',sleeping:'#8E8E93'};
+  document.getElementById('agSheetBody').innerHTML=`
+    <div class="ags-top">
+      <div class="ags-face"><canvas id="ags-face-cv" width="96" height="96" style="width:54px;height:54px;display:block;border-radius:14px;"></canvas></div>
+      <div>
+        <div class="ags-name">${a.name}</div>
+        <div class="ags-role">${a.role}</div>
+        <div class="ags-state" style="color:${stC[a.state]}">${stLbl[a.state]||a.state}</div>
+      </div>
+    </div>
+    <div class="ags-section">
+      <div class="ags-sec-lbl">אחריות ותפקיד</div>
+      <div class="ags-sec-body">${a.desc}</div>
+    </div>
+    <div class="ags-section">
+      <div class="ags-sec-lbl">לוז עבודה</div>
+      <div class="ags-sched">🕐 ${a.sched}</div>
+    </div>`;
+  // Draw face in sheet
+  const fcv=document.getElementById('ags-face-cv');
+  if(fcv) drawFace(fcv, ci, a.state);
+  document.getElementById('agSheet').classList.add('open');
+}
+function closeAgSheet(e){
+  if(!e||e.target===document.getElementById('agSheet'))
+    document.getElementById('agSheet').classList.remove('open');
+}
+
+// ── PIXEL-ART OFFICE CANVAS ──
+// Character palettes per the design spec
+// char_01: Strategist — dark brown slicked-back hair, charcoal-navy suit, light-blue shirt, blue-grey tie
+// char_02: Finder/Scout — light brown curtain-bangs + glasses, mustard yellow shirt, brown striped tie
+// char_03: Mentor/Coordinator — medium brown shaggy mop, light-blue rolled-up shirt, loose black tie
+// char_04: Assistant/receptionist — strawberry-blonde half-up, pastel pink cardigan, white blouse
+const OFF_P={
+  p1:{skin:'#f1c27d',hair:'#3b2209',shirt:'#ddeaff',tie:'#6b83a8',pants:'#2c3448',suit:'#2e3448'},   // Michael Scott: dark brown slick, charcoal-navy suit
+  p2:{skin:'#f5d5a8',hair:'#9b7a4a',shirt:'#f0c040',tie:'#7a5c30',pants:'#5a4a32',glasses:true},       // Dwight Schrute: curtain bangs, mustard shirt, glasses
+  p3:{skin:'#ffdbac',hair:'#7a5030',shirt:'#b8d8f0',tie:'#1a1a1a',pants:'#c8b890',rolled:true},        // Jim Halpert: shaggy brown, light-blue rolled shirt
+  p4:{skin:'#f6cfa6',hair:'#d4896a',shirt:'#f5f5f5',cardigan:'#dba8c8',woman:true},                    // Pam Beesly: strawberry blonde, pink cardigan
+  p5:{skin:'#e8b88a',hair:'#2a1a0e',shirt:'#f8f8f8',tie:'#8a6a4a',pants:'#4a4040',suit:'#6a6258',balding:true},  // Kevin Malone: dark balding, grey-brown suit
+  p6:{skin:'#8d5524',hair:'#1a1a1a',shirt:'#f8f8f8',tie:'#cc2222',pants:'#2a3060',suit:'#1e2a4a',mustache:true,glasses2:true},  // Stanley Hudson: dark skin, buzz+mustache, navy suit, red tie
+};
+
+// Map each agent slot (0-5) to a palette and animation role
+// state → animation: working→typist, idle→phoneGuy, sleeping→sleeper
+// Layout: 3 desks back row (ROW1), 3 desks front row (ROW2)
+// Logical canvas 320×180, S=4 → physical 1280×720
+const OFF_S=4;
+// 3 rows × 2 desks — wall now at y=0 so rows shifted up by 12
+const OFF_ROW1=80,OFF_ROW2=120,OFF_ROW3=162,OFF_DX=[52,192];
+const OFF_C={
+  wall:'#4d6283',wallD:'#3d4f6c',base:'#2a3448',
+  fl1:'#cdb88c',fl2:'#c1ab7e',
+  deskT:'#c28a52',deskF:'#93613a',deskD:'#74482a',
+  mon:'#23262f',scr:'#123a58',scrL:'#5fe0ff',chair:'#2c2a3a'
+};
+const OFF_FONT='"Inter",system-ui,sans-serif';
+
+let offT=0,offLast=0,offAnimId=null,offPops=[],offNextPop=1.5,offCount=0;
+
+function sizeOff(){
+  const box=document.getElementById('offWrap');
+  const cv=document.getElementById('cvOff');
+  if(!box||!cv) return;
+  const W=box.offsetWidth,H=box.offsetHeight;
+  if(!W||!H) return;
+  // Use 16:9 logical 1280×720 for the pixel art engine
+  cv.width=1280; cv.height=720;
+  cv.style.width=W+'px'; cv.style.height=H+'px';
+}
+
+function drawOff(){
+  cancelAnimationFrame(offAnimId);
+  const cv=document.getElementById('cvOff');
+  if(!cv) return;
+  offLast=performance.now();
+  const ctx=cv.getContext('2d');
+  ctx.setTransform(OFF_S,0,0,OFF_S,0,0);
+  ctx.imageSmoothingEnabled=false;
+  const R=(x,y,w,h,c)=>{ctx.fillStyle=c;ctx.fillRect(Math.round(x),Math.round(y),w,h)};
+
+  function offDesk(dx,y){
+    R(dx,y,60,4,OFF_C.deskT);R(dx,y+4,60,15,OFF_C.deskF);
+    R(dx+2,y+6,56,1,OFF_C.deskD);R(dx+4,y+19,4,3,OFF_C.deskD);R(dx+52,y+19,4,3,OFF_C.deskD);
+    R(dx+40,y+9,14,6,OFF_C.deskD);R(dx+46,y+11,2,1,OFF_C.deskT);
+  }
+  function offMonitor(mx,y,mode){
+    R(mx+8,y-3,3,3,'#555');R(mx+5,y-1,9,1,'#555');R(mx,y-16,19,13,OFF_C.mon);R(mx+1,y-15,17,11,OFF_C.scr);
+    if(mode==='type'){
+      const n=Math.floor(offT*3)%9;
+      for(let i=0;i<Math.min(n,5);i++){const w=4+((i*7+Math.floor(offT*3/9))%9);R(mx+2,y-14+i*2,Math.min(w,15),1,OFF_C.scrL);}
+      if(Math.floor(offT*4)%2) R(mx+2+((n*3)%14),y-14+Math.min(n,4)*2,1,1,'#fff');
+    } else if(mode==='saver'){
+      const bx=Math.abs(((offT*9)%28)-14),by=Math.abs(((offT*6)%18)-9);R(mx+2+bx,y-14+by,2,2,'#ff6bd5');
+    } else if(mode==='call'){
+      R(mx+3,y-13,6,6,'#2e8bd1');R(mx+10,y-13,6,1,OFF_C.scrL);R(mx+10,y-11,5,1,OFF_C.scrL);R(mx+10,y-9,6,1,OFF_C.scrL);
+    } else {
+      R(mx+2,y-14,15,9,'#1d5d3a');R(mx+3,y-13,8,1,'#8ff0b0');R(mx+3,y-11,11,1,'#8ff0b0');R(mx+3,y-9,6,1,'#8ff0b0');
+    }
+  }
+  function offHead(cx,hy,p,eyes){
+    R(cx-5,hy,10,11,p.skin);
+    if(p.woman){
+      // strawberry blonde half-up: wide top, side tendrils
+      R(cx-6,hy-1,12,4,p.hair);R(cx-6,hy-1,2,14,p.hair);R(cx+4,hy-1,2,14,p.hair);
+      // cardigan collar hint
+      R(cx+2,hy-2,3,2,'#dba8c8');
+    } else if(p.glasses){
+      // curtain bangs: center part
+      R(cx-5,hy-1,4,3,p.hair);R(cx+1,hy-1,4,3,p.hair);R(cx-5,hy-1,2,5,p.hair);R(cx+3,hy-1,2,5,p.hair);
+    } else if(p.rolled){
+      // shaggy mop: bigger, messier
+      R(cx-5,hy-1,10,4,p.hair);R(cx-6,hy,2,6,p.hair);R(cx+4,hy,2,5,p.hair);R(cx-4,hy-2,2,2,p.hair);R(cx+2,hy-2,2,2,p.hair);
+    } else {
+      // slicked-back: tight, smooth
+      R(cx-5,hy-1,10,2,p.hair);R(cx-5,hy-1,2,4,p.hair);R(cx-4,hy-1,8,1,p.hair);
+    }
+    R(cx-6,hy+5,1,2,p.skin);R(cx+5,hy+5,1,2,p.skin);
+    // glasses overlay
+    if(p.glasses){ctx.strokeStyle='#8a7a60';ctx.lineWidth=0.5;ctx.strokeRect(cx-4,hy+4,4,3);ctx.strokeRect(cx+0,hy+4,4,3);}
+    if(eyes==='closed'){R(cx-3,hy+5,2,1,'#222');R(cx+1,hy+5,2,1,'#222');}
+    else if(eyes!=='none'){const blink=((offT+cx*.13)%4)<.12;R(cx-3,hy+5,1,blink?1:2,'#111');R(cx+2,hy+5,1,blink?1:2,'#111');}
+  }
+  function offTorso(cx,ty,p,h){
+    const topC=p.cardigan||p.shirt;
+    R(cx-7,ty,14,h,topC);
+    if(p.cardigan){// blouse under cardigan: peek at collar
+      R(cx-3,ty,6,2,p.shirt||'#fff');
+    }
+    if(p.tie){R(cx-1,ty,2,h-2,p.tie);}
+    else if(!p.woman){R(cx-2,ty,4,2,p.skin);}
+    if(p.suit){// suit jacket over shirt
+      R(cx-7,ty,3,h,p.suit);R(cx+4,ty,3,h,p.suit);
+    }
+  }
+  function offTypist(dx,y,p,speed){
+    const cx=dx+20;
+    R(cx-9,y-21,18,21,OFF_C.chair);
+    offTorso(cx,y-13,p,13);offHead(cx,y-25,p);
+    R(cx-1,y-17,2,1,'#8a4a3a');
+    offDesk(dx,y);R(cx-8,y,16,2,'#e4e4ea');
+    for(let i=0;i<7;i++) R(cx-7+i*2,y,1,1,'#b9b9c4');
+    const a=Math.sin(offT*speed)>0?-1:0,b=Math.sin(offT*speed+1.7)>0?-1:0;
+    R(cx-9,y-6,3,5,p.shirt||p.cardigan);R(cx+6,y-6,3,5,p.shirt||p.cardigan);
+    R(cx-7,y-1+a,3,2,p.skin);R(cx+4,y-1+b,3,2,p.skin);
+    offMonitor(dx+36,y,'type');
+    R(dx+3,y-3,4,3,'#fff');R(dx+7,y-2,1,1,'#fff');R(dx+4,y-3,2,1,'#6b3a1a');
+  }
+  function offPhoneGuy(dx,y,p){
+    const cx=dx+20;
+    R(cx-9,y-21,18,21,OFF_C.chair);
+    offTorso(cx,y-13,p,13);offHead(cx,y-25,p);
+    const talk=Math.floor(offT*7)%3!==0&&(offT%5)<3.6;
+    R(cx-1,y-17,2,talk?2:1,'#8a4a3a');
+    R(cx-10,y-19,3,9,p.shirt||p.cardigan);R(cx-9,y-21,3,3,p.skin);
+    R(cx-7,y-24,2,8,'#151515');R(cx-7,y-24,2,1,'#e74c3c');
+    offDesk(dx,y);R(cx-8,y,16,2,'#e4e4ea');R(cx+5,y-1,3,2,p.skin);
+    offMonitor(dx+36,y,'call');
+    R(dx+4,y-4,6,4,'#d8d8d8');R(dx+5,y-6,4,2,'#d8d8d8');R(dx+6,y-7,2,1,'#c0392b');
+  }
+  function offSleeper(dx,y,p){
+    const cx=dx+20,br=Math.round(Math.sin(offT*1.6)*0.8);
+    R(cx-9,y-21,18,21,OFF_C.chair);
+    offTorso(cx,y-10+br,p,10);
+    offDesk(dx,y);R(cx-8,y,16,2,'#e4e4ea');
+    R(cx-12,y-5,22,6,'#f6f6fb');R(cx-12,y,22,1,'#cfd0e0');
+    R(cx-12,y-5,1,6,'#dcdcec');R(cx+9,y-5,1,6,'#dcdcec');
+    R(cx-11,y-4,3,3,p.shirt||p.cardigan);R(cx+6,y-4,3,3,p.shirt||p.cardigan);
+    offHead(cx-1,y-13+br,p,'closed');R(cx-2,y-6+br,2,1,'#8a4a3a');
+    if(((offT%3)<1.5)) R(cx-3,y-5+br,1,2,'#9bd8ff');
+    offMonitor(dx+36,y,'saver');
+    for(let i=0;i<3;i++){
+      const ph=(offT*0.55+i/3)%1;
+      ctx.globalAlpha=1-ph;ctx.fillStyle='#ffffff';
+      ctx.font=`700 ${5+i*1.5}px ${OFF_FONT}`;
+      ctx.fillText('Z',cx+4+ph*10+i*2,y-18-ph*16-i*3);
+    }
+    ctx.globalAlpha=1;
+  }
+  // Animated 3-dot talking bubble (no text)
+  function offBubble(x,y){
+    const bw=16,bh=10;
+    let bx=Math.round(x-bw/2);bx=Math.max(3,Math.min(317-bw,bx));const by=Math.round(y-bh-2);
+    ctx.fillStyle='#fff';
+    ctx.beginPath();
+    const r=2;
+    ctx.moveTo(bx+r,by);ctx.lineTo(bx+bw-r,by);ctx.quadraticCurveTo(bx+bw,by,bx+bw,by+r);
+    ctx.lineTo(bx+bw,by+bh-r);ctx.quadraticCurveTo(bx+bw,by+bh,bx+bw-r,by+bh);
+    ctx.lineTo(bx+4,by+bh);ctx.lineTo(bx+2,by+bh+3);ctx.lineTo(bx+2,by+bh);
+    ctx.lineTo(bx+r,by+bh);ctx.quadraticCurveTo(bx,by+bh,bx,by+bh-r);
+    ctx.lineTo(bx,by+r);ctx.quadraticCurveTo(bx,by,bx+r,by);
+    ctx.closePath();ctx.fill();
+    ctx.strokeStyle='rgba(0,0,0,0.08)';ctx.lineWidth=0.5;ctx.stroke();
+    // 3 animated dots
+    const phase=offT*3;
+    for(let d=0;d<3;d++){
+      const bounce=Math.sin(phase+d*1.1)*1.5;
+      const cx2=bx+4+d*5;const cy2=by+bh/2-bounce;
+      ctx.fillStyle='#888';ctx.beginPath();ctx.arc(cx2,cy2,1.2,0,Math.PI*2);ctx.fill();
+    }
+  }
+
+  function offRoom(d){
+    // Wall starts at y=0 — full canvas, no HUD bar
+    R(0,0,320,58,OFF_C.wall);
+    for(let x=0;x<320;x+=8) R(x,0,1,58,OFF_C.wallD);
+    R(0,46,320,8,OFF_C.wallD);R(0,54,320,3,OFF_C.base);
+    for(let y=57;y<180;y+=12) for(let x=0;x<320;x+=12) R(x,y,12,12,((x+y)/12)%2?OFF_C.fl1:OFF_C.fl2);
+    // windows
+    offWin(14,8,50,30);offWin(258,8,50,30);
+    // wall clock
+    const ccx=150,ccy=22;
+    R(ccx-9,ccy-9,18,18,'#222');R(ccx-8,ccy-8,16,16,'#fafafa');
+    const gm=9*60+Math.floor(offT);
+    ctx.strokeStyle='#222';ctx.lineWidth=1;ctx.beginPath();
+    const ha=((gm/60)%12)/12*Math.PI*2,ma=(gm%60)/60*Math.PI*2;
+    ctx.moveTo(ccx,ccy);ctx.lineTo(ccx+Math.sin(ha)*4,ccy-Math.cos(ha)*4);
+    ctx.moveTo(ccx,ccy);ctx.lineTo(ccx+Math.sin(ma)*6.5,ccy-Math.cos(ma)*6.5);
+    ctx.stroke();
+    // poster — domain color block, no text
+    R(186,10,52,30,'#1d2740');R(188,12,48,26,d.color);
+    // whiteboard — only bar chart
+    R(76,10,52,30,'#e9edf2');R(76,10,52,2,'#9aa4b3');
+    const bars=[d.prog*0.18,14,d.prog*0.12,d.prog*0.16];
+    const barC=[d.color,'#4a90d9','#2ecc71','#e67e22'];
+    bars.forEach((bh,bi)=>{R(80+bi*11,32-Math.round(bh),8,Math.round(bh),barC[bi]);});
+    R(78,32,48,1,'#555');
+    // water cooler + plant (shifted to freed right area — standing agents moved)
+    R(4,124,14,30,'#d6dde6');R(4,124,14,2,'#aab4c0');R(6,108,10,16,'#7cc8f5');R(7,110,3,10,'#b6e3ff');R(10,134,3,2,'#3a6ea5');
+    R(300,140,12,14,'#a0522d');R(300,140,12,2,'#7a3e20');
+    const sw=Math.round(Math.sin(offT*1.2));
+    R(302+sw,124,3,16,'#2f8f46');R(306,120,3,20,'#3faa55');R(298+sw,128,4,4,'#3faa55');R(309-sw,126,4,4,'#2f8f46');
+  }
+  function offWin(x,y,w,h){
+    R(x-2,y-2,w+4,h+4,'#e8edf3');R(x,y,w,h,'#7ec8ff');R(x,y+h-8,w,8,'#a9dcff');
+    ctx.save();ctx.beginPath();ctx.rect(x,y,w,h);ctx.clip();
+    for(let i=0;i<2;i++){const cx2=x+((offT*3+i*37+x)%(w+30))-15;R(cx2,y+6+i*9,12,3,'#fff');R(cx2+3,y+4+i*9,6,2,'#fff');}
+    R(x+6,y+h-12,8,12,'#5b6b84');R(x+18,y+h-17,10,17,'#4b5a72');R(x+32,y+h-10,7,10,'#5b6b84');
+    ctx.restore();
+    R(x+w/2-1,y,2,h,'#e8edf3');R(x,y+h/2-1,w,2,'#e8edf3');
+  }
+  function offStanding(cx,fy,p,face,gesture){
+    const pants=p.pants||'#2b2f45';
+    R(cx-5,fy-12,4,12,pants);R(cx+1,fy-12,4,12,pants);
+    R(cx-6,fy-1,5,2,'#111');R(cx+1,fy-1,5,2,'#111');
+    offTorso(cx,fy-26,p,15);offHead(cx,fy-37,p);
+    R(cx-1+face,fy-29,2,gesture?2:1,'#8a4a3a');
+    const up=gesture&&Math.sin(offT*5)>0;
+    if(face<0){
+      R(cx-9,fy-25-(up?5:0),3,up?7:10,p.shirt||p.cardigan);
+      R(cx-9,fy-(up?20:15),3,3,p.skin);
+      R(cx+6,fy-25,3,10,p.shirt||p.cardigan);R(cx+6,fy-15,3,3,p.skin);
+    } else {
+      R(cx-9,fy-25,3,10,p.shirt||p.cardigan);R(cx-9,fy-15,3,3,p.skin);
+      R(cx+6,fy-25,3,10,p.shirt||p.cardigan);R(cx+6,fy-15,3,3,p.skin);
+    }
+  }
+
+  function offFrame(){
+    const now=performance.now();
+    const dt=Math.min(0.1,(now-offLast)/1000);offLast=now;
+    offT+=dt;
+    offNextPop-=dt;
+    if(offNextPop<=0){
+      offCount++;offNextPop=2+Math.random()*2.5;
+      const spots=[[OFF_DX[0]+20,OFF_ROW1-30],[OFF_DX[1]+20,OFF_ROW2-30],[OFF_DX[0]+20,OFF_ROW3-30]];
+      const s=spots[Math.floor(Math.random()*3)];
+      offPops.push({x:s[0],y:s[1],age:0});
+    }
+    offPops.forEach(p=>p.age+=dt);
+    offPops=offPops.filter(p=>p.age<1.4);
+
+    ctx.clearRect(0,0,320,180);
+    const d=DOMS[selDom];
+    offRoom(d);
+
+    // 6 desk positions — 3 rows × 2 columns, depth order back→front
+    const allPositions=[
+      {dx:OFF_DX[0],y:OFF_ROW1},{dx:OFF_DX[1],y:OFF_ROW1},
+      {dx:OFF_DX[0],y:OFF_ROW2},{dx:OFF_DX[1],y:OFF_ROW2},
+      {dx:OFF_DX[0],y:OFF_ROW3},{dx:OFF_DX[1],y:OFF_ROW3}
+    ];
+    const allPalettes=[OFF_P.p1,OFF_P.p2,OFF_P.p3,OFF_P.p4,OFF_P.p5,OFF_P.p6];
+    const speeds=[22,26,18,24,20,28];
+    const agents=d.agents;
+
+    // Draw rows back→front, skip sleeping agents (empty desk drawn instead)
+    [0,1, 2,3, 4,5].forEach(i=>{
+      if(i>=agents.length) return;
+      const ag=agents[i];
+      const pos=allPositions[i];
+      const pal=allPalettes[i];
+      if(ag.state==='sleeping'){offSleeper(pos.dx,pos.y,pal);return;}
+      if(ag.state==='working'){offTypist(pos.dx,pos.y,pal,speeds[i]);offBubble(pos.dx+6,pos.y-48);}
+      else offPhoneGuy(pos.dx,pos.y,pal);
+    });
+
+    // Floating score pops
+    for(const p of offPops){
+      const k=p.age/1.4;
+      ctx.globalAlpha=1-k;ctx.fillStyle=d.color;
+      ctx.font=`700 6px ${OFF_FONT}`;ctx.direction='rtl';ctx.textAlign='center';
+      ctx.fillText('+1',p.x,p.y-k*14);
+    }
+    ctx.globalAlpha=1;ctx.direction='ltr';ctx.textAlign='left';
+
+    offAnimId=requestAnimationFrame(offFrame);
+  }
+
+  offFrame();
+}
+
+
+/* ═════════ shell: navigation, drawer, sheet, toast ═════════ */
+const TITLES={main:'',jobs:'משרות חדשות',tracker:'מעקב הגשות',interview:'הכנה לראיון',office:'המשרד',profile:'פרופיל'};
+let curPg='main';
+function goPage(id){
+  if(typeof offAnimId!=='undefined') cancelAnimationFrame(offAnimId);
+  closeDrawer(); closeSheet();
+  curPg=id;
+  document.querySelectorAll('.pg').forEach(p=>p.classList.toggle('on',p.id==='pg-'+id));
+  document.body.className=document.body.className.replace(/\bpg-\w+/g,'').trim()+' pg-'+id;
+  $('tbTitle').innerHTML=id==='main'?'<span class="wordmark">findjob</span>':esc(TITLES[id]);
+  document.querySelectorAll('.dr-item').forEach(b=>b.classList.toggle('active',b.dataset.pg===id));
+  $('topbar').classList.remove('scrolled');
+  const sc=document.querySelector('#pg-'+id+' .scroll'); if(sc) sc.scrollTop=0;
+  if(id==='main') renderHome();
+  if(id==='jobs') renderJobs();
+  if(id==='tracker') renderTracker();
+  if(id==='interview') renderInterview();
+  if(id==='profile') renderProfile();
+  if(id==='office'){setTimeout(()=>{sizeOff();drawOff();},80);renderOffice();}
+}
+function syncChrome(){
+  const q=queue().length, act=S.apps.filter(a=>!['rejected','ghosted'].includes(a.status)).length;
+  $('bdJobs').hidden=!q; $('bdJobs').textContent=q;
+  $('bdApps').hidden=!act; $('bdApps').textContent=act;
+  $('menuDot').hidden=!q;
+  const ini=(prof().first||prof().name||'?').slice(0,2);
+  ['tbAvatar','drAvatar'].forEach(i=>$(i).textContent=ini);
+  $('drName').textContent=prof().name; $('drGoal').textContent=goalTxt();
+  $('qPct').textContent=S.quota+'%'; $('qFill').style.width=S.quota+'%';
+  $('qNote').textContent=prof().key?'Groq, חינם. אין כרטיס אשראי, אז אין חיוב.':'מצב התנסות. חבר מפתח Groq חינמי בפרופיל.';
+}
+function toggleDrawer(){$('drawerOverlay').classList.contains('open')?closeDrawer():openDrawer()}
+function openDrawer(){syncChrome();$('drawerOverlay').classList.add('open');document.body.classList.add('drawer-open');$('menuBtn').setAttribute('aria-expanded','true');0}
+function closeDrawer(){$('drawerOverlay').classList.remove('open');document.body.classList.remove('drawer-open');$('menuBtn').setAttribute('aria-expanded','false')}
+// edge swipe: from the app's left edge to open, swipe left on the drawer to close
+(function(){
+  let sx=0,sy=0,mode=null;
+  document.addEventListener('touchstart',e=>{
+    const t=e.touches[0],appLeft=$('app').getBoundingClientRect().left;sx=t.clientX;sy=t.clientY;
+    const open=$('drawerOverlay').classList.contains('open');
+    mode=!open&&sx-appLeft<22&&curPg!=='jobs'?'open':open?'close':null;
+  },{passive:true});
+  document.addEventListener('touchmove',e=>{
+    if(!mode)return;const dx=e.touches[0].clientX-sx,dy=Math.abs(e.touches[0].clientY-sy);
+    if(dy>40){mode=null;return}
+    if(mode==='open'&&dx>36){openDrawer();mode=null}
+    if(mode==='close'&&dx<-40){closeDrawer();mode=null}
+  },{passive:true});
+})();
+document.addEventListener('scroll',e=>{if(e.target.classList&&e.target.classList.contains('scroll'))$('topbar').classList.toggle('scrolled',e.target.scrollTop>4)},true);
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){closeSheet();closeDrawer();if(chatOpen)toggleChat()}
+  if(curPg==='jobs'&&!$('sheet').classList.contains('open')&&document.activeElement.tagName!=='INPUT'){
+    if(e.key==='ArrowRight')decide('save'); if(e.key==='ArrowLeft')decide('skip');
+  }
+});
+
+function openSheet(html){$('sheetBody').innerHTML=html;$('sheetBody').scrollTop=0;$('sheet').classList.add('open')}
+function closeSheet(){$('sheet').classList.remove('open')}
+
+function toast(msg,{undo,chips,ms=3600}={}){
+  $('toasts').querySelectorAll('.toast').forEach(t=>t.remove());
+  const el=document.createElement('div');el.className='toast';
+  el.innerHTML=`<div class="toast-row"><span>${esc(msg)}</span>${undo?'<button class="undo">ביטול</button>':''}</div>${chips?`<div class="toast-chips">${chips.map((c,i)=>`<button data-i="${i}">${esc(c.t)}</button>`).join('')}</div>`:''}`;
+  const kill=()=>{el.classList.add('out');setTimeout(()=>el.remove(),220)};
+  if(undo) el.querySelector('.undo').onclick=()=>{undo();kill()};
+  if(chips) el.querySelectorAll('.toast-chips button').forEach(b=>b.onclick=()=>{chips[b.dataset.i].fn();kill()});
+  $('toasts').appendChild(el); setTimeout(kill,ms);
+}
+
+function face(cv,idx,state){if(cv) drawFace(cv,idx,state||CAREER.agents[idx].state)}
+function logo(j,cls=''){return`<span class="logo-tile ${cls}" style="background:linear-gradient(140deg,${j.c[0]},${j.c[1]})">${esc(j.ini)}</span>`}
+
+/* ═════════ HOME ═════════ */
+function renderHome(){
+  const h=new Date().getHours();
+  const hi=h<5?'לילה טוב':h<12?'בוקר טוב':h<17?'צהריים טובים':h<21?'ערב טוב':'לילה טוב';
+  $('greetH').textContent=`${hi}, ${prof().first}`;
+  const q=queue();
+  const date=new Date().toLocaleDateString('he-IL',{weekday:'long',day:'numeric',month:'long'});
+  $('greetP').textContent=q.length?`${date}. ${q.length} משרות חדשות מחכות לך.`:`${date}. סקרת את כל המשרות של היום.`;
+
+  const iv=S.apps.find(a=>a.status==='interview');
+  const follow=S.apps.filter(a=>a.status==='applied'&&daysSince(a.date)>=7);
+  const items=[q.length&&`${q.length} משרות`,iv&&'ראיון השבוע',follow.length&&`${follow.length} ממתינות ל-follow-up`].filter(Boolean);
+  $('briefCard').innerHTML=`
+    <div class="brief-top"><span>הבריף של Stanley</span><span class="new">${new Date().toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'})}</span></div>
+    <h2>${items.length?`${items.length} דברים שדורשים אותך היום`:'הכל מעודכן. אין משהו דחוף היום.'}</h2>
+    <div class="brief-chips">${q.length?`<span class="ok">${q.length} משרות עברו סינון</span>`:''}${iv?`<span class="warn">ראיון ב-${esc(JOBS[iv.jobId].co)}, ${esc(iv.iv||'')}</span>`:''}${follow.length?`<span>${follow.length} בלי תשובה שבוע+</span>`:''}</div>
+    <div class="brief-more">הבריף המלא ${IC.arrow}</div>`;
+
+  const top=q.slice(0,3).map(id=>JOBS[id]);
+  $('todayCard').style.display='';
+  $('todayCard').innerHTML=q.length?`
+    <span class="stack-prev">${top.slice().reverse().map(j=>logo(j)).join('')}</span>
+    <span class="today-txt"><b>המשרות של היום</b><span>${top.slice(0,2).map(j=>esc(j.co)).join(', ')}${q.length>2?` ועוד ${q.length-2}`:''}</span></span>
+    <span class="go-round">${IC.arrow}</span>`
+  :`<span class="today-txt"><b>סקרת הכל להיום</b><span>Dwight יסרוק שוב הלילה. ${S.apps.filter(a=>a.status==='saved').length} משרות שמורות מחכות להגשה.</span></span><span class="go-round" onclick="event.stopPropagation();goPage('tracker')">${IC.arrow}</span>`;
+
+  renderTodo();
+  $('agentsRow').innerHTML=UPDATES.map((u,i)=>{const a=CAREER.agents[u.a];return`
+    <button class="ag-card glass" onclick="openUpdate(${i})">
+      <span class="ag-top"><span class="ag-face"><canvas id="uf-${i}" width="96" height="96"></canvas></span><span><span class="ag-name" style="display:block">${a.name}</span><span class="ag-role">${a.role}</span></span></span>
+      <span class="ag-body">${esc(u.body)}</span><span class="ag-time">${u.time}</span>
+    </button>`}).join('');
+  UPDATES.forEach((u,i)=>face($('uf-'+i),u.a));
+  syncChrome();
+}
+function openBrief(){
+  const q=queue(),iv=S.apps.find(a=>a.status==='interview'),follow=S.apps.filter(a=>a.status==='applied'&&daysSince(a.date)>=7);
+  const b=[];
+  if(q.length) b.push({c:'var(--mint)',t:`Dwight סרק 41 משרות הלילה. ${q.length} עברו את הסף והכי חזקה היא ${JOBS[q[0]].co} (${JOBS[q[0]].fit}).`,a:`<button class="btn btn-sm btn-primary" onclick="goPage('jobs')">לסקירה</button>`});
+  if(iv) b.push({c:'var(--amber)',t:`ראיון ב-${JOBS[iv.jobId].co} ${iv.iv?'ב'+iv.iv:''}. Pam הכינה 5 שאלות System Design.`,a:`<button class="btn btn-sm btn-ghost" onclick="goPage('interview')">להכנה</button>`});
+  follow.forEach(f=>b.push({c:'var(--brand)',t:`${JOBS[f.jobId].co} לא ענו ${daysSince(f.date)} ימים. הגיע הזמן ל-follow-up קצר.`,a:`<button class="btn btn-sm btn-ghost" onclick="goPage('tracker')">למעקב</button>`}));
+  if(!b.length) b.push({c:'var(--mint)',t:'אין פעולות דחופות. הסוכנים ממשיכים לעבוד ברקע.'});
+  openSheet(`<h3>הבריף של היום</h3><div class="sheet-sub">Stanley מסכם את מה שהסוכנים עשו בלילה</div>
+    <div class="s-sec">${b.map(x=>`<div class="bullet"><span class="dot" style="background:${x.c}"></span><div style="flex:1">${esc(x.t)}${x.a?`<div style="margin-top:9px">${x.a}</div>`:''}</div></div>`).join('')}</div>`);
+}
+function openUpdate(i){
+  const u=UPDATES[i],a=CAREER.agents[u.a];
+  openSheet(`<div style="display:flex;gap:13px;align-items:center"><span class="ag-face" style="width:54px;height:54px;border-radius:16px"><canvas id="upf" width="96" height="96"></canvas></span><div><h3>${a.name}</h3><div class="sheet-sub">${a.role} · ${u.time}</div></div></div>
+    <div class="s-sec"><div class="bullet" style="display:block">${esc(u.body)}</div></div>
+    <div class="s-sec"><h4>מה ${a.name} עושה</h4><p style="font-size:14px;color:var(--ink2);line-height:1.6">${esc(a.desc)}</p></div>
+    <button class="btn btn-ghost btn-block" style="margin-top:16px" onclick="goPage('office')">לראות אותו במשרד</button>`);
+  face($('upf'),u.a);
+}
+
+/* todo — persisted, add, toggle, drag-to-reorder via the handle */
+function renderTodo(){
+  const all=S.todos, left=all.filter(t=>!t.done).length;
+  const show=S.todoOpen?all:all.slice(0,4);
+  $('todoBox').innerHTML=`
+    <div class="todo-head"><h2>פעולות מומלצות</h2><span class="num">${left} פתוחות</span></div>
+    <div id="todoList">${show.map(t=>`
+      <div class="todo-item" data-id="${t.id}">
+        <button class="tcheck${t.done?' done':''}" aria-label="${t.done?'סמן כלא בוצע':'סמן כבוצע'}" onclick="toggleTodo('${t.id}')"></button>
+        <span class="ttext${t.done?' done':''}">${esc(t.text)}</span>
+        <span class="thandle" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg></span>
+      </div>`).join('')}</div>
+    <div class="todo-foot"><input id="todoIn" placeholder="הוסף משימה" onkeydown="if(event.key==='Enter')addTodo()">${all.length>4?`<button class="todo-more" onclick="S.todoOpen=!S.todoOpen;save();renderTodo()">${S.todoOpen?'הצג פחות':`הכל (${all.length})`}</button>`:''}</div>`;
+  $('todoBox').querySelectorAll('.thandle').forEach(bindTodoDrag);
+}
+function toggleTodo(id){const t=S.todos.find(x=>x.id===id);t.done=!t.done;save();renderTodo()}
+function addTodo(){const v=$('todoIn').value.trim();if(!v)return;S.todos.unshift({id:'t'+Date.now(),text:v,done:false});save();renderTodo();$('todoIn').focus()}
+function bindTodoDrag(h){
+  h.addEventListener('pointerdown',e=>{
+    const item=h.closest('.todo-item'),list=$('todoList');item.classList.add('dragging');h.setPointerCapture(e.pointerId);
+    const mv=ev=>{const others=[...list.querySelectorAll('.todo-item:not(.dragging)')];const nxt=others.find(o=>{const r=o.getBoundingClientRect();return ev.clientY<r.top+r.height/2});nxt?list.insertBefore(item,nxt):list.appendChild(item)};
+    const up=()=>{item.classList.remove('dragging');h.removeEventListener('pointermove',mv);h.removeEventListener('pointerup',up);h.removeEventListener('pointercancel',up);
+      const ids=[...list.querySelectorAll('.todo-item')].map(n=>n.dataset.id);S.todos=[...ids.map(id=>S.todos.find(t=>t.id===id)),...S.todos.filter(t=>!ids.includes(t.id))];save()};
+    h.addEventListener('pointermove',mv);h.addEventListener('pointerup',up);h.addEventListener('pointercancel',up);
+  });
+}
+
+/* ═════════ JOBS — swipe deck ═════════ */
+let lastAct=null, busy=false;
+function renderJobs(){
+  const q=queue(),done=DECK.length-q.length,saved=DECK.filter(id=>S.decisions[id]==='save').length;
+  $('jobsCount').textContent=q.length?`${done+1} מתוך ${DECK.length} · ${saved} נשמרו`:`${DECK.length} נסקרו · ${saved} נשמרו`;
+  $('jobsFiltered').textContent=`${FILTERED_OUT} בכירות מדי סוננו`;
+  $('deckProg').innerHTML=DECK.map((id,i)=>`<i class="${S.decisions[id]?'done':i===done?'cur':''}"></i>`).join('');
+  const deck=$('deck');
+  if(!q.length){
+    $('deckActions').style.display='none';
+    const sv=S.apps.filter(a=>a.status==='saved').length;
+    deck.innerHTML=`<div class="empty"><div class="empty-ic">✓</div><h3>סיימת את המשרות של היום</h3><p>Dwight יסרוק שוב הלילה.${sv?(sv===1?' בינתיים משרה שמורה אחת מחכה להגשה.':` בינתיים ${sv} משרות שמורות מחכות להגשה.`):''}</p>${sv?`<button class="btn btn-primary" onclick="goPage('tracker')">למעקב ההגשות</button>`:`<button class="btn btn-ghost" onclick="goPage('main')">חזרה ללוח</button>`}</div>`;
+    return;
+  }
+  $('deckActions').style.display='';
+  deck.innerHTML=q.slice(0,3).reverse().map((id,ri,arr)=>{
+    const pos=arr.length-1-ri;const j=JOBS[id];
+    return`<article class="jcard${pos===1?' behind':pos===2?' behind2':''}" data-id="${id}" ${pos?'aria-hidden="true"':''}>${cardInner(j)}${pos===0?'<span class="stamp save">שמור</span><span class="stamp skip">דלג</span>':''}</article>`;
+  }).join('');
+  bindSwipe(deck.querySelector('.jcard:not(.behind):not(.behind2)'));
+}
+function cardInner(j){
+  const full=Math.floor(j.fit),part=j.fit-full;
+  return`<div class="jc-top">${logo(j)}<div style="flex:1;min-width:0"><div class="jc-title">${esc(j.title)}</div><div class="jc-co">${esc(j.co)} · ${esc(j.loc)}</div></div></div>
+    <div class="fit"><div class="fit-num num">${j.fit.toFixed(1)}<small>/5</small></div><div class="fit-right"><div class="fit-lbl">${j.fit>=4.3?'התאמה חזקה':j.fit>=4?'התאמה טובה':'שווה בדיקה'}</div>
+      <div class="pills">${[0,1,2,3,4].map(i=>`<i>${i<full?'<b></b>':i===full&&part>0?`<b style="right:${(1-part)*100}%"></b>`:''}</i>`).join('')}</div></div></div>
+    <div class="jc-reasons">${j.reasons.slice(0,2).map(r=>`<div class="jc-r"><span class="ic ok">✓</span><span>${esc(r)}</span></div>`).join('')}${j.gaps.slice(0,1).map(g=>`<div class="jc-r"><span class="ic gap">!</span><span>חסר: ${esc(g)}</span></div>`).join('')}</div>
+    <div class="jc-desc">${esc(j.desc)}</div>
+    <div class="jc-tags">${j.tags.map(t=>`<span class="chip">${esc(t)}</span>`).join('')}</div>
+    <div class="jc-foot"><span>${esc(j.src)} · ${agoTxt(j.posted)}</span><span>${esc(j.salary)}</span></div>`;
+}
+function bindSwipe(card){
+  if(!card)return;
+  let sx=0,dx=0,on=false;
+  const st=card.querySelector('.stamp.save'),sk=card.querySelector('.stamp.skip');
+  card.addEventListener('pointerdown',e=>{if(busy)return;on=true;sx=e.clientX;dx=0;card.setPointerCapture(e.pointerId);card.style.transition='none'});
+  card.addEventListener('pointermove',e=>{if(!on)return;dx=e.clientX-sx;card.style.transform=`translateX(${dx}px) rotate(${dx*.05}deg)`;st.style.opacity=Math.max(0,Math.min(1,dx/90));sk.style.opacity=Math.max(0,Math.min(1,-dx/90))});
+  const end=()=>{if(!on)return;on=false;
+    if(Math.abs(dx)>90) decide(dx>0?'save':'skip');
+    else if(Math.abs(dx)<6){card.style.transform='';openJobInfo()}
+    else{card.style.transition='transform .4s cubic-bezier(.2,.9,.3,1.25)';card.style.transform='';st.style.opacity=0;sk.style.opacity=0}};
+  card.addEventListener('pointerup',end);card.addEventListener('pointercancel',end);
+}
+function decide(kind){
+  const q=queue();if(!q.length||busy)return;
+  const id=q[0],j=JOBS[id],card=$('deck').querySelector(`.jcard[data-id="${id}"]`);
+  busy=true;
+  if(card){card.classList.add('fly');card.style.transform=`translateX(${kind==='save'?130:-130}%) rotate(${kind==='save'?14:-14}deg)`;card.style.opacity='0';}
+  S.decisions[id]=kind;
+  if(kind==='save'&&!S.apps.find(a=>a.jobId===id)) S.apps.unshift({id:'a-'+id,jobId:id,status:'saved',date:new Date().toISOString(),letter:letterFor(j)});
+  save();lastAct={id,kind};
+  setTimeout(()=>{busy=false;renderJobs();syncChrome()},340);
+  if(kind==='save') toast(`${j.co} נשמרה למעקב`,{undo:undoLast});
+  else toast('למה לא?',{undo:undoLast,ms:5200,chips:['בכירה מדי','מיקום','טכנולוגיה','לא מעניין אותי'].map(t=>({t,fn:()=>{S.skipReasons[id]=t;save();toast(`רשמתי. Dwight יסנן פחות משרות כאלה (${t})`)}}))});
+}
+function undoLast(){
+  if(!lastAct)return;const{id,kind}=lastAct;delete S.decisions[id];delete S.skipReasons[id];
+  if(kind==='save') S.apps=S.apps.filter(a=>!(a.jobId===id&&a.status==='saved'));
+  save();lastAct=null;renderJobs();syncChrome();
+}
+function openJobInfo(id){
+  id=id||queue()[0];if(!id)return;const j=JOBS[id];const inDeck=queue()[0]===id;
+  openSheet(`<div style="display:flex;gap:13px;align-items:center">${logo(j)}<div><h3>${esc(j.title)}</h3><div class="sheet-sub">${esc(j.co)} · ${esc(j.loc)}</div></div></div>
+    <div class="fit" style="margin:16px 0 0"><div class="fit-num num">${j.fit.toFixed(1)}<small>/5</small></div><div class="fit-right"><div class="fit-lbl">ציון ההתאמה של Dwight מול קורות החיים שלך</div><div class="pills">${[0,1,2,3,4].map(i=>`<i>${i<Math.round(j.fit)?'<b></b>':''}</i>`).join('')}</div></div></div>
+    <div class="s-sec"><h4>למה זה מתאים</h4>${j.reasons.map(r=>`<div class="jc-r" style="margin-bottom:7px"><span class="ic ok">✓</span><span>${esc(r)}</span></div>`).join('')}</div>
+    <div class="s-sec"><h4>מה חסר לך</h4>${j.gaps.map(g=>`<div class="jc-r" style="margin-bottom:7px"><span class="ic gap">!</span><span>${esc(g)}</span></div>`).join('')}</div>
+    <div class="s-sec"><h4>על המשרה</h4><p style="font-size:14px;line-height:1.65;color:var(--ink2)">${esc(j.desc)}</p></div>
+    <div class="s-sec"><h4>Jim על החברה</h4><p style="font-size:14px;line-height:1.65;color:var(--ink2)">שכר משוער ${esc(j.salary)}. פורסם ב-${esc(j.src)} ${agoTxt(j.posted)}. המשרה נבדקה כפעילה הבוקר.</p></div>
+    ${inDeck?`<div style="display:flex;gap:10px;margin-top:20px"><button class="btn btn-ghost" style="flex:1" onclick="closeSheet();decide('skip')">דלג</button><button class="btn btn-primary" style="flex:2" onclick="closeSheet();decide('save')">שמור למעקב</button></div>`:''}`);
+}
+
+/* ═════════ TRACKER ═════════ */
+let trFilter='all';
+function renderTracker(){
+  const counts={all:S.apps.length};Object.keys(STATUSES).forEach(k=>counts[k]=S.apps.filter(a=>a.status===k).length);
+  $('seg').innerHTML=[['all','הכל'],...Object.entries(STATUSES)].filter(([k])=>k==='all'||counts[k]).map(([k,l])=>`<button class="chip${trFilter===k?' sel':''}" onclick="trFilter='${k}';renderTracker()">${l} <b class="num">${counts[k]}</b></button>`).join('');
+  const list=S.apps.filter(a=>trFilter==='all'||a.status===trFilter);
+  if(!list.length){$('appsList').innerHTML=`<div class="empty"><div class="empty-ic">📋</div><h3>${S.apps.length?'אין כאן כלום כרגע':'עוד לא שמרת משרות'}</h3><p>משרות שתחליק ימינה יגיעו לכאן, עם מכתב פנייה מוכן.</p><button class="btn btn-primary" onclick="goPage('jobs')">לסקירת משרות</button></div>`;return}
+  $('appsList').innerHTML=list.map(a=>{
+    const j=JOBS[a.jobId],d=daysSince(a.date),letter=a.letter||letterFor(j);
+    const sub=a.status==='saved'?`נשמר ${agoTxt(d)}`:a.status==='interview'?`ראיון ${esc(a.iv||'נקבע')}`:`הוגש ${agoTxt(d)}`;
+    const follow=a.status==='applied'&&d>=7?`<div class="follow"><span>${d} ימים בלי תשובה. follow-up קצר מעלה סיכוי לתגובה.</span><button class="btn btn-sm btn-ghost" onclick="copyFollow('${a.id}')">העתק נוסח</button></div>`:'';
+    const actions=a.status==='saved'
+      ?`<div class="app-actions"><button class="btn btn-sm btn-ghost" onclick="copyLetter('${a.id}')">העתק מכתב</button><button class="btn btn-sm btn-primary" onclick="markApplied('${a.id}')">סימנתי שהגשתי</button></div>`
+      :a.status==='interview'?`<div class="app-actions"><button class="btn btn-sm btn-primary" onclick="goPage('interview')">להכנה לראיון</button></div>`:'';
+    return`<article class="app glass">
+      <div class="app-top">${logo(j)}<div class="app-info"><div class="app-title">${esc(j.title)}</div><div class="app-sub">${esc(j.co)} · ${sub}</div></div>
+        <button class="status st-${a.status}" onclick="openStatus('${a.id}')" aria-label="שנה סטטוס">${STATUSES[a.status]}</button></div>
+      ${follow}${actions}
+      <details class="letter"><summary>מכתב הפנייה</summary><textarea oninput="setLetter('${a.id}',this.value)">${esc(letter)}</textarea><div class="prov">✓ כל העובדות במכתב מופיעות בקורות החיים שלך</div></details>
+    </article>`}).join('');
+}
+function setLetter(id,v){S.apps.find(a=>a.id===id).letter=v;save()}
+async function copyText(t,msg){try{await navigator.clipboard.writeText(t);toast(msg)}catch(e){toast('ההעתקה נחסמה בדפדפן. סמן את הטקסט והעתק ידנית')}}
+function copyLetter(id){const a=S.apps.find(x=>x.id===id);copyText(a.letter||letterFor(JOBS[a.jobId]),'המכתב הועתק')}
+function copyFollow(id){const a=S.apps.find(x=>x.id===id),j=JOBS[a.jobId];copyText(`שלום,\n\nהגשתי לפני כשבוע מועמדות למשרת ה-${j.title}. אני עדיין מאוד מעוניין ואשמח לדעת אם יש עדכון לגבי התהליך.\n\nתודה,\n${prof().name}`,'נוסח ה-follow-up הועתק')}
+function markApplied(id){const a=S.apps.find(x=>x.id===id);a.status='applied';a.date=new Date().toISOString();save();renderTracker();syncChrome();toast(`סומן כהוגש. אזכיר לך follow-up בעוד שבוע`)}
+function openStatus(id){
+  const a=S.apps.find(x=>x.id===id),j=JOBS[a.jobId];
+  openSheet(`<h3>${esc(j.co)}</h3><div class="sheet-sub">${esc(j.title)}</div><div class="s-sec">${Object.entries(STATUSES).map(([k,l])=>`<button class="opt${a.status===k?' sel':''}" onclick="setStatus('${id}','${k}')"><span class="status st-${k}">${l}</span><span class="radio"></span></button>`).join('')}</div>`);
+}
+function setStatus(id,k){const a=S.apps.find(x=>x.id===id);if(a.status!==k){a.status=k;if(k==='applied')a.date=new Date().toISOString();save()}closeSheet();renderTracker();syncChrome();toast(`עודכן: ${STATUSES[k]}`)}
+
+/* ═════════ INTERVIEW ═════════ */
+const IV_Q=[
+  {tag:'System Design',q:'איך היית מתכנן מערכת התראות לבורד של Monday.com עם מיליון משתמשים?',h:'<b>מבנה תשובה:</b> דרישות (מה נחשב התראה, latency) ← רכיבים (API, תור הודעות, workers, WebSocket) ← צוואר בקבוק (fan-out לבורדים גדולים) ← trade-offs. <b>מהניסיון שלך:</b> ה-Socket.IO במערכות הזמן אמת.'},
+  {tag:'Backend',q:'מה ההבדל בין SQL ל-NoSQL, ומתי תבחר בכל אחד?',h:'<b>בקצרה:</b> עקביות ויחסים ← SQL. סכמה גמישה ו-scale אופקי ← NoSQL. <b>תן דוגמה:</b> למה בחרת ב-Supabase (Postgres) ב-Lifeboard.'},
+  {tag:'פרויקט',q:'ספר על פרויקט שאתה גאה בו. מה היה האתגר הטכני הכי קשה?',h:'<b>STAR:</b> מצב (Lifeboard, סוכנים שקורסים על מכסת API) ← משימה ← פעולה (Budget Guard, caching) ← תוצאה במספרים.'},
+  {tag:'Debugging',q:'ספר על באג קשה שפתרת. איך ניגשת אליו?',h:'<b>מה מחפשים:</b> שיטתיות. שחזור ← בידוד ← השערה ← בדיקה ← מניעה. AI Smart Crosswalk עם תנאי תאורה משתנים מתאים כאן.'},
+  {tag:'צוות',q:'מה אתה עושה כשאתה לא מסכים עם החלטה טכנית של הצוות?',h:'<b>רמז:</b> השירות כקצין לוגיסטיקה וסגן מ״פ הוא יתרון אמיתי. דוגמה להבעת עמדה, הקשבה וקבלת החלטה.'},
+];
+const IV_TIPS=['לכל תשובה הכן דוגמה אחת קונקרטית מפרויקט אמיתי, עם מספר','קרא על ה-Work OS של Monday.com ונסה את המוצר 20 דקות','הכן 2 שאלות לסוף: מה האתגר הטכני של הצוות ברבעון הקרוב?','בדוק מצלמה ומיקרופון 10 דקות לפני'];
+let ivSel=null;
+function renderInterview(){
+  const ivs=S.apps.filter(a=>a.status==='interview');
+  if(!ivs.length){$('ivScroll').innerHTML=`<div class="empty"><div class="empty-ic">🎤</div><h3>אין ראיונות קרובים</h3><p>כשתעביר משרה לסטטוס "ראיון" במעקב, Pam תכין לך שאלות לפי החברה והתפקיד.</p><button class="btn btn-ghost" onclick="goPage('tracker')">למעקב ההגשות</button></div>`;return}
+  if(!ivs.find(a=>a.id===ivSel)) ivSel=ivs[0].id;
+  const a=ivs.find(x=>x.id===ivSel),j=JOBS[a.jobId];
+  const known=['React','TypeScript','Node.js','Python','SQL','Git','Socket.IO'];
+  const skills=[...new Set([...j.tags,'System Design','REST API','SQL','Git',...j.gaps])];
+  $('ivScroll').innerHTML=`
+    ${ivs.length>1?`<div class="iv-jobs">${ivs.map(x=>{const jj=JOBS[x.jobId];return`<button class="iv-job${x.id===ivSel?' sel':''}" onclick="ivSel='${x.id}';renderInterview()">${logo(jj)}<span><b>${esc(jj.co)}</b><span>${esc(x.iv||'')}</span></span></button>`}).join('')}</div>`:''}
+    <div class="card glass iv-when">${logo(j)}<div style="flex:1"><div class="muted" style="font-size:13px">ראיון ב-${esc(j.co)}</div><div class="big">${esc(a.iv||'עוד לא נקבע')}</div><div class="muted" style="font-size:13px">${esc(j.title)}</div></div></div>
+    <div class="card glass" style="display:flex;gap:12px;align-items:flex-start"><span class="ag-face" style="width:42px;height:42px"><canvas id="ivPam" width="96" height="96"></canvas></span>
+      <div style="flex:1"><b style="font-size:14px">Pam</b> <span class="muted" style="font-size:12.5px">ראיונות ופיתוח</span><p style="font-size:13.5px;color:var(--ink2);margin-top:3px;line-height:1.55">הכנתי ${IV_Q.length} שאלות לפי מודעת המשרה ולפי ראיונות קודמים ב-${esc(j.co)}. לחץ על שאלה לראות איך לבנות את התשובה מהניסיון שלך.</p></div></div>
+    <div class="card glass"><div class="card-h">שאלות צפויות</div>${IV_Q.map(q=>`<details class="q"><summary><span class="qtag">${q.tag}</span><span class="qtxt">${esc(q.q)}</span></summary><div class="hint">${q.h}</div></details>`).join('')}</div>
+    <div class="card glass"><div class="card-h">לפני הראיון</div>${IV_TIPS.map(t=>`<div class="tip"><i>✓</i><span>${esc(t)}</span></div>`).join('')}</div>
+    <div class="card glass"><div class="card-h">כישורים לרענן</div><div class="card-sub">כתום = לא מופיע בקורות החיים שלך</div><div class="skills">${skills.map(s=>`<span class="skill${known.includes(s)||j.tags.includes(s)&&!j.gaps.includes(s)?'':' gap'}">${esc(s)}</span>`).join('')}</div></div>
+    <button class="btn btn-primary btn-block" onclick="toggleChat(true);chatAsk('בוא נתרגל ראיון')">תרגל איתי בצ׳אט</button>`;
+  face($('ivPam'),3);
+}
+
+/* ═════════ PROFILE ═════════ */
+const ROW_IC={doc:'<svg viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8z"/><path d="M14 3v5h5"/></svg>',
+  target:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/></svg>',
+  pin:'<svg viewBox="0 0 24 24"><path d="M12 21s-7-6.5-7-12a7 7 0 0114 0c0 5.5-7 12-7 12z"/><circle cx="12" cy="9" r="2.5"/></svg>',
+  bolt:'<svg viewBox="0 0 24 24"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg>',
+  bell:'<svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 00-12 0c0 7-3 8-3 8h18s-3-1-3-8"/><path d="M13.7 21a2 2 0 01-3.4 0"/></svg>',
+  globe:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 010 18M12 3a14 14 0 000 18"/></svg>',
+  replay:'<svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 109-9"/><path d="M3 4v5h5"/></svg>',
+  trash:'<svg viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>'};
+function renderProfile(){
+  const p=prof(),applied=S.apps.filter(a=>a.status!=='saved').length,ivs=S.apps.filter(a=>['interview','offer'].includes(a.status)).length;
+  $('profScroll').innerHTML=`
+    <div class="p-hero glass"><div class="avatar">${esc((p.first||p.name).slice(0,2))}</div><div class="p-name">${esc(p.name)}</div><div class="p-goal">${esc(goalTxt())}</div>
+      <div class="p-stats"><div><b class="num">${34+Object.keys(S.decisions).length}</b><span>משרות נסקרו</span></div><div><b class="num">${applied}</b><span>הגשות</span></div><div><b class="num">${ivs}</b><span>ראיונות</span></div></div></div>
+
+    <div class="card glass"><div class="card-h">קורות חיים</div>
+      <div class="row"><span class="ri">${ROW_IC.doc}</span><span class="rl"><b>${esc(p.cvName||(p.cv?'הודבק כטקסט':'עוד לא הועלו'))}</b><span>${p.cv||p.cvName?'כל הסוכנים עובדים מהקובץ הזה':'בלי קורות חיים אין ציון התאמה'}</span></span>${p.cv||p.cvName?'<span class="pill-ok">פעיל</span>':'<span class="pill-warn">חסר</span>'}</div>
+      <div style="display:flex;gap:8px;margin-top:6px"><button class="btn btn-sm btn-ghost" style="flex:1" onclick="$('cvFile').click()">העלה קובץ</button><button class="btn btn-sm btn-ghost" style="flex:1" onclick="editCvText()">ערוך כטקסט</button></div></div>
+
+    <div class="card glass"><div class="card-h">מה אני מחפש</div>
+      <button class="row" onclick="openOnb(2)"><span class="ri">${ROW_IC.target}</span><span class="rl"><b>${esc(p.role)}</b><span>${esc(p.level)}</span></span><span class="chev"></span></button>
+      <button class="row" onclick="openOnb(2)"><span class="ri">${ROW_IC.pin}</span><span class="rl"><b>${esc(p.locs.join(', ')||'כל הארץ')}</b><span>מיקום וסוג עבודה</span></span><span class="chev"></span></button></div>
+
+    <div class="card glass" id="ai"><div class="card-h">חיבור AI</div><div class="card-sub">findjob רץ על המכסה החינמית של Groq. בלי כרטיס אשראי אין חיוב, וכשהמכסה נגמרת הסוכנים פשוט ממתינים למחר.</div>
+      <button class="row" onclick="openOnb(3)"><span class="ri">${ROW_IC.bolt}</span><span class="rl"><b>Groq</b><span>${p.key?'gsk_••••'+esc(p.key.slice(-4)):'מצב התנסות, 3 ריצות'}</span></span>${p.key?'<span class="pill-ok">מחובר</span>':'<span class="pill-warn">חבר מפתח</span>'}</button>
+      <div style="padding:4px 2px 12px"><div class="quota-row"><span>נוצל היום</span><b class="num">${S.quota}%</b></div><div class="quota-bar"><div class="quota-fill" style="width:${S.quota}%"></div></div></div>
+      <div class="row"><span class="ri">${ROW_IC.doc}</span><span class="rl"><b>Claude למכתבים</b><span>בתשלום לפי שימוש. לא כלול במנוי Claude Pro</span></span><button class="switch${S.claude?' on':''}" role="switch" aria-checked="${S.claude}" aria-label="Claude למכתבים" onclick="toggleClaude()"></button></div></div>
+
+    <div class="card glass"><div class="card-h">הגדרות</div>
+      <div class="row"><span class="ri">${ROW_IC.bell}</span><span class="rl"><b>בריף בוקר</b><span>כל יום ב-08:00</span></span><button class="switch${S.notif?' on':''}" role="switch" aria-checked="${S.notif}" aria-label="בריף בוקר" onclick="S.notif=!S.notif;save();renderProfile()"></button></div>
+      <div class="row"><span class="ri">${ROW_IC.globe}</span><span class="rl"><b>שפה</b><span>עברית</span></span></div>
+      <button class="row" onclick="openOnb(0)"><span class="ri">${ROW_IC.replay}</span><span class="rl"><b>הפעל שוב את ההיכרות</b><span>קורות חיים, העדפות ומפתח</span></span><span class="chev"></span></button>
+      <button class="row" onclick="confirmWipe()"><span class="ri">${ROW_IC.trash}</span><span class="rl"><b class="danger">מחק את כל הנתונים שלי</b><span>קורות חיים, משרות, מכתבים ומפתח</span></span></button></div>`;
+}
+function toggleClaude(){S.claude=!S.claude;save();renderProfile();if(S.claude)toast('Claude יופעל רק עם מפתח Anthropic ו-credit מוגבל מראש. עד אז Groq ממשיך לכתוב',{ms:5200})}
+function editCvText(){openSheet(`<h3>קורות חיים כטקסט</h3><div class="sheet-sub">הסוכנים קוראים את הטקסט הזה. עדכן ושמור</div><div class="field" style="margin-top:14px"><textarea id="cvEdit" rows="12">${esc(prof().cv)}</textarea></div><button class="btn btn-primary btn-block" onclick="prof().cv=$('cvEdit').value;save();closeSheet();renderProfile();toast('קורות החיים נשמרו')">שמור</button>`)}
+function confirmWipe(){openSheet(`<h3>למחוק הכל?</h3><div class="sheet-sub">זה ימחק מהמכשיר את קורות החיים, ההחלטות, המכתבים והמפתח. אי אפשר לשחזר.</div><div style="display:flex;gap:10px;margin-top:20px"><button class="btn btn-ghost" style="flex:1" onclick="closeSheet()">ביטול</button><button class="btn" style="flex:1;background:var(--rose);color:#fff" onclick="LS.clear();location.reload()">מחק הכל</button></div>`)}
+function onCvFile(inp){
+  const f=inp.files[0];if(!f)return;prof().cvName=f.name;
+  if(/\.(txt|md)$/i.test(f.name)){const r=new FileReader();r.onload=()=>{prof().cv=String(r.result).slice(0,20000);save();afterCv()};r.readAsText(f)}else{save();afterCv()}
+  inp.value='';
+}
+function afterCv(){if($('onb').classList.contains('open'))renderOnb();else{renderProfile();toast('קורות החיים עודכנו. Dwight יחשב ציונים מחדש בריצה הבאה')}}
+
+/* ═════════ ONBOARDING ═════════ */
+let onbStep=0, onbDraft=null, onbSingle=false;
+const LOCS=['תל אביב','מרכז','ירושלים','חיפה והצפון','היברידי','Remote'];
+const LEVELS=['סטודנט / ג׳וניור','1–3 שנים','3+ שנים'];
+function openOnb(step=0){onbSingle=step>0&&S.onboarded;onbStep=step;onbDraft=JSON.parse(JSON.stringify(prof()));closeSheet();closeDrawer();$('onb').classList.add('open');renderOnb()}
+function onbGo(d){onbStep=Math.max(0,Math.min(4,onbStep+d));renderOnb()}
+function renderOnb(){
+  const p=onbDraft;p.cv=prof().cv;p.cvName=prof().cvName;
+  $('onbSteps').innerHTML=[0,1,2,3,4].map(i=>`<i class="${i===onbStep?'on':i<onbStep?'done':''}"></i>`).join('');
+  $('onbBack').style.visibility=onbStep>0&&onbStep<4||onbSingle?'visible':'hidden';$('onbBack').textContent=onbSingle?'סגור':'חזרה';$('onbBack').onclick=onbSingle?()=>$('onb').classList.remove('open'):()=>onbGo(-1);
+  let body='',foot='';
+  if(onbStep===0){
+    body=`<div class="logo-mark" style="margin-bottom:22px"><svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21"/><path d="M8 10.8l1.8 1.8L13.3 9"/></svg></div>
+      <h1>שישה סוכנים מחפשים לך עבודה. אתה רק מחליט.</h1><p class="lead">findjob סורק משרות כל לילה, מדרג כל אחת מול קורות החיים שלך ומכין מכתב פנייה. ההגשה עצמה תמיד בידיים שלך.</p>
+      <div class="onb-hero">
+        <div class="onb-li glass"><span class="ic">🔍</span><span><b>סריקה לילית</b><span>LinkedIn, Indeed ואתרי החברות</span></span></div>
+        <div class="onb-li glass"><span class="ic">🎯</span><span><b>ציון 1–5 עם הסבר</b><span>רק מה שמתאים לרמה שלך</span></span></div>
+        <div class="onb-li glass"><span class="ic">✍️</span><span><b>מכתב לכל משרה</b><span>רק עובדות מקורות החיים שלך</span></span></div>
+      </div>`;
+    foot=`<button class="btn btn-primary btn-block" onclick="onbGo(1)">בוא נתחיל</button>`;
+  }else if(onbStep===1){
+    const has=p.cvName||(p.cv&&p.cv.length>40);
+    body=`<h1>קודם, קורות החיים שלך</h1><p class="lead">מהם הסוכנים לומדים מה אתה יודע לעשות. הקובץ נשאר שלך ואפשר למחוק אותו בכל רגע.</p>
+      <button class="drop${p.cvName?' has':''}" onclick="$('cvFile').click()"><span style="font-size:30px">${p.cvName?'✓':'📄'}</span><b>${p.cvName?esc(p.cvName):'בחר קובץ'}</b><span>${p.cvName?'לחץ להחלפה':'PDF, Word או טקסט'}</span></button>
+      <div class="field" style="margin-top:18px"><label for="onbCv">או הדבק את הטקסט</label><textarea id="onbCv" rows="6" placeholder="סטודנט שנה ג׳ למדעי המחשב…" oninput="prof().cv=this.value;save();$('onbNext').disabled=!(prof().cvName||this.value.trim().length>40)">${esc(p.cv)}</textarea></div>`;
+    foot=`<button class="btn btn-primary btn-block" id="onbNext" ${has?'':'disabled'} onclick="onbGo(1)">המשך</button>`;
+  }else if(onbStep===2){
+    body=`<h1>מה אתה מחפש?</h1><p class="lead">Dwight מסנן לפי זה כל לילה. אפשר לשנות בכל רגע מהפרופיל.</p>
+      <div class="field"><label for="onbRole">תפקיד</label><input id="onbRole" value="${esc(p.role)}" oninput="onbDraft.role=this.value"></div>
+      <div class="field"><label>רמה</label><div class="chips">${LEVELS.map(l=>`<button class="chip${p.level===l?' sel':''}" onclick="onbDraft.level='${l}';renderOnb()">${l}</button>`).join('')}</div></div>
+      <div class="field"><label>מיקום וסוג עבודה</label><div class="chips">${LOCS.map(l=>`<button class="chip${p.locs.includes(l)?' sel':''}" aria-pressed="${p.locs.includes(l)}" onclick="onbToggleLoc('${l}')">${l}</button>`).join('')}</div></div>`;
+    foot=`<button class="btn btn-primary btn-block" onclick="onbNext()">${onbSingle?'שמור':'המשך'}</button>`;
+  }else if(onbStep===3){
+    body=`<h1>חבר מפתח AI חינמי</h1><p class="lead">לכל משתמש מכסה חינמית משלו ב-Groq. בלי כרטיס אשראי, אז אין דרך לחייב אותך.</p>
+      <div class="key-steps"><div><span>היכנס ל-<a href="https://console.groq.com/keys" target="_blank" rel="noopener">console.groq.com/keys</a> עם חשבון Google</span></div><div><span>לחץ Create API Key והעתק את המפתח</span></div><div><span>הדבק אותו כאן</span></div></div>
+      <div class="field"><label for="onbKey">מפתח Groq</label><input id="onbKey" class="ltr" placeholder="gsk_..." value="${esc(p.key)}" autocomplete="off" spellcheck="false" oninput="onbDraft.key=this.value.trim();$('onbKeyBtn').disabled=!/^gsk_\\w{20,}/.test(onbDraft.key)">
+        <div class="help">המפתח נשמר רק במכשיר הזה בגרסת ההדגמה. בגרסה המלאה הוא נשמר מוצפן בשרת.</div></div>`;
+    foot=`<button class="btn btn-primary btn-block" id="onbKeyBtn" ${/^gsk_\w{20,}/.test(p.key)?'':'disabled'} onclick="onbNext()">${onbSingle?'שמור מפתח':'חבר והמשך'}</button><button class="link-btn" onclick="onbDraft.key='';onbNext()">${onbSingle?'נתק ועבור למצב התנסות':'דלג, אנסה במצב התנסות'}</button>`;
+  }else{
+    body=`<div class="empty-ic" style="margin:20px 0 22px;background:var(--mint-lt)">✓</div><h1>הכל מוכן, ${esc(p.first)}</h1>
+      <p class="lead">Dwight מריץ עכשיו את הסריקה הראשונה. בינתיים הכנו ${DECK.length} משרות לדוגמה כדי שתכיר את הסקירה: ימינה לשמור, שמאלה לדלג.</p>`;
+    foot=`<button class="btn btn-primary btn-block" onclick="finishOnb('jobs')">לסקירת המשרות</button><button class="link-btn" onclick="finishOnb('main')">ללוח</button>`;
+  }
+  $('onbBody').innerHTML=body;$('onbFoot').innerHTML=foot;$('onbBody').scrollTop=0;
+}
+function onbNext(){commitOnb();if(onbSingle){$('onb').classList.remove('open');renderProfile();toast('נשמר')}else onbGo(1)}
+function onbToggleLoc(l){const a=onbDraft.locs;const i=a.indexOf(l);i>=0?a.splice(i,1):a.push(l);renderOnb()}
+function commitOnb(){const keep={cv:prof().cv,cvName:prof().cvName};S.profile=Object.assign({},onbDraft,keep);save();syncChrome()}
+function finishOnb(pg){commitOnb();S.onboarded=true;save();$('onb').classList.remove('open');goPage(pg);if(curPg===pg&&pg==='main')renderHome()}
+
+/* ═════════ CHAT (Stanley) ═════════ */
+let chatOpen=false;
+const SUGS=['איזו משרה הכי מתאימה לי?','מה לתרגל לראיון?','כמה מכסה נשארה?'];
+function toggleChat(force){
+  chatOpen=force===true?true:!chatOpen;$('chatPop').classList.toggle('open',chatOpen);
+  if(chatOpen){if(!$('chatMsgs').children.length)addMsg('bot',`היי ${prof().first}. אני Stanley, אני מרכז את מה שהסוכנים עושים. מה תרצה לדעת?`);
+    $('chatSugs').innerHTML=SUGS.map(s=>`<button onclick="chatAsk('${s}')">${s}</button>`).join('');face($('chatFace'),5);setTimeout(()=>$('chatInput').focus(),260)}
+}
+function addMsg(who,text){const d=document.createElement('div');d.className='msg '+who;d.textContent=text;$('chatMsgs').appendChild(d);$('chatMsgs').scrollTop=1e6}
+function chatAsk(t){$('chatInput').value=t;sendChat()}
+function sendChat(){
+  const v=$('chatInput').value.trim();if(!v)return;addMsg('me',v);$('chatInput').value='';
+  const q=queue();let r;
+  if(/מתאימ|הכי טוב|משרה/.test(v)) r=q.length?`הכי חזקה כרגע: ${JOBS[q[0]].title} ב-${JOBS[q[0]].co}, ציון ${JOBS[q[0]].fit}. ${JOBS[q[0]].reasons[0]}.`:'סקרת את כל המשרות של היום. במעקב יש לך משרות שמורות שמחכות להגשה.';
+  else if(/ראיון|לתרגל|תרגל/.test(v)) r='נתחיל מ-System Design: איך היית מתכנן מערכת התראות לבורד עם מיליון משתמשים? כתוב לי את הרכיבים הראשונים ואני אגיב.';
+  else if(/מכס|טוקן|כסף|עלות/.test(v)) r=`נוצלו היום ${S.quota}% מהמכסה החינמית. אין חיוב בשום שלב, וכשהמכסה נגמרת הסוכנים ממתינים למחר.`;
+  else r='רשמתי. בגרסה המלאה אני עונה מהנתונים האמיתיים של הסוכנים. כרגע זו הדגמה.';
+  setTimeout(()=>addMsg('bot',r),550);
+}
+
+/* ═════════ INIT ═════════ */
+function init(){
+  syncChrome();
+  goPage('main');
+  setTimeout(()=>{$('splash').classList.add('hide');if(!S.onboarded)openOnb(0)},1100);
+}
+
+init();
+</script>
+</body>
+</html>
