@@ -1,7 +1,7 @@
 """
 cover_letter.py — סוכן Cover Letter.
 
-משתמש ב-Anthropic Claude (claude-opus-4-5 / claude-sonnet-4-5) לכתיבת מכתבי מוטיבציה
+ברירת מחדל: Groq (חינם). Claude אופציונלי בלבד עם ENABLE_CLAUDE=1
 איכותיים המותאמים אישית לכל משרה + CV.
 
 למה Claude ולא Groq?
@@ -58,7 +58,9 @@ def _get_client():
         raise ImportError("anthropic package לא מותקן. הרץ: pip install anthropic")
 
 
-def _write_with_claude(prompt: str, model: str = "claude-opus-4-5") -> str:
+def _write_with_claude(prompt: str, model: str = "claude-haiku-4-5") -> str:
+    if os.environ.get("ENABLE_CLAUDE") != "1":
+        raise RuntimeError("Claude כבוי (ENABLE_CLAUDE!=1) — משתמש ב-Groq החינמי")
     client = _get_client()
     message = client.messages.create(
         model=model,
@@ -146,7 +148,7 @@ def generate_cover_letter(
     language: str = "he",
     tone: str = "professional",
     use_cache: bool = True,
-    model: str = "claude-opus-4-5",
+    model: str = "claude-haiku-4-5",
 ) -> dict:
     """
     מחזיר:

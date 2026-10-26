@@ -32,8 +32,10 @@ def _get_anthropic():
     if _anthropic_client is None:
         try:
             import anthropic
+            # Claude כבוי כברירת מחדל — ה-API בתשלום (לא חלק ממנוי Pro).
+            # להפעלה: ENABLE_CLAUDE=1 + ANTHROPIC_API_KEY עם credit מוגבל מראש.
             api_key = os.environ.get("ANTHROPIC_API_KEY")
-            if api_key:
+            if api_key and os.environ.get("ENABLE_CLAUDE") == "1":
                 _anthropic_client = anthropic.Anthropic(api_key=api_key)
         except ImportError:
             pass
@@ -100,12 +102,12 @@ def _generate_cover_letter(job: dict, cv_profile: dict, resume_text: str) -> Opt
 
     prompt = _build_cover_letter_prompt(job, cv_profile, resume_text)
 
-    # נסה Claude claude-opus-4-5
+    # Claude (רק אם הופעל במפורש) — Haiku, לא Opus
     anthropic = _get_anthropic()
     if anthropic:
         try:
             response = anthropic.messages.create(
-                model="claude-opus-4-5",
+                model=os.environ.get("CLAUDE_MODEL", "claude-haiku-4-5"),
                 max_tokens=600,
                 messages=[{"role": "user", "content": prompt}],
             )

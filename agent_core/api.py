@@ -108,7 +108,7 @@ class CoverLetterRequest(BaseModel):
     resume:          str = Field(..., description="CV כטקסט")
     language:        str = Field(default="he",           description="he / en")
     tone:            str = Field(default="professional", description="professional / friendly / confident")
-    model:           str = Field(default="claude-opus-4-5", description="claude model")
+    model:           str = Field(default="claude-haiku-4-5", description="claude model (רק עם ENABLE_CLAUDE=1)")
 
 
 class CoverLetterResponse(BaseModel):
