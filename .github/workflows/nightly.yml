@@ -3,10 +3,13 @@ on:
   schedule:
     - cron: "17 3 * * *"     # כל יום ב-05:17/06:17 שעון ישראל (GitHub עובד ב-UTC)
   workflow_dispatch: {}       # כפתור "Run workflow" להרצה ידנית
+concurrency:
+  group: findjob-agents      # סוכן אחד בכל פעם: חולקים את מכסת Groq
+  cancel-in-progress: false
 jobs:
   hunt:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5

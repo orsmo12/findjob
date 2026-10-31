@@ -51,15 +51,15 @@ def salary_text(row: dict) -> str:
     return f"{cur}{fmt(lo)}–{fmt(hi)}{per}" if lo and hi else f"{cur}{fmt(lo or hi)}{per}"
 
 
-def collect(plan: dict, per_search: int = 15) -> list[dict]:
-    """JobSpy לפי התוכנית: עד 3 שאילתות × 2 אזורים. LinkedIn כמודעות ציבוריות בלבד."""
+def collect(plan: dict, per_search: int = 20) -> list[dict]:
+    """JobSpy לפי התוכנית: עד 6 שאילתות × 2 אזורים. LinkedIn כמודעות ציבוריות בלבד."""
     from jobspy import scrape_jobs
     out = []
-    for q in plan.get("queries", [])[:3]:
+    for q in plan.get("queries", [])[:6]:
         for loc in plan.get("locations", ["Israel"])[:2]:
             try:
                 df = scrape_jobs(
-                    site_name=["indeed", "linkedin", "google"],
+                    site_name=["indeed", "linkedin"],  # Google Jobs לא מחזיר תוצאות משרתי ענן
                     search_term=q, location=loc, results_wanted=per_search, hours_old=24 * 7,
                     country_indeed="Israel", is_remote=bool(plan.get("remote_only")),
                     google_search_term=f"{q} jobs in {loc}, Israel since last week",
@@ -260,7 +260,7 @@ def to_card(j: dict, r: dict, cv: str = "") -> dict:
             "posted_days": days, "salary": j.get("salary", ""), "desc": j.get("description", "")[:600], "ad": j.get("description", "")[:4000], "url": j["url"]}
 
 
-def run(profile: dict, plan: dict, raw: list[dict] | None = None, rate_top: int = 15, min_fit: float = 3.5, remember: bool = True,
+def run(profile: dict, plan: dict, raw: list[dict] | None = None, rate_top: int = 25, min_fit: float = 3.5, remember: bool = True,
         seen: set[str] | None = None, persist: bool = True) -> dict:
     """persist=False: לא כותבים קבצים מקומיים (בענן התוצאות נשמרות ב-Supabase)."""
     cv = profile.get("cv_text", "")
@@ -283,7 +283,7 @@ def run(profile: dict, plan: dict, raw: list[dict] | None = None, rate_top: int 
         if not r:
             continue
         if not r["seniority_ok"]:
-            stats["too_senior"] += 1; continue
+            stats["too_senior"] += 1; stats["ai_senior"] = stats.get("ai_senior", 0) + 1; continue
         stats.setdefault("fits", []).append(r["fit"])
         if r["fit"] >= min_fit:
             cards.append(to_card(j, r, cv))

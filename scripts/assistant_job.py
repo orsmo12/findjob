@@ -49,13 +49,14 @@ for u in db.profiles_ready():
     if done["prep"]:
         db.add_run(u["user_id"], "coach", f"שאלות הכנה מוכנות ל-{names(done['prep'])}, לפי מה שכתוב במודעה.")
     # מאיה: שיפורי פרופיל LinkedIn — רק כשהעלית PDF חדש של הפרופיל
-    li = dict(u.get("li") or {})
+    lf = dict(u.get("li_fixes") or {})      # עמודה נפרדת: קובי ומאיה לא דורסים זה את זה
     lt = u.get("li_text") or ""
-    if lt and li.get("fixes_for") != K.li_hash(lt):
+    if lt and lf.get("for") != K.li_hash(lt):
         try:
             plan = build_search_plan({"cv_text": cv, "answers": u.get("answers") or {}}).to_dict()
-            li["fixes"] = K.profile_fixes(cv, lt, plan); li["fixes_for"] = K.li_hash(lt)
-            db.update_profile(u["user_id"], {"li": li})
-            db.add_run(u["user_id"], "coach", f"עברתי על פרופיל ה-LinkedIn שלך: {len(li['fixes'])} שיפורים, עם טקסט מוכן להעתקה.")
+            fixes = K.profile_fixes(cv, lt, plan)
+            db.update_profile(u["user_id"], {"li_fixes": {"fixes": fixes, "for": K.li_hash(lt)}})
+            db.add_run(u["user_id"], "coach", f"עברתי על פרופיל ה-LinkedIn שלך: {len(fixes)} שיפורים, עם טקסט מוכן להעתקה." if fixes
+                       else "עברתי על פרופיל ה-LinkedIn שלך. לא מצאתי שיפור שאפשר להציע בלי להוסיף דברים שלא כתובים אצלך.")
         except BudgetDeferred:
             print("מכסה: הפרופיל בריצה הבאה")

@@ -3,6 +3,9 @@ on:
   schedule:
     - cron: "23 5-21/2 * * *"   # כל שעתיים, בערך 07:00–23:00 שעון ישראל
   workflow_dispatch: {}
+concurrency:
+  group: findjob-agents      # סוכן אחד בכל פעם: חולקים את מכסת Groq
+  cancel-in-progress: false
 jobs:
   letters:
     runs-on: ubuntu-latest

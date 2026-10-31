@@ -138,6 +138,10 @@ FIX_PROMPT = """You review a candidate's LinkedIn profile (exported PDF text) ag
 Suggest up to 5 concrete improvements, most impactful first. For each: a short Hebrew title, a short Hebrew reason,
 and "copy": ready-to-paste English text when relevant (headline, About, skills list), else "".
 Use ONLY facts from the CV and the profile. Do not invent achievements or numbers.
+NEVER suggest adding a skill, technology, tool or company that does not already appear in the CV or the profile.
+Good fixes: a sharper headline from existing facts, an About section that tells the existing projects clearly,
+moving the strongest existing skills to the top, adding a project that is in the CV but missing from the profile,
+adding the GitHub link, setting "Open to work" for recruiters only.
 
 TARGET ROLES: {roles}
 CV:

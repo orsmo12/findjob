@@ -56,3 +56,4 @@ alter table public.jobs add column if not exists brief jsonb;   -- גיל: סק�
 alter table public.jobs add column if not exists prep jsonb;    -- מאיה: שאלות הכנה
 alter table public.profiles add column if not exists li jsonb default '{}'::jsonb;  -- קובי ומאיה: פוסטים, טיוטה, שיפורים
 alter table public.profiles add column if not exists li_text text default '';        -- טקסט מ-PDF של פרופיל ה-LinkedIn
+alter table public.profiles add column if not exists li_fixes jsonb default '{}'::jsonb;  -- מאיה: שיפורי פרופיל
