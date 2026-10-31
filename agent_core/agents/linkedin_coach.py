@@ -108,7 +108,7 @@ def hot_posts(plan: dict, cv: str, limit: int = 5) -> list[dict]:
         if len(out) >= limit or len(p["text"]) < 60:
             continue
         d = _json(chat("linkedin", "comment_drafts", [{"role": "user", "content": POST_PROMPT.format(
-            author=p["author"], text=p["text"], cv=cv[:3000])}], tier="write", max_tokens=700))
+            author=p["author"], text=p["text"], cv=cv[:3000])}], tier="write", max_tokens=1200))
         if not d.get("relevant"):
             continue
         drafts = [x for x in (d.get("drafts") or [])[:2] if grounded(str(x.get("t", "")), cv + " " + p["text"] + " " + p["author"])]
@@ -152,8 +152,11 @@ Return JSON only: {{"fixes": [{{"t": "...", "why": "...", "copy": "..."}}]}}"""
 def profile_fixes(cv: str, li_text: str, plan: dict) -> list[dict]:
     if len(li_text.strip()) < 80:
         return []
-    d = _json(chat("coach", "linkedin_profile", [{"role": "user", "content": FIX_PROMPT.format(
-        roles=", ".join(plan.get("titles", [])[:3]), cv=cv[:4000], li=li_text[:5000])}], tier="judge", max_tokens=1200))
+    prompt = FIX_PROMPT.format(roles=", ".join(plan.get("titles", [])[:3]), cv=cv[:4000], li=li_text[:5000])
+    d = _json(chat("coach", "linkedin_profile", [{"role": "user", "content": prompt}], tier="judge", max_tokens=2500))
+    if not d.get("fixes"):
+        d = _json(chat("coach", "linkedin_profile_retry", [{"role": "user", "content": prompt + "\n\nReturn ONLY the JSON object."}],
+                       tier="judge", max_tokens=2500))
     if not d.get("fixes"):
         print("[מאיה] המודל לא החזיר שיפורים בפורמט תקין")
     out = []

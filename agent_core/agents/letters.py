@@ -80,11 +80,11 @@ def write_letter(cv: str, job: dict, name: str) -> dict:
     ad = job.get("ad") or job.get("desc") or ""
     lang = ad_language(ad) if ad else "English"
     prompt = PROMPT.format(lang=lang, name=name or "", cv=cv[:5000], title=job["title"], company=job["co"], ad=ad[:3500] or "(no description)")
-    text = chat("assistant", "cover_letter", [{"role": "user", "content": prompt}], tier="write", max_tokens=900)
+    text = chat("assistant", "cover_letter", [{"role": "user", "content": prompt}], tier="write", max_tokens=1500)
     bad = unsupported(text, cv, ad, job["co"], name)
     if bad:
         fix = prompt + f"\n\nYour previous draft mentioned things NOT in the CV or ad: {', '.join(bad)}. Rewrite without them."
-        text = chat("assistant", "cover_letter_retry", [{"role": "user", "content": fix}], tier="write", max_tokens=900)
+        text = chat("assistant", "cover_letter_retry", [{"role": "user", "content": fix}], tier="write", max_tokens=1500)
         bad = unsupported(text, cv, ad, job["co"], name)
         if bad:
             text = _drop_bad_sentences(text, bad)

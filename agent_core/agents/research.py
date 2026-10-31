@@ -67,7 +67,7 @@ def brief(company: str, title: str, cv: str) -> dict:
         return {"found": False, "sources": []}
     block = "\n".join(f"[{i}] {s['title']} — {s['text']}" for i, s in enumerate(snips))
     raw = chat("researcher", "company_brief", [{"role": "user", "content": PROMPT.format(
-        company=company, title=title, snips=block, cv=cv[:3000])}], tier="judge", max_tokens=900)
+        company=company, title=title, snips=block, cv=cv[:3000])}], tier="judge", max_tokens=1800)
     m = re.search(r"\{.*\}", raw or "", re.S)
     try:
         d = json.loads(m.group(0)) if m else {}

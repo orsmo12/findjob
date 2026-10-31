@@ -206,7 +206,12 @@ def rate(job: dict, cv: str, prefs: str) -> dict | None:
     desc = job.get("description", "")
     prompt = RANK_PROMPT.format(cv=cv[:5000], prefs=prefs, title=job["title"], company=job["company"],
                                 location=job["location"], desc=(desc[:3500] or "(no description available)"))
-    r = parse_rating(chat("hunter", "rate_job", [{"role": "user", "content": prompt}], tier="judge", max_tokens=1000))  # בלי json_mode: חלק מהמודלים נכשלים בו; parse_rating מחלץ את ה-JSON
+    r = parse_rating(chat("hunter", "rate_job", [{"role": "user", "content": prompt}], tier="judge", max_tokens=1600))
+    if r is None:  # תשובה שנחתכה או לא בפורמט — ניסיון נוסף אחד
+        r = parse_rating(chat("hunter", "rate_job_retry", [{"role": "user", "content": prompt + "\n\nReturn ONLY the JSON object, nothing else."}],
+                              tier="judge", max_tokens=1600))
+    if r is None:
+        print(f"[דורון] לא הצלחתי לדרג: {job['title']} @ {job['company']}")  # בלי json_mode: חלק מהמודלים נכשלים בו; parse_rating מחלץ את ה-JSON
     if r:
         r["reasons"] = grounded(r["reasons"], cv)        # סיבה = עובדה מקורות החיים
         r["gaps"] = grounded(r["gaps"], desc)             # חסר = דרישה שכתובה במודעה
@@ -279,6 +284,7 @@ def run(profile: dict, plan: dict, raw: list[dict] | None = None, rate_top: int 
             continue
         if not r["seniority_ok"]:
             stats["too_senior"] += 1; continue
+        stats.setdefault("fits", []).append(r["fit"])
         if r["fit"] >= min_fit:
             cards.append(to_card(j, r, cv))
     cards.sort(key=lambda c: -c["fit"])

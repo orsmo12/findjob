@@ -36,7 +36,7 @@ def prepare(cv: str, job: dict) -> dict:
     ad = job.get("ad") or job.get("desc") or ""
     raw = chat("coach", "interview_prep", [{"role": "user", "content": PROMPT.format(
         cv=cv[:4000], title=job["title"], company=job["co"], ad=ad[:3500] or "(no description)")}],
-        tier="write", max_tokens=1400)
+        tier="write", max_tokens=2500)
     m = re.search(r"\{.*\}", raw or "", re.S)
     try:
         qs = (json.loads(m.group(0)) if m else {}).get("questions") or []

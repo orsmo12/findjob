@@ -128,9 +128,20 @@ def _chat_once(agent, task, messages, tier, max_tokens, temperature, json_mode) 
             continue
         try:
             kwargs = dict(model=model, messages=messages, temperature=temperature, max_tokens=max_tokens)
+            # מודלי reasoning "חושבים" לפני התשובה ושורפים את תקציב הטוקנים — מקצרים את החשיבה
+            if "gpt-oss" in model:
+                kwargs["extra_body"] = {"reasoning_effort": "low"}
+            elif "qwen3" in model:
+                kwargs["extra_body"] = {"reasoning_effort": "none"}
             if json_mode:
                 kwargs["response_format"] = {"type": "json_object"}
-            raw = _groq_client().chat.completions.with_raw_response.create(**kwargs)
+            try:
+                raw = _groq_client().chat.completions.with_raw_response.create(**kwargs)
+            except Exception as e:  # noqa: BLE001 — מודל שלא מכיר reasoning_effort: שוב בלי
+                if "reasoning" not in str(e).lower() or "extra_body" not in kwargs:
+                    raise
+                kwargs.pop("extra_body")
+                raw = _groq_client().chat.completions.with_raw_response.create(**kwargs)
             resp = raw.parse()
             usage = getattr(resp, "usage", None)
             bg.record(model, agent, task, getattr(usage, "total_tokens", 0) or 0, dict(raw.headers))
