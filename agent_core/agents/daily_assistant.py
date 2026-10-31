@@ -9,7 +9,8 @@ daily_assistant.py — סוכן העוזר הבוקרי.
 
 import os
 from datetime import date
-from groq import Groq
+from groq import Groq  # noqa: F401 (type hints)
+from agent_core.llm_router import router_client
 from agent_core.state import CareerState
 from agent_core.memory.manager import save_run_results, get_weekly_stats
 
@@ -21,7 +22,7 @@ def _get_client() -> Groq:
         api_key = os.environ.get("GROQ_API_KEY")
         if not api_key:
             raise ValueError("GROQ_API_KEY לא מוגדר.")
-        _client = Groq(api_key=api_key)
+        _client = router_client("assistant", "write")  # הנתב בוחר מודל ושומר על המכסה
     return _client
 
 
@@ -75,7 +76,7 @@ def daily_assistant_node(state: CareerState) -> dict:
         client = _get_client()
         print("[עוזר בוקרי] מייצר briefing...")
         response = client.chat.completions.create(
-            model="qwen/qwen3.8-27b",
+            model="routed",
             messages=[{"role": "user", "content": prompt}],
             temperature=0.7,
             max_tokens=220,

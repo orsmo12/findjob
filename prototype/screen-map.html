@@ -1,0 +1,252 @@
+<title>findjob מפת מסכים</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700&display=swap">
+<style>
+/* layout: one reading column; nav map → screens (one card each) → lookup table → flows → changes */
+:root{
+  --bg:#EDF4F0; --surf:#FFFFFF; --surf2:#F5F7FD; --ink:#171A33; --ink2:#4A4F72; --ink3:#7C81A3;
+  --line:rgba(70,80,150,.14); --brand:#0F8A64; --brand-lt:rgba(15,138,100,.10); --mint:#0E9A6E; --mint-lt:rgba(20,184,132,.12);
+  --amber:#B0640F; --amber-lt:rgba(232,145,45,.14); --rose:#C9353A; --rose-lt:rgba(229,72,77,.10);
+  --font:'Rubik',system-ui,-apple-system,'Segoe UI',sans-serif; --r:18px;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#11132A;--surf:#1B1E3D;--surf2:#222650;--ink:#ECEEFF;--ink2:#B6BADB;--ink3:#868BB3;--line:rgba(180,190,255,.14);--brand:#4FD6A6;--brand-lt:rgba(79,214,166,.14);--mint:#4FD6A6;--mint-lt:rgba(79,214,166,.14);--amber:#F2B266;--amber-lt:rgba(242,178,102,.14);--rose:#FF8A8E;--rose-lt:rgba(255,138,142,.12);color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#11132A;--surf:#1B1E3D;--surf2:#222650;--ink:#ECEEFF;--ink2:#B6BADB;--ink3:#868BB3;--line:rgba(180,190,255,.14);--brand:#4FD6A6;--brand-lt:rgba(79,214,166,.14);--mint:#4FD6A6;--mint-lt:rgba(79,214,166,.14);--amber:#F2B266;--amber-lt:rgba(242,178,102,.14);--rose:#FF8A8E;--rose-lt:rgba(255,138,142,.12);color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--font);font-size:15px;line-height:1.6;direction:rtl;margin:0}
+.wrap{max-width:860px;margin:0 auto;padding-block:32px 64px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:40px}
+h1{font-size:30px;font-weight:700;letter-spacing:-.02em;line-height:1.2;margin:0 0 10px;text-wrap:balance}
+h2{font-size:21px;font-weight:700;letter-spacing:-.01em;margin:0 0 6px;text-wrap:balance}
+h3{font-size:17px;font-weight:600;margin:0}
+p{margin:0;max-width:65ch;color:var(--ink2)}
+.lead{font-size:16.5px}
+section{display:flex;flex-direction:column;gap:14px}
+.rule{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
+.rule div{background:var(--surf);border:1px solid var(--line);border-radius:var(--r);padding:16px}
+.rule b{display:block;font-size:15.5px;margin-bottom:4px;color:var(--ink)}
+.rule p{font-size:14px}
+
+/* nav map */
+.navmap{display:grid;grid-template-columns:minmax(0,300px) minmax(0,1fr);gap:20px;align-items:start}
+@media (max-width:680px){.navmap{grid-template-columns:1fr}}
+.phone{background:var(--surf);border:1px solid var(--line);border-radius:26px;padding:14px;box-shadow:0 18px 40px -24px rgba(40,50,130,.35)}
+.tb{display:grid;grid-template-columns:36px 1fr 36px;align-items:center;direction:ltr;padding:2px 2px 12px;border-bottom:1px solid var(--line);margin-bottom:10px}
+.tb span{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;background:var(--surf2);font-size:15px;color:var(--ink)}
+.tb span.av{border-radius:50%;background:var(--brand);color:#fff;font-size:12px;font-weight:700}
+.tb em{font-style:normal;text-align:center;font-weight:700;font-size:15px;direction:rtl}
+.grp{font-size:12.5px;color:var(--ink3);padding:10px 8px 4px}
+.it{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:12px;font-size:15px;color:var(--ink)}
+.it.on{background:var(--brand-lt);color:var(--brand);font-weight:600}
+.it .bd{margin-inline-start:auto;min-width:22px;height:22px;padding:0 7px;border-radius:11px;background:var(--brand);color:#fff;font-size:12px;font-weight:600;display:grid;place-items:center;font-variant-numeric:tabular-nums}
+.it .bd.soft{background:var(--surf2);color:var(--ink2)}
+.it.cond{border:1.5px dashed var(--line);color:var(--ink2);font-size:14px}
+.foot{margin-top:10px;padding:10px;border-top:1px solid var(--line);font-size:12.5px;color:var(--ink2)}
+.bar{height:6px;border-radius:4px;background:var(--surf2);margin-top:6px;overflow:hidden}
+.bar i{display:block;height:100%;width:18%;background:var(--mint);border-radius:4px}
+.notes{display:flex;flex-direction:column;gap:10px}
+.note{background:var(--surf);border:1px solid var(--line);border-radius:14px;padding:12px 14px;font-size:14px;color:var(--ink2)}
+.note b{color:var(--ink)}
+
+/* screen cards */
+.screens{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+.sc{background:var(--surf);border:1px solid var(--line);border-radius:var(--r);padding:16px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.sc-h{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+.tag{font-size:12px;font-weight:600;padding:3px 9px;border-radius:9px;white-space:nowrap}
+.t-now{background:var(--brand-lt);color:var(--brand)}
+.t-ag{background:var(--amber-lt);color:var(--amber)}
+.t-me{background:var(--mint-lt);color:var(--mint)}
+.t-layer{background:var(--surf2);color:var(--ink2)}
+.job{font-size:14px;color:var(--ink);font-weight:500}
+.sc ol,.sc ul{margin:0;padding-inline-start:20px;display:flex;flex-direction:column;gap:3px;font-size:14px;color:var(--ink2)}
+.sc .k{font-size:12.5px;color:var(--ink3);margin-bottom:2px}
+.sc .not{font-size:13px;color:var(--ink3);border-top:1px solid var(--line);padding-top:9px}
+.sc .not s{text-decoration:none;color:var(--rose)}
+.sc.new{outline:2px solid var(--brand);outline-offset:-1px}
+
+/* table */
+.tw{overflow-x:auto;border:1px solid var(--line);border-radius:var(--r);background:var(--surf)}
+table{border-collapse:collapse;width:100%;min-width:560px;font-size:14px}
+th,td{padding:10px 14px;text-align:right;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:12.5px;font-weight:600;color:var(--ink3);background:var(--surf2)}
+tr:last-child td{border-bottom:0}
+td:first-child{font-weight:500;color:var(--ink)}
+td{color:var(--ink2)}
+.home{display:inline-block;font-weight:600;color:var(--brand)}
+
+/* flows */
+.flow{background:var(--surf);border:1px solid var(--line);border-radius:var(--r);padding:16px;display:flex;flex-direction:column;gap:10px}
+.steps{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.step{background:var(--surf2);border-radius:10px;padding:6px 11px;font-size:13.5px;color:var(--ink)}
+.step.st{background:var(--brand-lt);color:var(--brand);font-weight:600}
+.arr{color:var(--ink3);font-size:14px}
+
+/* changes */
+.chg{display:flex;flex-direction:column;gap:8px}
+.chg div{display:grid;grid-template-columns:minmax(0,1fr) 22px minmax(0,1fr);gap:10px;align-items:start;background:var(--surf);border:1px solid var(--line);border-radius:14px;padding:12px 14px;font-size:14px}
+.chg .was{color:var(--ink3)}
+.chg .now{color:var(--ink)}
+.chg span.ar{color:var(--brand);text-align:center}
+@media (max-width:520px){.chg div{grid-template-columns:1fr}.chg span.ar{display:none}.chg .was::after{content:' ←';color:var(--brand)}}
+.ask{background:var(--amber-lt);border:1px solid transparent;border-radius:var(--r);padding:16px;display:flex;flex-direction:column;gap:6px}
+.ask b{color:var(--ink)}
+.a11y{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px}
+.a11y div{background:var(--surf);border:1px solid var(--line);border-radius:14px;padding:12px 14px;font-size:14px;color:var(--ink2)}
+.a11y b{display:block;color:var(--ink);font-size:14.5px;margin-bottom:2px}
+</style>
+
+<main class="wrap">
+  <header>
+    <h1>מפת המסכים של findjob</h1>
+    <p class="lead">7 מסכים, 3 שכבות שנפתחות מעל המסך, ו-3 כללים שמונעים כפילויות. כל פריט באפליקציה גר במקום אחד בדיוק.</p>
+  </header>
+
+  <section aria-labelledby="rules">
+    <h2 id="rules">שלושת הכללים</h2>
+    <div class="rule">
+      <div><b>לכל דבר בית אחד</b><p>מכתב פנייה גר בהגשה. תגובה לפוסט גרה ב-LinkedIn. מסך אחר יכול רק להצביע עליו, לא להציג עותק.</p></div>
+      <div><b>לוח הבקרה מצביע, לא מעתיק</b><p>הוא מציג שורה אחת לכל צעד הבא ("2 תגובות מחכות, חלון הזהב נסגר בעוד 25 דק׳"), והלחיצה פותחת את הפריט בבית שלו.</p></div>
+      <div><b>מספר במגירה = דברים שמחכים לך</b><p>לא "כמה יש", אלא כמה פעולות מחכות לך במסך הזה. אין מה לעשות? אין מספר.</p></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="nav">
+    <h2 id="nav">הניווט</h2>
+    <div class="navmap">
+      <div class="phone" aria-label="הדמיית מגירה">
+        <div class="tb"><span aria-hidden="true">☰</span><em>לוח בקרה</em><span class="av" aria-hidden="true">Or</span></div>
+        <div class="grp">חיפוש עבודה</div>
+        <div class="it on">לוח בקרה</div>
+        <div class="it">משרות חדשות<span class="bd">6</span></div>
+        <div class="it">הגשות<span class="bd">2</span></div>
+        <div class="it cond">ראיון ב-Monday.com, רביעי 14:00</div>
+        <div class="it">LinkedIn<span class="bd">3</span></div>
+        <div class="grp">הסוכנים</div>
+        <div class="it">המשרד</div>
+        <div class="grp">החשבון שלי</div>
+        <div class="it">הפרופיל שלי</div>
+        <div class="it">הגדרות</div>
+      </div>
+      <div class="notes">
+        <div class="note"><b>פס עליון:</b> ☰ משמאל פותח את המגירה מאותו צד. באמצע שם המסך. האווטאר מימין פותח את "הפרופיל שלי".</div>
+        <div class="note"><b>שורה מקווקוות:</b> קיצור שמופיע רק כשיש ראיון קרוב. הוא פותח את ההגשה של אותה משרה, לא מסך נפרד.</div>
+        <div class="note"><b>שכבות מעל המסך:</b> פרטי משרה, פרטי הגשה ופוסט עם תגובות נפתחים כגיליון מלמטה. אין מסך בתוך מסך, ו"חזרה" תמיד סוגרת את הגיליון.</div>
+        <div class="note"><b>צ׳אט עם Stanley:</b> כפתור צף בכל המסכים חוץ ממשרות ומהמשרד, שם הוא היה מסתיר פעולות.</div>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="scr">
+    <h2 id="scr">המסכים, בסדר שבו הם מופיעים</h2>
+    <div class="screens">
+      <article class="sc">
+        <div class="sc-h"><h3>לוח בקרה</h3><span class="tag t-now">חיפוש עבודה</span></div>
+        <div class="job">מה לעשות עכשיו, מסודר לפי דחיפות.</div>
+        <div><div class="k">מלמעלה למטה</div><ol><li>ברכה ובריף של שתי שורות מ-Stanley</li><li>הצעדים הבאים: עד 5 שורות שמצביעות למסכים אחרים</li><li>המשימות שלי (משימות שהוספת בעצמך)</li><li>השלמת השאלון, עד שהוא מסתיים</li></ol></div>
+        <div class="not">לא כאן: <s>הודעות מהסוכנים</s> (במשרד), <s>כרטיסי משרות</s> (במשרות)</div>
+      </article>
+      <article class="sc">
+        <div class="sc-h"><h3>משרות חדשות</h3><span class="tag t-now">חיפוש עבודה</span></div>
+        <div class="job">להחליט על משרות חדשות: שמור או דלג.</div>
+        <div><div class="k">מה יש</div><ul><li>חבילת הכרטיסים של היום, עם ציון 1–5 וסיבות</li><li>שורת "3 סוננו כי בכירות מדי", שמובילה להעדפות בפרופיל</li><li>גיליון פרטים מלאים</li></ul></div>
+        <div class="not">משרה שנשמרה עוברת להגשות ונעלמת מכאן</div>
+      </article>
+      <article class="sc">
+        <div class="sc-h"><h3>הגשות</h3><span class="tag t-now">חיפוש עבודה</span></div>
+        <div class="job">כל משרה ששמרת, מהשמירה ועד התשובה.</div>
+        <div><div class="k">שלבים</div><ul><li>שמור · הוגש · סינון · ראיון · הצעה · נסגר</li></ul></div>
+        <div><div class="k">גיליון הגשה</div><ul><li>פרטים ו-follow-up</li><li>מכתב פנייה וקורות חיים מותאמים</li><li>מי בחברה יכול להמליץ עליך</li><li>הכנה לסינון או לראיון, רק בשלבים האלה</li></ul></div>
+      </article>
+      <article class="sc new">
+        <div class="sc-h"><h3>LinkedIn</h3><span class="tag t-now">חיפוש עבודה · חדש</span></div>
+        <div class="job">פרופיל חזק ונוכחות פעילה מביאים יותר פניות.</div>
+        <div><div class="k">מלמעלה למטה</div><ol><li>יעד שבועי: תגובות ופוסט</li><li>פוסטים חמים עם תגובות מוצעות</li><li>ציון הפרופיל ותיקונים מוכנים להדבקה</li><li>אנשים להכיר והודעות חיבור</li><li>טיוטת הפוסט של השבוע</li></ol></div>
+        <div class="not">ממליצים למשרה מסוימת גרים בהגשה, לא כאן</div>
+      </article>
+      <article class="sc">
+        <div class="sc-h"><h3>המשרד</h3><span class="tag t-ag">הסוכנים</span></div>
+        <div class="job">לראות את הסוכנים עובדים, ומה כל אחד דיווח.</div>
+        <div><div class="k">מה יש</div><ul><li>האנימציה, שורת הסוכנים ותהליך העבודה, ללא שינוי</li><li>הודעות מהסוכנים, בקטע נפרד מתחת לתהליך</li></ul></div>
+        <div class="not">פעולות שמחכות לך לא מופיעות כאן</div>
+      </article>
+      <article class="sc">
+        <div class="sc-h"><h3>הפרופיל שלי</h3><span class="tag t-me">החשבון שלי</span></div>
+        <div class="job">כל מה שהסוכנים יודעים עליך.</div>
+        <div><div class="k">מה יש</div><ul><li>קורות חיים</li><li>תשובות השאלון</li><li>בנק סיפורים לראיונות</li><li>מה למדנו עליך מהדילוגים, עם אפשרות לתקן</li></ul></div>
+        <div class="not">לא כאן: <s>מפתחות</s>, <s>התראות</s> (בהגדרות), <s>פרופיל LinkedIn</s></div>
+      </article>
+      <article class="sc">
+        <div class="sc-h"><h3>הגדרות</h3><span class="tag t-me">החשבון שלי</span></div>
+        <div class="job">איך האפליקציה עובדת.</div>
+        <div><div class="k">מה יש</div><ul><li>חיבור הסוכנים</li><li>בריף בוקר והתראות</li><li>שפה ונגישות</li><li>היכרות מחדש</li><li>מחיקת כל הנתונים</li></ul></div>
+      </article>
+      <article class="sc">
+        <div class="sc-h"><h3>שכבות</h3><span class="tag t-layer">לא במגירה</span></div>
+        <div class="job">נפתחות מעל המסך ולא מחליפות אותו.</div>
+        <ul><li>היכרות: פעם אחת, וממשיכה אחר כך מהלוח</li><li>צ׳אט עם Stanley</li><li>גיליונות פרטים</li></ul>
+      </article>
+    </div>
+  </section>
+
+  <section aria-labelledby="where">
+    <h2 id="where">איפה כל דבר גר</h2>
+    <p>אם משהו מופיע בשתי שורות כבית, יש כפילות. אין כאן כזה.</p>
+    <div class="tw" tabindex="0" role="region" aria-label="טבלת מיקומים">
+      <table>
+        <thead><tr><th scope="col">פריט</th><th scope="col">הבית שלו</th><th scope="col">איפה רק מצביעים עליו</th></tr></thead>
+        <tbody>
+          <tr><td>משרה חדשה לסקירה</td><td><span class="home">משרות</span></td><td>לוח בקרה (שורה אחת), מספר במגירה</td></tr>
+          <tr><td>משרה שמורה או מוגשת</td><td><span class="home">הגשות</span></td><td>לוח בקרה כשיש follow-up</td></tr>
+          <tr><td>מכתב פנייה, קורות חיים מותאמים</td><td><span class="home">הגשות › גיליון הגשה</span></td><td>—</td></tr>
+          <tr><td>ממליצים בחברה מסוימת</td><td><span class="home">הגשות › גיליון הגשה</span></td><td>—</td></tr>
+          <tr><td>הכנה לסינון ולראיון</td><td><span class="home">הגשות › גיליון הגשה</span></td><td>קיצור במגירה, לוח בקרה</td></tr>
+          <tr><td>פוסט חם ותגובה מוצעת</td><td><span class="home">LinkedIn</span></td><td>לוח בקרה בחלון הזהב</td></tr>
+          <tr><td>הודעת חיבור לאדם חדש</td><td><span class="home">LinkedIn</span></td><td>—</td></tr>
+          <tr><td>ציון פרופיל LinkedIn</td><td><span class="home">LinkedIn</span></td><td>—</td></tr>
+          <tr><td>הודעות מהסוכנים</td><td><span class="home">המשרד</span></td><td>הבריף מסכם אותן בשתי שורות</td></tr>
+          <tr><td>משימה שהוספתי בעצמי</td><td><span class="home">לוח בקרה</span></td><td>—</td></tr>
+          <tr><td>קורות חיים בסיסיים, שאלון</td><td><span class="home">הפרופיל שלי</span></td><td>לוח בקרה עד שהשאלון הושלם</td></tr>
+          <tr><td>חיבור הסוכנים</td><td><span class="home">הגדרות</span></td><td>לוח בקרה, כשהם עוד לא מחוברים</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section aria-labelledby="flows">
+    <h2 id="flows">שני המסלולים המרכזיים</h2>
+    <div class="flow"><h3>ממשרה לתשובה</h3>
+      <div class="steps"><span class="step st">משרות</span><span class="arr">←</span><span class="step">שמור</span><span class="arr">←</span><span class="step st">הגשות · שמור</span><span class="arr">←</span><span class="step">העתק מכתב ופתח</span><span class="arr">←</span><span class="step">הגשתי</span><span class="arr">←</span><span class="step">אחרי 7 ימים: follow-up</span><span class="arr">←</span><span class="step">סינון / ראיון: הכנה</span><span class="arr">←</span><span class="step">הצעה או נסגר</span></div>
+    </div>
+    <div class="flow"><h3>מפוסט לחשיפה</h3>
+      <div class="steps"><span class="step st">LinkedIn · פוסטים חמים</span><span class="arr">←</span><span class="step">בחירה בין 2 תגובות</span><span class="arr">←</span><span class="step">עריכה קצרה</span><span class="arr">←</span><span class="step">העתק, או פתח את הפוסט</span><span class="arr">←</span><span class="step">פרסום ולייק בלחיצה שלך</span><span class="arr">←</span><span class="step">נספר ביעד השבועי</span></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="chg">
+    <h2 id="chg">מה משתנה מהאב-טיפוס הנוכחי</h2>
+    <div class="chg">
+      <div><span class="was">"לוח" עם כרטיס משרות, רשימת משימות והודעות סוכנים</span><span class="ar" aria-hidden="true">←</span><span class="now">"לוח בקרה": בריף, צעדים הבאים, המשימות שלי</span></div>
+      <div><span class="was">"הכנה לראיון" כמסך נפרד במגירה</span><span class="ar" aria-hidden="true">←</span><span class="now">חלק מגיליון ההגשה, עם קיצור במגירה רק כשיש ראיון</span></div>
+      <div><span class="was">פרופיל שמערבב קורות חיים עם מפתחות והתראות</span><span class="ar" aria-hidden="true">←</span><span class="now">"הפרופיל שלי" ו"הגדרות" כשני מסכים</span></div>
+      <div><span class="was">"מעקב הגשות" עם שלבים בלי סינון</span><span class="ar" aria-hidden="true">←</span><span class="now">"הגשות", ונוסף שלב "סינון" לשאלות של LinkedIn</span></div>
+      <div><span class="was">הצעה קודמת שלי: מסך "לאישורך" נפרד</span><span class="ar" aria-hidden="true">←</span><span class="now">בוטל. הוא היה מעתיק תגובות והגשות ממסכים אחרים. במקומו הלוח מצביע</span></div>
+      <div><span class="was">אין מסך LinkedIn</span><span class="ar" aria-hidden="true">←</span><span class="now">מסך LinkedIn חדש</span></div>
+    </div>
+  </section>
+
+  <section class="ask" aria-labelledby="q">
+    <h2 id="q">הודעות מהסוכנים</h2>
+    <p><b>הוחלט:</b> הודעות מהסוכנים גרות במשרד, בקטע נפרד מתחת לתהליך העבודה. האנימציה, שורת הסוכנים והתהליך לא השתנו.</p>
+  </section>
+
+  <section aria-labelledby="acc">
+    <h2 id="acc">נגישות בכל המסכים</h2>
+    <div class="a11y">
+      <div><b>קריאות</b>טקסט רק על משטח אטום, ניגודיות AA. זכוכית רק בפס העליון, במגירה ובכרטיסים צפים.</div>
+      <div><b>מגע</b>כל כפתור לפחות 44×44. לכל החלקה יש גם כפתור.</div>
+      <div><b>קורא מסך</b>תוויות בעברית, כותרות לפי סדר, הכרזה על פעולות ("נשמר למעקב").</div>
+      <div><b>לא רק צבע</b>לכל סטטוס יש טקסט. הציון מוצג גם כמספר.</div>
+      <div><b>הגדרות הטלפון</b>גודל טקסט מתאים את עצמו. מכבדים הפחתת תנועה ושקיפות.</div>
+      <div><b>שפה וכיוון</b>עברית מימין לשמאל, מספרים וטווחים בסדר הנכון, אנגלית מסומנת כאנגלית.</div>
+    </div>
+  </section>
+</main>

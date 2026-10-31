@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#EEF1FA">
+<meta name="theme-color" content="#EDF4F0">
 <title>findjob</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -147,7 +147,7 @@
 /* ═══════════ findjob — design tokens ═══════════ */
 :root{
   /* legacy tokens — kept identical so the Office screen renders exactly as before */
-  --bg:#EEF0F8;--surf:#FFFFFF;--surf2:#E8EBF5;
+  --bg:#EDF4F0;--surf:#FFFFFF;--surf2:#E8EBF5;
   --fg:#1A1A2E;--fg2:#5A5A7A;--fg3:#9999BB;
   --brd:rgba(90,90,150,0.10);
   --shadow:0 2px 12px rgba(90,90,180,0.08);
@@ -156,28 +156,31 @@
   --accent:#5B6CF9;--accent-lt:#EDEFFE;
 
   /* findjob */
-  --ink:#171A33;--ink2:#4A4F72;--ink3:#8B90B3;
-  --brand:#4E5BF2;--brand2:#7B5CF5;--brand-lt:rgba(78,91,242,.10);
-  --mint:#14B884;--mint-lt:rgba(20,184,132,.12);
+  --ink:#12241D;--ink2:#46594F;--ink3:#76887F;
+  --brand:#0F8A64;--brand2:#0B6E5C;--brand-lt:rgba(15,138,100,.10);--brand-hi:#2FBF8C;
+  --mint:#0F8A64;--mint-lt:rgba(15,138,100,.11);
+  --sky:#1F6FB2;--sky-lt:rgba(31,111,178,.10);
+  --teal:#0E7C86;--teal-lt:rgba(14,124,134,.10);
   --amber:#E8912D;--amber-lt:rgba(232,145,45,.14);
   --rose:#E5484D;--rose-lt:rgba(229,72,77,.10);
-  --canvas:#EEF1FA;
-  --glass:rgba(255,255,255,.58);
+  --canvas:#EDF4F0;
+  --glass:rgba(255,255,255,.74);
   --glass-strong:rgba(255,255,255,.80);
   --glass-brd:rgba(255,255,255,.78);
-  --glass-edge:rgba(70,80,150,.10);
+  --glass-edge:rgba(20,70,50,.10);
   --blur:saturate(180%) blur(22px);
-  --g-shadow:inset 0 1px 0 rgba(255,255,255,.95),0 12px 32px -14px rgba(40,50,130,.28),0 2px 6px rgba(40,50,130,.05);
-  --g-shadow-lg:inset 0 1px 0 rgba(255,255,255,.95),0 24px 60px -20px rgba(40,50,130,.38),0 4px 12px rgba(40,50,130,.08);
+  --g-shadow:inset 0 1px 0 rgba(255,255,255,.95),0 12px 30px -16px rgba(16,60,44,.28),0 2px 6px rgba(16,60,44,.05);
+  --g-shadow-lg:inset 0 1px 0 rgba(255,255,255,.95),0 26px 60px -22px rgba(16,60,44,.38),0 4px 12px rgba(16,60,44,.07);
+  --solid:rgba(255,255,255,.92);
   --rad-xl:26px;--rad-l:20px;--rad-m:14px;--rad-s:10px;
   --topbar:58px;
   --font:'Rubik',system-ui,-apple-system,'Segoe UI',sans-serif;
   color-scheme:light;
 }
 @media (prefers-color-scheme:dark){
-  :root:not([data-theme="light"]){--canvas:#12142A;--glass:rgba(30,34,66,.55);--glass-strong:rgba(30,34,66,.82);--glass-brd:rgba(255,255,255,.10);--ink:#ECEEFF;--ink2:#B4B8DA;--ink3:#7C81A8;}
+  :root:not([data-theme="light"]){--canvas:#0F1A16;--glass:rgba(24,40,33,.55);--glass-strong:rgba(24,40,33,.82);--solid:rgba(24,40,33,.95);--glass-brd:rgba(255,255,255,.10);--ink:#E8F3EE;--ink2:#A9BFB5;--ink3:#7B9088;}
 }
-:root[data-theme="dark"]{--canvas:#12142A;--glass:rgba(30,34,66,.55);--glass-strong:rgba(30,34,66,.82);--glass-brd:rgba(255,255,255,.10);--ink:#ECEEFF;--ink2:#B4B8DA;--ink3:#7C81A8;}
+:root[data-theme="dark"]{--canvas:#0F1A16;--glass:rgba(24,40,33,.55);--glass-strong:rgba(24,40,33,.82);--solid:rgba(24,40,33,.95);--glass-brd:rgba(255,255,255,.10);--ink:#E8F3EE;--ink2:#A9BFB5;--ink3:#7B9088;}
 
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html{height:100%;height:100dvh;overflow:hidden}
@@ -196,10 +199,10 @@ label.btn,label.drop{cursor:pointer}
 /* ── mesh background ── */
 #mesh{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;background:var(--canvas)}
 #mesh i{position:absolute;border-radius:50%;filter:blur(60px);opacity:.75;animation:drift 38s ease-in-out infinite alternate}
-#mesh i:nth-child(1){width:62vmax;height:62vmax;left:-22vmax;top:-26vmax;background:radial-gradient(circle,#A9B4FF 0%,transparent 68%)}
-#mesh i:nth-child(2){width:54vmax;height:54vmax;right:-24vmax;top:6vmax;background:radial-gradient(circle,#D6C8FF 0%,transparent 66%);animation-duration:46s}
-#mesh i:nth-child(3){width:48vmax;height:48vmax;left:-12vmax;bottom:-22vmax;background:radial-gradient(circle,#A8EDE3 0%,transparent 66%);animation-duration:52s}
-#mesh i:nth-child(4){width:34vmax;height:34vmax;right:-6vmax;bottom:-8vmax;background:radial-gradient(circle,#FFD9C2 0%,transparent 66%);opacity:.55;animation-duration:60s}
+#mesh i:nth-child(1){width:62vmax;height:62vmax;left:-22vmax;top:-26vmax;background:radial-gradient(circle,#A6E3C8 0%,transparent 68%)}
+#mesh i:nth-child(2){width:54vmax;height:54vmax;right:-24vmax;top:6vmax;background:radial-gradient(circle,#BFE6E2 0%,transparent 66%);animation-duration:46s}
+#mesh i:nth-child(3){width:48vmax;height:48vmax;left:-12vmax;bottom:-22vmax;background:radial-gradient(circle,#CFEBC0 0%,transparent 66%);animation-duration:52s}
+#mesh i:nth-child(4){width:34vmax;height:34vmax;right:-6vmax;bottom:-8vmax;background:radial-gradient(circle,#F3E6BF 0%,transparent 66%);opacity:.55;animation-duration:60s}
 @keyframes drift{from{transform:translate3d(0,0,0) scale(1)}to{transform:translate3d(4vmax,3vmax,0) scale(1.08)}}
 @media (prefers-reduced-motion:reduce){#mesh i{animation:none}*{transition-duration:.01ms!important;animation-duration:.01ms!important}}
 
@@ -208,10 +211,10 @@ label.btn,label.drop{cursor:pointer}
 #splash.hide{opacity:0;visibility:hidden}
 .splash-in{display:flex;flex-direction:column;align-items:center;gap:14px;animation:splashUp .7s cubic-bezier(.2,.9,.3,1) both}
 @keyframes splashUp{from{opacity:0;transform:translateY(10px) scale(.96)}to{opacity:1;transform:none}}
-.logo-mark{width:64px;height:64px;border-radius:20px;background:linear-gradient(140deg,var(--brand) 0%,var(--brand2) 100%);display:grid;place-items:center;box-shadow:0 14px 40px -10px rgba(78,91,242,.6),inset 0 1px 0 rgba(255,255,255,.35)}
+.logo-mark{width:64px;height:64px;border-radius:20px;background:linear-gradient(140deg,var(--brand) 0%,var(--brand2) 100%);display:grid;place-items:center;box-shadow:0 14px 40px -10px rgba(15,138,100,.6),inset 0 1px 0 rgba(255,255,255,.35)}
 .logo-mark svg{width:32px;height:32px;stroke:#fff;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
 .wordmark{font-weight:800;letter-spacing:-.035em;color:var(--ink);direction:ltr;display:inline-flex;align-items:baseline}
-.wordmark::after{content:'';width:.22em;height:.22em;border-radius:50%;background:var(--mint);margin-inline-start:.06em;transform:translateY(-.02em)}
+.wordmark::after{content:'';width:.22em;height:.22em;border-radius:50%;background:var(--brand-hi);margin-inline-start:.06em;transform:translateY(-.02em)}
 .splash-in .wordmark{font-size:30px}
 .splash-tag{font-size:13px;color:var(--ink3)}
 
@@ -228,10 +231,10 @@ label.btn,label.drop{cursor:pointer}
 #topbar{position:fixed;top:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;z-index:300;
   height:calc(var(--topbar) + env(safe-area-inset-top,0px));padding:env(safe-area-inset-top,0px) 12px 0;
   display:grid;grid-template-columns:44px 1fr 44px;align-items:center;direction:ltr;
-  background:linear-gradient(to bottom,rgba(238,241,250,.82),rgba(238,241,250,.42));
+  background:linear-gradient(to bottom,rgba(237,244,240,.88),rgba(237,244,240,.52));
   -webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur);
   border-bottom:1px solid transparent;transition:border-color .25s,box-shadow .25s}
-#topbar.scrolled{border-bottom-color:var(--glass-edge);box-shadow:0 6px 20px -14px rgba(40,50,130,.35)}
+#topbar.scrolled{border-bottom-color:var(--glass-edge);box-shadow:0 6px 20px -14px rgba(16,60,44,.35)}
 .tb-btn{width:42px;height:42px;border-radius:14px;display:grid;place-items:center;position:relative;transition:transform .15s,background .2s}
 .tb-btn:active{transform:scale(.92)}
 .tb-menu{background:var(--glass-strong);border:1px solid var(--glass-brd);box-shadow:var(--g-shadow)}
@@ -247,20 +250,20 @@ body.drawer-open .burger span:nth-child(3){top:6px;transform:rotate(-45deg)}
 .tb-dot[hidden]{display:none}
 .tb-title{text-align:center;font-size:16px;font-weight:600;letter-spacing:-.01em;direction:rtl;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .tb-title .wordmark{font-size:21px}
-.avatar{width:38px;height:38px;border-radius:50%;background:linear-gradient(140deg,var(--brand),var(--brand2));color:#fff;font-weight:700;font-size:14px;display:grid;place-items:center;box-shadow:0 4px 14px -4px rgba(78,91,242,.55),0 0 0 2px rgba(255,255,255,.9)}
+.avatar{width:38px;height:38px;border-radius:50%;background:linear-gradient(140deg,var(--brand),var(--brand2));color:#fff;font-weight:700;font-size:14px;display:grid;place-items:center;box-shadow:0 4px 14px -4px rgba(15,138,100,.55),0 0 0 2px rgba(255,255,255,.9)}
 
 /* ── drawer ── */
-#drawerOverlay{position:fixed;inset:0;z-index:400;background:rgba(23,26,51,0);pointer-events:none;transition:background .3s}
-#drawerOverlay.open{background:rgba(23,26,51,.32);pointer-events:auto}
+#drawerOverlay{position:fixed;inset:0;z-index:400;background:rgba(18,40,32,0);pointer-events:none;transition:background .3s}
+#drawerOverlay.open{background:rgba(18,40,32,.32);pointer-events:auto}
 #drawer{position:absolute;top:0;bottom:0;left:max(0px,calc(50% - 215px));width:min(300px,84vw);
   background:var(--glass-strong);-webkit-backdrop-filter:saturate(180%) blur(28px);backdrop-filter:saturate(180%) blur(28px);
-  border-right:1px solid var(--glass-brd);box-shadow:24px 0 60px -20px rgba(40,50,130,.35);
+  border-right:1px solid var(--glass-brd);box-shadow:24px 0 60px -20px rgba(16,60,44,.35);
   transform:translateX(-104%);transition:transform .38s cubic-bezier(.22,.9,.25,1.05);
   display:flex;flex-direction:column;direction:rtl;padding:calc(14px + env(safe-area-inset-top,0px)) 14px calc(14px + env(safe-area-inset-bottom,0px))}
 #drawerOverlay.open #drawer{transform:none}
 .dr-head{display:flex;align-items:center;justify-content:space-between;padding:4px 4px 14px}
 .dr-head .wordmark{font-size:22px}
-.dr-x{width:36px;height:36px;border-radius:12px;display:grid;place-items:center;color:var(--ink2);background:rgba(23,26,51,.05)}
+.dr-x{width:36px;height:36px;border-radius:12px;display:grid;place-items:center;color:var(--ink2);background:rgba(18,40,32,.05)}
 .dr-x svg{width:16px;height:16px;stroke:currentColor;stroke-width:2.2;fill:none;stroke-linecap:round}
 .dr-user{display:flex;align-items:center;gap:11px;padding:12px;border-radius:var(--rad-l);background:rgba(255,255,255,.6);border:1px solid var(--glass-brd);margin-bottom:14px;text-align:right;width:100%}
 .dr-user .avatar{width:40px;height:40px;flex-shrink:0}
@@ -269,17 +272,17 @@ body.drawer-open .burger span:nth-child(3){top:6px;transform:rotate(-45deg)}
 .dr-group{font-size:12px;color:var(--ink3);padding:10px 10px 6px;font-weight:500}
 .dr-item{display:flex;align-items:center;gap:12px;width:100%;padding:11px 12px;border-radius:var(--rad-m);font-size:15px;font-weight:500;color:var(--ink2);position:relative;transition:background .18s,color .18s;text-align:right}
 .dr-item svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
-.dr-item:hover{background:rgba(23,26,51,.04)}
+.dr-item:hover{background:rgba(18,40,32,.04)}
 .dr-item.active{background:var(--brand-lt);color:var(--brand);font-weight:600}
-.dr-item.active{box-shadow:inset -3px 0 0 var(--brand)}
+
 .dr-item .lbl{flex:1}
 .dr-badge{min-width:22px;height:22px;padding:0 7px;border-radius:11px;background:var(--brand);color:#fff;font-size:12px;font-weight:600;display:grid;place-items:center}
-.dr-badge.soft{background:rgba(23,26,51,.07);color:var(--ink2)}
+.dr-badge.soft{background:rgba(18,40,32,.07);color:var(--ink2)}
 .dr-badge[hidden]{display:none}
 .dr-foot{margin-top:auto;padding:14px 12px 4px;border-top:1px solid var(--glass-edge)}
 .quota-row{display:flex;justify-content:space-between;font-size:12px;color:var(--ink2);margin-bottom:7px}
 .quota-row b{font-weight:600;color:var(--ink)}
-.quota-bar{height:6px;border-radius:4px;background:rgba(23,26,51,.07);overflow:hidden}
+.quota-bar{height:6px;border-radius:4px;background:rgba(18,40,32,.07);overflow:hidden}
 .quota-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--mint),#3CC9A0);transition:width .6s}
 .quota-note{font-size:11.5px;color:var(--ink3);margin-top:7px}
 
@@ -290,12 +293,12 @@ body.drawer-open .burger span:nth-child(3){top:6px;transform:rotate(-45deg)}
 .h-sec .link{font-size:13px;color:var(--brand);font-weight:500}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;height:46px;padding:0 18px;border-radius:15px;font-size:15px;font-weight:600;transition:transform .15s,box-shadow .2s,opacity .2s}
 .btn:active{transform:scale(.97)}
-.btn-primary{background:linear-gradient(140deg,var(--brand),var(--brand2));color:#fff;box-shadow:0 10px 24px -10px rgba(78,91,242,.7),inset 0 1px 0 rgba(255,255,255,.25)}
+.btn-primary{background:linear-gradient(140deg,var(--brand),var(--brand2));color:#fff;box-shadow:0 10px 24px -10px rgba(15,138,100,.7),inset 0 1px 0 rgba(255,255,255,.25)}
 .btn-ghost{background:rgba(255,255,255,.7);border:1px solid var(--glass-brd);color:var(--ink);box-shadow:var(--g-shadow)}
 .btn-block{width:100%}
 .btn[disabled]{opacity:.45;pointer-events:none}
 .btn-sm{height:36px;padding:0 13px;font-size:13px;border-radius:12px}
-.chip{display:inline-flex;align-items:center;gap:5px;height:28px;padding:0 11px;border-radius:14px;font-size:12.5px;font-weight:500;background:rgba(23,26,51,.06);color:var(--ink2);white-space:nowrap}
+.chip{display:inline-flex;align-items:center;gap:5px;height:28px;padding:0 11px;border-radius:14px;font-size:12.5px;font-weight:500;background:rgba(18,40,32,.06);color:var(--ink2);white-space:nowrap}
 .chip.sel{background:var(--ink);color:#fff}
 .logo-tile{width:46px;height:46px;border-radius:14px;display:grid;place-items:center;color:#fff;font-weight:700;font-size:17px;flex-shrink:0;box-shadow:inset 0 1px 0 rgba(255,255,255,.3),0 6px 14px -6px rgba(0,0,0,.3);direction:ltr}
 .muted{color:var(--ink3)}
@@ -309,9 +312,9 @@ body.drawer-open .burger span:nth-child(3){top:6px;transform:rotate(-45deg)}
 .greet h1{font-size:25px;font-weight:700;letter-spacing:-.02em}
 .greet p{font-size:14px;color:var(--ink2);margin-top:3px}
 .brief{position:relative;border-radius:var(--rad-xl);padding:18px;color:#fff;overflow:hidden;cursor:pointer;text-align:right;width:100%;
-  background:linear-gradient(150deg,rgba(38,40,110,.94) 0%,rgba(66,56,170,.90) 55%,rgba(110,80,220,.86) 100%);
-  box-shadow:0 22px 46px -22px rgba(52,44,160,.75),inset 0 1px 0 rgba(255,255,255,.22);border:1px solid rgba(255,255,255,.14)}
-.brief::before{content:'';position:absolute;width:220px;height:220px;left:-70px;top:-110px;border-radius:50%;background:radial-gradient(circle,rgba(168,237,227,.35),transparent 65%)}
+  background:linear-gradient(150deg,#0C3A2D 0%,#11573F 55%,#17785A 100%);
+  box-shadow:0 22px 46px -24px rgba(8,60,42,.8),inset 0 1px 0 rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.12)}
+.brief::before{content:'';position:absolute;width:240px;height:240px;left:-80px;top:-120px;border-radius:50%;background:radial-gradient(circle,rgba(160,240,200,.28),transparent 65%)}
 .brief>*{position:relative}
 .brief-top{display:flex;justify-content:space-between;align-items:center;font-size:12.5px;color:rgba(255,255,255,.7);margin-bottom:10px}
 .brief-top .new{background:rgba(255,255,255,.16);padding:3px 9px;border-radius:10px;color:#fff;font-weight:500}
@@ -332,7 +335,7 @@ body.drawer-open .burger span:nth-child(3){top:6px;transform:rotate(-45deg)}
 .today-txt{flex:1;min-width:0}
 .today-txt b{display:block;font-size:16px;font-weight:600}
 .today-txt span{font-size:13px;color:var(--ink2)}
-.go-round{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(140deg,var(--brand),var(--brand2));box-shadow:0 8px 18px -8px rgba(78,91,242,.8);flex-shrink:0}
+.go-round{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(140deg,var(--brand),var(--brand2));box-shadow:0 8px 18px -8px rgba(15,138,100,.8);flex-shrink:0}
 .go-round svg{width:18px;height:18px;stroke:#fff;fill:none;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
 
 .todo{border-radius:var(--rad-l);padding:6px 0 4px;overflow:hidden}
@@ -340,12 +343,12 @@ body.drawer-open .burger span:nth-child(3){top:6px;transform:rotate(-45deg)}
 .todo-head h2{font-size:15px;font-weight:600}
 .todo-head span{font-size:12.5px;color:var(--ink3)}
 .todo-item{display:flex;align-items:center;gap:12px;padding:11px 16px;border-top:1px solid var(--glass-edge);background:transparent;transition:background .15s}
-.todo-item.dragging{background:rgba(255,255,255,.9);box-shadow:0 10px 24px -10px rgba(40,50,130,.4);position:relative;z-index:2}
-.tcheck{width:22px;height:22px;border-radius:50%;border:2px solid rgba(23,26,51,.22);display:grid;place-items:center;flex-shrink:0;transition:all .2s}
+.todo-item.dragging{background:rgba(255,255,255,.9);box-shadow:0 10px 24px -10px rgba(16,60,44,.4);position:relative;z-index:2}
+.tcheck{width:22px;height:22px;border-radius:50%;border:2px solid rgba(18,40,32,.22);display:grid;place-items:center;flex-shrink:0;transition:all .2s}
 .tcheck.done{background:var(--mint);border-color:var(--mint)}
 .tcheck.done::after{content:'';width:9px;height:5px;border:2px solid #fff;border-top:0;border-right:0;transform:rotate(-45deg) translate(1px,-1px)}
 .ttext{flex:1;font-size:14px;line-height:1.4}
-.ttext.done{color:var(--ink3);text-decoration:line-through;text-decoration-color:rgba(23,26,51,.25)}
+.ttext.done{color:var(--ink3);text-decoration:line-through;text-decoration-color:rgba(18,40,32,.25)}
 .thandle{width:28px;height:28px;display:grid;place-items:center;color:var(--ink3);touch-action:none;cursor:grab;flex-shrink:0}
 .thandle svg{width:16px;height:16px;fill:currentColor}
 .todo-foot{display:flex;gap:8px;padding:8px 12px 10px;border-top:1px solid var(--glass-edge);align-items:center}
@@ -369,9 +372,9 @@ body.drawer-open .burger span:nth-child(3){top:6px;transform:rotate(-45deg)}
 .jobs-meta{display:flex;justify-content:space-between;align-items:center;padding:2px 4px 10px;font-size:13px;color:var(--ink2)}
 .jobs-meta .filtered{font-size:12px;color:var(--ink3)}
 .deck-progress{display:flex;gap:4px;padding:0 4px 12px}
-.deck-progress i{flex:1;height:4px;border-radius:3px;background:rgba(23,26,51,.08)}
+.deck-progress i{flex:1;height:4px;border-radius:3px;background:rgba(18,40,32,.08)}
 .deck-progress i.done{background:var(--brand)}
-.deck-progress i.cur{background:rgba(78,91,242,.35)}
+.deck-progress i.cur{background:rgba(15,138,100,.35)}
 .deck{position:relative;flex:1;min-height:360px;max-height:540px}
 .jcard{position:absolute;inset:0;border-radius:var(--rad-xl);padding:20px;display:flex;flex-direction:column;
   background:var(--glass-strong);-webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur);border:1px solid var(--glass-brd);box-shadow:var(--g-shadow-lg);
@@ -382,14 +385,14 @@ body.drawer-open .burger span:nth-child(3){top:6px;transform:rotate(-45deg)}
 .jc-top{display:flex;gap:13px;align-items:flex-start}
 .jc-title{font-size:19px;font-weight:700;line-height:1.25;letter-spacing:-.015em}
 .jc-co{font-size:13.5px;color:var(--ink2);margin-top:3px}
-.fit{display:flex;align-items:center;gap:14px;margin:18px 0 14px;padding:13px 14px;border-radius:var(--rad-m);background:rgba(78,91,242,.06);border:1px solid rgba(78,91,242,.10)}
+.fit{display:flex;align-items:center;gap:14px;margin:18px 0 14px;padding:13px 14px;border-radius:var(--rad-m);background:rgba(15,138,100,.06);border:1px solid rgba(15,138,100,.10)}
 .fit-num{font-size:34px;font-weight:800;letter-spacing:-.04em;line-height:1;color:var(--brand);direction:ltr}
 .fit-num small{font-size:14px;font-weight:600;color:var(--ink3);letter-spacing:0}
 .fit-right{flex:1}
 .fit-lbl{font-size:12.5px;color:var(--ink2);margin-bottom:7px}
 .pills{display:flex;gap:4px;direction:ltr}
-.pills i{flex:1;height:8px;border-radius:5px;background:rgba(23,26,51,.08);overflow:hidden;position:relative}
-.pills i b{position:absolute;inset:0;background:linear-gradient(90deg,var(--brand),var(--brand2));border-radius:5px}
+.pills i{flex:1;height:8px;border-radius:5px;background:rgba(18,40,32,.08);overflow:hidden;position:relative}
+.pills i b{position:absolute;inset:0;background:linear-gradient(90deg,var(--brand2),var(--brand-hi));border-radius:5px}
 .jc-reasons{display:flex;flex-direction:column;gap:7px;margin-bottom:12px}
 .jc-r{display:flex;gap:8px;font-size:13.5px;line-height:1.4;align-items:flex-start}
 .jc-r .ic{width:18px;height:18px;border-radius:50%;display:grid;place-items:center;flex-shrink:0;margin-top:1px;font-size:11px;font-weight:700}
@@ -426,12 +429,14 @@ body.drawer-open .burger span:nth-child(3){top:6px;transform:rotate(-45deg)}
 .app-sub{font-size:12.5px;color:var(--ink3);margin-top:1px}
 .status{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 11px;border-radius:15px;font-size:12.5px;font-weight:600;flex-shrink:0}
 .status::before{content:'';width:7px;height:7px;border-radius:50%;background:currentColor}
-.st-saved{background:rgba(23,26,51,.06);color:var(--ink2)}
-.st-applied{background:var(--brand-lt);color:var(--brand)}
-.st-interview{background:var(--amber-lt);color:#C2701A}
-.st-offer{background:var(--mint-lt);color:#0E9A6E}
+.st-saved{background:rgba(18,40,32,.06);color:var(--ink2)}
+.st-applied{background:var(--teal-lt);color:var(--teal)}
+.st-screening{background:var(--sky-lt);color:var(--sky)}
+.st-interview{background:var(--amber-lt);color:#A9620F}
+.st-offer{background:var(--brand-lt);color:var(--brand)}
+.st-withdrew{background:rgba(18,40,32,.05);color:var(--ink3)}
 .st-rejected{background:var(--rose-lt);color:var(--rose)}
-.st-ghosted{background:rgba(23,26,51,.05);color:var(--ink3)}
+.st-ghosted{background:rgba(18,40,32,.05);color:var(--ink3)}
 .follow{display:flex;align-items:center;gap:10px;margin-top:12px;padding:10px 12px;border-radius:var(--rad-m);background:var(--amber-lt);font-size:13px;color:#8A4E0E}
 .follow span{flex:1}
 .app-actions{display:flex;gap:8px;margin-top:12px}
@@ -479,7 +484,7 @@ details.letter textarea:focus{border-color:var(--brand)}
 .p-stats div span{font-size:12px;color:var(--ink3)}
 .row{display:flex;align-items:center;gap:12px;padding:13px 2px;border-top:1px solid var(--glass-edge);width:100%;text-align:right}
 .row:first-child{border-top:0}
-.row .ri{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;background:rgba(23,26,51,.05);flex-shrink:0}
+.row .ri{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;background:rgba(18,40,32,.05);flex-shrink:0}
 .row .ri svg{width:18px;height:18px;stroke:var(--ink2);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .row .rl{flex:1;min-width:0}
 .row .rl b{display:block;font-size:14px;font-weight:500}
@@ -488,24 +493,24 @@ details.letter textarea:focus{border-color:var(--brand)}
 .row .chev{width:8px;height:8px;border-left:2px solid var(--ink3);border-bottom:2px solid var(--ink3);transform:rotate(45deg);margin-left:4px}
 .card-h{font-size:15px;font-weight:600;margin-bottom:4px}
 .card-sub{font-size:13px;color:var(--ink2);margin-bottom:10px}
-.pill-ok{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;color:#0E9A6E;background:var(--mint-lt);padding:4px 10px;border-radius:10px}
+.pill-ok{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;color:var(--brand);background:var(--mint-lt);padding:4px 10px;border-radius:10px}
 .pill-ok::before{content:'';width:7px;height:7px;border-radius:50%;background:currentColor}
 .pill-warn{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;color:#B0640F;background:var(--amber-lt);padding:4px 10px;border-radius:10px}
-.switch{width:46px;height:28px;border-radius:14px;background:rgba(23,26,51,.14);position:relative;flex-shrink:0;transition:background .2s}
+.switch{width:46px;height:28px;border-radius:14px;background:rgba(18,40,32,.14);position:relative;flex-shrink:0;transition:background .2s}
 .switch::after{content:'';position:absolute;top:3px;right:3px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 2px 6px rgba(0,0,0,.2);transition:transform .25s cubic-bezier(.3,.9,.3,1.2)}
 .switch.on{background:var(--mint)}
 .switch.on::after{transform:translateX(-18px)}
 .danger{color:var(--rose)!important}
 
 /* ── generic sheet ── */
-.sheet{position:fixed;inset:0;z-index:500;display:flex;align-items:flex-end;justify-content:center;background:rgba(23,26,51,0);pointer-events:none;transition:background .28s}
-.sheet.open{background:rgba(23,26,51,.34);pointer-events:auto}
+.sheet{position:fixed;inset:0;z-index:500;display:flex;align-items:flex-end;justify-content:center;background:rgba(18,40,32,0);pointer-events:none;transition:background .28s}
+.sheet.open{background:rgba(18,40,32,.34);pointer-events:auto}
 .sheet-panel{width:100%;max-width:430px;max-height:86vh;display:flex;flex-direction:column;border-radius:28px 28px 0 0;
   background:rgba(250,251,255,.9);-webkit-backdrop-filter:saturate(180%) blur(30px);backdrop-filter:saturate(180%) blur(30px);
-  border:1px solid var(--glass-brd);border-bottom:0;box-shadow:0 -20px 60px -20px rgba(40,50,130,.4);
+  border:1px solid var(--glass-brd);border-bottom:0;box-shadow:0 -20px 60px -20px rgba(16,60,44,.4);
   transform:translateY(102%);transition:transform .38s cubic-bezier(.22,.9,.25,1.05);direction:rtl}
 .sheet.open .sheet-panel{transform:none}
-.sheet-grab{width:40px;height:5px;border-radius:3px;background:rgba(23,26,51,.16);margin:10px auto 2px;flex-shrink:0}
+.sheet-grab{width:40px;height:5px;border-radius:3px;background:rgba(18,40,32,.16);margin:10px auto 2px;flex-shrink:0}
 .sheet-body{overflow-y:auto;padding:12px 20px calc(24px + env(safe-area-inset-bottom,0px))}
 .sheet-body h3{font-size:19px;font-weight:700;letter-spacing:-.01em}
 .sheet-sub{font-size:13px;color:var(--ink3);margin-top:3px}
@@ -516,7 +521,7 @@ details.letter textarea:focus{border-color:var(--brand)}
 .opt{display:flex;align-items:center;gap:12px;width:100%;padding:14px 4px;border-top:1px solid var(--glass-edge);font-size:15px;text-align:right}
 .opt:first-child{border-top:0}
 .opt .status{pointer-events:none}
-.opt .radio{margin-right:auto;width:22px;height:22px;border-radius:50%;border:2px solid rgba(23,26,51,.2)}
+.opt .radio{margin-right:auto;width:22px;height:22px;border-radius:50%;border:2px solid rgba(18,40,32,.2)}
 .opt.sel .radio{border:7px solid var(--brand)}
 
 /* ── onboarding ── */
@@ -525,7 +530,7 @@ details.letter textarea:focus{border-color:var(--brand)}
 #onb .mesh-copy{position:absolute;inset:0;background:var(--canvas)}
 .onb-in{position:relative;height:100%;max-width:430px;margin:0 auto;display:flex;flex-direction:column;padding:calc(20px + env(safe-area-inset-top,0px)) 22px calc(22px + env(safe-area-inset-bottom,0px))}
 .onb-steps{display:flex;gap:6px;direction:ltr;justify-content:center;margin-bottom:8px}
-.onb-steps i{width:8px;height:8px;border-radius:4px;background:rgba(23,26,51,.14);transition:width .3s,background .3s}
+.onb-steps i{width:8px;height:8px;border-radius:4px;background:rgba(18,40,32,.14);transition:width .3s,background .3s}
 .onb-steps i.on{width:24px;background:var(--brand)}
 .onb-steps i.done{background:var(--brand2)}
 .onb-top{display:flex;justify-content:space-between;align-items:center;min-height:40px}
@@ -538,7 +543,7 @@ details.letter textarea:focus{border-color:var(--brand)}
 .onb-li .ic{width:40px;height:40px;border-radius:13px;display:grid;place-items:center;font-size:19px;flex-shrink:0;background:rgba(255,255,255,.8)}
 .onb-li b{display:block;font-size:14.5px;font-weight:600}
 .onb-li span{font-size:13px;color:var(--ink2)}
-.drop{display:flex;flex-direction:column;align-items:center;gap:8px;padding:26px 16px;border-radius:var(--rad-l);border:2px dashed rgba(78,91,242,.3);background:rgba(255,255,255,.55);text-align:center;cursor:pointer;width:100%;transition:border-color .2s,background .2s}
+.drop{display:flex;flex-direction:column;align-items:center;gap:8px;padding:26px 16px;border-radius:var(--rad-l);border:2px dashed rgba(15,138,100,.3);background:rgba(255,255,255,.55);text-align:center;cursor:pointer;width:100%;transition:border-color .2s,background .2s}
 .drop.has{border-style:solid;border-color:var(--mint);background:rgba(20,184,132,.06)}
 .drop b{font-size:15px;font-weight:600}
 .drop span{font-size:13px;color:var(--ink3)}
@@ -560,10 +565,10 @@ details.letter textarea:focus{border-color:var(--brand)}
 
 /* ── chat ── */
 #chatBtn{position:fixed;bottom:calc(20px + env(safe-area-inset-bottom,0px));right:max(16px,calc(50% - 215px + 16px));z-index:250;width:54px;height:54px;border-radius:18px;
-  background:linear-gradient(140deg,var(--brand),var(--brand2));display:grid;place-items:center;box-shadow:0 14px 30px -12px rgba(78,91,242,.8),inset 0 1px 0 rgba(255,255,255,.3);transition:transform .2s}
+  background:linear-gradient(140deg,var(--brand),var(--brand2));display:grid;place-items:center;box-shadow:0 14px 30px -12px rgba(15,138,100,.8),inset 0 1px 0 rgba(255,255,255,.3);transition:transform .2s}
 #chatBtn:active{transform:scale(.92)}
 #chatBtn svg{width:22px;height:22px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-body.pg-jobs #chatBtn,body.pg-office #chatBtn{display:none}
+body.pg-jobs #chatBtn,body.pg-office #chatBtn,body.drawer-open #chatBtn{display:none}
 #chatPop{position:fixed;bottom:calc(86px + env(safe-area-inset-bottom,0px));right:max(12px,calc(50% - 215px + 12px));z-index:260;width:min(330px,calc(100vw - 24px));max-height:min(460px,64vh);border-radius:24px;display:flex;flex-direction:column;overflow:hidden;
   background:rgba(250,251,255,.88);-webkit-backdrop-filter:saturate(180%) blur(28px);backdrop-filter:saturate(180%) blur(28px);border:1px solid var(--glass-brd);box-shadow:var(--g-shadow-lg);
   transform-origin:bottom right;transform:scale(.9) translateY(14px);opacity:0;pointer-events:none;transition:transform .26s cubic-bezier(.3,1.3,.5,1),opacity .2s;direction:rtl}
@@ -589,18 +594,203 @@ body.pg-jobs #chatBtn,body.pg-office #chatBtn{display:none}
 /* ── toast ── */
 #toasts{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(96px + env(safe-area-inset-bottom,0px));z-index:900;width:min(400px,calc(100vw - 24px));display:flex;flex-direction:column;gap:8px;pointer-events:none;direction:rtl}
 body.pg-jobs #toasts{bottom:calc(120px + env(safe-area-inset-bottom,0px))}
-.toast{pointer-events:auto;background:rgba(23,26,51,.92);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);color:#fff;border-radius:18px;padding:12px 14px;font-size:14px;box-shadow:0 16px 36px -14px rgba(0,0,0,.5);animation:tIn .32s cubic-bezier(.3,1.3,.5,1) both}
+.toast{pointer-events:auto;background:rgba(14,32,25,.94);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);color:#fff;border-radius:18px;padding:12px 14px;font-size:14px;box-shadow:0 16px 36px -14px rgba(0,0,0,.5);animation:tIn .32s cubic-bezier(.3,1.3,.5,1) both}
 .toast.out{animation:tOut .22s ease both}
 @keyframes tIn{from{opacity:0;transform:translateY(12px) scale(.96)}to{opacity:1;transform:none}}
 @keyframes tOut{to{opacity:0;transform:translateY(8px)}}
 .toast-row{display:flex;align-items:center;gap:10px}
 .toast-row span{flex:1}
-.toast button.undo{color:#A8B4FF;font-weight:600;font-size:14px;padding:2px 4px}
+.toast button.undo{color:#8EE6C1;font-weight:600;font-size:14px;padding:2px 4px}
 .toast-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
 .toast-chips button{font-size:12.5px;padding:6px 11px;border-radius:12px;background:rgba(255,255,255,.12);color:#fff}
 
 /* layering: Office sheet above top bar */
 #agSheet{z-index:450!important}
+
+/* ── questionnaire (one question per screen) ── */
+#onb.qmode .onb-top{display:none}
+.q-top{display:grid;grid-template-columns:40px 1fr auto;gap:14px;align-items:center}
+.q-back{width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.75);border:1px solid var(--glass-brd);box-shadow:var(--g-shadow);display:grid;place-items:center}
+.q-back svg{width:18px;height:18px;stroke:var(--brand);fill:none;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+.q-prog{height:5px;border-radius:3px;background:rgba(18,40,32,.08);overflow:hidden}
+.q-prog i{display:block;height:100%;border-radius:3px;background:linear-gradient(90deg,var(--brand2),var(--brand));transition:width .4s cubic-bezier(.2,.9,.3,1)}
+.q-later{font-size:13.5px;font-weight:500;color:var(--brand);padding:8px 2px;white-space:nowrap}
+.q-count{font-size:13px;color:var(--ink3);margin:30px 0 8px}
+.q-title{font-size:30px!important;font-weight:700;letter-spacing:-.025em;line-height:1.15!important;margin-bottom:8px!important}
+.q-sub{font-size:14.5px;color:var(--ink2);line-height:1.55}
+.q-card{margin-top:22px;border-radius:22px;background:rgba(255,255,255,.88);border:1px solid var(--glass-brd);box-shadow:var(--g-shadow);overflow:hidden}
+.q-opt{display:flex;align-items:center;gap:14px;width:100%;min-height:62px;padding:16px 18px;font-size:16.5px;line-height:1.35;text-align:right;border-top:1px solid var(--glass-edge);transition:background .15s}
+.q-opt:first-child{border-top:0}
+.q-opt:active{background:rgba(18,40,32,.04)}
+.q-opt span:first-child{flex:1}
+.q-opt.sel{background:rgba(15,138,100,.06);font-weight:600}
+.q-opt .rd{width:24px;height:24px;border-radius:50%;border:2px solid rgba(18,40,32,.22);flex-shrink:0;transition:border .18s cubic-bezier(.3,1.4,.5,1)}
+.q-opt.sel .rd{border:7px solid var(--brand)}
+.q-opt .cb{width:24px;height:24px;border-radius:8px;border:2px solid rgba(18,40,32,.22);flex-shrink:0;display:grid;place-items:center;transition:all .18s}
+.q-opt.sel .cb{background:var(--brand);border-color:var(--brand)}
+.q-opt.sel .cb::after{content:'';width:10px;height:5px;border:2.4px solid #fff;border-top:0;border-right:0;transform:rotate(-45deg) translate(1px,-1px)}
+#qCard .qc-ring{width:52px;height:52px;border-radius:50%;flex-shrink:0;display:grid;place-items:center;background:conic-gradient(var(--brand) calc(var(--p)*1%),rgba(15,138,100,.12) 0)}
+#qCard .qc-ring b{width:42px;height:42px;border-radius:50%;background:#fff;display:grid;place-items:center;font-size:13px;font-weight:700;color:var(--brand)}
+
+/* ═════════ v2 components ═════════ */
+.stack{display:flex;flex-direction:column;gap:10px}
+.dr-scroll{flex:1;overflow-y:auto;margin:0 -4px;padding:0 4px}
+.dr-user-txt{display:flex;flex-direction:column;min-width:0}
+.dr-user-goal{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dr-item.dr-sub{font-size:13.5px;padding:8px 12px 8px 12px;margin:-2px 0 4px;color:var(--brand);background:var(--brand-lt);font-weight:500}
+.dr-item.dr-sub svg{width:17px;height:17px}
+.dr-item.dr-sub[hidden]{display:none}
+.sheet-panel{position:relative}
+.sheet-x{position:absolute;top:12px;left:14px;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:rgba(18,40,32,.06);color:var(--ink2);z-index:2}
+.sheet-x svg{width:15px;height:15px;stroke:currentColor;stroke-width:2.3;fill:none;stroke-linecap:round}
+.sheet-body h3{padding-left:40px}
+.btn .oi{width:16px;height:16px}
+a.btn{text-decoration:none}
+
+/* home */
+.notice{font-size:13px;color:var(--ink2);background:rgba(255,255,255,.6);border:1px dashed rgba(18,40,32,.18);border-radius:12px;padding:8px 12px}
+.brief p{font-size:15px;line-height:1.55;color:rgba(255,255,255,.92);margin-top:2px}
+.next{border-radius:var(--rad-l);padding:4px 0}
+.next-h{display:flex;justify-content:space-between;align-items:baseline;padding:12px 16px 4px}
+.next-h h2{font-size:15px;font-weight:600}
+.next-h span{font-size:12.5px;color:var(--ink3)}
+.nx{display:flex;align-items:center;gap:12px;width:100%;padding:12px 16px;text-align:right;border-top:1px solid var(--glass-edge);transition:background .15s}
+.nx:first-of-type{border-top:0}
+.nx:active{background:rgba(18,40,32,.04)}
+.nx .ic{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;flex-shrink:0}
+.nx .ic svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.nx .tx{flex:1;min-width:0}
+.nx .tx b{display:block;font-size:14.5px;font-weight:600;line-height:1.35}
+.nx .tx span{display:block;font-size:12.5px;color:var(--ink3);margin-top:1px}
+.nx .when{font-size:11.5px;font-weight:600;padding:3px 8px;border-radius:8px;white-space:nowrap;flex-shrink:0}
+.nx .chev,.row .chev{width:8px;height:8px;border-left:2px solid var(--ink3);border-bottom:2px solid var(--ink3);transform:rotate(45deg);flex-shrink:0;margin-left:2px}
+.i-green{background:var(--brand-lt);color:var(--brand)}
+.i-amber{background:var(--amber-lt);color:#A9620F}
+.i-sky{background:var(--sky-lt);color:var(--sky)}
+.i-teal{background:var(--teal-lt);color:var(--teal)}
+.i-rose{background:var(--rose-lt);color:var(--rose)}
+.w-urgent{background:var(--rose-lt);color:var(--rose)}
+.w-soon{background:var(--amber-lt);color:#A9620F}
+
+/* app sheet */
+.tabs{display:flex;gap:4px;padding:4px;border-radius:14px;background:rgba(18,40,32,.06);margin:16px 0 4px}
+.tabs button{flex:1;height:36px;border-radius:11px;font-size:13.5px;font-weight:500;color:var(--ink2)}
+.tabs button[aria-selected="true"]{background:#fff;color:var(--ink);font-weight:600;box-shadow:0 2px 8px -2px rgba(16,60,44,.2)}
+.kv{display:flex;justify-content:space-between;gap:12px;padding:11px 0;border-top:1px solid var(--glass-edge);font-size:14px}
+.kv:first-child{border-top:0}
+.kv span{color:var(--ink3)}
+.kv b{font-weight:500;text-align:left}
+.textbox{width:100%;border-radius:14px;border:1px solid var(--glass-edge);background:#fff;padding:12px 14px;font-size:14px;line-height:1.65;resize:vertical;direction:rtl;outline:none;color:var(--ink)}
+.textbox.ltr{direction:ltr;text-align:left}
+.textbox:focus{border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-lt)}
+.duo{display:flex;gap:8px;margin-top:10px}
+.duo>*{flex:1}
+.btn svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.hint-line{font-size:12.5px;color:var(--ink3);margin-top:8px;display:flex;gap:6px;align-items:center}
+.hint-line.ok{color:var(--brand)}
+.person{display:flex;align-items:center;gap:12px;padding:12px 0;border-top:1px solid var(--glass-edge)}
+.person:first-child{border-top:0}
+.pav{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;font-weight:600;font-size:15px;flex-shrink:0;background:linear-gradient(140deg,#D7EEE4,#BFE3D3);color:var(--brand2)}
+.person .tx{flex:1;min-width:0}
+.person .tx b{display:block;font-size:14.5px;font-weight:600}
+.person .tx span{display:block;font-size:12.5px;color:var(--ink3)}
+.why,.person .tx .why{display:inline-block;margin-top:3px;font-size:11.5px;font-weight:500;color:var(--brand);background:var(--brand-lt);padding:2px 8px;border-radius:8px}
+
+/* LinkedIn */
+.li-head{display:flex;align-items:center;gap:16px;border-radius:var(--rad-xl);padding:16px}
+.ring{--p:0;width:74px;height:74px;border-radius:50%;flex-shrink:0;display:grid;place-items:center;background:conic-gradient(var(--brand) calc(var(--p)*1%),rgba(15,138,100,.13) 0)}
+.ring b{width:60px;height:60px;border-radius:50%;background:#fff;display:grid;place-items:center;font-size:17px;font-weight:700;color:var(--ink);line-height:1}
+.ring b small{display:block;font-size:10.5px;font-weight:500;color:var(--ink3);margin-top:2px}
+.li-head .tx{flex:1;min-width:0}
+.li-head .tx b{display:block;font-size:16px;font-weight:600}
+.li-head .tx span{display:block;font-size:13px;color:var(--ink2);margin-top:2px}
+.goal-bars{display:flex;gap:6px;margin-top:9px}
+.goal-bars i{flex:1;height:6px;border-radius:4px;background:rgba(15,138,100,.13)}
+.goal-bars i.on{background:var(--brand)}
+.post{border-radius:var(--rad-l);padding:16px;display:flex;flex-direction:column;gap:12px}
+.post-top{display:flex;align-items:center;gap:11px}
+.post-top .tx{flex:1;min-width:0}
+.post-top .tx b{display:block;font-size:14.5px;font-weight:600}
+.post-top .tx span{display:block;font-size:12.5px;color:var(--ink3)}
+.fresh{font-size:11.5px;font-weight:600;padding:4px 9px;border-radius:9px;white-space:nowrap;background:var(--amber-lt);color:#A9620F}
+.fresh.old{background:rgba(18,40,32,.06);color:var(--ink3)}
+.post-text{font-size:14px;line-height:1.6;color:var(--ink);padding:12px 14px;border-radius:14px;background:rgba(18,40,32,.04);border-inline-start:3px solid rgba(15,138,100,.35)}
+.post-text[lang="en"]{direction:ltr;text-align:left;border-inline-start:0;border-inline-end:3px solid rgba(15,138,100,.35)}
+.drafts{display:flex;flex-direction:column;gap:8px}
+.drafts-h{font-size:13px;font-weight:600;color:var(--ink2)}
+.draft{display:flex;gap:11px;align-items:flex-start;width:100%;text-align:right;padding:12px 13px;border-radius:14px;border:1.5px solid var(--glass-edge);background:#fff;transition:border-color .15s,box-shadow .15s}
+.draft .rd{width:20px;height:20px;border-radius:50%;border:2px solid rgba(18,40,32,.22);flex-shrink:0;margin-top:2px;transition:border .18s}
+.draft[aria-checked="true"]{border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-lt)}
+.draft[aria-checked="true"] .rd{border:6px solid var(--brand)}
+.draft .dk{display:block;font-size:11.5px;font-weight:600;color:var(--brand);margin-bottom:3px}
+.draft .dt{display:block;font-size:13.5px;line-height:1.55;color:var(--ink)}
+.draft .dt[lang="en"]{direction:ltr;text-align:left}
+.done-row{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:13px;color:var(--ink3)}
+.mark{font-size:13px;font-weight:600;color:var(--brand);padding:6px 2px}
+.post.handled{opacity:.62}
+.post.handled .drafts,.post.handled .duo{display:none}
+.handled-tag{font-size:12.5px;font-weight:600;color:var(--brand);display:flex;gap:6px;align-items:center}
+.fix{display:flex;gap:12px;align-items:flex-start;padding:13px 0;border-top:1px solid var(--glass-edge)}
+.fix:first-of-type{border-top:0}
+.fix .chk{width:24px;height:24px;border-radius:50%;border:2px solid rgba(18,40,32,.2);flex-shrink:0;display:grid;place-items:center;margin-top:1px;transition:all .2s}
+.fix .chk.on{background:var(--brand);border-color:var(--brand)}
+.fix .chk.on::after{content:'';width:9px;height:5px;border:2.2px solid #fff;border-top:0;border-right:0;transform:rotate(-45deg) translate(1px,-1px)}
+.fix .tx{flex:1;min-width:0}
+.fix .tx b{display:block;font-size:14.5px;font-weight:600}
+.fix .tx span{display:block;font-size:13px;color:var(--ink2);margin-top:1px}
+.fix.done .tx b{color:var(--ink3);text-decoration:line-through;text-decoration-color:rgba(18,40,32,.25)}
+.fix .copybox{margin-top:9px;font-size:13px;line-height:1.55;padding:10px 12px;border-radius:12px;background:rgba(18,40,32,.04);direction:ltr;text-align:left;color:var(--ink)}
+.fix .duo{margin-top:8px}
+.sec-h{display:flex;align-items:baseline;justify-content:space-between;padding:8px 4px 0}
+.sec-h h2{font-size:16px;font-weight:600}
+.sec-h span{font-size:12.5px;color:var(--ink3)}
+.card-solid{background:var(--solid);border:1px solid var(--glass-brd);box-shadow:var(--g-shadow);border-radius:var(--rad-l);padding:16px}
+
+/* office: agent messages (added below the workflow, nothing above it changes) */
+.om-panel{background:var(--surf);border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow);border:1px solid var(--brd);margin-bottom:24px;direction:rtl}
+.om-title{display:flex;align-items:center;justify-content:space-between;padding:11px 14px 10px;border-bottom:1px solid var(--brd);font-size:11px;font-weight:700;color:var(--fg)}
+.om-title span{font-weight:500;color:var(--fg3)}
+.om-item{display:flex;gap:10px;align-items:flex-start;width:100%;padding:10px 12px;text-align:right;border-top:1px solid var(--brd);font-family:inherit}
+.om-item:first-of-type{border-top:0}
+.om-item:active{background:var(--surf2)}
+.om-face{width:34px;height:34px;border-radius:10px;overflow:hidden;background:#E8EBF5;flex-shrink:0}
+.om-face canvas{width:100%;height:100%;display:block;image-rendering:pixelated}
+.om-tx{flex:1;min-width:0}
+.om-tx b{font-size:12px;font-weight:700;color:var(--fg)}
+.om-tx i{font-style:normal;font-size:10.5px;color:var(--fg3);margin-inline-start:6px}
+.om-tx p{font-size:12.5px;line-height:1.5;color:var(--fg2);margin-top:2px}
+.om-more{width:100%;padding:10px;font-size:12px;font-weight:600;color:var(--brand);border-top:1px solid var(--brd);font-family:inherit}
+
+/* profile & settings */
+.learned{display:flex;flex-wrap:wrap;gap:8px}
+.learned .chip{height:34px;padding:0 6px 0 12px;font-size:13px;background:#fff;border:1px solid var(--glass-edge);gap:6px}
+.learned .chip button{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;background:rgba(18,40,32,.07);font-size:13px;line-height:1;color:var(--ink2)}
+.ok-line{display:flex;align-items:center;gap:8px;font-size:14.5px;font-weight:600;color:var(--brand)}
+.ok-line::before{content:'';width:9px;height:9px;border-radius:50%;background:var(--brand-hi);box-shadow:0 0 0 4px rgba(47,191,140,.18)}
+.warn-line{display:flex;align-items:center;gap:8px;font-size:14.5px;font-weight:600;color:#A9620F}
+.warn-line::before{content:'';width:9px;height:9px;border-radius:50%;background:var(--amber);box-shadow:0 0 0 4px var(--amber-lt)}
+.greet-h{font-size:25px;font-weight:700;letter-spacing:-.02em;line-height:1.25}
+#onb .onb-bg{position:absolute;inset:0;background:var(--canvas)}
+.tb-title{margin:0}
+.p-name{font-size:19px;font-weight:700}
+.card-h{font-size:15px;font-weight:600;margin-bottom:4px}
+.app-top{background:none;border:0;padding:0;font:inherit;color:inherit}
+
+.duo .btn{white-space:nowrap;padding:0 12px}
+.li-goal-line{display:block;font-size:12.5px;color:var(--ink3);margin-top:6px}
+.li-goal-line b{display:inline;font-size:12.5px;font-weight:600;color:var(--brand)}
+
+.tabs.mini{margin:6px 0 0}
+.tabs.mini button{height:34px;font-size:13px}
+.tabs button[aria-checked="true"]{background:#fff;color:var(--ink);font-weight:600;box-shadow:0 2px 8px -2px rgba(16,60,44,.2)}
+
+.tm-row{align-items:center}
+.tm-face{width:40px;height:40px;border-radius:12px;overflow:hidden;background:#E8EBF5;flex-shrink:0}
+.tm-face canvas{width:100%;height:100%;display:block;image-rendering:pixelated}
+.tm-in{display:block;width:100%;max-width:180px;height:34px;border:1px solid transparent;border-radius:10px;background:transparent;font-size:15px;font-weight:600;padding:0 8px;margin-inline-start:-8px;outline:none}
+.tm-in:hover{background:rgba(18,40,32,.04)}
+.tm-in:focus{border-color:var(--brand);background:#fff;box-shadow:0 0 0 3px var(--brand-lt)}
+.tm-info{width:32px;height:32px;border-radius:50%;background:rgba(18,40,32,.06);color:var(--ink2);font-weight:600;font-size:14px;flex-shrink:0}
 
 </style>
 </head>
@@ -611,87 +801,80 @@ body.pg-jobs #toasts{bottom:calc(120px + env(safe-area-inset-bottom,0px))}
   <div class="splash-in">
     <div class="logo-mark"><svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21"/><path d="M8 10.8l1.8 1.8L13.3 9"/></svg></div>
     <div class="wordmark">findjob</div>
-    <div class="splash-tag">הסוכנים שלך כבר מחפשים</div>
+    <div class="splash-tag">המשרד שלך כבר עובד</div>
   </div>
 </div>
 
-<!-- TOP BAR: menu left (drawer opens from the same side) · title · avatar right -->
 <header id="topbar">
-  <button class="tb-btn tb-menu" id="menuBtn" aria-label="פתח תפריט" aria-controls="drawer" aria-expanded="false" onclick="toggleDrawer()">
+  <button class="tb-btn tb-menu" id="menuBtn" aria-label="פתיחת התפריט" aria-controls="drawer" aria-expanded="false" onclick="toggleDrawer()">
     <span class="burger" aria-hidden="true"><span></span><span></span><span></span></span>
     <span class="tb-dot" id="menuDot" hidden></span>
   </button>
-  <div class="tb-title" id="tbTitle"></div>
-  <button class="tb-btn" aria-label="פרופיל" onclick="goPage('profile')"><span class="avatar" id="tbAvatar">Or</span></button>
+  <h1 class="tb-title" id="tbTitle"></h1>
+  <button class="tb-btn" aria-label="הפרופיל שלי" onclick="goPage('profile')"><span class="avatar" id="tbAvatar" aria-hidden="true">Or</span></button>
 </header>
 
-<!-- DRAWER -->
 <div id="drawerOverlay" onclick="if(event.target===this)closeDrawer()">
   <nav id="drawer" aria-label="תפריט ראשי">
     <div class="dr-head">
       <span class="wordmark">findjob</span>
-      <button class="dr-x" aria-label="סגור תפריט" onclick="closeDrawer()"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+      <button class="dr-x" aria-label="סגירת התפריט" onclick="closeDrawer()"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
     </div>
     <button class="dr-user" onclick="goPage('profile')">
-      <span class="avatar" id="drAvatar">Or</span>
-      <span><span class="dr-user-name" id="drName"></span><span class="dr-user-goal" id="drGoal"></span></span>
+      <span class="avatar" id="drAvatar" aria-hidden="true">Or</span>
+      <span class="dr-user-txt"><span class="dr-user-name" id="drName"></span><span class="dr-user-goal" id="drGoal"></span></span>
     </button>
-    <div class="dr-group">חיפוש עבודה</div>
-    <button class="dr-item" data-pg="main" onclick="goPage('main')"><svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-5h4v5"/></svg><span class="lbl">לוח</span></button>
-    <button class="dr-item" data-pg="jobs" onclick="goPage('jobs')"><svg viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="3"/><path d="M9 8h6M9 12h6M9 16h3"/></svg><span class="lbl">משרות חדשות</span><span class="dr-badge" id="bdJobs" hidden></span></button>
-    <button class="dr-item" data-pg="tracker" onclick="goPage('tracker')"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h10M4 18h6"/><circle cx="18" cy="16" r="3"/></svg><span class="lbl">מעקב הגשות</span><span class="dr-badge soft" id="bdApps" hidden></span></button>
-    <button class="dr-item" data-pg="interview" onclick="goPage('interview')"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H8l-5 4V5a2 2 0 012-2h14a2 2 0 012 2z"/><path d="M8 9h8M8 13h5"/></svg><span class="lbl">הכנה לראיון</span></button>
-    <button class="dr-item" data-pg="office" onclick="goPage('office')"><svg viewBox="0 0 24 24"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 21v-4h6v4"/></svg><span class="lbl">המשרד</span></button>
-    <div class="dr-group">החשבון שלי</div>
-    <button class="dr-item" data-pg="profile" onclick="goPage('profile')"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg><span class="lbl">פרופיל וקורות חיים</span></button>
-    <div class="dr-foot">
-      <div class="quota-row"><span>מכסת AI חינמית היום</span><b class="num" id="qPct"></b></div>
-      <div class="quota-bar"><div class="quota-fill" id="qFill"></div></div>
-      <div class="quota-note" id="qNote"></div>
+    <div class="dr-scroll">
+      <div class="dr-group" id="g1">חיפוש עבודה</div>
+      <div role="list" aria-labelledby="g1">
+        <button role="listitem" class="dr-item" data-pg="main" onclick="goPage('main')"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7.5" height="9" rx="2"/><rect x="13.5" y="3" width="7.5" height="5" rx="2"/><rect x="13.5" y="11" width="7.5" height="10" rx="2"/><rect x="3" y="15" width="7.5" height="6" rx="2"/></svg><span class="lbl">לוח בקרה</span></button>
+        <button role="listitem" class="dr-item" data-pg="jobs" onclick="goPage('jobs')"><svg viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="3"/><path d="M9 8h6M9 12h6M9 16h3"/></svg><span class="lbl">משרות חדשות</span><span class="dr-badge" id="bdJobs" hidden></span></button>
+        <button role="listitem" class="dr-item" data-pg="apps" onclick="goPage('apps')"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h10M4 18h6"/><circle cx="18" cy="16" r="3"/></svg><span class="lbl">הגשות</span><span class="dr-badge" id="bdApps" hidden></span></button>
+        <button role="listitem" class="dr-item dr-sub" id="drIv" hidden onclick="openIvShortcut()"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></svg><span class="lbl" id="drIvTxt"></span></button>
+        <button role="listitem" class="dr-item" data-pg="linkedin" onclick="goPage('linkedin')"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="M8 10v6M8 7.5v.01M12 16v-3.5a2 2 0 014 0V16M12 10v6"/></svg><span class="lbl">LinkedIn</span><span class="dr-badge" id="bdLi" hidden></span></button>
+      </div>
+      <div class="dr-group" id="g2">הסוכנים</div>
+      <div role="list" aria-labelledby="g2">
+        <button role="listitem" class="dr-item" data-pg="office" onclick="goPage('office')"><svg viewBox="0 0 24 24"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 21v-4h6v4"/></svg><span class="lbl">המשרד</span></button>
+      </div>
+      <div class="dr-group" id="g3">החשבון שלי</div>
+      <div role="list" aria-labelledby="g3">
+        <button role="listitem" class="dr-item" data-pg="profile" onclick="goPage('profile')"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg><span class="lbl">הפרופיל שלי</span></button>
+        <button role="listitem" class="dr-item" data-pg="settings" onclick="goPage('settings')"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1.1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.5-1.1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.8.3H9a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8V9a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z"/></svg><span class="lbl">הגדרות</span></button>
+      </div>
     </div>
   </nav>
 </div>
 
 <div id="app">
-  <div id="pages">
+  <main id="pages">
 
-    <!-- HOME -->
-    <section class="pg on" id="pg-main">
-      <div class="scroll">
-        <div class="greet"><h1 id="greetH"></h1><p id="greetP"></p></div>
-        <button class="brief" id="briefCard" onclick="openBrief()"></button>
-        <button class="today glass" id="todayCard" onclick="goPage('jobs')"></button>
-        <div class="todo glass" id="todoBox"></div>
-        <div class="h-sec"><h2>מה הסוכנים עשו</h2><button class="link" onclick="goPage('office')">למשרד</button></div>
-        <div class="agents-row" id="agentsRow"></div>
-      </div>
+    <section class="pg on" id="pg-main" aria-labelledby="tbTitle">
+      <div class="scroll" id="homeScroll"></div>
     </section>
 
-    <!-- JOBS -->
-    <section class="pg" id="pg-jobs">
+    <section class="pg" id="pg-jobs" aria-labelledby="tbTitle">
       <div class="jobs-wrap">
-        <div class="jobs-meta"><span id="jobsCount" class="num"></span><span class="filtered" id="jobsFiltered"></span></div>
-        <div class="deck-progress" id="deckProg"></div>
+        <div class="jobs-meta"><span id="jobsCount" class="num"></span><button class="filtered" id="jobsFiltered" onclick="goPage('profile','learned')"></button></div>
+        <div class="deck-progress" id="deckProg" aria-hidden="true"></div>
         <div class="deck" id="deck"></div>
         <div class="deck-actions" id="deckActions">
-          <button class="act skip" aria-label="דלג" onclick="decide('skip')"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
-          <button class="act save" aria-label="שמור למעקב" onclick="decide('save')"><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg></button>
-          <button class="act info" aria-label="פרטים מלאים" onclick="openJobInfo()"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg></button>
+          <button class="act skip" aria-label="דלג על המשרה" onclick="decide('skip')"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+          <button class="act save" aria-label="שמור את המשרה" onclick="decide('save')"><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg></button>
+          <button class="act info" aria-label="פרטי המשרה" onclick="openJobInfo()"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg></button>
         </div>
       </div>
     </section>
 
-    <!-- TRACKER -->
-    <section class="pg" id="pg-tracker">
+    <section class="pg" id="pg-apps" aria-labelledby="tbTitle">
       <div class="scroll">
-        <div class="seg" id="seg"></div>
-        <div id="appsList" style="display:flex;flex-direction:column;gap:10px"></div>
+        <div class="seg" id="seg" role="tablist" aria-label="שלבי הגשה"></div>
+        <div id="appsList" class="stack"></div>
       </div>
     </section>
 
-    <!-- INTERVIEW -->
-    <section class="pg" id="pg-interview">
-      <div class="scroll" id="ivScroll"></div>
+    <section class="pg" id="pg-linkedin" aria-labelledby="tbTitle">
+      <div class="scroll" id="liScroll"></div>
     </section>
 
     <!-- OFFICE -->
@@ -720,18 +903,23 @@ body.pg-jobs #toasts{bottom:calc(120px + env(safe-area-inset-bottom,0px))}
           </div>
           <div class="wf-scroll" id="wfList"></div>
         </div>
+                <!-- agent messages: added below the workflow; the animation, agents row and workflow above are unchanged -->
+        <section class="om-panel" aria-labelledby="omH"><div class="om-title"><span id="omH" style="font-weight:700;color:var(--fg)">הודעות מהסוכנים</span><span>החדשות למעלה</span></div><div id="omList"></div></section>
         <div class="off-car-wrap"><div class="car-track" id="dcarOff"></div></div>
       </div>
     </div>
 
     
 
-    <!-- PROFILE -->
-    <section class="pg" id="pg-profile">
+    <section class="pg" id="pg-profile" aria-labelledby="tbTitle">
       <div class="scroll" id="profScroll"></div>
     </section>
 
-  </div>
+    <section class="pg" id="pg-settings" aria-labelledby="tbTitle">
+      <div class="scroll" id="setScroll"></div>
+    </section>
+
+  </main>
 </div>
 
 <!-- Agent detail bottom sheet -->
@@ -744,33 +932,30 @@ body.pg-jobs #toasts{bottom:calc(120px + env(safe-area-inset-bottom,0px))}
 
     
 
-<!-- GENERIC SHEET -->
-<div class="sheet" id="sheet" onclick="if(event.target===this)closeSheet()" role="dialog" aria-modal="true">
-  <div class="sheet-panel"><div class="sheet-grab"></div><div class="sheet-body" id="sheetBody"></div></div>
+<div class="sheet" id="sheet" onclick="if(event.target===this)closeSheet()" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+  <div class="sheet-panel"><div class="sheet-grab" aria-hidden="true"></div><button class="sheet-x" aria-label="סגירה" onclick="closeSheet()"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button><div class="sheet-body" id="sheetBody"></div></div>
 </div>
 
-<!-- ONBOARDING -->
 <div id="onb" role="dialog" aria-modal="true" aria-label="היכרות">
-  <div class="mesh-copy"></div>
+  <div class="onb-bg"></div>
   <div class="onb-in">
-    <div class="onb-top"><button class="onb-back" id="onbBack" onclick="onbGo(-1)">חזרה</button><div class="onb-steps" id="onbSteps"></div><span style="width:44px"></span></div>
+    <div class="onb-top"><button class="onb-back" id="onbBack">חזרה</button><div class="onb-steps" id="onbSteps" aria-hidden="true"></div><span style="width:52px"></span></div>
     <div class="onb-body" id="onbBody"></div>
     <div class="onb-foot" id="onbFoot"></div>
   </div>
 </div>
 <input type="file" id="cvFile" class="vh" accept=".pdf,.txt,.doc,.docx,.md,application/pdf,text/plain" tabindex="-1" aria-hidden="true" onchange="onCvFile(this)">
 
-<!-- CHAT -->
-<button id="chatBtn" aria-label="שאל את העוזר" onclick="toggleChat()"><svg viewBox="0 0 24 24"><path d="M21 12a8 8 0 01-11.6 7.1L4 20l1-4.6A8 8 0 1121 12z"/></svg></button>
-<div id="chatPop" role="dialog" aria-label="צ'אט עם העוזר">
-  <div class="chat-h"><div class="ag-face"><canvas id="chatFace" width="96" height="96"></canvas></div><div><b>Stanley, העוזר שלך</b><span>זמין</span></div>
-    <button class="dr-x" aria-label="סגור" onclick="toggleChat()"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
-  <div class="chat-msgs" id="chatMsgs"></div>
+<button id="chatBtn" aria-label="צ׳אט עם העוזר האישי" onclick="toggleChat()"><svg viewBox="0 0 24 24"><path d="M21 12a8 8 0 01-11.6 7.1L4 20l1-4.6A8 8 0 1121 12z"/></svg></button>
+<div id="chatPop" role="dialog" aria-label="צ׳אט עם העוזר האישי">
+  <div class="chat-h"><div class="ag-face"><canvas id="chatFace" width="96" height="96"></canvas></div><div><b id="chatName"></b><span>העוזר האישי שלך</span></div>
+    <button class="dr-x" aria-label="סגירת השיחה" onclick="toggleChat()"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+  <div class="chat-msgs" id="chatMsgs" aria-live="polite"></div>
   <div class="chat-sugs" id="chatSugs"></div>
-  <div class="chat-in"><input id="chatInput" placeholder="שאל משהו על החיפוש שלך" onkeydown="if(event.key==='Enter')sendChat()"><button aria-label="שלח" onclick="sendChat()"><svg viewBox="0 0 24 24"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/></svg></button></div>
+  <div class="chat-in"><label for="chatInput" class="vh">הודעה לעוזר</label><input id="chatInput" placeholder="כתוב הודעה" onkeydown="if(event.key==='Enter')sendChat()"><button aria-label="שליחה" onclick="sendChat()"><svg viewBox="0 0 24 24"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/></svg></button></div>
 </div>
 
-<div id="toasts" aria-live="polite"></div>
+<div id="toasts" role="status" aria-live="polite"></div>
 
 <script>
 document.documentElement.setAttribute('data-theme','light');
@@ -778,6 +963,9 @@ document.documentElement.setAttribute('data-theme','light');
 /* ═════════ helpers ═════════ */
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+// keep numeric ranges (18–21, ₪12–16K, 1–2) in reading order inside RTL text
+const BIDI_RNG=/([₪$]?\d[\d.,]*K?\s*[–-]\s*[₪$]?\d[\d.,]*K?)/g;
+const _esc=esc; window.escB=x=>_esc(x).replace(BIDI_RNG,'\u2066$1\u2069');
 const LS={
   get(k,d){try{const v=localStorage.getItem('findjob_'+k);return v?JSON.parse(v):d}catch(e){return d}},
   set(k,v){try{localStorage.setItem('findjob_'+k,JSON.stringify(v))}catch(e){}},
@@ -794,104 +982,216 @@ const IC={
 
 /* ═════════ data — agents (single registry shared with the Office) ═════════ */
 // index → Office character. key → backend node in agent_core.
-const CAREER={id:'career',icon:'💼',lbl:'קריירה',color:'#4F46E5',lt:'#EEF2FF',desc:'חיפוש עבודה ופיתוח קריירה',prog:72,
-  workflow:[
-    {cmd:'Dwight.scan',out:'14 משרות חדשות · 3 בהתאמה גבוהה · זמן ריצה: 2.4 דק',tag:'עובד',state:'working'},
-    {cmd:'Dwight.analyze',out:'Google Backend — שכר ממוצע ₪42K · Glassdoor 4.2 · Remote חלקי',tag:'הושלם',state:'working'},
-    {cmd:'Pam.write',out:'Cover Letter ל-Monday.com — TypeScript + React · מוכן תוך 40 שניות',tag:'עובד',state:'working'},
-    {cmd:'Pam.prep',out:'הכנה לראיון System Design — 5 שאלות נוצרו · DB, API, Scale',tag:'הושלם',state:'idle'},
-    {cmd:'Kevin.update',out:'LinkedIn — ניסיון ומיומנויות · ממתין לאישורך',tag:'ממתין',state:'idle'},
-    {cmd:'Stanley.follow',out:'3 חברות ללא מענה · Reminder יישלח מחר ב-09:00',tag:'מתוזמן',state:'idle'},
-  ],
-  agents:[
-    {name:'Michael',role:'אסטרטגיה',e:'🎯',state:'working',sched:'ראשון בשבוע, 09:00',key:'manager',desc:'מגדיר את מטרות הקריירה, מכוון את כל הסוכנים לעבוד בסנכרון מלא. בונה תוכנית פעולה שבועית, עוקב אחר KPIים ומוודא שהכיוון תמיד ממוקד ב-ROI הגבוה ביותר.'},
-    {name:'Dwight',role:'סריקת משרות',e:'🔍',state:'working',sched:'כל 6 שעות, 24/7',key:'job_finder',desc:'סורק LinkedIn, Indeed, Glassdoor, Geektime ועוד 12 מקורות. מסנן לפי ניסיון, טכנולוגיה, שכר וגיאוגרפיה. מתעדף לפי ציון התאמה ומעביר הלאה רק הזדמנויות איכותיות.'},
-    {name:'Jim',role:'מודיעין חברות',e:'🕵️',state:'idle',sched:'לפי בקשת Dwight',key:'market_scout',desc:'חוקר כל חברה לעומק: שכר ממוצע, תרבות ארגונית, ביקורות עובדים, מבנה צוות, Glassdoor ו-LinkedIn. מוצא אנשי קשר רלוונטיים ונתיבי כניסה חמים.'},
-    {name:'Pam',role:'ראיונות ופיתוח',e:'🧭',state:'idle',sched:'רביעי, 19:00',key:'mentor',desc:'מכינה לראיונות טכניים ו-Behavioral. מזהה פערי ידע, ממליצה על קורסים ממוקדים, מדמה שאלות System Design ו-STAR. עוקבת אחר התקדמות הלמידה לאורך זמן.'},
-    {name:'Kevin',role:'LinkedIn + CV',e:'📋',state:'sleeping',sched:'ראשון בחודש',key:'cover_letter',desc:'מתחזק את פרופיל LinkedIn בצורה שתשיג חשיפה מקסימלית. מתאים את ה-CV לכל משרה ספציפית, מנסח כתבי כיסוי מותאמים אישית ומייעל לפי כלי ATS.'},
-    {name:'Stanley',role:'שיווק אישי',e:'🤝',state:'working',sched:'09:00 יומי',key:'daily_assistant',desc:'מסנן את כל הדיווחים ומעביר אליך רק את מה שדורש תשומת לב אמיתית. מנהל תקשורת ראשונית עם מגייסים, מתזמן שיחות ומוודא שאף הזדמנות לא נופלת בין הכיסאות.'},
-  ]};
+const TEAM_DEFAULT=[
+  {key:'strategist',name:'יואב',role:'יועץ אסטרטגי',state:'working',sched:'כל יום ראשון, 07:00',
+   desc:'קובע מה מחפשים: כותרות תפקיד, אזורים, רמת בכירות וחברות יעד. מציב את יעדי השבוע ולומד מכל משרה ששמרת או דילגת עליה.'},
+  {key:'hunter',name:'דורון',role:'צייד משרות',state:'working',sched:'כל לילה, 02:00',
+   desc:'אוסף משרות חדשות מכמה מקורות, מסנן בכירות, אזור ומשרות שנסגרו, ומדרג כל משרה מ-1 עד 5 מול הפרופיל שלך עם סיבות ומה חסר.'},
+  {key:'researcher',name:'גיל',role:'חוקר חברות',state:'idle',sched:'כשמשרה נשמרת',
+   desc:'בודק כל חברה ששמרת: שלב, טכנולוגיות ושכר אם פורסם. מחפש עובדים שיכולים להמליץ עליך ומזהה משרות שמתפרסמות שוב ושוב בלי גיוס.'},
+  {key:'coach',name:'מאיה',role:'מאמנת ראיונות',state:'idle',sched:'כשנקבע סינון או ראיון',
+   desc:'מכינה שאלות צפויות לפי המשרה והחברה, בונה איתך תשובות מתוך בנק הסיפורים שלך ומתרגלת איתך בצ׳אט.'},
+  {key:'linkedin',name:'קובי',role:'מנהל LinkedIn',state:'sleeping',sched:'כל בוקר, 07:30',
+   desc:'מוצא פוסטים ואנשים רלוונטיים, מכין תגובות והודעות חיבור, מציע שיפורים לפרופיל ומנסח פוסט שבועי. אתה תמיד זה שמפרסם.'},
+  {key:'assistant',name:'שי',role:'עוזר אישי',state:'working',sched:'כל בוקר, 07:45',
+   desc:'כותב מכתבי פנייה והודעות המשך, מזכיר מתי לפעול, ומסכם לך כל בוקר מה חשוב. זמין לשאלות בצ׳אט.'},
+];
+// index → Office character (palette/desk). key → backend agent in agent_core.
+const CAREER={id:'career',icon:'💼',lbl:'קריירה',color:'#0F8A64',lt:'#E6F4EE',desc:'חיפוש עבודה',prog:72,workflow:[],
+  agents:TEAM_DEFAULT.map(a=>({...a}))};
+const AG=key=>CAREER.agents.find(a=>a.key===key)||CAREER.agents[0];
+const N=key=>AG(key).name;
+function buildWorkflow(){
+  const n=k=>N(k);
+  CAREER.workflow=[
+    {cmd:`${n('hunter')}.חיפוש לילה`,out:'41 משרות נאספו · 6 עברו את הסף · 3 סוננו כבכירות מדי',tag:'הושלם',state:'idle'},
+    {cmd:`${n('researcher')}.מחקר`,out:'Mobileye: תקציר חברה וממליצים אפשריים',tag:'עובד',state:'working'},
+    {cmd:`${n('assistant')}.מכתב`,out:'מכתב פנייה ל-Mobileye, לפי קורות החיים בלבד',tag:'ממתין',state:'idle'},
+    {cmd:`${n('coach')}.הכנה`,out:'ראיון ב-Monday.com: 5 שאלות ומבנה תשובה',tag:'הושלם',state:'idle'},
+    {cmd:`${n('linkedin')}.רדאר`,out:'3 פוסטים רלוונטיים מהיומיים האחרונים',tag:'עובד',state:'working'},
+    {cmd:`${n('strategist')}.תכנון`,out:'יעד השבוע: 5 הגשות טובות · 5 תגובות · פוסט אחד',tag:'מתוזמן',state:'idle'},
+  ];
+}
 // The Office engine reads DOMS[selDom]; findjob has exactly one domain.
 const DOMS=[CAREER]; let selDom=0, selAg=0;
-
-const UPDATES=[
-  {a:1,time:'לפני 12 דק׳',body:'סרקתי 41 משרות הלילה. 6 עברו את הסף (ציון 3.5 ומעלה), 3 בכירות מדי סוננו.'},
-  {a:3,time:'לפני שעה',body:'הכנתי 5 שאלות System Design לראיון ב-Monday.com ביום רביעי.'},
-  {a:2,time:'לפני 3 שעות',body:'Guardz מגייסים כמה ג׳וניורים אחרי סבב גיוס. כדאי לפנות השבוע.'},
-  {a:4,time:'אתמול',body:'המכתב ל-Wix מוכן. כל העובדות בו לקוחות מקורות החיים שלך.'},
-  {a:0,time:'ראשון',body:'יעד השבוע: 5 הגשות איכותיות במקום 15 מהירות. כרגע 2 מתוך 5.'},
-];
 
 /* ═════════ data — jobs ═════════ */
 const JOBS={
   'j-mobileye':{co:'Mobileye',ini:'Me',c:['#0E7C86','#19A7A6'],title:'Computer Vision Student',loc:'ירושלים · משרת סטודנט',fit:4.5,
     reasons:['OpenCV ו-TensorFlow — אותו stack של AI Smart Crosswalk','משרת סטודנט, מתאים לשנה ג׳','צוות מחקר שעובד עם Python ו-C++'],
-    gaps:['C++ מודרני (17/20) מופיע כדרישה'],tags:['Python','OpenCV','Deep Learning'],src:'אתר החברה',posted:1,salary:'₪60–75 לשעה (הערכה)',
+    gaps:['C++ מודרני (17/20) מופיע כדרישה'],tags:['Python','OpenCV','Deep Learning'],src:'אתר החברה',posted:1,salary:'₪60–75 לשעה',
     desc:'הצטרפות לצוות אלגוריתמים בתחום זיהוי אובייקטים בזמן אמת. 24 שעות שבועיות לפחות, גמישות בתקופת מבחנים.',deck:true},
   'j-guardz':{co:'Guardz',ini:'Gz',c:['#2B2D42','#4A4E78'],title:'Junior Software Engineer',loc:'תל אביב',fit:4.4,
     reasons:['Python ו-Backend הם הליבה של המשרה','מוגדרת לג׳וניורים, ללא דרישת שנות ניסיון','סטארט-אפ סייבר בצמיחה עם צוות קטן'],
-    gaps:['Kubernetes — יתרון, לא חובה'],tags:['Python','AWS','REST'],src:'LinkedIn',posted:2,salary:'₪17–21K (הערכה)',
+    gaps:['Kubernetes — יתרון, לא חובה'],tags:['Python','AWS','REST'],src:'LinkedIn',posted:2,salary:'',
     desc:'פיתוח שירותי backend לפלטפורמת אבטחה לעסקים קטנים. עבודה צמודה עם צוות המוצר.',deck:true},
   'j-riskified':{co:'Riskified',ini:'Rf',c:['#3B5BDB','#5C7CFA'],title:'Junior Backend Engineer',loc:'תל אביב · היברידי',fit:4.1,
     reasons:['Python ו-SQL מופיעים בראש הדרישות','תוכנית קליטה מסודרת לג׳וניורים'],
-    gaps:['Kafka','מערכות מבוזרות'],tags:['Python','SQL','Microservices'],src:'Greenhouse',posted:3,salary:'₪18–22K (הערכה)',
+    gaps:['Kafka','מערכות מבוזרות'],tags:['Python','SQL','Microservices'],src:'Greenhouse',posted:3,salary:'₪18–22K',
     desc:'צוות Data Platform מחפש מהנדס backend לבניית pipelines של עיבוד עסקאות בזמן אמת.',deck:true},
   'j-vhive':{co:'vHive',ini:'vH',c:['#F08C00','#FFA94D'],title:'Full Stack Developer',loc:'פתח תקווה',fit:4.0,
     reasons:['React ו-Socket.IO — כמו המערכות בזמן אמת שבנית','Computer Vision ברחפנים, מתחבר לפרויקט שלך'],
-    gaps:['Docker','בסיסי נתונים גאוגרפיים'],tags:['React','Node.js','Real-time'],src:'Indeed',posted:4,salary:'₪16–20K (הערכה)',
+    gaps:['Docker','בסיסי נתונים גאוגרפיים'],tags:['React','Node.js','Real-time'],src:'Indeed',posted:4,salary:'',
     desc:'פיתוח ממשק ניהול לצי רחפנים אוטונומיים, מהשרת ועד התצוגה.',deck:true},
   'j-checkpoint':{co:'Check Point',ini:'CP',c:['#C2255C','#E64980'],title:'Software Engineer Student',loc:'תל אביב · משרת סטודנט',fit:3.9,
     reasons:['C++ ו-Linux מהקורסים ומהפרויקטים','משרת סטודנט עם מסלול להמשך'],
-    gaps:['Networking','Reversing — יתרון'],tags:['C++','Linux'],src:'Comeet',posted:5,salary:'₪55–65 לשעה (הערכה)',
+    gaps:['Networking','Reversing — יתרון'],tags:['C++','Linux'],src:'Comeet',posted:5,salary:'₪55–65 לשעה',
     desc:'פיתוח רכיבי אבטחה בצוות Threat Prevention. נדרשות 20 שעות שבועיות.',deck:true},
   'j-earnix':{co:'Earnix',ini:'Ex',c:['#2F9E44','#51CF66'],title:'Automation Engineer',loc:'רמת גן',fit:3.6,
-    reasons:['Python לאוטומציה ובדיקות'],gaps:['CI/CD','Selenium / Playwright'],tags:['Python','QA Automation'],src:'Indeed',posted:6,salary:'₪15–18K (הערכה)',
+    reasons:['Python לאוטומציה ובדיקות'],gaps:['CI/CD','Selenium / Playwright'],tags:['Python','QA Automation'],src:'Indeed',posted:6,salary:'',
     desc:'בניית תשתית בדיקות אוטומטיות למערכת תמחור ביטוחית.',deck:true},
   'j-monday':{co:'Monday.com',ini:'mo',c:['#6741D9','#9775FA'],title:'Full-Stack Developer',loc:'תל אביב · היברידי',fit:4.6,
-    reasons:['React ו-TypeScript','צוות פלטפורמה עם Node.js'],gaps:['GraphQL'],tags:['React','TypeScript','Node.js'],src:'Greenhouse',posted:12,salary:'₪19–24K (הערכה)',
+    reasons:['React ו-TypeScript','צוות פלטפורמה עם Node.js'],gaps:['GraphQL'],tags:['React','TypeScript','Node.js'],src:'Greenhouse',posted:12,salary:'',
     desc:'פיתוח full-stack בצוות פלטפורמה של Work OS.',deck:false},
   'j-wix':{co:'Wix',ini:'Wx',c:['#1C1C1C','#495057'],title:'Frontend Engineer',loc:'תל אביב · היברידי',fit:4.2,
-    reasons:['React ו-TypeScript','רכיבי drag & drop מורכבים'],gaps:['בדיקות E2E'],tags:['React','TypeScript'],src:'אתר החברה',posted:14,salary:'₪18–23K (הערכה)',
+    reasons:['React ו-TypeScript','רכיבי drag & drop מורכבים'],gaps:['בדיקות E2E'],tags:['React','TypeScript'],src:'אתר החברה',posted:14,salary:'',
     desc:'פיתוח רכיבי עורך מתקדמים בצוות Editor.',deck:false},
 };
 const DECK=Object.keys(JOBS).filter(k=>JOBS[k].deck);
 const FILTERED_OUT=3;
 
-const STATUSES={saved:'שמור',applied:'הוגש',interview:'ראיון',offer:'הצעה',rejected:'נדחה',ghosted:'אין מענה'};
+/* ═════════ applications: stages ═════════ */
+const STATUSES={saved:'שמור',applied:'הוגש',screening:'סינון',interview:'ראיון',offer:'הצעה',rejected:'נדחה',ghosted:'אין מענה',withdrew:'ויתרתי'};
+const CLOSED=['rejected','ghosted','withdrew'];
+const SEGS=[['all','הכל'],['saved','שמור'],['applied','הוגש'],['screening','סינון'],['interview','ראיון'],['offer','הצעה'],['closed','נסגרו']];
+
+/* ═════════ agent messages (live in the Office) ═════════ */
+const UPDATES=[
+  {a:1,time:'לפני 12 דק׳',body:'סרקתי הלילה 41 משרות. 6 מתאימות לך, ו-3 בכירות מדי סיננתי.'},
+  {a:4,time:'לפני 40 דק׳',body:'מצאתי 2 פוסטים חמים של מגייסים בחברות שברשימה שלך. הכנתי לך תגובות.'},
+  {a:3,time:'לפני שעה',body:'ההכנה לראיון ב-Monday.com מוכנה: 5 שאלות, ולכל אחת דוגמה מהניסיון שלך.'},
+  {a:2,time:'לפני 3 שעות',body:'בדקתי את Guardz: צוות קטן שמגייס ג׳וניורים עכשיו. כדאי לפנות השבוע.'},
+  {a:5,time:'אתמול',body:'המכתב ל-Wix מוכן. הוא מבוסס רק על מה שכתוב בקורות החיים שלך.'},
+  {a:0,time:'יום ראשון',body:'יעד השבוע: 5 הגשות טובות, לא 15 מהירות. כרגע 2 מתוך 5.'},
+  {a:5,time:'יום ראשון',body:'Wix לא ענו כבר שבוע. הכנתי הודעת המשך קצרה.'},
+];
+
+/* ═════════ LinkedIn ═════════ */
+const LI_URL='https://www.linkedin.com/';
+const liSearch=q=>'https://www.linkedin.com/search/results/people/?keywords='+encodeURIComponent(q);
+const POSTS=[
+  {id:'p1',author:'מיכל אברהם',role:'גיוס, Riskified',mins:22,lang:'he',why:'מגייסת בחברה שברשימה שלך',
+   text:'מגייסים 3 ג׳וניורים ל-Backend בצוות Data Platform. אם בניתם משהו אמיתי עם Python מחוץ לקורסים, אשמח לשמוע מה למדתם ממנו 👇',
+   drafts:[
+    {k:'ניסיון אישי',t:'בניתי מערכת סוכנים ב-Python ו-LangGraph שסורקת משרות כל לילה. הלקח הכי גדול שלי: להגביל קריאות API לפני שמגיעים לתקרה, לא אחרי. איך הצוות שלכם מתמודד עם עומסים בזמן אמת?'},
+    {k:'שאלה',t:'פוסט מעניין. בפרויקט AI Smart Crosswalk עבדתי עם Computer Vision ב-Python, ותמיד מתלבט מה עדיף להציג. מה הכי חשוב לכם לראות אצל ג׳וניור: עומק בפרויקט אחד או רוחב?'}]},
+  {id:'p2',author:'Daniel Cohen',role:'Engineering Manager, Guardz',mins:48,lang:'en',why:'מנהל פיתוח בחברה שמגייסת עכשיו',
+   text:'What separates a junior who ramps up in 3 months from one who takes a year? In my experience: asking good questions early, and writing things down.',
+   drafts:[
+    {k:'ניסיון אישי',t:'Agree. Writing a question down before asking it often answers half of it. As a student building a multi-agent app in Python, I am curious: how does your team make it easy for juniors to ask the other half?'},
+    {k:'שאלה',t:'Great point. Do you see a difference between juniors who ask in public channels and those who ask in private messages? Curious which one your team encourages, and why.'}]},
+  {id:'p3',author:'יעל בן-דוד',role:'CTO, vHive',mins:300,lang:'he',why:'Computer Vision, כמו הפרויקט שלך',
+   text:'שלוש שנים של Computer Vision על רחפנים לימדו אותנו שמודל טוב שווה פחות מ-pipeline נתונים טוב. מה הלקח הכי גדול שלכם מעבודה עם נתונים אמיתיים?',
+   drafts:[
+    {k:'ניסיון אישי',t:'מתחבר מאוד. ב-AI Smart Crosswalk עבדתי עם Computer Vision על צילומים מהעולם האמיתי, וזה בדיוק המקום שבו הנתונים קובעים. מעניין איך אתם מתייגים נתונים בקנה מידה כזה.'},
+    {k:'שאלה',t:'לקח חשוב. איך אתם מחליטים מתי להשקיע באיסוף נתונים חדשים ומתי בשיפור המודל הקיים?'}]},
+];
+const LI_FIXES=[
+  {id:'f1',t:'כותרת עם תפקיד ותחום',why:'מגייסים מחפשים לפי מילות מפתח בכותרת.',copy:'Computer Science Student @ HIT | Python · React · AI Agents | Looking for Junior Backend & AI roles'},
+  {id:'f2',t:'About עם תוצאות ומספרים',why:'"בניתי" חזק יותר כשרואים מה זה עשה.',copy:'Third-year CS student at HIT. I build things that run in production: Lifeboard, a multi-agent career platform in Python, LangGraph and Next.js that scans jobs every night, and AI Smart Crosswalk, a real-time computer vision system. Former logistics officer and deputy company commander in the IDF.'},
+  {id:'f3',t:'כישורים שחסרים',why:'כישורי AI הם מה שמחפשים היום.',copy:'LangGraph, FastAPI, Prompt Engineering, Computer Vision, Supabase'},
+  {id:'f4',t:'GitHub מחובר לפרופיל',why:'פרויקטים אמיתיים מקבלים יותר פניות ממגייסים.',copy:''},
+  {id:'f5',t:'Open to Work למגייסים בלבד',why:'מגייסים רואים שאתה זמין, בלי תווית על התמונה.',copy:''},
+];
+const PEOPLE=[
+  {id:'n1',name:'רוני שפירא',role:'Backend Engineer, Riskified',why:'בוגר HIT',note:'היי רוני, אני סטודנט שנה ג׳ במדעי המחשב ב-HIT ומתעניין בצוות ה-Backend ב-Riskified. אשמח להתחבר ולשמוע איך היה המעבר שלך מהלימודים לתעשייה.'},
+  {id:'n2',name:'נועה לוי',role:'Talent Acquisition, Mobileye',why:'מגייסת למשרות סטודנט',note:'היי נועה, אני סטודנט שנה ג׳ במדעי המחשב עם פרויקט Computer Vision בזמן אמת. ראיתי שאת מגייסת למשרות סטודנט ב-Mobileye ואשמח להתחבר.'},
+  {id:'n3',name:'איתי גולן',role:'Team Lead, Monday.com',why:'שירת ביחידה טכנולוגית',note:'היי איתי, יש לי ראיון בקרוב לצוות הפלטפורמה ב-Monday.com. אשמח להתחבר ולשמוע ממך על אופי העבודה בצוות.'},
+];
+const POST_DRAFT='בונה בפומבי: Lifeboard 🧵\n\nהשבוע עבדתי על "שומר תקציב" לסוכני ה-AI שלי: רכיב שמחליט אילו משימות חשובות עכשיו ואילו יכולות לחכות למחר, כדי שהמערכת תרוץ כל לילה בלי לעבור את מכסת ה-API.\n\nמה שלמדתי: מערכת טובה יודעת לעצור בזמן, לא רק לרוץ מהר.\n\nמה הרכיב הכי קטן שבניתם שחסך לכם הכי הרבה כאב ראש?';
+const WEEK_GOAL={comments:5,posts:1};
+
+/* ═════════ per-application extras ═════════ */
+const REFERRALS={
+  'j-monday':[{name:'איתי גולן',role:'Team Lead, Platform',why:'שירת ביחידה טכנולוגית'}],
+  'j-wix':[{name:'שירה כהן',role:'Frontend Engineer, Editor',why:'בוגרת HIT 2023'}],
+  'j-mobileye':[{name:'נועה לוי',role:'Talent Acquisition',why:'מגייסת למשרות סטודנט'}],
+  'j-guardz':[{name:'Daniel Cohen',role:'Engineering Manager',why:'פרסם השבוע על גיוס ג׳וניורים'}],
+  'j-riskified':[{name:'רוני שפירא',role:'Backend Engineer',why:'בוגר HIT'}],
+};
+const refNote=(r,j)=>`היי ${r.name}, ראיתי שאתה ב-${j.co} ואני מתעניין במשרת ה-${nb(j.title)}. אני סטודנט שנה ג׳ במדעי המחשב ב-HIT. אשמח לשמוע ממך על הצוות, ואם זה מתאים, גם להמלצה.`;
+const PREP={
+  screening:{title:'שאלות סינון',lead:'מגייסים שולחים היום שאלות קצרות לפני השיחה הראשונה, בטקסט או בווידאו. אלה השאלות שכדאי להכין:',
+    qs:[{tag:'מוטיבציה',q:'למה דווקא החברה הזו?',h:'שני משפטים: משהו ספציפי במוצר שלהם, וקשר לפרויקט שלך.'},
+        {tag:'זמינות',q:'מתי אתה יכול להתחיל, וכמה שעות בשבוע?',h:'תשובה מדויקת, בלי "גמיש". זה מה שהמגייס מסמן בטופס.'},
+        {tag:'ניסיון',q:'ספר על פרויקט אחד שבנית מאפס.',h:'60 שניות: מה הבעיה, מה בנית, ומה יצא. מספר אחד לפחות.'}]},
+  interview:{title:'הכנה לראיון',lead:'השאלות מבוססות על מודעת המשרה ועל מה שנמצא על החברה. לחץ על שאלה כדי לראות איך לבנות את התשובה.',
+    qs:[{tag:'System Design',q:'איך היית מתכנן מערכת התראות לבורד עם מיליון משתמשים?',h:'<b>מבנה:</b> דרישות ← רכיבים (API, תור הודעות, workers, WebSocket) ← צוואר בקבוק ← פשרות. <b>מהניסיון שלך:</b> Socket.IO במערכות זמן אמת.'},
+        {tag:'Backend',q:'מה ההבדל בין SQL ל-NoSQL, ומתי תבחר בכל אחד?',h:'<b>בקצרה:</b> קשרים ועקביות ← SQL. סכמה גמישה וגדילה ← NoSQL. <b>דוגמה:</b> למה בחרת ב-Postgres ב-Lifeboard.'},
+        {tag:'פרויקט',q:'ספר על האתגר הטכני הכי קשה בפרויקט שאתה גאה בו.',h:'<b>STAR:</b> מצב ← משימה ← פעולה ← תוצאה. מבנק הסיפורים: "Lifeboard: מגבלת API".'},
+        {tag:'Debugging',q:'ספר על באג קשה שפתרת.',h:'<b>מה מחפשים:</b> שיטתיות. שחזור, בידוד, השערה, בדיקה, מניעה.'},
+        {tag:'צוות',q:'מה אתה עושה כשאתה לא מסכים עם החלטה של הצוות?',h:'<b>יתרון שלך:</b> השירות כסגן מ״פ. דוגמה להבעת עמדה, הקשבה והחלטה.'}]},
+};
 
 /* ═════════ state ═════════ */
 function defaultState(){return{
-  onboarded:false,
-  profile:{name:'Or Smolarchik',first:'Or',role:'Junior Backend Developer',locs:['תל אביב','היברידי'],level:'סטודנט / ג׳וניור',cv:'',cvName:'',key:''},
+  v:2,onboarded:false,
+  profile:{name:'Or Smolarchik',first:'אור',cv:'',cvName:'',key:'',ans:{}},qi:0,team:{},
   decisions:{},skipReasons:{},
   apps:[
     {id:'a-monday',jobId:'j-monday',status:'interview',date:daysAgoISO(6),iv:'רביעי, 14:00'},
     {id:'a-wix',jobId:'j-wix',status:'applied',date:daysAgoISO(9)},
   ],
   todos:[
-    {id:'t1',text:'לעבור על 6 המשרות החדשות',done:false},
-    {id:'t2',text:'לתרגל 2 שאלות System Design לראיון ב-Monday.com',done:false},
-    {id:'t3',text:'לשלוח follow-up ל-Wix, 9 ימים בלי תשובה',done:false},
-    {id:'t4',text:'להוסיף את Lifeboard לפרויקטים ב-LinkedIn',done:true},
-    {id:'t5',text:'לעדכן את קורות החיים עם ה-Deploy ל-Vercel',done:false},
+    {id:'t1',text:'להעלות את Lifeboard ל-GitHub עם README מסודר',done:false},
+    {id:'t2',text:'לבקש המלצה מהמרצה בקורס מערכות מבוזרות',done:false},
+    {id:'t3',text:'לעדכן את קורות החיים עם הפרויקט האחרון',done:true},
   ],
-  claude:false,notif:true,quota:18,todoOpen:false,
+  li:{handled:{},drafts:{},fixes:{},people:{},comments:0,posts:0},
+  stories:[
+    {id:'s1',t:'Lifeboard: מגבלת API',b:'מצב: הסוכנים של Lifeboard צורכים מכסת API מוגבלת.\nמשימה: לשמור על ריצה יומית בלי לשלם.\nפעולה: תכננתי שומר תקציב שמתעדף משימות ודוחה את השאר.\nתוצאה: '},
+    {id:'s2',t:'AI Smart Crosswalk: נתונים אמיתיים',b:'מצב: מערכת Computer Vision למעבר חצייה חכם.\nמשימה: \nפעולה: \nתוצאה: '},
+    {id:'s3',t:'סגן מ״פ: החלטה תחת לחץ',b:'מצב: \nמשימה: \nפעולה: \nתוצאה: '},
+  ],
+  notif:true,todoOpen:false,
 }}
-let S=Object.assign(defaultState(),LS.get('state',{}));
-function save(){LS.set('state',S)}
+let S=LS.get('state2',null);
+const initials=n=>{n=String(n||'?').trim();return /^[\u0590-\u05FF]/.test(n)?[...n][0]:n.slice(0,2)};
+const salaryTxt=j=>j.salary||'לא פורסם';
+if(!S){const old=LS.get('state',null);S=defaultState();if(old){S.onboarded=!!old.onboarded;S.qi=old.qi||0;if(old.profile)S.profile=Object.assign(S.profile,old.profile);}}
+else S=Object.assign(defaultState(),S);
+function save(){LS.set('state2',S)}
+function applyTeam(){CAREER.agents.forEach((a,i)=>{a.name=(S.team&&S.team[a.key])||TEAM_DEFAULT[i].name});buildWorkflow()}
+if(!S.team)S.team={};
+if(S.profile&&S.profile.first==='Or')S.profile.first='אור';
+applyTeam();
 const prof=()=>S.profile;
-const goalTxt=()=>`${prof().role} · ${prof().locs.join(', ')||'כל הארץ'}`;
+const STATUS_SHORT={'סטודנט/ית':'סטודנט','בוגר/ת טרי/ה, מחפש/ת עבודה ראשונה':'בוגר טרי','ג׳וניור עם ניסיון של עד שנתיים':'ג׳וניור','עובד/ת ומחפש/ת לעבור':'מחפש מעבר','משתחרר/ת משירות':'משתחרר','לא עובד/ת כרגע':'מחפש עבודה'};
+const goalTxt=()=>{const a=prof().ans||{};return [(a.roles||[]).slice(0,2).join(', ')||'עוד לא בחרת תפקיד',STATUS_SHORT[a.status],(a.locs||[])[0]].filter(Boolean).join(' · ')};
 const queue=()=>DECK.filter(id=>!S.decisions[id]);
-const letterFor=(j)=>`שלום,
+const appOf=id=>S.apps.find(a=>a.id===id);
+const followDue=a=>a.status==='applied'&&daysSince(a.date)>=7;
+const appNeedsMe=a=>a.status==='saved'||followDue(a)||a.status==='screening'||a.status==='interview';
+const hotPosts=()=>POSTS.filter(p=>p.mins<60&&!S.li.handled[p.id]);
+const fixesLeft=()=>LI_FIXES.filter(f=>!S.li.fixes[f.id]);
+const liScore=()=>Math.min(100,62+Object.keys(S.li.fixes).length*8);
+const nb=x=>String(x).replace(/ /g,'\u00A0');
+const letterFor=j=>`שלום,
 
-אני ${prof().name}, סטודנט שנה שלישית למדעי המחשב ב-HIT. ראיתי את משרת ה-${j.title} ב-${j.co} והיא מתאימה בדיוק לכיוון שאני בונה.
+אני ${prof().name}, סטודנט שנה שלישית למדעי המחשב ב-HIT. ראיתי את משרת ה-${nb(j.title)} ב-${j.co}, והיא מתאימה בדיוק לכיוון שאני בונה.
 
-${j.reasons[0]}. בנוסף פיתחתי את Lifeboard, מערכת Full-Stack עם סוכני AI ב-Next.js ו-Python, שמריצה pipeline יומי של איסוף וניתוח נתונים.
+${j.reasons[0]}. בנוסף פיתחתי את Lifeboard, מערכת עם סוכני AI ב-Next.js ו-Python שמריצה כל לילה איסוף וניתוח של משרות.
 
 אשמח לשיחה קצרה כדי לשמוע עוד על הצוות.
 
 תודה,
 ${prof().name}`;
+const followText=j=>`שלום,
+
+הגשתי לפני כשבוע מועמדות למשרת ה-${nb(j.title)}. אני עדיין מאוד מעוניין ואשמח לדעת אם יש עדכון לגבי התהליך.
+
+תודה,
+${prof().name}`;
+
+/* clipboard with fallback (some app views refuse the async API) */
+async function copyText(t,msg){
+  let ok=false;
+  try{await navigator.clipboard.writeText(t);ok=true}catch(e){
+    try{const ta=document.createElement('textarea');ta.value=t;ta.setAttribute('readonly','');ta.style.cssText='position:fixed;opacity:0;top:0';document.body.appendChild(ta);ta.select();ok=document.execCommand('copy');ta.remove()}catch(e2){}
+  }
+  toast(ok?(msg||'הועתק'):'לא הצלחתי להעתיק. סמן את הטקסט והעתק ידנית');
+  return ok;
+}
 
 /* ═════════ OFFICE — copied verbatim from Life Building (unchanged) ═════════ */
 // ── OFFICE CHARACTERS (The Office cast) — 6 palettes ──
@@ -1342,41 +1642,39 @@ function drawOff(){
 }
 
 
-/* ═════════ shell: navigation, drawer, sheet, toast ═════════ */
-const TITLES={main:'',jobs:'משרות חדשות',tracker:'מעקב הגשות',interview:'הכנה לראיון',office:'המשרד',profile:'פרופיל'};
+/* ═════════ shell ═════════ */
+const TITLES={main:'לוח בקרה',jobs:'משרות חדשות',apps:'הגשות',linkedin:'LinkedIn',office:'המשרד',profile:'הפרופיל שלי',settings:'הגדרות'};
 let curPg='main';
-function goPage(id){
+function goPage(id,anchor){
   if(typeof offAnimId!=='undefined') cancelAnimationFrame(offAnimId);
-  closeDrawer(); closeSheet();
+  closeDrawer();closeSheet();if(chatOpen)toggleChat();
   curPg=id;
   document.querySelectorAll('.pg').forEach(p=>p.classList.toggle('on',p.id==='pg-'+id));
-  document.body.className=document.body.className.replace(/\bpg-\w+/g,'').trim()+' pg-'+id;
-  $('tbTitle').innerHTML=id==='main'?'<span class="wordmark">findjob</span>':esc(TITLES[id]);
-  document.querySelectorAll('.dr-item').forEach(b=>b.classList.toggle('active',b.dataset.pg===id));
+  document.body.className=(document.body.className.replace(/\bpg-\w+/g,'').trim()+' pg-'+id).trim();
+  $('tbTitle').innerHTML=id==='main'?'<span class="wordmark" aria-hidden="true">findjob</span><span class="vh">לוח בקרה</span>':escB(TITLES[id]);
+  document.title=id==='main'?'findjob':`${TITLES[id]} · findjob`;
+  document.querySelectorAll('.dr-item[data-pg]').forEach(b=>{const on=b.dataset.pg===id;b.classList.toggle('active',on);on?b.setAttribute('aria-current','page'):b.removeAttribute('aria-current')});
   $('topbar').classList.remove('scrolled');
   const sc=document.querySelector('#pg-'+id+' .scroll'); if(sc) sc.scrollTop=0;
-  if(id==='main') renderHome();
-  if(id==='jobs') renderJobs();
-  if(id==='tracker') renderTracker();
-  if(id==='interview') renderInterview();
-  if(id==='profile') renderProfile();
-  if(id==='office'){setTimeout(()=>{sizeOff();drawOff();},80);renderOffice();}
+  ({main:renderHome,jobs:renderJobs,apps:renderApps,linkedin:renderLinkedIn,profile:renderProfile,settings:renderSettings})[id]?.();
+  if(id==='office'){setTimeout(()=>{sizeOff();drawOff();},80);renderOffice();renderOfficeMsgs();}
+  if(anchor) setTimeout(()=>$(anchor)?.scrollIntoView({behavior:'smooth',block:'start'}),60);
+  syncChrome();
 }
 function syncChrome(){
-  const q=queue().length, act=S.apps.filter(a=>!['rejected','ghosted'].includes(a.status)).length;
-  $('bdJobs').hidden=!q; $('bdJobs').textContent=q;
-  $('bdApps').hidden=!act; $('bdApps').textContent=act;
-  $('menuDot').hidden=!q;
-  const ini=(prof().first||prof().name||'?').slice(0,2);
+  const q=queue().length, ap=S.apps.filter(appNeedsMe).length, li=hotPosts().length+fixesLeft().length;
+  [['bdJobs',q],['bdApps',ap],['bdLi',li]].forEach(([i,n])=>{$(i).hidden=!n;$(i).textContent=n;$(i).setAttribute('aria-label',`${n} מחכים לך`)});
+  $('menuDot').hidden=!(q||hotPosts().length);
+  const iv=S.apps.find(a=>a.status==='interview'&&a.iv);
+  $('drIv').hidden=!iv; if(iv) $('drIvTxt').textContent=`ראיון ב-${JOBS[iv.jobId].co}, ${iv.iv}`;
+  const ini=initials(prof().first||prof().name);
   ['tbAvatar','drAvatar'].forEach(i=>$(i).textContent=ini);
   $('drName').textContent=prof().name; $('drGoal').textContent=goalTxt();
-  $('qPct').textContent=S.quota+'%'; $('qFill').style.width=S.quota+'%';
-  $('qNote').textContent=prof().key?'Groq, חינם. אין כרטיס אשראי, אז אין חיוב.':'מצב התנסות. חבר מפתח Groq חינמי בפרופיל.';
 }
+function openIvShortcut(){const iv=S.apps.find(a=>a.status==='interview');if(iv){goPage('apps');openApp(iv.id,'prep')}}
 function toggleDrawer(){$('drawerOverlay').classList.contains('open')?closeDrawer():openDrawer()}
-function openDrawer(){syncChrome();$('drawerOverlay').classList.add('open');document.body.classList.add('drawer-open');$('menuBtn').setAttribute('aria-expanded','true');0}
-function closeDrawer(){$('drawerOverlay').classList.remove('open');document.body.classList.remove('drawer-open');$('menuBtn').setAttribute('aria-expanded','false')}
-// edge swipe: from the app's left edge to open, swipe left on the drawer to close
+function openDrawer(){syncChrome();$('drawerOverlay').classList.add('open');document.body.classList.add('drawer-open');$('menuBtn').setAttribute('aria-expanded','true');$('menuBtn').setAttribute('aria-label','סגירת התפריט')}
+function closeDrawer(){$('drawerOverlay').classList.remove('open');document.body.classList.remove('drawer-open');$('menuBtn').setAttribute('aria-expanded','false');$('menuBtn').setAttribute('aria-label','פתיחת התפריט')}
 (function(){
   let sx=0,sy=0,mode=null;
   document.addEventListener('touchstart',e=>{
@@ -1393,99 +1691,94 @@ function closeDrawer(){$('drawerOverlay').classList.remove('open');document.body
 })();
 document.addEventListener('scroll',e=>{if(e.target.classList&&e.target.classList.contains('scroll'))$('topbar').classList.toggle('scrolled',e.target.scrollTop>4)},true);
 document.addEventListener('keydown',e=>{
-  if(e.key==='Escape'){closeSheet();closeDrawer();if(chatOpen)toggleChat()}
-  if(curPg==='jobs'&&!$('sheet').classList.contains('open')&&document.activeElement.tagName!=='INPUT'){
-    if(e.key==='ArrowRight')decide('save'); if(e.key==='ArrowLeft')decide('skip');
+  if(e.key==='Escape'){if($('sheet').classList.contains('open'))closeSheet();else if(chatOpen)toggleChat();else closeDrawer()}
+  const typing=/INPUT|TEXTAREA/.test(document.activeElement.tagName);
+  if(curPg==='jobs'&&!$('sheet').classList.contains('open')&&!typing&&!$('onb').classList.contains('open')){
+    if(e.key==='ArrowRight'){e.preventDefault();decide('save')} if(e.key==='ArrowLeft'){e.preventDefault();decide('skip')}
   }
 });
 
-function openSheet(html){$('sheetBody').innerHTML=html;$('sheetBody').scrollTop=0;$('sheet').classList.add('open')}
-function closeSheet(){$('sheet').classList.remove('open')}
+let sheetReturn=null;
+function openSheet(html){sheetReturn=document.activeElement;$('sheetBody').innerHTML=html;$('sheetBody').scrollTop=0;$('sheet').classList.add('open');setTimeout(()=>$('sheet').querySelector('.sheet-x')?.focus({preventScroll:true}),60)}
+function closeSheet(){if(!$('sheet').classList.contains('open'))return;$('sheet').classList.remove('open');sheetReturn?.focus?.({preventScroll:true})}
 
 function toast(msg,{undo,chips,ms=3600}={}){
   $('toasts').querySelectorAll('.toast').forEach(t=>t.remove());
   const el=document.createElement('div');el.className='toast';
-  el.innerHTML=`<div class="toast-row"><span>${esc(msg)}</span>${undo?'<button class="undo">ביטול</button>':''}</div>${chips?`<div class="toast-chips">${chips.map((c,i)=>`<button data-i="${i}">${esc(c.t)}</button>`).join('')}</div>`:''}`;
+  el.innerHTML=`<div class="toast-row"><span>${escB(msg)}</span>${undo?'<button class="undo">ביטול</button>':''}</div>${chips?`<div class="toast-chips">${chips.map((c,i)=>`<button data-i="${i}">${escB(c.t)}</button>`).join('')}</div>`:''}`;
   const kill=()=>{el.classList.add('out');setTimeout(()=>el.remove(),220)};
   if(undo) el.querySelector('.undo').onclick=()=>{undo();kill()};
   if(chips) el.querySelectorAll('.toast-chips button').forEach(b=>b.onclick=()=>{chips[b.dataset.i].fn();kill()});
   $('toasts').appendChild(el); setTimeout(kill,ms);
 }
-
 function face(cv,idx,state){if(cv) drawFace(cv,idx,state||CAREER.agents[idx].state)}
-function logo(j,cls=''){return`<span class="logo-tile ${cls}" style="background:linear-gradient(140deg,${j.c[0]},${j.c[1]})">${esc(j.ini)}</span>`}
+function logo(j){return`<span class="logo-tile" aria-hidden="true" style="background:linear-gradient(140deg,${j.c[0]},${j.c[1]})">${escB(j.ini)}</span>`}
+const pav=n=>`<span class="pav" aria-hidden="true">${escB([...n.trim()][0]||'?')}</span>`;
+const ICO={
+  li:'<svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="M8 10v6M8 7.5v.01M12 16v-3.5a2 2 0 014 0V16M12 10v6"/></svg>',
+  cal:'<svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>',
+  jobs:'<svg viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="3"/><path d="M9 8h6M9 12h6M9 16h3"/></svg>',
+  mail:'<svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M4 7l8 6 8-6"/></svg>',
+  send:'<svg viewBox="0 0 24 24"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/></svg>',
+  spark:'<svg viewBox="0 0 24 24"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/></svg>',
+  copy:'<svg viewBox="0 0 24 24"><rect x="9" y="9" width="12" height="12" rx="2.5"/><path d="M5 15V5a2 2 0 012-2h10"/></svg>',
+  open:'<svg viewBox="0 0 24 24"><path d="M14 4h6v6M20 4l-9 9"/><path d="M18 14v5a1 1 0 01-1 1H5a1 1 0 01-1-1V7a1 1 0 011-1h5"/></svg>',
+};
 
-/* ═════════ HOME ═════════ */
+/* ═════════ לוח בקרה ═════════ */
+function nextSteps(){
+  const out=[],hp=hotPosts(),q=queue();
+  if(hp.length) out.push({ic:ICO.li,c:'i-amber',b:hp.length===1?'פוסט חם מחכה לתגובה':`${hp.length} פוסטים חמים מחכים לתגובה`,s:`הראשון פורסם לפני ${Math.min(...hp.map(p=>p.mins))} דק׳`,w:['עכשיו','w-urgent'],go:"goPage('linkedin')"});
+  S.apps.filter(a=>a.status==='interview').forEach(a=>out.push({ic:ICO.cal,c:'i-amber',b:`ראיון ב-${JOBS[a.jobId].co}${a.iv?', '+a.iv:''}`,s:'ההכנה מוכנה',w:['השבוע','w-soon'],go:`openApp('${a.id}','prep')`}));
+  S.apps.filter(a=>a.status==='screening').forEach(a=>out.push({ic:ICO.cal,c:'i-sky',b:`שאלות סינון מ-${JOBS[a.jobId].co}`,s:'הכנו לך תשובות לדוגמה',go:`openApp('${a.id}','prep')`}));
+  if(q.length) out.push({ic:ICO.jobs,c:'i-green',b:q.length===1?'משרה חדשה מחכה לך':`${q.length} משרות חדשות מחכות לך`,s:q.slice(0,2).map(id=>JOBS[id].co).join(', ')+(q.length>2?` ועוד ${q.length-2}`:''),go:"goPage('jobs')"});
+  S.apps.filter(followDue).forEach(a=>out.push({ic:ICO.mail,c:'i-teal',b:`${JOBS[a.jobId].co} לא ענו ${daysSince(a.date)} ימים`,s:'הודעת המשך מוכנה',go:`openApp('${a.id}','details')`}));
+  S.apps.filter(a=>a.status==='saved').forEach(a=>out.push({ic:ICO.send,c:'i-green',b:`${JOBS[a.jobId].co}: שמרת ועוד לא הגשת`,s:'המכתב מוכן',go:`openApp('${a.id}','letter')`}));
+  const fl=fixesLeft().length; if(fl) out.push({ic:ICO.spark,c:'i-teal',b:fl===1?'שיפור אחד לפרופיל LinkedIn':`${fl} שיפורים לפרופיל LinkedIn`,s:'טקסט מוכן להעתקה',go:"goPage('linkedin','liFixes')"});
+  return out;
+}
 function renderHome(){
   const h=new Date().getHours();
   const hi=h<5?'לילה טוב':h<12?'בוקר טוב':h<17?'צהריים טובים':h<21?'ערב טוב':'לילה טוב';
-  $('greetH').textContent=`${hi}, ${prof().first}`;
-  const q=queue();
   const date=new Date().toLocaleDateString('he-IL',{weekday:'long',day:'numeric',month:'long'});
-  $('greetP').textContent=q.length?`${date}. ${q.length} משרות חדשות מחכות לך.`:`${date}. סקרת את כל המשרות של היום.`;
-
-  const iv=S.apps.find(a=>a.status==='interview');
-  const follow=S.apps.filter(a=>a.status==='applied'&&daysSince(a.date)>=7);
-  const items=[q.length&&`${q.length} משרות`,iv&&'ראיון השבוע',follow.length&&`${follow.length} ממתינות ל-follow-up`].filter(Boolean);
-  $('briefCard').innerHTML=`
-    <div class="brief-top"><span>הבריף של Stanley</span><span class="new">${new Date().toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'})}</span></div>
-    <h2>${items.length?`${items.length} דברים שדורשים אותך היום`:'הכל מעודכן. אין משהו דחוף היום.'}</h2>
-    <div class="brief-chips">${q.length?`<span class="ok">${q.length} משרות עברו סינון</span>`:''}${iv?`<span class="warn">ראיון ב-${esc(JOBS[iv.jobId].co)}, ${esc(iv.iv||'')}</span>`:''}${follow.length?`<span>${follow.length} בלי תשובה שבוע+</span>`:''}</div>
-    <div class="brief-more">הבריף המלא ${IC.arrow}</div>`;
-
-  const top=q.slice(0,3).map(id=>JOBS[id]);
-  $('todayCard').style.display='';
-  $('todayCard').innerHTML=q.length?`
-    <span class="stack-prev">${top.slice().reverse().map(j=>logo(j)).join('')}</span>
-    <span class="today-txt"><b>המשרות של היום</b><span>${top.slice(0,2).map(j=>esc(j.co)).join(', ')}${q.length>2?` ועוד ${q.length-2}`:''}</span></span>
-    <span class="go-round">${IC.arrow}</span>`
-  :`<span class="today-txt"><b>סקרת הכל להיום</b><span>Dwight יסרוק שוב הלילה. ${S.apps.filter(a=>a.status==='saved').length} משרות שמורות מחכות להגשה.</span></span><span class="go-round" onclick="event.stopPropagation();goPage('tracker')">${IC.arrow}</span>`;
-
-  renderTodo();
-  $('agentsRow').innerHTML=UPDATES.map((u,i)=>{const a=CAREER.agents[u.a];return`
-    <button class="ag-card glass" onclick="openUpdate(${i})">
-      <span class="ag-top"><span class="ag-face"><canvas id="uf-${i}" width="96" height="96"></canvas></span><span><span class="ag-name" style="display:block">${a.name}</span><span class="ag-role">${a.role}</span></span></span>
-      <span class="ag-body">${esc(u.body)}</span><span class="ag-time">${u.time}</span>
-    </button>`}).join('');
-  UPDATES.forEach((u,i)=>face($('uf-'+i),u.a));
-  syncChrome();
+  const steps=nextSteps(), q=queue(), iv=S.apps.find(a=>a.status==='interview'), fu=S.apps.filter(followDue);
+  const brief=[q.length?`${N('hunter')} מצא ${q.length===1?'משרה אחת שמתאימה':q.length+' משרות שמתאימות'} לך.`:'סקרת את כל המשרות החדשות.',
+    iv?`יש לך ראיון ב-${JOBS[iv.jobId].co}${iv.iv?' ב'+iv.iv:''}.`:'',
+    fu.length?`${fu.map(a=>JOBS[a.jobId].co).join(' ו-')} עוד לא ענו.`:''].filter(Boolean).join(' ');
+  const shown=steps.slice(0,5);
+  $('homeScroll').innerHTML=`
+    <div class="greet"><h2 class="greet-h">${hi}, ${escB(prof().first)}</h2><p>${escB(date)}</p></div>
+    ${prof().key?'':`<div class="notice">מוצגות דוגמאות עד שתחבר את הסוכנים. <button class="link" style="color:var(--brand);font-weight:600" onclick="goPage('settings')">לחיבור</button></div>`}
+    <div class="brief"><div class="brief-top"><span>הבריף של ${escB(N('assistant'))}</span><span class="new num">${new Date().toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'})}</span></div><p>${escB(brief)}</p></div>
+    <section class="next glass" aria-labelledby="nxH"><div class="next-h"><h2 id="nxH">הצעדים הבאים</h2>${steps.length>5?`<span>5 מתוך ${steps.length}</span>`:''}</div>
+      ${shown.length?shown.map(x=>`<button class="nx" onclick="${x.go}"><span class="ic ${x.c}" aria-hidden="true">${x.ic}</span><span class="tx"><b>${escB(x.b)}</b><span>${escB(x.s)}</span></span>${x.w?`<span class="when ${x.w[1]}">${x.w[0]}</span>`:''}<span class="chev" aria-hidden="true"></span></button>`).join('')
+        :'<p style="padding:6px 16px 14px;color:var(--ink2);font-size:14px">אין צעדים פתוחים כרגע. הסוכנים ממשיכים לעבוד ויעדכנו אותך.</p>'}
+    </section>
+    <button class="today glass" id="qCard" onclick="openQuestions()"></button>
+    <section class="todo glass" id="todoBox" aria-label="המשימות שלי"></section>`;
+  renderQCard();renderTodo();
 }
-function openBrief(){
-  const q=queue(),iv=S.apps.find(a=>a.status==='interview'),follow=S.apps.filter(a=>a.status==='applied'&&daysSince(a.date)>=7);
-  const b=[];
-  if(q.length) b.push({c:'var(--mint)',t:`Dwight סרק 41 משרות הלילה. ${q.length} עברו את הסף והכי חזקה היא ${JOBS[q[0]].co} (${JOBS[q[0]].fit}).`,a:`<button class="btn btn-sm btn-primary" onclick="goPage('jobs')">לסקירה</button>`});
-  if(iv) b.push({c:'var(--amber)',t:`ראיון ב-${JOBS[iv.jobId].co} ${iv.iv?'ב'+iv.iv:''}. Pam הכינה 5 שאלות System Design.`,a:`<button class="btn btn-sm btn-ghost" onclick="goPage('interview')">להכנה</button>`});
-  follow.forEach(f=>b.push({c:'var(--brand)',t:`${JOBS[f.jobId].co} לא ענו ${daysSince(f.date)} ימים. הגיע הזמן ל-follow-up קצר.`,a:`<button class="btn btn-sm btn-ghost" onclick="goPage('tracker')">למעקב</button>`}));
-  if(!b.length) b.push({c:'var(--mint)',t:'אין פעולות דחופות. הסוכנים ממשיכים לעבוד ברקע.'});
-  openSheet(`<h3>הבריף של היום</h3><div class="sheet-sub">Stanley מסכם את מה שהסוכנים עשו בלילה</div>
-    <div class="s-sec">${b.map(x=>`<div class="bullet"><span class="dot" style="background:${x.c}"></span><div style="flex:1">${esc(x.t)}${x.a?`<div style="margin-top:9px">${x.a}</div>`:''}</div></div>`).join('')}</div>`);
+function renderQCard(){
+  const el=$('qCard');if(!el)return;const {done,total}=qProgress();
+  if(done>=total){el.remove();return}
+  el.innerHTML=`<span class="qc-ring" style="--p:${Math.round(done/total*100)}" aria-hidden="true"><b class="num">${done}/${total}</b></span>
+    <span class="today-txt"><b>ספר לסוכנים עוד עליך</b><span>${done?`נשארו ${total-done} שאלות קצרות. ממשיכים מאיפה שעצרת`:`${total} שאלות קצרות, אחת בכל מסך`}</span></span><span class="go-round" aria-hidden="true">${IC.arrow}</span>`;
 }
-function openUpdate(i){
-  const u=UPDATES[i],a=CAREER.agents[u.a];
-  openSheet(`<div style="display:flex;gap:13px;align-items:center"><span class="ag-face" style="width:54px;height:54px;border-radius:16px"><canvas id="upf" width="96" height="96"></canvas></span><div><h3>${a.name}</h3><div class="sheet-sub">${a.role} · ${u.time}</div></div></div>
-    <div class="s-sec"><div class="bullet" style="display:block">${esc(u.body)}</div></div>
-    <div class="s-sec"><h4>מה ${a.name} עושה</h4><p style="font-size:14px;color:var(--ink2);line-height:1.6">${esc(a.desc)}</p></div>
-    <button class="btn btn-ghost btn-block" style="margin-top:16px" onclick="goPage('office')">לראות אותו במשרד</button>`);
-  face($('upf'),u.a);
-}
-
-/* todo — persisted, add, toggle, drag-to-reorder via the handle */
 function renderTodo(){
-  const all=S.todos, left=all.filter(t=>!t.done).length;
-  const show=S.todoOpen?all:all.slice(0,4);
+  const all=S.todos, left=all.filter(t=>!t.done).length, show=S.todoOpen?all:all.slice(0,4);
   $('todoBox').innerHTML=`
-    <div class="todo-head"><h2>פעולות מומלצות</h2><span class="num">${left} פתוחות</span></div>
-    <div id="todoList">${show.map(t=>`
-      <div class="todo-item" data-id="${t.id}">
-        <button class="tcheck${t.done?' done':''}" aria-label="${t.done?'סמן כלא בוצע':'סמן כבוצע'}" onclick="toggleTodo('${t.id}')"></button>
-        <span class="ttext${t.done?' done':''}">${esc(t.text)}</span>
-        <span class="thandle" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg></span>
+    <div class="todo-head"><h2>המשימות שלי</h2><span class="num">${left?`${left} פתוחות`:'הכל בוצע'}</span></div>
+    <div id="todoList" role="list">${show.map(t=>`
+      <div class="todo-item" role="listitem" data-id="${t.id}">
+        <button class="tcheck${t.done?' done':''}" role="checkbox" aria-checked="${t.done}" aria-label="${escB(t.text)}" onclick="toggleTodo('${t.id}')"></button>
+        <span class="ttext${t.done?' done':''}">${escB(t.text)}</span>
+        <button class="thandle" aria-label="גרירה לשינוי הסדר" tabindex="-1"><svg viewBox="0 0 24 24"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg></button>
       </div>`).join('')}</div>
-    <div class="todo-foot"><input id="todoIn" placeholder="הוסף משימה" onkeydown="if(event.key==='Enter')addTodo()">${all.length>4?`<button class="todo-more" onclick="S.todoOpen=!S.todoOpen;save();renderTodo()">${S.todoOpen?'הצג פחות':`הכל (${all.length})`}</button>`:''}</div>`;
+    <div class="todo-foot"><label for="todoIn" class="vh">משימה חדשה</label><input id="todoIn" placeholder="הוסף משימה" enterkeyhint="done" onkeydown="if(event.key==='Enter')addTodo()"><button class="btn btn-sm btn-ghost" onclick="addTodo()">הוסף</button>${all.length>4?`<button class="todo-more" onclick="S.todoOpen=!S.todoOpen;save();renderTodo()">${S.todoOpen?'פחות':`הכל (${all.length})`}</button>`:''}</div>`;
   $('todoBox').querySelectorAll('.thandle').forEach(bindTodoDrag);
 }
 function toggleTodo(id){const t=S.todos.find(x=>x.id===id);t.done=!t.done;save();renderTodo()}
-function addTodo(){const v=$('todoIn').value.trim();if(!v)return;S.todos.unshift({id:'t'+Date.now(),text:v,done:false});save();renderTodo();$('todoIn').focus()}
+function addTodo(){const v=$('todoIn').value.trim();if(!v){$('todoIn').focus();return}S.todos.unshift({id:'t'+Date.now(),text:v,done:false});save();renderTodo();$('todoIn').focus();toast('המשימה נוספה')}
 function bindTodoDrag(h){
   h.addEventListener('pointerdown',e=>{
     const item=h.closest('.todo-item'),list=$('todoList');item.classList.add('dragging');h.setPointerCapture(e.pointerId);
@@ -1496,36 +1789,36 @@ function bindTodoDrag(h){
   });
 }
 
-/* ═════════ JOBS — swipe deck ═════════ */
+/* ═════════ משרות חדשות ═════════ */
 let lastAct=null, busy=false;
 function renderJobs(){
   const q=queue(),done=DECK.length-q.length,saved=DECK.filter(id=>S.decisions[id]==='save').length;
-  $('jobsCount').textContent=q.length?`${done+1} מתוך ${DECK.length} · ${saved} נשמרו`:`${DECK.length} נסקרו · ${saved} נשמרו`;
-  $('jobsFiltered').textContent=`${FILTERED_OUT} בכירות מדי סוננו`;
+  $('jobsCount').textContent=q.length?`משרה ${done+1} מתוך ${DECK.length}${saved?` · ${saved} נשמרו`:''}`:`עברת על כל ${DECK.length} המשרות${saved?` · ${saved} נשמרו`:''}`;
+  $('jobsFiltered').textContent=`${FILTERED_OUT} סוננו כבכירות מדי`;
   $('deckProg').innerHTML=DECK.map((id,i)=>`<i class="${S.decisions[id]?'done':i===done?'cur':''}"></i>`).join('');
   const deck=$('deck');
   if(!q.length){
     $('deckActions').style.display='none';
     const sv=S.apps.filter(a=>a.status==='saved').length;
-    deck.innerHTML=`<div class="empty"><div class="empty-ic">✓</div><h3>סיימת את המשרות של היום</h3><p>Dwight יסרוק שוב הלילה.${sv?(sv===1?' בינתיים משרה שמורה אחת מחכה להגשה.':` בינתיים ${sv} משרות שמורות מחכות להגשה.`):''}</p>${sv?`<button class="btn btn-primary" onclick="goPage('tracker')">למעקב ההגשות</button>`:`<button class="btn btn-ghost" onclick="goPage('main')">חזרה ללוח</button>`}</div>`;
+    deck.innerHTML=`<div class="empty"><div class="empty-ic">✓</div><h3>סיימת את המשרות של היום</h3><p>${escB(N('hunter'))} יחפש שוב הלילה.${sv?(sv===1?' בינתיים משרה אחת ששמרת מחכה להגשה.':` בינתיים ${sv} משרות ששמרת מחכות להגשה.`):''}</p>${sv?`<button class="btn btn-primary" onclick="goPage('apps')">להגשות</button>`:`<button class="btn btn-ghost" onclick="goPage('main')">ללוח הבקרה</button>`}</div>`;
     return;
   }
   $('deckActions').style.display='';
   deck.innerHTML=q.slice(0,3).reverse().map((id,ri,arr)=>{
     const pos=arr.length-1-ri;const j=JOBS[id];
-    return`<article class="jcard${pos===1?' behind':pos===2?' behind2':''}" data-id="${id}" ${pos?'aria-hidden="true"':''}>${cardInner(j)}${pos===0?'<span class="stamp save">שמור</span><span class="stamp skip">דלג</span>':''}</article>`;
+    return`<article class="jcard${pos===1?' behind':pos===2?' behind2':''}" data-id="${id}" ${pos?'aria-hidden="true"':`aria-label="${escB(j.title)} ב-${escB(j.co)}, התאמה ${j.fit} מתוך 5"`}>${cardInner(j)}${pos===0?'<span class="stamp save" aria-hidden="true">שמור</span><span class="stamp skip" aria-hidden="true">דלג</span>':''}</article>`;
   }).join('');
   bindSwipe(deck.querySelector('.jcard:not(.behind):not(.behind2)'));
 }
+function fitLbl(f){return f>=4.3?'התאמה חזקה':f>=4?'התאמה טובה':'שווה בדיקה'}
+function pills(f){const full=Math.floor(f),part=f-full;return`<div class="pills" aria-hidden="true">${[0,1,2,3,4].map(i=>`<i>${i<full?'<b></b>':i===full&&part>0?`<b style="right:${((1-part)*100).toFixed(0)}%"></b>`:''}</i>`).join('')}</div>`}
 function cardInner(j){
-  const full=Math.floor(j.fit),part=j.fit-full;
-  return`<div class="jc-top">${logo(j)}<div style="flex:1;min-width:0"><div class="jc-title">${esc(j.title)}</div><div class="jc-co">${esc(j.co)} · ${esc(j.loc)}</div></div></div>
-    <div class="fit"><div class="fit-num num">${j.fit.toFixed(1)}<small>/5</small></div><div class="fit-right"><div class="fit-lbl">${j.fit>=4.3?'התאמה חזקה':j.fit>=4?'התאמה טובה':'שווה בדיקה'}</div>
-      <div class="pills">${[0,1,2,3,4].map(i=>`<i>${i<full?'<b></b>':i===full&&part>0?`<b style="right:${(1-part)*100}%"></b>`:''}</i>`).join('')}</div></div></div>
-    <div class="jc-reasons">${j.reasons.slice(0,2).map(r=>`<div class="jc-r"><span class="ic ok">✓</span><span>${esc(r)}</span></div>`).join('')}${j.gaps.slice(0,1).map(g=>`<div class="jc-r"><span class="ic gap">!</span><span>חסר: ${esc(g)}</span></div>`).join('')}</div>
-    <div class="jc-desc">${esc(j.desc)}</div>
-    <div class="jc-tags">${j.tags.map(t=>`<span class="chip">${esc(t)}</span>`).join('')}</div>
-    <div class="jc-foot"><span>${esc(j.src)} · ${agoTxt(j.posted)}</span><span>${esc(j.salary)}</span></div>`;
+  return`<div class="jc-top">${logo(j)}<div style="flex:1;min-width:0"><div class="jc-title" lang="en" dir="ltr" style="text-align:right">${escB(j.title)}</div><div class="jc-co">${escB(j.co)} · ${escB(j.loc)}</div></div></div>
+    <div class="fit"><div class="fit-num num">${j.fit.toFixed(1)}<small>/5</small></div><div class="fit-right"><div class="fit-lbl">${fitLbl(j.fit)}</div>${pills(j.fit)}</div></div>
+    <div class="jc-reasons">${j.reasons.slice(0,2).map(r=>`<div class="jc-r"><span class="ic ok" aria-hidden="true">✓</span><span>${escB(r)}</span></div>`).join('')}${j.gaps.slice(0,1).map(g=>`<div class="jc-r"><span class="ic gap" aria-hidden="true">!</span><span>חסר: ${escB(g)}</span></div>`).join('')}</div>
+    <div class="jc-desc">${escB(j.desc)}</div>
+    <div class="jc-tags">${j.tags.map(t=>`<span class="chip" lang="en">${escB(t)}</span>`).join('')}</div>
+    <div class="jc-foot"><span>${escB(j.src)} · ${agoTxt(j.posted)}</span>${j.salary?`<span>${escB(j.salary)}</span>`:''}</div>`;
 }
 function bindSwipe(card){
   if(!card)return;
@@ -1548,8 +1841,8 @@ function decide(kind){
   if(kind==='save'&&!S.apps.find(a=>a.jobId===id)) S.apps.unshift({id:'a-'+id,jobId:id,status:'saved',date:new Date().toISOString(),letter:letterFor(j)});
   save();lastAct={id,kind};
   setTimeout(()=>{busy=false;renderJobs();syncChrome()},340);
-  if(kind==='save') toast(`${j.co} נשמרה למעקב`,{undo:undoLast});
-  else toast('למה לא?',{undo:undoLast,ms:5200,chips:['בכירה מדי','מיקום','טכנולוגיה','לא מעניין אותי'].map(t=>({t,fn:()=>{S.skipReasons[id]=t;save();toast(`רשמתי. Dwight יסנן פחות משרות כאלה (${t})`)}}))});
+  if(kind==='save') toast(`${j.co} נשמרה בהגשות`,{undo:undoLast});
+  else toast('למה זה לא מתאים?',{undo:undoLast,ms:5200,chips:['בכירה מדי','מיקום','טכנולוגיה','לא מעניין אותי'].map(t=>({t,fn:()=>{S.skipReasons[id]=t;save();toast('הבנתי. אציג פחות משרות כאלה')}}))});
 }
 function undoLast(){
   if(!lastAct)return;const{id,kind}=lastAct;delete S.decisions[id];delete S.skipReasons[id];
@@ -1558,156 +1851,194 @@ function undoLast(){
 }
 function openJobInfo(id){
   id=id||queue()[0];if(!id)return;const j=JOBS[id];const inDeck=queue()[0]===id;
-  openSheet(`<div style="display:flex;gap:13px;align-items:center">${logo(j)}<div><h3>${esc(j.title)}</h3><div class="sheet-sub">${esc(j.co)} · ${esc(j.loc)}</div></div></div>
-    <div class="fit" style="margin:16px 0 0"><div class="fit-num num">${j.fit.toFixed(1)}<small>/5</small></div><div class="fit-right"><div class="fit-lbl">ציון ההתאמה של Dwight מול קורות החיים שלך</div><div class="pills">${[0,1,2,3,4].map(i=>`<i>${i<Math.round(j.fit)?'<b></b>':''}</i>`).join('')}</div></div></div>
-    <div class="s-sec"><h4>למה זה מתאים</h4>${j.reasons.map(r=>`<div class="jc-r" style="margin-bottom:7px"><span class="ic ok">✓</span><span>${esc(r)}</span></div>`).join('')}</div>
-    <div class="s-sec"><h4>מה חסר לך</h4>${j.gaps.map(g=>`<div class="jc-r" style="margin-bottom:7px"><span class="ic gap">!</span><span>${esc(g)}</span></div>`).join('')}</div>
-    <div class="s-sec"><h4>על המשרה</h4><p style="font-size:14px;line-height:1.65;color:var(--ink2)">${esc(j.desc)}</p></div>
-    <div class="s-sec"><h4>Jim על החברה</h4><p style="font-size:14px;line-height:1.65;color:var(--ink2)">שכר משוער ${esc(j.salary)}. פורסם ב-${esc(j.src)} ${agoTxt(j.posted)}. המשרה נבדקה כפעילה הבוקר.</p></div>
-    ${inDeck?`<div style="display:flex;gap:10px;margin-top:20px"><button class="btn btn-ghost" style="flex:1" onclick="closeSheet();decide('skip')">דלג</button><button class="btn btn-primary" style="flex:2" onclick="closeSheet();decide('save')">שמור למעקב</button></div>`:''}`);
+  openSheet(`<div style="display:flex;gap:13px;align-items:center">${logo(j)}<div style="min-width:0"><h3 id="sheetTitle" lang="en" dir="ltr" style="text-align:right">${escB(j.title)}</h3><div class="sheet-sub">${escB(j.co)} · ${escB(j.loc)}</div></div></div>
+    <div class="fit" style="margin:16px 0 0"><div class="fit-num num">${j.fit.toFixed(1)}<small>/5</small></div><div class="fit-right"><div class="fit-lbl">${fitLbl(j.fit)}</div>${pills(j.fit)}</div></div>
+    <div class="s-sec"><h4>למה זה מתאים לך</h4>${j.reasons.map(r=>`<div class="jc-r" style="margin-bottom:7px"><span class="ic ok" aria-hidden="true">✓</span><span>${escB(r)}</span></div>`).join('')}</div>
+    <div class="s-sec"><h4>מה חסר</h4>${j.gaps.map(g=>`<div class="jc-r" style="margin-bottom:7px"><span class="ic gap" aria-hidden="true">!</span><span>${escB(g)}</span></div>`).join('')}</div>
+    <div class="s-sec"><h4>על המשרה</h4><p style="font-size:14px;line-height:1.65;color:var(--ink2)">${escB(j.desc)}</p></div>
+    <div class="s-sec"><h4>פרטים</h4><div class="kv"><span>שכר</span><b>${escB(salaryTxt(j))}</b></div><div class="kv"><span>פורסם</span><b>${escB(j.src)}, ${agoTxt(j.posted)}</b></div></div>
+    ${inDeck?`<div class="duo" style="margin-top:20px"><button class="btn btn-ghost" onclick="closeSheet();decide('skip')">דלג</button><button class="btn btn-primary" style="flex:2" onclick="closeSheet();decide('save')">שמור</button></div>`:''}`);
 }
 
-/* ═════════ TRACKER ═════════ */
+/* ═════════ הגשות ═════════ */
 let trFilter='all';
-function renderTracker(){
-  const counts={all:S.apps.length};Object.keys(STATUSES).forEach(k=>counts[k]=S.apps.filter(a=>a.status===k).length);
-  $('seg').innerHTML=[['all','הכל'],...Object.entries(STATUSES)].filter(([k])=>k==='all'||counts[k]).map(([k,l])=>`<button class="chip${trFilter===k?' sel':''}" onclick="trFilter='${k}';renderTracker()">${l} <b class="num">${counts[k]}</b></button>`).join('');
-  const list=S.apps.filter(a=>trFilter==='all'||a.status===trFilter);
-  if(!list.length){$('appsList').innerHTML=`<div class="empty"><div class="empty-ic">📋</div><h3>${S.apps.length?'אין כאן כלום כרגע':'עוד לא שמרת משרות'}</h3><p>משרות שתחליק ימינה יגיעו לכאן, עם מכתב פנייה מוכן.</p><button class="btn btn-primary" onclick="goPage('jobs')">לסקירת משרות</button></div>`;return}
-  $('appsList').innerHTML=list.map(a=>{
-    const j=JOBS[a.jobId],d=daysSince(a.date),letter=a.letter||letterFor(j);
-    const sub=a.status==='saved'?`נשמר ${agoTxt(d)}`:a.status==='interview'?`ראיון ${esc(a.iv||'נקבע')}`:`הוגש ${agoTxt(d)}`;
-    const follow=a.status==='applied'&&d>=7?`<div class="follow"><span>${d} ימים בלי תשובה. follow-up קצר מעלה סיכוי לתגובה.</span><button class="btn btn-sm btn-ghost" onclick="copyFollow('${a.id}')">העתק נוסח</button></div>`:'';
-    const actions=a.status==='saved'
-      ?`<div class="app-actions"><button class="btn btn-sm btn-ghost" onclick="copyLetter('${a.id}')">העתק מכתב</button><button class="btn btn-sm btn-primary" onclick="markApplied('${a.id}')">סימנתי שהגשתי</button></div>`
-      :a.status==='interview'?`<div class="app-actions"><button class="btn btn-sm btn-primary" onclick="goPage('interview')">להכנה לראיון</button></div>`:'';
+function inSeg(a,k){return k==='all'||(k==='closed'?CLOSED.includes(a.status):a.status===k)}
+function appSub(a){const d=daysSince(a.date);
+  return a.status==='saved'?`שמרת ${agoTxt(d)}`:a.status==='interview'?`ראיון ${a.iv||'בתיאום'}`:a.status==='screening'?'מחכות לך שאלות סינון':a.status==='offer'?'קיבלת הצעה':CLOSED.includes(a.status)?STATUSES[a.status]:`הגשת ${agoTxt(d)}`}
+function renderApps(){
+  const cnt=k=>S.apps.filter(a=>inSeg(a,k)).length;
+  if(trFilter!=='all'&&!cnt(trFilter)) trFilter='all';
+  $('seg').innerHTML=SEGS.filter(([k])=>k==='all'||cnt(k)).map(([k,l])=>`<button class="chip${trFilter===k?' sel':''}" role="tab" aria-selected="${trFilter===k}" onclick="trFilter='${k}';renderApps()">${l} <b class="num">${cnt(k)}</b></button>`).join('');
+  const list=S.apps.filter(a=>inSeg(a,trFilter));
+  if(!list.length){$('appsList').innerHTML=`<div class="empty"><div class="empty-ic">📋</div><h3>עוד אין כאן משרות</h3><p>משרות שתשמור יגיעו לכאן, עם מכתב פנייה מוכן.</p><button class="btn btn-primary" onclick="goPage('jobs')">למשרות החדשות</button></div>`;return}
+  const order={interview:0,screening:1,offer:2,saved:3,applied:4,rejected:5,ghosted:6,withdrew:7};
+  $('appsList').innerHTML=list.slice().sort((x,y)=>order[x.status]-order[y.status]).map(a=>{
+    const j=JOBS[a.jobId],fu=followDue(a);
     return`<article class="app glass">
-      <div class="app-top">${logo(j)}<div class="app-info"><div class="app-title">${esc(j.title)}</div><div class="app-sub">${esc(j.co)} · ${sub}</div></div>
-        <button class="status st-${a.status}" onclick="openStatus('${a.id}')" aria-label="שנה סטטוס">${STATUSES[a.status]}</button></div>
-      ${follow}${actions}
-      <details class="letter"><summary>מכתב הפנייה</summary><textarea oninput="setLetter('${a.id}',this.value)">${esc(letter)}</textarea><div class="prov">✓ כל העובדות במכתב מופיעות בקורות החיים שלך</div></details>
+      <button class="app-top" style="width:100%;text-align:right" onclick="openApp('${a.id}')" aria-label="${escB(j.title)} ב-${escB(j.co)}, ${STATUSES[a.status]}">
+        ${logo(j)}<span class="app-info"><span class="app-title" lang="en" dir="ltr" style="display:block;text-align:right">${escB(j.title)}</span><span class="app-sub" style="display:block">${escB(j.co)} · ${escB(appSub(a))}</span></span>
+        <span class="status st-${a.status}">${STATUSES[a.status]}</span></button>
+      ${fu?`<div class="follow"><span>${daysSince(a.date)} ימים בלי תשובה. הודעה קצרה עכשיו מעלה את הסיכוי לתגובה.</span><button class="btn btn-sm btn-ghost" onclick="openApp('${a.id}','details')">להודעה</button></div>`:''}
+      ${a.status==='saved'?`<div class="app-actions"><button class="btn btn-sm btn-ghost" onclick="openApp('${a.id}','letter')">למכתב</button><button class="btn btn-sm btn-primary" onclick="markApplied('${a.id}')">הגשתי</button></div>`:''}
+      ${a.status==='interview'||a.status==='screening'?`<div class="app-actions"><button class="btn btn-sm btn-primary" onclick="openApp('${a.id}','prep')">${a.status==='interview'?'להכנה לראיון':'לשאלות הסינון'}</button></div>`:''}
     </article>`}).join('');
 }
-function setLetter(id,v){S.apps.find(a=>a.id===id).letter=v;save()}
-async function copyText(t,msg){try{await navigator.clipboard.writeText(t);toast(msg)}catch(e){toast('ההעתקה נחסמה בדפדפן. סמן את הטקסט והעתק ידנית')}}
-function copyLetter(id){const a=S.apps.find(x=>x.id===id);copyText(a.letter||letterFor(JOBS[a.jobId]),'המכתב הועתק')}
-function copyFollow(id){const a=S.apps.find(x=>x.id===id),j=JOBS[a.jobId];copyText(`שלום,\n\nהגשתי לפני כשבוע מועמדות למשרת ה-${j.title}. אני עדיין מאוד מעוניין ואשמח לדעת אם יש עדכון לגבי התהליך.\n\nתודה,\n${prof().name}`,'נוסח ה-follow-up הועתק')}
-function markApplied(id){const a=S.apps.find(x=>x.id===id);a.status='applied';a.date=new Date().toISOString();save();renderTracker();syncChrome();toast(`סומן כהוגש. אזכיר לך follow-up בעוד שבוע`)}
+function markApplied(id){const a=appOf(id);a.status='applied';a.date=new Date().toISOString();save();refreshApps();toast('סימנתי שהגשת. אזכיר לך לשלוח הודעת המשך בעוד שבוע')}
+function refreshApps(){if(curPg==='apps')renderApps();if(curPg==='main')renderHome();syncChrome()}
+
+/* application sheet: details · letter · referrals · prep */
+let appTab='details';
+function openApp(id,tab){
+  const a=appOf(id);if(!a)return;
+  const hasPrep=a.status==='interview'||a.status==='screening';
+  appTab=tab==='prep'&&!hasPrep?'details':(tab||'details');
+  const j=JOBS[a.jobId];
+  const tabs=[['details','פרטים'],['letter','מכתב'],['ref','ממליצים'],...(hasPrep?[['prep',a.status==='interview'?'הכנה':'סינון']]:[])];
+  openSheet(`<div style="display:flex;gap:13px;align-items:center">${logo(j)}<div style="min-width:0"><h3 id="sheetTitle" lang="en" dir="ltr" style="text-align:right">${escB(j.title)}</h3><div class="sheet-sub">${escB(j.co)} · ${escB(j.loc)}</div></div></div>
+    <div class="tabs" role="tablist">${tabs.map(([k,l])=>`<button role="tab" id="tab-${k}" aria-selected="${appTab===k}" onclick="appTab='${k}';paintAppTab('${id}')">${l}</button>`).join('')}</div>
+    <div id="appTab" role="tabpanel"></div>`);
+  paintAppTab(id);
+}
+function paintAppTab(id){
+  const a=appOf(id),j=JOBS[a.jobId],el=$('appTab');
+  document.querySelectorAll('.tabs [role=tab]').forEach(b=>b.setAttribute('aria-selected',b.id==='tab-'+appTab));
+  el.setAttribute('aria-labelledby','tab-'+appTab);
+  if(appTab==='details'){
+    const fu=followDue(a);
+    el.innerHTML=`<div class="s-sec" style="margin-top:12px">
+        <div class="kv"><span>שלב</span><button class="status st-${a.status}" onclick="openStatus('${id}')">${STATUSES[a.status]} · שינוי</button></div>
+        <div class="kv"><span>${a.status==='saved'?'נשמרה':'הוגשה'}</span><b>${agoTxt(daysSince(a.date))}</b></div>
+        ${a.iv?`<div class="kv"><span>ראיון</span><b>${escB(a.iv)}</b></div>`:''}
+        <div class="kv"><span>התאמה</span><b class="num">${j.fit.toFixed(1)} מתוך 5</b></div>
+        <div class="kv"><span>שכר</span><b>${escB(salaryTxt(j))}</b></div></div>
+      ${fu?`<div class="s-sec"><h4>הודעת המשך</h4><textarea class="textbox" id="fuText" rows="7" aria-label="הודעת המשך">${esc(a.follow||followText(j))}</textarea>
+        <div class="duo"><button class="btn btn-ghost" onclick="copyText($('fuText').value,'ההודעה הועתקה')">${ICO.copy}העתק</button><button class="btn btn-primary" onclick="sentFollow('${id}')">שלחתי</button></div></div>`:''}
+      <div class="s-sec"><a class="btn btn-ghost btn-block ext" href="${j.url||LI_URL+'jobs/'}" target="_blank" rel="noopener">פתח את המשרה${ICO.open}</a></div>`;
+  }else if(appTab==='letter'){
+    el.innerHTML=`<div class="s-sec" style="margin-top:12px"><label for="letterBox" class="vh">מכתב פנייה</label><textarea class="textbox" id="letterBox" rows="13" oninput="appOf('${id}').letter=this.value;save()">${esc(a.letter||letterFor(j))}</textarea>
+      <div class="hint-line ok">✓ מבוסס רק על מה שכתבת בקורות החיים</div>
+      <div class="duo"><button class="btn btn-ghost" onclick="copyText($('letterBox').value,'המכתב הועתק')">${ICO.copy}העתק</button><a class="btn btn-primary ext" href="${j.url||LI_URL+'jobs/'}" target="_blank" rel="noopener" onclick="copyText($('letterBox').value,'המכתב הועתק. הדבק אותו בטופס')">פתח את המשרה${ICO.open}</a></div>
+      ${a.status==='saved'?`<button class="btn btn-ghost btn-block" style="margin-top:8px" onclick="markApplied('${id}');closeSheet()">הגשתי</button>`:''}</div>`;
+  }else if(appTab==='ref'){
+    const refs=REFERRALS[a.jobId]||[];
+    el.innerHTML=refs.length?`<p style="font-size:13.5px;color:var(--ink2);margin:12px 0 4px">המלצה מבפנים מקפיצה מועמדות לראש הערימה. ${escB(N('researcher'))} מצא:</p>`+refs.map((r,i)=>`
+      <div class="person">${pav(r.name)}<div class="tx"><b>${escB(r.name)}</b><span>${escB(r.role)}</span><span class="why">${escB(r.why)}</span></div></div>
+      <label for="ref${i}" class="vh">הודעה ל${escB(r.name)}</label><textarea class="textbox" id="ref${i}" rows="5">${esc(refNote(r,j))}</textarea>
+      <div class="duo"><button class="btn btn-ghost" onclick="copyText($('ref${i}').value,'ההודעה הועתקה')">${ICO.copy}העתק</button><a class="btn btn-primary ext" href="${liSearch(r.name+' '+j.co)}" target="_blank" rel="noopener" onclick="copyText($('ref${i}').value,'ההודעה הועתקה. הדבק אותה בהודעה')">פתח בלינקדאין${ICO.open}</a></div>`).join('')
+      :`<div class="empty" style="padding:28px 8px"><h3>עוד לא מצאנו קשר בחברה</h3><p>${escB(N('researcher'))} ימשיך לחפש אנשים מ-HIT, מהשירות ומהקשרים שלך.</p></div>`;
+  }else{
+    const P=PREP[a.status];
+    el.innerHTML=`<p style="font-size:13.5px;color:var(--ink2);margin:12px 0 6px">${escB(P.lead)}</p>
+      <div class="card-solid" style="padding:4px 14px">${P.qs.map(q=>`<details class="q"><summary><span class="qtag" lang="en">${escB(q.tag)}</span><span class="qtxt">${escB(q.q)}</span></summary><div class="hint">${q.h}</div></details>`).join('')}</div>
+      <button class="btn btn-primary btn-block" style="margin-top:14px" onclick="closeSheet();toggleChat(true);chatAsk('בוא נתרגל ${a.status==='interview'?'ראיון':'שאלות סינון'}')">לתרגל עם ${escB(N('coach'))}</button>`;
+  }
+}
+function sentFollow(id){const a=appOf(id);a.follow=$('fuText').value;a.date=new Date().toISOString();save();closeSheet();refreshApps();toast('מעולה. אזכיר שוב בעוד שבוע אם לא יענו')}
 function openStatus(id){
-  const a=S.apps.find(x=>x.id===id),j=JOBS[a.jobId];
-  openSheet(`<h3>${esc(j.co)}</h3><div class="sheet-sub">${esc(j.title)}</div><div class="s-sec">${Object.entries(STATUSES).map(([k,l])=>`<button class="opt${a.status===k?' sel':''}" onclick="setStatus('${id}','${k}')"><span class="status st-${k}">${l}</span><span class="radio"></span></button>`).join('')}</div>`);
+  const a=appOf(id),j=JOBS[a.jobId];
+  openSheet(`<h3 id="sheetTitle">שלב ההגשה</h3><div class="sheet-sub">${escB(j.co)}</div><div class="s-sec" role="radiogroup" aria-label="שלב">${Object.entries(STATUSES).map(([k,l])=>`<button class="opt${a.status===k?' sel':''}" role="radio" aria-checked="${a.status===k}" onclick="setStatus('${id}','${k}')"><span class="status st-${k}">${l}</span><span class="radio" aria-hidden="true"></span></button>`).join('')}</div>`);
 }
-function setStatus(id,k){const a=S.apps.find(x=>x.id===id);if(a.status!==k){a.status=k;if(k==='applied')a.date=new Date().toISOString();save()}closeSheet();renderTracker();syncChrome();toast(`עודכן: ${STATUSES[k]}`)}
+function setStatus(id,k){const a=appOf(id);if(a.status!==k){a.status=k;if(k==='applied')a.date=new Date().toISOString();save()}refreshApps();openApp(id,(k==='interview'||k==='screening')?'prep':'details');toast(`השלב עודכן: ${STATUSES[k]}`)}
 
-/* ═════════ INTERVIEW ═════════ */
-const IV_Q=[
-  {tag:'System Design',q:'איך היית מתכנן מערכת התראות לבורד של Monday.com עם מיליון משתמשים?',h:'<b>מבנה תשובה:</b> דרישות (מה נחשב התראה, latency) ← רכיבים (API, תור הודעות, workers, WebSocket) ← צוואר בקבוק (fan-out לבורדים גדולים) ← trade-offs. <b>מהניסיון שלך:</b> ה-Socket.IO במערכות הזמן אמת.'},
-  {tag:'Backend',q:'מה ההבדל בין SQL ל-NoSQL, ומתי תבחר בכל אחד?',h:'<b>בקצרה:</b> עקביות ויחסים ← SQL. סכמה גמישה ו-scale אופקי ← NoSQL. <b>תן דוגמה:</b> למה בחרת ב-Supabase (Postgres) ב-Lifeboard.'},
-  {tag:'פרויקט',q:'ספר על פרויקט שאתה גאה בו. מה היה האתגר הטכני הכי קשה?',h:'<b>STAR:</b> מצב (Lifeboard, סוכנים שקורסים על מכסת API) ← משימה ← פעולה (Budget Guard, caching) ← תוצאה במספרים.'},
-  {tag:'Debugging',q:'ספר על באג קשה שפתרת. איך ניגשת אליו?',h:'<b>מה מחפשים:</b> שיטתיות. שחזור ← בידוד ← השערה ← בדיקה ← מניעה. AI Smart Crosswalk עם תנאי תאורה משתנים מתאים כאן.'},
-  {tag:'צוות',q:'מה אתה עושה כשאתה לא מסכים עם החלטה טכנית של הצוות?',h:'<b>רמז:</b> השירות כקצין לוגיסטיקה וסגן מ״פ הוא יתרון אמיתי. דוגמה להבעת עמדה, הקשבה וקבלת החלטה.'},
-];
-const IV_TIPS=['לכל תשובה הכן דוגמה אחת קונקרטית מפרויקט אמיתי, עם מספר','קרא על ה-Work OS של Monday.com ונסה את המוצר 20 דקות','הכן 2 שאלות לסוף: מה האתגר הטכני של הצוות ברבעון הקרוב?','בדוק מצלמה ומיקרופון 10 דקות לפני'];
-let ivSel=null;
-function renderInterview(){
-  const ivs=S.apps.filter(a=>a.status==='interview');
-  if(!ivs.length){$('ivScroll').innerHTML=`<div class="empty"><div class="empty-ic">🎤</div><h3>אין ראיונות קרובים</h3><p>כשתעביר משרה לסטטוס "ראיון" במעקב, Pam תכין לך שאלות לפי החברה והתפקיד.</p><button class="btn btn-ghost" onclick="goPage('tracker')">למעקב ההגשות</button></div>`;return}
-  if(!ivs.find(a=>a.id===ivSel)) ivSel=ivs[0].id;
-  const a=ivs.find(x=>x.id===ivSel),j=JOBS[a.jobId];
-  const known=['React','TypeScript','Node.js','Python','SQL','Git','Socket.IO'];
-  const skills=[...new Set([...j.tags,'System Design','REST API','SQL','Git',...j.gaps])];
-  $('ivScroll').innerHTML=`
-    ${ivs.length>1?`<div class="iv-jobs">${ivs.map(x=>{const jj=JOBS[x.jobId];return`<button class="iv-job${x.id===ivSel?' sel':''}" onclick="ivSel='${x.id}';renderInterview()">${logo(jj)}<span><b>${esc(jj.co)}</b><span>${esc(x.iv||'')}</span></span></button>`}).join('')}</div>`:''}
-    <div class="card glass iv-when">${logo(j)}<div style="flex:1"><div class="muted" style="font-size:13px">ראיון ב-${esc(j.co)}</div><div class="big">${esc(a.iv||'עוד לא נקבע')}</div><div class="muted" style="font-size:13px">${esc(j.title)}</div></div></div>
-    <div class="card glass" style="display:flex;gap:12px;align-items:flex-start"><span class="ag-face" style="width:42px;height:42px"><canvas id="ivPam" width="96" height="96"></canvas></span>
-      <div style="flex:1"><b style="font-size:14px">Pam</b> <span class="muted" style="font-size:12.5px">ראיונות ופיתוח</span><p style="font-size:13.5px;color:var(--ink2);margin-top:3px;line-height:1.55">הכנתי ${IV_Q.length} שאלות לפי מודעת המשרה ולפי ראיונות קודמים ב-${esc(j.co)}. לחץ על שאלה לראות איך לבנות את התשובה מהניסיון שלך.</p></div></div>
-    <div class="card glass"><div class="card-h">שאלות צפויות</div>${IV_Q.map(q=>`<details class="q"><summary><span class="qtag">${q.tag}</span><span class="qtxt">${esc(q.q)}</span></summary><div class="hint">${q.h}</div></details>`).join('')}</div>
-    <div class="card glass"><div class="card-h">לפני הראיון</div>${IV_TIPS.map(t=>`<div class="tip"><i>✓</i><span>${esc(t)}</span></div>`).join('')}</div>
-    <div class="card glass"><div class="card-h">כישורים לרענן</div><div class="card-sub">כתום = לא מופיע בקורות החיים שלך</div><div class="skills">${skills.map(s=>`<span class="skill${known.includes(s)||j.tags.includes(s)&&!j.gaps.includes(s)?'':' gap'}">${esc(s)}</span>`).join('')}</div></div>
-    <button class="btn btn-primary btn-block" onclick="toggleChat(true);chatAsk('בוא נתרגל ראיון')">תרגל איתי בצ׳אט</button>`;
-  face($('ivPam'),3);
+/* ═════════ LinkedIn ═════════ */
+function renderLinkedIn(){
+  const L=S.li, c=Math.min(L.comments,WEEK_GOAL.comments), sc=liScore();
+  $('liScroll').innerHTML=`
+    <section class="li-head glass" aria-labelledby="goalH">
+      <span class="ring" style="--p:${Math.round(c/WEEK_GOAL.comments*100)}" aria-hidden="true"><b class="num">${c}/${WEEK_GOAL.comments}<small>תגובות</small></b></span>
+      <span class="tx"><b id="goalH">היעד שלך השבוע</b><span>${c>=WEEK_GOAL.comments?'השגת את יעד התגובות. כל הכבוד':'5 תגובות טובות ופוסט אחד. תגובה טובה שווה יותר מעשרות לייקים'}</span>
+        <span class="li-goal-line">פוסט השבוע: ${L.posts?'<b>פורסם ✓</b>':'עוד לא'}</span></span>
+    </section>
+
+    <div class="sec-h"><h2>פוסטים חמים</h2><span>מהיומיים האחרונים</span></div>
+    ${POSTS.map(postCard).join('')}
+
+    <div class="sec-h" id="liFixes"><h2>הפרופיל שלך</h2><span class="num">${sc} מתוך 100</span></div>
+    <section class="card-solid" aria-label="שיפורים לפרופיל">${LI_FIXES.map(fixRow).join('')}</section>
+
+    <div class="sec-h"><h2>אנשים להכיר</h2><span>${PEOPLE.filter(p=>!L.people[p.id]).length} השבוע</span></div>
+    <section class="card-solid" aria-label="אנשים להכיר">${PEOPLE.map(personRow).join('')}</section>
+
+    <div class="sec-h"><h2>הפוסט של השבוע</h2><span>${L.posts?'פורסם ✓':'טיוטה'}</span></div>
+    <section class="card-solid"><label for="postDraft" class="vh">טיוטת פוסט</label><textarea class="textbox" id="postDraft" rows="10" oninput="S.li.postText=this.value;save()">${esc(L.postText||POST_DRAFT)}</textarea>
+      <div class="duo"><button class="btn btn-ghost" onclick="copyText($('postDraft').value,'הפוסט הועתק')">${ICO.copy}העתק</button><a class="btn btn-primary ext" href="${LI_URL}feed/" target="_blank" rel="noopener" onclick="copyText($('postDraft').value,'הפוסט הועתק. הדבק אותו בפוסט חדש')">פתח את LinkedIn${ICO.open}</a></div>
+      <div class="done-row" style="margin-top:10px"><span>פרסמת?</span><button class="mark" onclick="S.li.posts=S.li.posts?0:1;save();renderLinkedIn();syncChrome()">${L.posts?'בטל סימון':'פרסמתי ✓'}</button></div></section>`;
 }
-
-/* ═════════ PROFILE ═════════ */
-const ROW_IC={doc:'<svg viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8z"/><path d="M14 3v5h5"/></svg>',
-  target:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/></svg>',
-  pin:'<svg viewBox="0 0 24 24"><path d="M12 21s-7-6.5-7-12a7 7 0 0114 0c0 5.5-7 12-7 12z"/><circle cx="12" cy="9" r="2.5"/></svg>',
-  bolt:'<svg viewBox="0 0 24 24"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg>',
-  bell:'<svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 00-12 0c0 7-3 8-3 8h18s-3-1-3-8"/><path d="M13.7 21a2 2 0 01-3.4 0"/></svg>',
-  globe:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 010 18M12 3a14 14 0 000 18"/></svg>',
-  replay:'<svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 109-9"/><path d="M3 4v5h5"/></svg>',
-  trash:'<svg viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>'};
-function renderProfile(){
-  const p=prof(),applied=S.apps.filter(a=>a.status!=='saved').length,ivs=S.apps.filter(a=>['interview','offer'].includes(a.status)).length;
-  $('profScroll').innerHTML=`
-    <div class="p-hero glass"><div class="avatar">${esc((p.first||p.name).slice(0,2))}</div><div class="p-name">${esc(p.name)}</div><div class="p-goal">${esc(goalTxt())}</div>
-      <div class="p-stats"><div><b class="num">${34+Object.keys(S.decisions).length}</b><span>משרות נסקרו</span></div><div><b class="num">${applied}</b><span>הגשות</span></div><div><b class="num">${ivs}</b><span>ראיונות</span></div></div></div>
-
-    <div class="card glass"><div class="card-h">קורות חיים</div>
-      <div class="row"><span class="ri">${ROW_IC.doc}</span><span class="rl"><b>${esc(p.cvName||(p.cv?'הודבק כטקסט':'עוד לא הועלו'))}</b><span>${p.cv||p.cvName?'כל הסוכנים עובדים מהקובץ הזה':'בלי קורות חיים אין ציון התאמה'}</span></span>${p.cv||p.cvName?'<span class="pill-ok">פעיל</span>':'<span class="pill-warn">חסר</span>'}</div>
-      <div style="display:flex;gap:8px;margin-top:6px"><label for="cvFile" class="btn btn-sm btn-ghost" style="flex:1">העלה קובץ</label><button class="btn btn-sm btn-ghost" style="flex:1" onclick="editCvText()">ערוך כטקסט</button></div></div>
-
-    <div class="card glass"><div class="card-h">מה אני מחפש</div>
-      <button class="row" onclick="openOnb(2)"><span class="ri">${ROW_IC.target}</span><span class="rl"><b>${esc(p.role)}</b><span>${esc(p.level)}</span></span><span class="chev"></span></button>
-      <button class="row" onclick="openOnb(2)"><span class="ri">${ROW_IC.pin}</span><span class="rl"><b>${esc(p.locs.join(', ')||'כל הארץ')}</b><span>מיקום וסוג עבודה</span></span><span class="chev"></span></button></div>
-
-    <div class="card glass" id="ai"><div class="card-h">חיבור AI</div><div class="card-sub">findjob רץ על המכסה החינמית של Groq. בלי כרטיס אשראי אין חיוב, וכשהמכסה נגמרת הסוכנים פשוט ממתינים למחר.</div>
-      <button class="row" onclick="openOnb(3)"><span class="ri">${ROW_IC.bolt}</span><span class="rl"><b>Groq</b><span>${p.key?'gsk_••••'+esc(p.key.slice(-4)):'מצב התנסות, 3 ריצות'}</span></span>${p.key?'<span class="pill-ok">מחובר</span>':'<span class="pill-warn">חבר מפתח</span>'}</button>
-      <div style="padding:4px 2px 12px"><div class="quota-row"><span>נוצל היום</span><b class="num">${S.quota}%</b></div><div class="quota-bar"><div class="quota-fill" style="width:${S.quota}%"></div></div></div>
-      <div class="row"><span class="ri">${ROW_IC.doc}</span><span class="rl"><b>Claude למכתבים</b><span>בתשלום לפי שימוש. לא כלול במנוי Claude Pro</span></span><button class="switch${S.claude?' on':''}" role="switch" aria-checked="${S.claude}" aria-label="Claude למכתבים" onclick="toggleClaude()"></button></div></div>
-
-    <div class="card glass"><div class="card-h">הגדרות</div>
-      <div class="row"><span class="ri">${ROW_IC.bell}</span><span class="rl"><b>בריף בוקר</b><span>כל יום ב-08:00</span></span><button class="switch${S.notif?' on':''}" role="switch" aria-checked="${S.notif}" aria-label="בריף בוקר" onclick="S.notif=!S.notif;save();renderProfile()"></button></div>
-      <div class="row"><span class="ri">${ROW_IC.globe}</span><span class="rl"><b>שפה</b><span>עברית</span></span></div>
-      <button class="row" onclick="openOnb(0)"><span class="ri">${ROW_IC.replay}</span><span class="rl"><b>הפעל שוב את ההיכרות</b><span>קורות חיים, העדפות ומפתח</span></span><span class="chev"></span></button>
-      <button class="row" onclick="confirmWipe()"><span class="ri">${ROW_IC.trash}</span><span class="rl"><b class="danger">מחק את כל הנתונים שלי</b><span>קורות חיים, משרות, מכתבים ומפתח</span></span></button></div>`;
+function postCard(p){
+  const L=S.li,h=L.handled[p.id],sel=L.drafts[p.id]??0,txt=L['edit_'+p.id]??p.drafts[sel].t;
+  const fresh=p.mins<60?`לפני ${p.mins} דק׳`:`לפני ${Math.round(p.mins/60)} שעות`;
+  return`<article class="post glass${h?' handled':''}" aria-label="פוסט של ${escB(p.author)}">
+    <div class="post-top">${pav(p.author)}<div class="tx"><b>${escB(p.author)}</b><span>${escB(p.role)}</span></div><span class="fresh${p.mins<60?'':' old'}">${fresh}</span></div>
+    <span class="why" style="align-self:flex-start;margin-top:-4px">${escB(p.why)}</span>
+    <div class="post-text" lang="${p.lang}">${escB(p.text)}</div>
+    ${h?`<div class="done-row"><span class="handled-tag">✓ הגבת לפוסט הזה</span><button class="mark" onclick="unhandle('${p.id}')">בטל</button></div>`:`
+    <div class="drafts"><span class="drafts-h" id="dh-${p.id}">תגובה מוצעת · אפשר לערוך לפני שמעתיקים</span>
+      <div class="tabs mini" role="radiogroup" aria-labelledby="dh-${p.id}">${p.drafts.map((d,i)=>`<button role="radio" aria-checked="${sel===i}" onclick="pickDraft('${p.id}',${i})">${escB(d.k)}</button>`).join('')}</div>
+    </div>
+    <label for="ed-${p.id}" class="vh">התגובה</label><textarea class="textbox${p.lang==='en'?' ltr':''}" id="ed-${p.id}" rows="5" oninput="S.li['edit_${p.id}']=this.value;save()">${esc(txt)}</textarea>
+    <div class="duo"><button class="btn btn-ghost" onclick="copyText($('ed-${p.id}').value,'התגובה הועתקה')">${ICO.copy}העתק</button><a class="btn btn-primary ext" href="${LI_URL}feed/" target="_blank" rel="noopener" onclick="copyText($('ed-${p.id}').value,'התגובה הועתקה. הדבק אותה מתחת לפוסט')">פתח את הפוסט${ICO.open}</a></div>
+    <div class="done-row"><span>הגבת?</span><button class="mark" onclick="handle('${p.id}')">הגבתי ✓</button></div>`}
+  </article>`;
 }
-function toggleClaude(){S.claude=!S.claude;save();renderProfile();if(S.claude)toast('Claude יופעל רק עם מפתח Anthropic ו-credit מוגבל מראש. עד אז Groq ממשיך לכתוב',{ms:5200})}
-function editCvText(){openSheet(`<h3>קורות חיים כטקסט</h3><div class="sheet-sub">הסוכנים קוראים את הטקסט הזה. עדכן ושמור</div><div class="field" style="margin-top:14px"><textarea id="cvEdit" rows="12">${esc(prof().cv)}</textarea></div><button class="btn btn-primary btn-block" onclick="prof().cv=$('cvEdit').value;save();closeSheet();renderProfile();toast('קורות החיים נשמרו')">שמור</button>`)}
-function confirmWipe(){openSheet(`<h3>למחוק הכל?</h3><div class="sheet-sub">זה ימחק מהמכשיר את קורות החיים, ההחלטות, המכתבים והמפתח. אי אפשר לשחזר.</div><div style="display:flex;gap:10px;margin-top:20px"><button class="btn btn-ghost" style="flex:1" onclick="closeSheet()">ביטול</button><button class="btn" style="flex:1;background:var(--rose);color:#fff" onclick="LS.clear();location.reload()">מחק הכל</button></div>`)}
-function onCvFile(inp){
-  const f=inp.files[0];if(!f)return;prof().cvName=f.name;
-  if(/\.(txt|md)$/i.test(f.name)){const r=new FileReader();r.onload=()=>{prof().cv=String(r.result).slice(0,20000);save();afterCv()};r.readAsText(f)}else{save();afterCv()}
-  inp.value='';
+function pickDraft(pid,i){S.li.drafts[pid]=i;delete S.li['edit_'+pid];save();const y=$('liScroll').scrollTop;renderLinkedIn();$('liScroll').scrollTop=y;$('ed-'+pid)?.focus({preventScroll:true})}
+function handle(pid){S.li.handled[pid]=true;S.li.comments++;save();renderLinkedIn();syncChrome();toast(S.li.comments>=WEEK_GOAL.comments?'השגת את יעד התגובות של השבוע':`נספר. ${S.li.comments} מתוך ${WEEK_GOAL.comments} השבוע`)}
+function unhandle(pid){delete S.li.handled[pid];S.li.comments=Math.max(0,S.li.comments-1);save();renderLinkedIn();syncChrome()}
+function fixRow(f){const on=!!S.li.fixes[f.id];
+  return`<div class="fix${on?' done':''}"><button class="chk${on?' on':''}" role="checkbox" aria-checked="${on}" aria-label="${escB(f.t)}" onclick="toggleFix('${f.id}')"></button>
+    <div class="tx"><b>${escB(f.t)}</b><span>${escB(f.why)}</span>
+      ${!on&&f.copy?`<div class="copybox" lang="en">${escB(f.copy)}</div><div class="duo"><button class="btn btn-sm btn-ghost" onclick="copyFix('${f.id}')">${ICO.copy}העתק</button><a class="btn btn-sm btn-primary ext" href="${LI_URL}in/me/" target="_blank" rel="noopener">פתח את הפרופיל${ICO.open}</a></div>`:''}
+      ${!on&&!f.copy?`<div class="duo"><a class="btn btn-sm btn-ghost ext" href="${LI_URL}in/me/" target="_blank" rel="noopener">פתח את הפרופיל${ICO.open}</a></div>`:''}</div></div>`}
+function copyFix(id){copyText(LI_FIXES.find(f=>f.id===id).copy,'הטקסט הועתק. הדבק אותו בפרופיל')}
+function toggleFix(id){S.li.fixes[id]?delete S.li.fixes[id]:S.li.fixes[id]=true;save();renderLinkedIn();syncChrome();if(S.li.fixes[id])toast(`הפרופיל עלה ל-${liScore()} מתוך 100`)}
+function personRow(p){const on=!!S.li.people[p.id];
+  return`<div class="person" style="flex-wrap:wrap">${pav(p.name)}<div class="tx"><b>${escB(p.name)}</b><span>${escB(p.role)}</span><span class="why">${escB(p.why)}</span></div>${on?'<span class="handled-tag">✓ נשלח</span>':''}
+    ${on?'':`<div style="flex-basis:100%"><label for="nt-${p.id}" class="vh">הודעת חיבור ל${escB(p.name)}</label><textarea class="textbox" id="nt-${p.id}" rows="4" maxlength="300">${esc(p.note)}</textarea>
+    <div class="hint-line"><span class="num">${[...p.note].length}</span>/300 תווים</div>
+    <div class="duo"><button class="btn btn-sm btn-ghost" onclick="copyText($('nt-${p.id}').value,'ההודעה הועתקה')">${ICO.copy}העתק</button><a class="btn btn-sm btn-primary ext" href="${liSearch(p.name+' '+p.role.split(',').pop().trim())}" target="_blank" rel="noopener" onclick="copyText($('nt-${p.id}').value,'ההודעה הועתקה. הדבק אותה בבקשת החיבור')">פתח בלינקדאין${ICO.open}</a></div>
+    <div class="done-row"><span>שלחת בקשת חיבור?</span><button class="mark" onclick="S.li.people['${p.id}']=1;save();renderLinkedIn();syncChrome()">שלחתי ✓</button></div></div>`}</div>`}
+
+/* ═════════ Office: agent messages (below the workflow) ═════════ */
+let omAll=false;
+function renderOfficeMsgs(){
+  const el=$('omList');if(!el)return;
+  const list=omAll?UPDATES:UPDATES.slice(0,5);
+  el.innerHTML=list.map((u,i)=>{const a=CAREER.agents[u.a];return`<button class="om-item" onclick="openAgSheet(${u.a})"><span class="om-face"><canvas id="om-${i}" width="96" height="96"></canvas></span><span class="om-tx"><b>${a.name}</b><i>${u.time}</i><p>${escB(u.body)}</p></span></button>`}).join('')
+    +(UPDATES.length>5?`<button class="om-more" onclick="omAll=!omAll;renderOfficeMsgs()">${omAll?'הצג פחות':`הצג עוד ${UPDATES.length-5}`}</button>`:'');
+  list.forEach((u,i)=>face($('om-'+i),u.a));
 }
-function afterCv(){if($('onb').classList.contains('open'))renderOnb();else{renderProfile();toast('קורות החיים עודכנו. Dwight יחשב ציונים מחדש בריצה הבאה')}}
 
 /* ═════════ ONBOARDING ═════════ */
 let onbStep=0, onbDraft=null, onbSingle=false;
-const LOCS=['תל אביב','מרכז','ירושלים','חיפה והצפון','היברידי','Remote'];
-const LEVELS=['סטודנט / ג׳וניור','1–3 שנים','3+ שנים'];
 function openOnb(step=0){onbSingle=step>0&&S.onboarded;onbStep=step;onbDraft=JSON.parse(JSON.stringify(prof()));closeSheet();closeDrawer();$('onb').classList.add('open');renderOnb()}
-function onbGo(d){onbStep=Math.max(0,Math.min(4,onbStep+d));renderOnb()}
+function closeOnb(){$('onb').classList.remove('open','qmode')}
+function onbGo(d){onbStep=Math.max(0,Math.min(4,onbStep+d));if(onbStep===2)qi=Math.min(S.qi||0,Math.max(0,visibleQs().length-1));renderOnb()}
 function renderOnb(){
+  if(onbStep===2){renderQ();return}
+  $('onb').classList.remove('qmode');
   const p=onbDraft;p.cv=prof().cv;p.cvName=prof().cvName;
   $('onbSteps').innerHTML=[0,1,2,3,4].map(i=>`<i class="${i===onbStep?'on':i<onbStep?'done':''}"></i>`).join('');
-  $('onbBack').style.visibility=onbStep>0&&onbStep<4||onbSingle?'visible':'hidden';$('onbBack').textContent=onbSingle?'סגור':'חזרה';$('onbBack').onclick=onbSingle?()=>$('onb').classList.remove('open'):()=>onbGo(-1);
+  $('onbBack').style.visibility=onbStep>0&&onbStep<4||onbSingle?'visible':'hidden';$('onbBack').textContent=onbSingle?'סגור':'חזרה';$('onbBack').onclick=onbSingle?closeOnb:()=>onbGo(-1);
   let body='',foot='';
   if(onbStep===0){
     body=`<div class="logo-mark" style="margin-bottom:22px"><svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21"/><path d="M8 10.8l1.8 1.8L13.3 9"/></svg></div>
       <h1>משרד מלא שמחפש לך עבודה, ואתה רק מחליט.</h1><p class="lead">findjob סורק משרות ביום ובלילה, מדרג כל אחת מול קורות החיים והפרופיל האישי שלך ומכין מכתב פנייה.</p>`;
     foot=`<button class="btn btn-primary btn-block" onclick="onbGo(1)">בוא נתחיל</button>`;
   }else if(onbStep===1){
-    body=`<h1>קודם, קורות החיים שלך</h1><p class="lead">מהם הסוכנים לומדים מה אתה יודע לעשות. הקובץ נשאר שלך ואפשר למחוק אותו בכל רגע.</p>
-      <label for="cvFile" class="drop${p.cvName?' has':''}" role="button" tabindex="0"><span style="font-size:30px">${p.cvName?'✓':'📄'}</span><b>${p.cvName?esc(p.cvName):'בחר קובץ'}</b><span>${p.cvName?'לחץ להחלפה':'PDF, Word או טקסט'}</span></label>
-      <div class="field" style="margin-top:18px"><label for="onbCv">או הדבק את הטקסט</label><textarea id="onbCv" rows="6" placeholder="סטודנט שנה ג׳ למדעי המחשב…" oninput="onbCvTyped(this)" onchange="onbCvTyped(this)" onkeyup="onbCvTyped(this)" onpaste="setTimeout(()=>onbCvTyped(this),0)">${esc(p.cv)}</textarea><div class="help" id="onbCvHelp"></div></div>`;
+    body=`<h1>נעים להכיר</h1><p class="lead">מקורות החיים הסוכנים לומדים מה אתה יודע לעשות. הקובץ נשאר שלך ואפשר למחוק אותו בכל רגע.</p>
+      <div class="field"><label for="onbFirst">איך לקרוא לך?</label><input id="onbFirst" value="${escB(prof().first)}" maxlength="20" autocomplete="given-name" oninput="prof().first=this.value.trim()||prof().first;save()"></div>
+      <label for="cvFile" class="drop${p.cvName?' has':''}" role="button" tabindex="0"><span style="font-size:30px">${p.cvName?'✓':'📄'}</span><b>${p.cvName?escB(p.cvName):'בחר קובץ'}</b><span>${p.cvName?'לחץ להחלפה':'PDF, Word או טקסט'}</span></label>
+      <div class="field" style="margin-top:18px"><label for="onbCv">או הדבק את הטקסט</label><textarea id="onbCv" rows="6" placeholder="סטודנט שנה ג׳ למדעי המחשב…" oninput="onbCvTyped(this)" onchange="onbCvTyped(this)" onkeyup="onbCvTyped(this)" onpaste="setTimeout(()=>onbCvTyped(this),0)">${escB(p.cv)}</textarea><div class="help" id="onbCvHelp"></div></div>`;
     foot=`<button class="btn btn-primary btn-block" id="onbNext" onclick="onbCvNext()">המשך</button><button class="link-btn" onclick="onbGo(1)">אוסיף אחר כך</button>`;
-  }else if(onbStep===2){
-    body=`<h1>מה אתה מחפש?</h1><p class="lead">Dwight מסנן לפי זה כל לילה. אפשר לשנות בכל רגע מהפרופיל.</p>
-      <div class="field"><label for="onbRole">תפקיד</label><input id="onbRole" value="${esc(p.role)}" oninput="onbDraft.role=this.value"></div>
-      <div class="field"><label>רמה</label><div class="chips">${LEVELS.map(l=>`<button class="chip${p.level===l?' sel':''}" onclick="onbDraft.level='${l}';renderOnb()">${l}</button>`).join('')}</div></div>
-      <div class="field"><label>מיקום וסוג עבודה</label><div class="chips">${LOCS.map(l=>`<button class="chip${p.locs.includes(l)?' sel':''}" aria-pressed="${p.locs.includes(l)}" onclick="onbToggleLoc('${l}')">${l}</button>`).join('')}</div></div>`;
-    foot=`<button class="btn btn-primary btn-block" onclick="onbNext()">${onbSingle?'שמור':'המשך'}</button>`;
   }else if(onbStep===3){
-    body=`<h1>חבר מפתח AI חינמי</h1><p class="lead">לכל משתמש מכסה חינמית משלו ב-Groq. בלי כרטיס אשראי, אז אין דרך לחייב אותך.</p>
-      <div class="key-steps"><div><span>היכנס ל-<a href="https://console.groq.com/keys" target="_blank" rel="noopener">console.groq.com/keys</a> עם חשבון Google</span></div><div><span>לחץ Create API Key והעתק את המפתח</span></div><div><span>הדבק אותו כאן</span></div></div>
-      <div class="field"><label for="onbKey">מפתח Groq</label><input id="onbKey" class="ltr" placeholder="gsk_..." value="${esc(p.key)}" autocomplete="off" spellcheck="false" oninput="onbDraft.key=this.value.trim();$('onbKeyBtn').disabled=!/^gsk_\\w{20,}/.test(onbDraft.key)">
-        <div class="help">המפתח נשמר רק במכשיר הזה בגרסת ההדגמה. בגרסה המלאה הוא נשמר מוצפן בשרת.</div></div>`;
-    foot=`<button class="btn btn-primary btn-block" id="onbKeyBtn" ${/^gsk_\w{20,}/.test(p.key)?'':'disabled'} onclick="onbNext()">${onbSingle?'שמור מפתח':'חבר והמשך'}</button><button class="link-btn" onclick="onbDraft.key='';onbNext()">${onbSingle?'נתק ועבור למצב התנסות':'דלג, אנסה במצב התנסות'}</button>`;
+    body=`<h1>צעד אחרון: לחבר את הסוכנים</h1><p class="lead">הסוכנים צריכים מפתח אישי כדי לעבוד בשבילך. זה חינם ולוקח שתי דקות.</p>
+      <div class="key-steps"><div><span>להיכנס ל-<a href="https://console.groq.com/keys" target="_blank" rel="noopener" lang="en">console.groq.com/keys</a> עם חשבון Google</span></div><div><span>ללחוץ <span lang="en">Create API Key</span> ולהעתיק את המפתח</span></div><div><span>להדביק אותו כאן</span></div></div>
+      <div class="field"><label for="onbKey">המפתח האישי</label><input id="onbKey" class="ltr" placeholder="gsk_..." value="${esc(p.key)}" autocomplete="off" spellcheck="false" oninput="onbDraft.key=this.value.trim();$('onbKeyBtn').disabled=!/^gsk_\\w{20,}/.test(onbDraft.key)">
+        <div class="help">המפתח נשמר אצלך ומשמש רק את הסוכנים שלך.</div></div>`;
+    foot=`<button class="btn btn-primary btn-block" id="onbKeyBtn" ${/^gsk_\w{20,}/.test(p.key)?'':'disabled'} onclick="onbNext()">${onbSingle?'שמור':'לחבר ולהמשיך'}</button><button class="link-btn" onclick="${onbSingle?'closeOnb()':'onbGo(1)'}">${onbSingle?'ביטול':'אחבר אחר כך'}</button>`;
   }else{
-    body=`<div class="empty-ic" style="margin:20px 0 22px;background:var(--mint-lt)">✓</div><h1>הכל מוכן, ${esc(p.first)}</h1>
-      <p class="lead">Dwight מריץ עכשיו את הסריקה הראשונה. בינתיים הכנו ${DECK.length} משרות לדוגמה כדי שתכיר את הסקירה: ימינה לשמור, שמאלה לדלג.</p>`;
-    foot=`<button class="btn btn-primary btn-block" onclick="finishOnb('jobs')">לסקירת המשרות</button><button class="link-btn" onclick="finishOnb('main')">ללוח</button>`;
+    body=`<div class="empty-ic" style="margin:20px 0 22px;background:var(--mint-lt)">✓</div><h1>הכל מוכן, ${escB(p.first)}</h1>
+      <p class="lead">${p.key?N('hunter')+' כבר מחפש לך משרות.':'כשתחבר את הסוכנים, '+N('hunter')+' יתחיל לחפש לך משרות.'} בינתיים הכנו ${DECK.length} משרות לדוגמה: מחליקים ימינה כדי לשמור ושמאלה כדי לדלג.</p>`;
+    foot=`<button class="btn btn-primary btn-block" onclick="finishOnb('jobs')">למשרות</button><button class="link-btn" onclick="finishOnb('main')">ללוח הבקרה</button>`;
   }
   $('onbBody').innerHTML=body;$('onbFoot').innerHTML=foot;$('onbBody').scrollTop=0;
 }
@@ -1715,17 +2046,182 @@ function onbCvTyped(t){prof().cv=t.value;save();const h=$('onbCvHelp');if(h)h.te
 function onbCvNext(){const t=$('onbCv');if(t)prof().cv=t.value;save();
   if(prof().cvName||prof().cv.trim().length>=15){onbGo(1);return}
   const h=$('onbCvHelp');if(h){h.textContent='בחר קובץ או הדבק לפחות כמה שורות מקורות החיים. אפשר גם להוסיף אחר כך.';h.style.color='var(--rose)'}}
-function onbNext(){commitOnb();if(onbSingle){$('onb').classList.remove('open');renderProfile();toast('נשמר')}else onbGo(1)}
-function onbToggleLoc(l){const a=onbDraft.locs;const i=a.indexOf(l);i>=0?a.splice(i,1):a.push(l);renderOnb()}
-function commitOnb(){const keep={cv:prof().cv,cvName:prof().cvName};S.profile=Object.assign({},onbDraft,keep);save();syncChrome()}
-function finishOnb(pg){commitOnb();S.onboarded=true;save();$('onb').classList.remove('open');goPage(pg);if(curPg===pg&&pg==='main')renderHome()}
+function onbNext(){commitOnb();if(onbSingle){closeOnb();curPg==='settings'?renderSettings():renderProfile();toast(prof().key?'הסוכנים מחוברים':'נשמר')}else onbGo(1)}
+function commitOnb(){const keep={cv:prof().cv,cvName:prof().cvName,ans:prof().ans||{}};S.profile=Object.assign({},onbDraft,keep);save();syncChrome()}
+function finishOnb(pg){commitOnb();S.onboarded=true;save();closeOnb();goPage(pg);if(curPg===pg&&pg==='main')renderHome()}
 
-/* ═════════ CHAT (Stanley) ═════════ */
+/* ═════════ QUESTIONNAIRE — one question per screen ═════════ */
+const isStudent=a=>a.status==='סטודנט/ית';
+const QS=[
+  {id:'status',t:'מה המצב שלך היום?',sub:'כך נדע אילו משרות להציג לך.',o:['סטודנט/ית','בוגר/ת טרי/ה, מחפש/ת עבודה ראשונה','ג׳וניור עם ניסיון של עד שנתיים','עובד/ת ומחפש/ת לעבור','משתחרר/ת משירות','לא עובד/ת כרגע']},
+  {id:'year',when:isStudent,t:'באיזו שנה אתה בתואר?',o:['שנה א׳','שנה ב׳','שנה ג׳','שנה ד׳','תואר שני']},
+  {id:'track',when:isStudent,t:'מה אתה מחפש עכשיו?',o:['משרת סטודנט חלקית','משרה מלאה אחרי התואר','את שתיהן']},
+  {id:'field',t:'מה הרקע המקצועי שלך?',o:['מדעי המחשב','הנדסת תוכנה','הנדסת חשמל או מחשבים','מערכות מידע','מדעי הנתונים או סטטיסטיקה','בוטקאמפ או לימוד עצמי','אחר']},
+  {id:'roles',multi:true,t:'אילו תפקידים מעניינים אותך?',sub:'אפשר לבחור כמה.',o:['Backend','Frontend','Full-Stack','Data / BI','AI / ML','QA ואוטומציה','DevOps / Cloud','סייבר','Embedded']},
+  {id:'exp',t:'כמה ניסיון מעשי יש לך בפיתוח?',sub:'כולל עבודה, התמחות או פרויקטים בתשלום.',o:['אין עדיין','פחות משנה','1–2 שנים','3–5 שנים','יותר מ-5 שנים']},
+  {id:'age',t:'מה הגיל שלך?',sub:'עוזר להתאים לך משרות. לא מופיע במכתבים ולא נשלח למעסיקים.',o:['18–21','22–25','26–29','30–34','35 ומעלה','מעדיף/ה לא לציין']},
+  {id:'army',t:'מה עשית בשירות?',sub:'בישראל זה חלק חשוב מקורות החיים, במיוחד בתחילת הדרך.',o:['שירות טכנולוגי (8200, ממר״ם וכד׳)','קרבי','קצונה או תפקיד פיקודי','שירות אחר','שירות לאומי','לא שירתתי']},
+  {id:'locs',multi:true,t:'איפה נוח לך לעבוד?',sub:'אפשר לבחור כמה.',o:['תל אביב','גוש דן והמרכז','השרון','ירושלים','חיפה והצפון','באר שבע והדרום']},
+  {id:'mode',t:'איך אתה מעדיף לעבוד?',o:['מהמשרד','היברידי','מהבית','לא משנה לי']},
+  {id:'start',t:'מתי אתה יכול להתחיל?',o:['מיד','תוך חודש','בעוד 2–3 חודשים','אחרי התואר']},
+  {id:'salaryH',when:a=>isStudent(a)&&a.track==='משרת סטודנט חלקית',t:'כמה שכר לשעה אתה מצפה?',o:['עד ₪45','₪45–55','₪55–65','₪65 ומעלה','עוד לא יודע']},
+  {id:'salary',when:a=>!(isStudent(a)&&a.track==='משרת סטודנט חלקית'),t:'מה ציפיות השכר שלך?',sub:'ברוטו לחודש, במשרה מלאה.',o:['עד ₪12K','₪12–16K','₪16–20K','₪20–25K','₪25K ומעלה','עוד לא יודע']},
+  {id:'english',t:'מה רמת האנגלית שלך?',o:['שפת אם','שוטפת','טובה','בסיסית']},
+  {id:'prio',multi:true,max:2,t:'מה הכי חשוב לך בעבודה הבאה?',sub:'עד 2 דברים.',o:['למידה וחניכה','שכר','טכנולוגיות מעניינות','סטארט-אפ קטן','חברה גדולה ויציבה','קרוב לבית','גמישות בשעות']},
+];
+let qi=0;
+const ans=()=>(prof().ans=prof().ans||{});
+const visibleQs=()=>QS.filter(q=>!q.when||q.when(ans()));
+const qTotal=()=>visibleQs().length+(ans().status?0:2);
+const answered=q=>{const v=ans()[q.id];return q.multi?Array.isArray(v)&&v.length>0:!!v};
+function qProgress(){const v=visibleQs();return{done:v.filter(answered).length,total:v.length}}
+function openQuestions(at){if(typeof at==='string')at=visibleQs().findIndex(q=>q.id===at);
+  const v=visibleQs();qi=at!=null?at:Math.max(0,v.findIndex(q=>!answered(q)));if(qi<0)qi=0;
+  onbSingle=S.onboarded;onbStep=2;onbDraft=JSON.parse(JSON.stringify(prof()));closeSheet();closeDrawer();$('onb').classList.add('open');renderOnb();
+}
+function renderQ(){
+  const v=visibleQs();
+  if(qi>=v.length){qDone();return}
+  $('onb').classList.add('qmode');
+  const q=v[qi],a=ans(),cur=a[q.id];
+  const sel=o=>q.multi?(Array.isArray(cur)&&cur.includes(o)):cur===o;
+  $('onbBody').innerHTML=`
+    <div class="q-top"><button class="q-back" aria-label="חזרה" onclick="qBack()"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>
+      <div class="q-prog" aria-hidden="true"><i style="width:${Math.round(qi/Math.max(v.length,qTotal())*100)}%"></i></div>
+      <button class="q-later" onclick="qLater()">המשך אחר כך</button></div>
+    <div class="q-count num">שאלה ${qi+1} מתוך ${Math.max(v.length,qTotal())}</div>
+    <h1 class="q-title">${escB(q.t)}</h1>${q.sub?`<p class="q-sub">${escB(q.sub)}</p>`:''}
+    <div class="q-card" role="${q.multi?'group':'radiogroup'}" aria-label="${escB(q.t)}">${q.o.map((o,i)=>`<button class="q-opt${sel(o)?' sel':''}" role="${q.multi?'checkbox':'radio'}" aria-checked="${sel(o)}" onclick="qPick(${i})"><span>${escB(o)}</span><span class="${q.multi?'cb':'rd'}"></span></button>`).join('')}</div>`;
+  $('onbFoot').innerHTML=q.multi
+    ?`<button class="btn btn-primary btn-block" ${answered(q)?'':'disabled'} onclick="qNext()">המשך</button><button class="link-btn" onclick="qNext()">דלג על השאלה</button>`
+    :`<button class="link-btn" onclick="qNext()">${cur?'המשך':'דלג על השאלה'}</button>`;
+  $('onbBody').scrollTop=0;
+}
+let qLock=false;
+function qPick(i){
+  if(qLock)return;
+  const q=visibleQs()[qi],o=q.o[i],a=ans();
+  if(q.multi){let arr=Array.isArray(a[q.id])?a[q.id]:[];
+    if(arr.includes(o))arr=arr.filter(x=>x!==o);else{if(q.max&&arr.length>=q.max)arr=arr.slice(1);arr=[...arr,o]}
+    a[q.id]=arr;save();renderQ();return}
+  a[q.id]=o;save();
+  document.querySelectorAll('.q-opt').forEach((b,j)=>{b.classList.toggle('sel',j===i);b.setAttribute('aria-checked',j===i)});
+  qLock=true;setTimeout(()=>{qLock=false;qNext()},300);
+}
+function qNext(){qi++;S.qi=qi;save();renderQ()}
+function qBack(){if(qi>0){qi--;renderQ()}else if(onbSingle)closeOnb();else{onbStep=1;renderOnb()}}
+function qLater(){
+  S.qi=qi;onbDraft.ans=prof().ans;commitOnb();
+  const first=!S.onboarded;S.onboarded=true;save();closeOnb();
+  if(first)goPage('main');else{curPg==='profile'?renderProfile():curPg==='main'?renderHome():0}
+  const {done,total}=qProgress();toast(`שמרתי ${done} מתוך ${total} תשובות. אפשר להמשיך מהלוח או מהפרופיל`,{ms:4200});
+}
+function qDone(){
+  S.qi=0;onbDraft.ans=prof().ans;commitOnb();
+  if(onbSingle){closeOnb();curPg==='profile'?renderProfile():renderHome();toast(`הפרופיל עודכן. מהחיפוש הבא ${N('hunter')} יתחשב בתשובות`)}
+  else{onbStep=3;renderOnb()}
+}
+
+
+/* ═════════ הפרופיל שלי ═════════ */
+const ROW_IC={doc:'<svg viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8z"/><path d="M14 3v5h5"/></svg>',
+  target:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/></svg>',
+  pin:'<svg viewBox="0 0 24 24"><path d="M12 21s-7-6.5-7-12a7 7 0 0114 0c0 5.5-7 12-7 12z"/><circle cx="12" cy="9" r="2.5"/></svg>',
+  bolt:'<svg viewBox="0 0 24 24"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg>',
+  bell:'<svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 00-12 0c0 7-3 8-3 8h18s-3-1-3-8"/><path d="M13.7 21a2 2 0 01-3.4 0"/></svg>',
+  globe:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 010 18M12 3a14 14 0 000 18"/></svg>',
+  replay:'<svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 109-9"/><path d="M3 4v5h5"/></svg>',
+  trash:'<svg viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>',
+  book:'<svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 016.5 17H20V3H6.5A2.5 2.5 0 004 5.5z"/><path d="M4 19.5A2.5 2.5 0 006.5 22H20v-5"/></svg>'};
+function learnedChips(){const c={};Object.values(S.skipReasons).forEach(r=>c[r]=(c[r]||0)+1);return Object.entries(c)}
+function renderProfile(){
+  const p=prof(),a=ans(),{done,total}=qProgress(),applied=S.apps.filter(x=>x.status!=='saved').length,ivs=S.apps.filter(x=>['interview','offer'].includes(x.status)).length,learned=learnedChips();
+  const L={'בכירה מדי':'פחות משרות בכירות','מיקום':'משרות קרובות יותר','טכנולוגיה':'טכנולוגיות שמתאימות לך','לא מעניין אותי':'פחות תפקידים מהסוג שדילגת'};
+  $('profScroll').innerHTML=`
+    <div class="p-hero glass"><div class="avatar" aria-hidden="true">${escB(initials(p.first||p.name))}</div><h2 class="p-name">${escB(p.name)}</h2><div class="p-goal">${escB(goalTxt())}</div><button class="btn btn-sm btn-ghost" style="margin-top:12px" onclick="editMe()">עריכת שם</button>
+      <div class="p-stats"><div><b class="num">${Object.keys(S.decisions).length}</b><span>משרות שסקרת</span></div><div><b class="num">${applied}</b><span>הגשות</span></div><div><b class="num">${ivs}</b><span>ראיונות</span></div></div></div>
+
+    <section class="card glass" aria-labelledby="cvH"><h2 class="card-h" id="cvH">קורות חיים</h2>
+      <div class="row"><span class="ri">${ROW_IC.doc}</span><span class="rl"><b>${escB(p.cvName||(p.cv?'הודבקו כטקסט':'עוד לא הועלו'))}</b><span>${p.cv||p.cvName?'כל הסוכנים עובדים לפיהם':'בלעדיהם הסוכנים לא יכולים להתאים לך משרות'}</span></span>${p.cv||p.cvName?'<span class="pill-ok">פעיל</span>':'<span class="pill-warn">חסר</span>'}</div>
+      <div class="duo"><label for="cvFile" class="btn btn-sm btn-ghost">${p.cvName?'להחליף קובץ':'להעלות קובץ'}</label><button class="btn btn-sm btn-ghost" onclick="editCvText()">לערוך כטקסט</button></div></section>
+
+    <section class="card glass" aria-labelledby="qH"><h2 class="card-h" id="qH">עליי</h2>
+      <div class="card-sub">${done<total?`ענית על ${done} מתוך ${total} שאלות. כל תשובה עוזרת לסוכנים לדייק.`:'ענית על כל השאלות. אפשר לעדכן בכל רגע.'}</div>
+      <div class="quota-bar" style="margin-bottom:6px" aria-hidden="true"><div class="quota-fill" style="width:${Math.round(done/total*100)}%;background:linear-gradient(90deg,var(--brand2),var(--brand-hi))"></div></div>
+      <button class="row" onclick="openQuestions('status')"><span class="ri">${ROW_IC.target}</span><span class="rl"><b>${escB(a.status||'מצב תעסוקתי')}</b><span>${escB([a.year,a.track,a.exp&&('ניסיון: '+a.exp)].filter(Boolean).join(' · ')||'עוד לא ענית')}</span></span><span class="chev" aria-hidden="true"></span></button>
+      <button class="row" onclick="openQuestions('roles')"><span class="ri">${ROW_IC.doc}</span><span class="rl"><b lang="en">${escB((a.roles||[]).join(', ')||'תפקידים')}</b><span>${escB(a.field||'רקע מקצועי: עוד לא ענית')}</span></span><span class="chev" aria-hidden="true"></span></button>
+      <button class="row" onclick="openQuestions('locs')"><span class="ri">${ROW_IC.pin}</span><span class="rl"><b>${escB((a.locs||[]).join(', ')||'אזור עבודה')}</b><span>${escB([a.mode,a.start&&('התחלה: '+a.start)].filter(Boolean).join(' · ')||'עוד לא ענית')}</span></span><span class="chev" aria-hidden="true"></span></button>
+      <button class="btn btn-sm ${done<total?'btn-primary':'btn-ghost'} btn-block" style="margin-top:8px" onclick="openQuestions()">${done<total?'להמשיך את השאלון':'לעבור על כל התשובות'}</button></section>
+
+    <section class="card glass" aria-labelledby="tmH"><h2 class="card-h" id="tmH">הצוות שלי</h2>
+      <div class="card-sub">אפשר לתת לכל סוכן שם אחר. התפקיד נשאר אותו תפקיד.</div>
+      ${CAREER.agents.map((g,i)=>`<div class="row tm-row"><span class="tm-face" aria-hidden="true"><canvas id="tm-${i}" width="96" height="96"></canvas></span>
+        <span class="rl"><label for="tmn-${i}" class="vh">השם של ${escB(g.role)}</label><input class="tm-in" id="tmn-${i}" value="${escB(g.name)}" maxlength="14" autocomplete="off" onchange="renameAgent('${g.key}',this.value)" onkeydown="if(event.key==='Enter')this.blur()"><span>${escB(g.role)}</span></span>
+        <button class="tm-info" aria-label="מה ${escB(g.name)} עושה" onclick="openAgSheet(${i})">?</button></div>`).join('')}
+      ${Object.keys(S.team).length?`<button class="btn btn-sm btn-ghost btn-block" style="margin-top:8px" onclick="S.team={};save();applyTeam();renderProfile();syncChrome();toast('השמות חזרו לברירת המחדל')">לשמות המקוריים</button>`:''}</section>
+
+    <section class="card glass" aria-labelledby="stH"><h2 class="card-h" id="stH">בנק סיפורים לראיונות</h2>
+      <div class="card-sub">סיפורים אמיתיים שלך בשיטת STAR. ${escB(N('coach'))} משתמשת בהם כשהיא מכינה אותך לראיון.</div>
+      ${S.stories.map(st=>`<button class="row" onclick="editStory('${st.id}')"><span class="ri">${ROW_IC.book}</span><span class="rl"><b>${escB(st.t)}</b><span>${/תוצאה: *$/.test(st.b)?'חסרה התוצאה':'מוכן'}</span></span><span class="chev" aria-hidden="true"></span></button>`).join('')}
+      <button class="btn btn-sm btn-ghost btn-block" style="margin-top:8px" onclick="editStory()">להוסיף סיפור</button></section>
+
+    <section class="card glass" id="learned" aria-labelledby="lH"><h2 class="card-h" id="lH">מה למדנו עליך</h2>
+      ${learned.length?`<div class="card-sub">מהמשרות שדילגת עליהן. אם משהו לא נכון, אפשר להסיר.</div><div class="learned">${learned.map(([r,n])=>`<span class="chip">${escB(L[r]||r)} <span class="num" style="color:var(--ink3)">(${n})</span><button aria-label="להסיר: ${escB(L[r]||r)}" onclick="forget('${r}')">×</button></span>`).join('')}</div>`
+        :`<div class="card-sub" style="margin:0">כשתדלג על משרה ותגיד למה, נלמד ונסנן בהתאם. ${FILTERED_OUT} משרות בכירות מדי כבר סוננו לפי התשובות שלך.</div>`}</section>`;
+  drawTeam();
+}
+function renameAgent(key,v){v=v.trim();const i=CAREER.agents.findIndex(a=>a.key===key);
+  if(!v||v===TEAM_DEFAULT[i].name){delete S.team[key]}else S.team[key]=v;save();applyTeam();syncChrome();renderProfile();toast(`נשמר: ${N(key)}, ${AG(key).role}`)}
+function editMe(){const p=prof();openSheet(`<h3 id="sheetTitle">השם שלך</h3><div class="sheet-sub">כך נפנה אליך באפליקציה ובמכתבים</div>
+  <div class="field" style="margin-top:14px"><label for="meFirst">איך לקרוא לך</label><input id="meFirst" value="${escB(p.first)}" maxlength="20"></div>
+  <div class="field"><label for="meFull">שם מלא, כמו במכתבים</label><input id="meFull" value="${escB(p.name)}" maxlength="40"></div>
+  <button class="btn btn-primary btn-block" onclick="saveMe()">שמירה</button>`)}
+function saveMe(){const f=$('meFirst').value.trim(),n=$('meFull').value.trim();if(!f){$('meFirst').focus();toast('צריך שם');return}prof().first=f;if(n)prof().name=n;save();closeSheet();syncChrome();renderProfile();toast('נשמר')}
+function drawTeam(){CAREER.agents.forEach((g,i)=>face($('tm-'+i),i))}
+function forget(r){Object.keys(S.skipReasons).forEach(k=>{if(S.skipReasons[k]===r)delete S.skipReasons[k]});save();renderProfile();toast('הוסר')}
+function editStory(id){
+  const st=id?S.stories.find(x=>x.id===id):{id:'',t:'',b:'מצב: \nמשימה: \nפעולה: \nתוצאה: '};
+  openSheet(`<h3 id="sheetTitle">${id?'עריכת סיפור':'סיפור חדש'}</h3><div class="sheet-sub">מצב, משימה, פעולה ותוצאה. עדיף עם מספר אחד לפחות.</div>
+    <div class="field" style="margin-top:14px"><label for="stT">כותרת</label><input id="stT" value="${escB(st.t)}" placeholder="למשל: Lifeboard, מגבלת API"></div>
+    <div class="field"><label for="stB">הסיפור</label><textarea id="stB" rows="8">${esc(st.b)}</textarea></div>
+    <div class="duo">${id?`<button class="btn btn-ghost" onclick="S.stories=S.stories.filter(x=>x.id!=='${id}');save();closeSheet();renderProfile();toast('הסיפור נמחק')">מחיקה</button>`:''}<button class="btn btn-primary" style="flex:2" onclick="saveStory('${id}')">שמירה</button></div>`);
+}
+function saveStory(id){const t=$('stT').value.trim(),b=$('stB').value;if(!t){$('stT').focus();toast('צריך כותרת לסיפור');return}
+  if(id){Object.assign(S.stories.find(x=>x.id===id),{t,b})}else S.stories.push({id:'s'+Date.now(),t,b});save();closeSheet();renderProfile();toast('הסיפור נשמר')}
+function editCvText(){openSheet(`<h3 id="sheetTitle">קורות חיים כטקסט</h3><div class="sheet-sub">הסוכנים עובדים לפי הטקסט הזה</div><div class="field" style="margin-top:14px"><label for="cvEdit" class="vh">קורות חיים</label><textarea id="cvEdit" rows="12">${esc(prof().cv)}</textarea></div><button class="btn btn-primary btn-block" onclick="prof().cv=$('cvEdit').value;save();closeSheet();renderProfile();toast('קורות החיים נשמרו')">שמירה</button>`)}
+function onCvFile(inp){
+  const f=inp.files[0];if(!f)return;prof().cvName=f.name;
+  if(/\.(txt|md)$/i.test(f.name)){const r=new FileReader();r.onload=()=>{prof().cv=String(r.result).slice(0,20000);save();afterCv()};r.readAsText(f)}else{save();afterCv()}
+  inp.value='';
+}
+function afterCv(){if($('onb').classList.contains('open'))renderOnb();else{renderProfile();toast('קורות החיים עודכנו')}}
+
+/* ═════════ הגדרות ═════════ */
+function renderSettings(){
+  const p=prof();
+  $('setScroll').innerHTML=`
+    <section class="card glass" aria-labelledby="aiH"><h2 class="card-h" id="aiH">הסוכנים</h2>
+      ${p.key?`<div class="ok-line">הסוכנים מחוברים ועובדים</div>`:`<div class="warn-line">הסוכנים עוד לא מחוברים</div><div class="card-sub" style="margin:6px 0 0">עד שתחבר, מוצגות דוגמאות.</div>`}
+      <button class="btn btn-sm ${p.key?'btn-ghost':'btn-primary'} btn-block" style="margin-top:12px" onclick="openOnb(3)">${p.key?'להחליף מפתח':'לחבר עכשיו'}</button></section>
+
+    <section class="card glass" aria-labelledby="ntH"><h2 class="card-h" id="ntH">התראות</h2>
+      <div class="row"><span class="ri">${ROW_IC.bell}</span><span class="rl"><b id="nb">בריף בוקר</b><span>כל יום ב-08:00, הודעה אחת עם מה שחשוב</span></span><button class="switch${S.notif?' on':''}" role="switch" aria-checked="${S.notif}" aria-labelledby="nb" onclick="S.notif=!S.notif;save();renderSettings()"></button></div></section>
+
+    <section class="card glass" aria-labelledby="gnH"><h2 class="card-h" id="gnH">כללי</h2>
+      <div class="row"><span class="ri">${ROW_IC.globe}</span><span class="rl"><b>שפה</b><span>עברית</span></span></div>
+      <button class="row" onclick="openOnb(0)"><span class="ri">${ROW_IC.replay}</span><span class="rl"><b>להתחיל את ההיכרות מחדש</b><span>קורות חיים, שאלון וחיבור</span></span><span class="chev" aria-hidden="true"></span></button>
+      <button class="row" onclick="confirmWipe()"><span class="ri">${ROW_IC.trash}</span><span class="rl"><b class="danger">למחוק את כל הנתונים שלי</b><span>קורות חיים, משרות, מכתבים ומפתח</span></span></button></section>
+    <p style="text-align:center;font-size:12px;color:var(--ink3)">findjob · גרסה 0.2</p>`;
+}
+function confirmWipe(){openSheet(`<h3 id="sheetTitle">למחוק את כל הנתונים?</h3><div class="sheet-sub">קורות החיים, המשרות, המכתבים והמפתח יימחקו מהמכשיר. אי אפשר לשחזר.</div><div class="duo" style="margin-top:20px"><button class="btn btn-ghost" onclick="closeSheet()">ביטול</button><button class="btn" style="background:var(--rose);color:#fff" onclick="LS.clear();location.reload()">למחוק הכל</button></div>`)}
+
+/* ═════════ chat with the assistant ═════════ */
 let chatOpen=false;
-const SUGS=['איזו משרה הכי מתאימה לי?','מה לתרגל לראיון?','כמה מכסה נשארה?'];
+const SUGS=['מה כדאי לעשות היום?','איזו משרה הכי מתאימה לי?','בוא נתרגל ראיון'];
 function toggleChat(force){
   chatOpen=force===true?true:!chatOpen;$('chatPop').classList.toggle('open',chatOpen);
-  if(chatOpen){if(!$('chatMsgs').children.length)addMsg('bot',`היי ${prof().first}. אני Stanley, אני מרכז את מה שהסוכנים עושים. מה תרצה לדעת?`);
+  $('chatName').textContent=N('assistant');
+  if(chatOpen){if(!$('chatMsgs').children.length)addMsg('bot',`היי ${prof().first}, אני ${N('assistant')}. אני עוקב אחרי מה שכל הצוות עושה. במה לעזור?`);
     $('chatSugs').innerHTML=SUGS.map(s=>`<button onclick="chatAsk('${s}')">${s}</button>`).join('');face($('chatFace'),5);setTimeout(()=>$('chatInput').focus(),260)}
 }
 function addMsg(who,text){const d=document.createElement('div');d.className='msg '+who;d.textContent=text;$('chatMsgs').appendChild(d);$('chatMsgs').scrollTop=1e6}
@@ -1733,14 +2229,14 @@ function chatAsk(t){$('chatInput').value=t;sendChat()}
 function sendChat(){
   const v=$('chatInput').value.trim();if(!v)return;addMsg('me',v);$('chatInput').value='';
   const q=queue();let r;
-  if(/מתאימ|הכי טוב|משרה/.test(v)) r=q.length?`הכי חזקה כרגע: ${JOBS[q[0]].title} ב-${JOBS[q[0]].co}, ציון ${JOBS[q[0]].fit}. ${JOBS[q[0]].reasons[0]}.`:'סקרת את כל המשרות של היום. במעקב יש לך משרות שמורות שמחכות להגשה.';
-  else if(/ראיון|לתרגל|תרגל/.test(v)) r='נתחיל מ-System Design: איך היית מתכנן מערכת התראות לבורד עם מיליון משתמשים? כתוב לי את הרכיבים הראשונים ואני אגיב.';
-  else if(/מכס|טוקן|כסף|עלות/.test(v)) r=`נוצלו היום ${S.quota}% מהמכסה החינמית. אין חיוב בשום שלב, וכשהמכסה נגמרת הסוכנים ממתינים למחר.`;
-  else r='רשמתי. בגרסה המלאה אני עונה מהנתונים האמיתיים של הסוכנים. כרגע זו הדגמה.';
+  if(/היום|לעשות|כדאי/.test(v)){const n=nextSteps();r=n.length?'הכי חשוב עכשיו:\n'+n.slice(0,3).map((x,i)=>`${i+1}. ${x.b}`).join('\n'):'אין משהו דחוף. זה זמן טוב לעבור על בנק הסיפורים בפרופיל.'}
+  else if(/מתאימ|משרה/.test(v)) r=q.length?`הכי חזקה כרגע: ${JOBS[q[0]].title} ב-${JOBS[q[0]].co}, התאמה ${JOBS[q[0]].fit} מתוך 5. ${JOBS[q[0]].reasons[0]}.`:'עברת על כל המשרות של היום. בהגשות יש משרות ששמרת ומחכות להגשה.';
+  else if(/ראיון|תרגל|סינון/.test(v)) r='נתחיל. איך היית מתכנן מערכת התראות לבורד עם מיליון משתמשים? כתוב את הרכיבים הראשונים, ואני אגיב.';
+  else r='רשמתי. ברגע שהסוכנים יהיו מחוברים, אענה מהנתונים האמיתיים שלך.';
   setTimeout(()=>addMsg('bot',r),550);
 }
 
-/* ═════════ INIT ═════════ */
+/* ═════════ init ═════════ */
 function init(){
   syncChrome();
   goPage('main');

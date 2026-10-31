@@ -201,10 +201,10 @@ def generate_cover_letter(
 def _fallback_groq(prompt: str) -> str:
     """Fallback ל-Groq אם Claude לא זמין"""
     import os
-    from groq import Groq
-    client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
+    from agent_core.llm_router import router_client
+    client = router_client("assistant", "write")
     response = client.chat.completions.create(
-        model="qwen/qwen3.8-27b",
+        model="routed",
         messages=[{"role": "user", "content": prompt}],
         temperature=0.7,
         max_tokens=1000,

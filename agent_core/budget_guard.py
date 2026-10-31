@@ -1,146 +1,136 @@
 """
-budget_guard.py — שומר תקציב Groq.
+budget_guard.py — שומר תקציב אמיתי למכסה החינמית של Groq.
 
-מכסה יומית: 200,000 tokens/day (Groq free tier)
-ClosedCircuit: עוצר ב-75% (150K) להשאיר buffer לcritical tasks
-
-שימוש:
-    from agent_core.budget_guard import check_budget, log_usage, get_report
-
-    # לפני כל קריאה ל-LLM:
-    if not check_budget(estimated_tokens=500):
-        raise BudgetExhaustedError("מכסה יומית הגיעה לגבול")
-
-    # אחרי קריאה:
-    log_usage(tokens_used=450, agent="mentor", task="skill_gaps")
+במקום להעריך, הוא קורא את מה ש-Groq מחזיר בכל תשובה:
+  x-ratelimit-remaining-requests / x-ratelimit-reset-requests   (מכסה יומית)
+  x-ratelimit-remaining-tokens   / x-ratelimit-reset-tokens     (מכסה לדקה)
+  retry-after (בשגיאת 429)
+המגבלות של Groq נספרות לכל מודל בנפרד, ולכן גם המעקב כאן הוא לכל מודל.
+אין כרטיס אשראי בחשבון, כך שאין חיוב: כשנגמר, הנתב פשוט עובר מודל או דוחה.
 """
 
+from __future__ import annotations
 import json
+import re
+import time
+from datetime import date
 from pathlib import Path
-from datetime import datetime, date
 
-# ── Config ─────────────────────────────────────────────────────────────────────
-DAILY_GROQ_LIMIT   = 200_000   # Groq free tier
-SAFETY_THRESHOLD   = 0.75      # עצור ב-75% (150K)
-HARD_STOP          = 0.95      # עצור הכל ב-95% (190K)
-SAFETY_BUDGET      = int(DAILY_GROQ_LIMIT * SAFETY_THRESHOLD)  # 150,000
-HARD_STOP_BUDGET   = int(DAILY_GROQ_LIMIT * HARD_STOP)         # 190,000
-
-# ── Storage ────────────────────────────────────────────────────────────────────
-BUDGET_DIR = Path(__file__).parent.parent / "memory"
-BUDGET_DIR.mkdir(parents=True, exist_ok=True)
-
-def _budget_file() -> Path:
-    today = date.today().isoformat()
-    return BUDGET_DIR / f"budget_{today}.json"
+STATE_FILE = Path(__file__).parent.parent / "memory" / "llm_budget.json"
+# משאירים מרווח קטן כדי לא להיתקע באמצע משימה
+MIN_REQUESTS_LEFT = 3
+MIN_TOKENS_LEFT = 1500
 
 
-def _load_today() -> dict:
-    path = _budget_file()
-    if path.exists():
-        try:
-            return json.loads(path.read_text())
-        except Exception:
-            pass
-    return {"date": date.today().isoformat(), "total_tokens": 0, "calls": []}
+class BudgetDeferred(Exception):
+    """כל המודלים בשכבה הגיעו לגבול. המשימה תרוץ בפעם הבאה."""
 
 
-def _save(data: dict):
-    _budget_file().write_text(json.dumps(data, ensure_ascii=False, indent=2))
+def parse_reset(value: str | None) -> float:
+    """'2m59.56s' / '7.66s' / '1h2m3s' / '450ms' -> שניות."""
+    if not value:
+        return 0.0
+    value = str(value).strip()
+    try:
+        return float(value)
+    except ValueError:
+        pass
+    total = 0.0
+    for num, unit in re.findall(r"([\d.]+)(ms|h|m|s)", value):
+        n = float(num)
+        total += {"h": 3600, "m": 60, "s": 1, "ms": 0.001}[unit] * n
+    return total
 
 
-# ── Public API ─────────────────────────────────────────────────────────────────
+def _load() -> dict:
+    try:
+        data = json.loads(STATE_FILE.read_text(encoding="utf-8"))
+    except Exception:
+        data = {}
+    if data.get("date") != date.today().isoformat():
+        # יום חדש: שומרים את מצב המודלים (המכסה שלהם מתאפסת לפי reset), מאפסים את השימוש היומי
+        data = {"date": date.today().isoformat(), "models": data.get("models", {}), "usage": {}}
+    data.setdefault("models", {})
+    data.setdefault("usage", {})
+    return data
 
-class BudgetExhaustedError(Exception):
-    """נזרק כשהתקציב היומי מוצה"""
-    pass
+
+def _save(data: dict) -> None:
+    STATE_FILE.parent.mkdir(parents=True, exist_ok=True)
+    STATE_FILE.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
-def get_tokens_used_today() -> int:
-    """כמה tokens נוצלו היום"""
-    return _load_today().get("total_tokens", 0)
-
-
-def check_budget(estimated_tokens: int = 1000, agent: str = "") -> bool:
-    """
-    מחזיר True אם יש מספיק תקציב לקריאה.
-    מחזיר False אם עברנו את SAFETY_BUDGET.
-    זורק BudgetExhaustedError אם עברנו HARD_STOP.
-    """
-    used = get_tokens_used_today()
-
-    if used + estimated_tokens > HARD_STOP_BUDGET:
-        raise BudgetExhaustedError(
-            f"מכסה יומית הגיעה ל-{used:,} tokens (גבול: {HARD_STOP_BUDGET:,}). "
-            f"המתן למחר."
-        )
-
-    if used + estimated_tokens > SAFETY_BUDGET:
-        print(f"[Budget Guard] ⚠️  {agent}: {used:,}/{SAFETY_BUDGET:,} tokens — מגבלת safety הגיעה")
+def is_available(model: str, now: float | None = None) -> bool:
+    now = now or time.time()
+    m = _load()["models"].get(model)
+    if not m:
+        return True
+    if m.get("blocked_until", 0) > now:
         return False
-
+    if m.get("req_left") is not None and m["req_left"] < MIN_REQUESTS_LEFT and m.get("req_reset_at", 0) > now:
+        return False
+    if m.get("tok_left") is not None and m["tok_left"] < MIN_TOKENS_LEFT and m.get("tok_reset_at", 0) > now:
+        return False
     return True
 
 
-def log_usage(tokens_used: int, agent: str = "unknown", task: str = ""):
-    """רשום שימוש בtokens אחרי קריאה"""
-    data = _load_today()
-    data["total_tokens"] = data.get("total_tokens", 0) + tokens_used
-    data["calls"].append({
-        "time":   datetime.now().isoformat(),
-        "agent":  agent,
-        "task":   task,
-        "tokens": tokens_used,
-    })
+def wait_hint(model: str, now: float | None = None) -> float:
+    """כמה שניות עד שהמודל יחזור להיות זמין (0 אם זמין)."""
+    now = now or time.time()
+    m = _load()["models"].get(model, {})
+    times = [t for t in (m.get("blocked_until", 0), m.get("tok_reset_at", 0), m.get("req_reset_at", 0)) if t > now]
+    return max(0.0, min(times) - now) if times and not is_available(model, now) else 0.0
+
+
+def record(model: str, agent: str, task: str, tokens: int, headers: dict | None = None) -> None:
+    """נרשם אחרי כל קריאה מוצלחת."""
+    data = _load()
+    now = time.time()
+    m = data["models"].setdefault(model, {})
+    h = {k.lower(): v for k, v in (headers or {}).items()}
+    if "x-ratelimit-remaining-requests" in h:
+        m["req_left"] = int(float(h["x-ratelimit-remaining-requests"]))
+        m["req_reset_at"] = now + parse_reset(h.get("x-ratelimit-reset-requests"))
+    if "x-ratelimit-remaining-tokens" in h:
+        m["tok_left"] = int(float(h["x-ratelimit-remaining-tokens"]))
+        m["tok_reset_at"] = now + parse_reset(h.get("x-ratelimit-reset-tokens"))
+    m.pop("blocked_until", None)
+    u = data["usage"].setdefault(agent, {"calls": 0, "tokens": 0, "tasks": {}})
+    u["calls"] += 1
+    u["tokens"] += int(tokens or 0)
+    u["tasks"][task] = u["tasks"].get(task, 0) + 1
     _save(data)
-    print(f"[Budget Guard] {agent}: +{tokens_used:,} tokens | יום: {data['total_tokens']:,}/{DAILY_GROQ_LIMIT:,}")
+
+
+def block(model: str, seconds: float) -> None:
+    """נקרא בשגיאת 429: המודל לא בשימוש עד שיעבור הזמן."""
+    data = _load()
+    data["models"].setdefault(model, {})["blocked_until"] = time.time() + max(5.0, seconds)
+    _save(data)
 
 
 def get_report() -> dict:
-    """דוח תקציב יומי"""
-    data   = _load_today()
-    used   = data.get("total_tokens", 0)
-    calls  = data.get("calls", [])
-
-    # breakdown per agent
-    by_agent: dict[str, int] = {}
-    for c in calls:
-        agent = c.get("agent", "unknown")
-        by_agent[agent] = by_agent.get(agent, 0) + c.get("tokens", 0)
-
+    """לנקודת הקצה /budget/report ולמסך ההגדרות (בלי מספרים טכניים למשתמש)."""
+    data = _load()
+    now = time.time()
+    models = {k: {"available": is_available(k, now),
+                  "requests_left": v.get("req_left"), "tokens_left_this_minute": v.get("tok_left")}
+              for k, v in data["models"].items()}
+    usage = data["usage"]
     return {
-        "date":            data.get("date", date.today().isoformat()),
-        "tokens_used":     used,
-        "tokens_budget":   SAFETY_BUDGET,
-        "tokens_limit":    DAILY_GROQ_LIMIT,
-        "percent_used":    round(used / DAILY_GROQ_LIMIT * 100, 1),
-        "calls_today":     len(calls),
-        "remaining":       max(0, SAFETY_BUDGET - used),
-        "status":          (
-            "hard_stop" if used >= HARD_STOP_BUDGET
-            else "warning" if used >= SAFETY_BUDGET
-            else "ok"
-        ),
-        "by_agent":        by_agent,
+        "date": data["date"],
+        "tokens_used": sum(u["tokens"] for u in usage.values()),
+        "calls_today": sum(u["calls"] for u in usage.values()),
+        "by_agent": {k: u["tokens"] for k, u in usage.items()},
+        "models": models,
+        "status": "ok" if any(m["available"] for m in models.values()) or not models else "resting",
     }
 
 
-def budget_protected(agent_name: str, estimated_tokens: int = 1000):
-    """
-    Decorator להגנה על פונקציות שקוראות ל-Groq.
+# ── תאימות לאחור (api.py ומודולים ישנים) ───────────────────────────────────────
+def check_budget(estimated_tokens: int = 1000, agent: str = "") -> bool:
+    return True  # ההחלטה האמיתית מתקבלת בנתב לפי המכסה שנשארה
 
-    שימוש:
-        @budget_protected("mentor", estimated_tokens=800)
-        def mentor_node(state): ...
-    """
-    def decorator(fn):
-        def wrapper(*args, **kwargs):
-            if not check_budget(estimated_tokens, agent=agent_name):
-                print(f"[Budget Guard] דחיית {agent_name} — תקציב safety הושלם")
-                return {"messages": [f"{agent_name} נדחה: תקציב יומי הגיע לסף בטיחות"]}
-            result = fn(*args, **kwargs)
-            # הערכת שימוש בפועל (ניתן לדייק יותר אם מחזירים token count)
-            log_usage(estimated_tokens, agent=agent_name)
-            return result
-        return wrapper
-    return decorator
+
+def log_usage(tokens_used: int, agent: str = "unknown", task: str = "") -> None:
+    record("unknown", agent, task, tokens_used)

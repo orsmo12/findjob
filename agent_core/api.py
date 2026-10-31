@@ -299,3 +299,10 @@ def budget_status():
         return get_report()
     except Exception as e:
         return {"error": str(e), "tokens_used": 0, "status": "unknown"}
+
+
+@app.get("/team")
+def team():
+    """צוות הסוכנים: key, שם ברירת מחדל, תפקיד ותזמון. המקור: agent_core/team.py"""
+    from agent_core.team import TEAM
+    return TEAM

@@ -9,7 +9,8 @@ import re
 import json
 import hashlib
 from typing import Optional
-from groq import Groq
+from groq import Groq  # noqa: F401 (type hints)
+from agent_core.llm_router import router_client
 from agent_core.state import CareerState
 
 _groq_client = None
@@ -23,7 +24,7 @@ def _get_groq() -> Groq:
         api_key = os.environ.get("GROQ_API_KEY")
         if not api_key:
             raise ValueError("GROQ_API_KEY לא מוגדר.")
-        _groq_client = Groq(api_key=api_key)
+        _groq_client = router_client("coach", "judge")  # הנתב בוחר מודל ושומר על המכסה
     return _groq_client
 
 
@@ -121,7 +122,7 @@ def _generate_cover_letter(job: dict, cv_profile: dict, resume_text: str) -> Opt
     try:
         client = _get_groq()
         response = client.chat.completions.create(
-            model="qwen/qwen3.8-27b",
+            model="routed",
             messages=[{"role": "user", "content": prompt}],
             temperature=0.6,
             max_tokens=600,
@@ -179,7 +180,7 @@ def _prepare_interview(job: dict, cv_profile: dict) -> dict:
     try:
         client = _get_groq()
         response = client.chat.completions.create(
-            model="qwen/qwen3.8-27b",
+            model="routed",
             messages=[{"role": "user", "content": prompt}],
             temperature=0.3,
             max_tokens=600,
@@ -254,7 +255,7 @@ def _generate_career_insight(cv_profile: dict, skill_gaps: list, company_signals
     try:
         client = _get_groq()
         response = client.chat.completions.create(
-            model="qwen/qwen3.8-27b",
+            model="routed",
             messages=[{"role": "user", "content": prompt}],
             temperature=0.5,
             max_tokens=120,

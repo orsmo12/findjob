@@ -8,7 +8,8 @@ query_strategist.py — סוכן אסטרטגיית חיפוש.
 import os
 import json
 import re
-from groq import Groq
+from groq import Groq  # noqa: F401 (type hints)
+from agent_core.llm_router import router_client
 from agent_core.state import CareerState
 
 _client = None
@@ -20,7 +21,7 @@ def _get_client() -> Groq:
         api_key = os.environ.get("GROQ_API_KEY")
         if not api_key:
             raise ValueError("GROQ_API_KEY לא מוגדר.")
-        _client = Groq(api_key=api_key)
+        _client = router_client("strategist", "light")  # הנתב בוחר מודל ושומר על המכסה
     return _client
 
 
@@ -85,7 +86,7 @@ CV:
     try:
         client = _get_client()
         response = client.chat.completions.create(
-            model="qwen/qwen3.8-27b",
+            model="routed",
             messages=[{"role": "user", "content": prompt}],
             temperature=0.2,
             max_tokens=150,
