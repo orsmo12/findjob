@@ -1,0 +1,121 @@
+<div id="mesh" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+
+<div id="splash" aria-hidden="true">
+  <div class="splash-in">
+    <div class="logo-mark"><svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21"/><path d="M8 10.8l1.8 1.8L13.3 9"/></svg></div>
+    <div class="wordmark">findjob</div>
+    <div class="splash-tag">המשרד שלך כבר עובד</div>
+  </div>
+</div>
+
+<header id="topbar">
+  <button class="tb-btn tb-menu" id="menuBtn" aria-label="פתיחת התפריט" aria-controls="drawer" aria-expanded="false" onclick="toggleDrawer()">
+    <span class="burger" aria-hidden="true"><span></span><span></span><span></span></span>
+    <span class="tb-dot" id="menuDot" hidden></span>
+  </button>
+  <h1 class="tb-title" id="tbTitle"></h1>
+  <button class="tb-btn" aria-label="הפרופיל שלי" onclick="goPage('profile')"><span class="avatar" id="tbAvatar" aria-hidden="true">Or</span></button>
+</header>
+
+<div id="drawerOverlay" onclick="if(event.target===this)closeDrawer()">
+  <nav id="drawer" aria-label="תפריט ראשי">
+    <div class="dr-head">
+      <span class="wordmark">findjob</span>
+      <button class="dr-x" aria-label="סגירת התפריט" onclick="closeDrawer()"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </div>
+    <button class="dr-user" onclick="goPage('profile')">
+      <span class="avatar" id="drAvatar" aria-hidden="true">Or</span>
+      <span class="dr-user-txt"><span class="dr-user-name" id="drName"></span><span class="dr-user-goal" id="drGoal"></span></span>
+    </button>
+    <div class="dr-scroll">
+      <div class="dr-group" id="g1">חיפוש עבודה</div>
+      <div role="list" aria-labelledby="g1">
+        <button role="listitem" class="dr-item" data-pg="main" onclick="goPage('main')"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7.5" height="9" rx="2"/><rect x="13.5" y="3" width="7.5" height="5" rx="2"/><rect x="13.5" y="11" width="7.5" height="10" rx="2"/><rect x="3" y="15" width="7.5" height="6" rx="2"/></svg><span class="lbl">לוח בקרה</span></button>
+        <button role="listitem" class="dr-item" data-pg="jobs" onclick="goPage('jobs')"><svg viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="3"/><path d="M9 8h6M9 12h6M9 16h3"/></svg><span class="lbl">משרות חדשות</span><span class="dr-badge" id="bdJobs" hidden></span></button>
+        <button role="listitem" class="dr-item" data-pg="apps" onclick="goPage('apps')"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h10M4 18h6"/><circle cx="18" cy="16" r="3"/></svg><span class="lbl">הגשות</span><span class="dr-badge" id="bdApps" hidden></span></button>
+        <button role="listitem" class="dr-item dr-sub" id="drIv" hidden onclick="openIvShortcut()"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></svg><span class="lbl" id="drIvTxt"></span></button>
+        <button role="listitem" class="dr-item" data-pg="linkedin" onclick="goPage('linkedin')"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="M8 10v6M8 7.5v.01M12 16v-3.5a2 2 0 014 0V16M12 10v6"/></svg><span class="lbl">LinkedIn</span><span class="dr-badge" id="bdLi" hidden></span></button>
+      </div>
+      <div class="dr-group" id="g2">הסוכנים</div>
+      <div role="list" aria-labelledby="g2">
+        <button role="listitem" class="dr-item" data-pg="office" onclick="goPage('office')"><svg viewBox="0 0 24 24"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 21v-4h6v4"/></svg><span class="lbl">המשרד</span></button>
+      </div>
+      <div class="dr-group" id="g3">החשבון שלי</div>
+      <div role="list" aria-labelledby="g3">
+        <button role="listitem" class="dr-item" data-pg="profile" onclick="goPage('profile')"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg><span class="lbl">הפרופיל שלי</span></button>
+        <button role="listitem" class="dr-item" data-pg="settings" onclick="goPage('settings')"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1.1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.5-1.1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.8.3H9a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8V9a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z"/></svg><span class="lbl">הגדרות</span></button>
+      </div>
+    </div>
+  </nav>
+</div>
+
+<div id="app">
+  <main id="pages">
+
+    <section class="pg on" id="pg-main" aria-labelledby="tbTitle">
+      <div class="scroll" id="homeScroll"></div>
+    </section>
+
+    <section class="pg" id="pg-jobs" aria-labelledby="tbTitle">
+      <div class="jobs-wrap">
+        <div class="jobs-meta"><span id="jobsCount" class="num"></span><button class="filtered" id="jobsFiltered" onclick="goPage('profile','learned')"></button></div>
+        <div class="deck-progress" id="deckProg" aria-hidden="true"></div>
+        <div class="deck" id="deck"></div>
+        <div class="deck-actions" id="deckActions">
+          <button class="act skip" aria-label="דלג על המשרה" onclick="decide('skip')"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+          <button class="act save" aria-label="שמור את המשרה" onclick="decide('save')"><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg></button>
+          <button class="act info" aria-label="פרטי המשרה" onclick="openJobInfo()"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg></button>
+        </div>
+      </div>
+    </section>
+
+    <section class="pg" id="pg-apps" aria-labelledby="tbTitle">
+      <div class="scroll">
+        <div class="seg" id="seg" role="tablist" aria-label="שלבי הגשה"></div>
+        <div id="appsList" class="stack"></div>
+      </div>
+    </section>
+
+    <section class="pg" id="pg-linkedin" aria-labelledby="tbTitle">
+      <div class="scroll" id="liScroll"></div>
+    </section>
+
+    <!--OFFICE_HTML-->
+
+    <section class="pg" id="pg-profile" aria-labelledby="tbTitle">
+      <div class="scroll" id="profScroll"></div>
+    </section>
+
+    <section class="pg" id="pg-settings" aria-labelledby="tbTitle">
+      <div class="scroll" id="setScroll"></div>
+    </section>
+
+  </main>
+</div>
+
+<!--AGSHEET_HTML-->
+
+<div class="sheet" id="sheet" onclick="if(event.target===this)closeSheet()" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+  <div class="sheet-panel"><div class="sheet-grab" aria-hidden="true"></div><button class="sheet-x" aria-label="סגירה" onclick="closeSheet()"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button><div class="sheet-body" id="sheetBody"></div></div>
+</div>
+
+<div id="onb" role="dialog" aria-modal="true" aria-label="היכרות">
+  <div class="onb-bg"></div>
+  <div class="onb-in">
+    <div class="onb-top"><button class="onb-back" id="onbBack">חזרה</button><div class="onb-steps" id="onbSteps" aria-hidden="true"></div><span style="width:52px"></span></div>
+    <div class="onb-body" id="onbBody"></div>
+    <div class="onb-foot" id="onbFoot"></div>
+  </div>
+</div>
+<input type="file" id="cvFile" class="vh" accept=".pdf,.txt,.doc,.docx,.md,application/pdf,text/plain" tabindex="-1" aria-hidden="true" onchange="onCvFile(this)">
+
+<button id="chatBtn" aria-label="צ׳אט עם העוזר האישי" onclick="toggleChat()"><svg viewBox="0 0 24 24"><path d="M21 12a8 8 0 01-11.6 7.1L4 20l1-4.6A8 8 0 1121 12z"/></svg></button>
+<div id="chatPop" role="dialog" aria-label="צ׳אט עם העוזר האישי">
+  <div class="chat-h"><div class="ag-face"><canvas id="chatFace" width="96" height="96"></canvas></div><div><b id="chatName"></b><span>העוזר האישי שלך</span></div>
+    <button class="dr-x" aria-label="סגירת השיחה" onclick="toggleChat()"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+  <div class="chat-msgs" id="chatMsgs" aria-live="polite"></div>
+  <div class="chat-sugs" id="chatSugs"></div>
+  <div class="chat-in"><label for="chatInput" class="vh">הודעה לעוזר</label><input id="chatInput" placeholder="כתוב הודעה" onkeydown="if(event.key==='Enter')sendChat()"><button aria-label="שליחה" onclick="sendChat()"><svg viewBox="0 0 24 24"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/></svg></button></div>
+</div>
+
+<div id="toasts" role="status" aria-live="polite"></div>

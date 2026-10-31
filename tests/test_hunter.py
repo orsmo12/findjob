@@ -67,3 +67,8 @@ def test_partial_rating_claims_no_gaps():
 
 def test_html_text():
     assert h._html_text("<p>Hi&amp;bye</p><ul><li>Python</li></ul>") == "Hi&bye\n• Python"
+
+
+def test_tags_only_when_in_ad_and_cv():
+    assert h.tags_for("We use Python, React and Kotlin", "Python React Java") == ["Python", "React"]
+    assert h.tags_for("C++ and C#", "C") == []

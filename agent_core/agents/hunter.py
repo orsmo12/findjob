@@ -180,9 +180,11 @@ JOB: {title} at {company} ({location})
 
 Return JSON only:
 {{"fit": number 1.0-5.0 with one decimal,
-  "reasons": [up to 3 short reasons in Hebrew, each pointing to a concrete CV fact that matches the ad],
-  "gaps": [up to 2 short items in Hebrew: requirements in the ad that the CV does not show],
+  "reasons": [up to 3 short reasons, each pointing to a concrete CV fact that matches a requirement in the ad],
+  "gaps": [up to 2 short items: requirements written in the ad that the CV does not show],
   "seniority_ok": true/false (false if the ad clearly needs more experience than the candidate has)}}
+Write reasons and gaps in natural, fluent Hebrew (as a native Israeli recruiter would), max 12 words each.
+Keep technology and company names in English. Do not use location as a reason.
 Scale: 5 = almost every requirement is shown in the CV and the level fits; 3 = partial match; 1 = wrong field or level."""
 
 
@@ -217,7 +219,17 @@ def prefs_text(plan: dict) -> str:
 
 
 # ── ריצה ───────────────────────────────────────────────────────────────────────
-def to_card(j: dict, r: dict) -> dict:
+TECH = ["Python", "Java", "C++", "C#", "JavaScript", "TypeScript", "React", "Node.js", "SQL", "Docker", "Kubernetes",
+        "AWS", "GCP", "Azure", "Linux", "Git", "TensorFlow", "PyTorch", "Keras", "OpenCV", "Go", "Kotlin", "REST", "GraphQL"]
+
+
+def tags_for(desc: str, cv: str) -> list[str]:
+    """טכנולוגיות שמופיעות גם במודעה וגם בקורות החיים. בלי ניחושים."""
+    has = lambda t, txt: re.search(r"(?<![A-Za-z])" + re.escape(t) + r"(?![A-Za-z+#])", txt, re.I)
+    return [t for t in TECH if has(t, desc) and has(t, cv)][:4]
+
+
+def to_card(j: dict, r: dict, cv: str = "") -> dict:
     """הפורמט שהאפליקציה מציגה. ריק = לא ידוע, לעולם לא ניחוש."""
     days = None
     try:
@@ -226,6 +238,7 @@ def to_card(j: dict, r: dict) -> dict:
         pass
     return {"id": j["id"], "co": j["company"], "title": j["title"], "loc": j["location"],
             "fit": r["fit"], "reasons": r["reasons"], "gaps": r["gaps"], "partial": r["partial"],
+            "tags": tags_for(j.get("description", ""), cv),
             "src": {"indeed": "Indeed", "linkedin": "LinkedIn", "google": "Google Jobs"}.get(j["source"], j["source"]),
             "posted_days": days, "salary": j.get("salary", ""), "desc": j.get("description", "")[:600], "url": j["url"]}
 
@@ -252,7 +265,7 @@ def run(profile: dict, plan: dict, raw: list[dict] | None = None, rate_top: int 
         if not r["seniority_ok"]:
             stats["too_senior"] += 1; continue
         if r["fit"] >= min_fit:
-            cards.append(to_card(j, r))
+            cards.append(to_card(j, r, cv))
     cards.sort(key=lambda c: -c["fit"])
     stats.update(rated=min(len(jobs), rate_top) - deferred, deferred=deferred, shown=len(cards))
     feed = {"generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"), "stats": stats,

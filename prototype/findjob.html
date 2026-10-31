@@ -979,7 +979,7 @@ const LS={
 const DAY=864e5;
 const daysAgoISO=n=>new Date(Date.now()-n*DAY).toISOString();
 const daysSince=iso=>Math.max(0,Math.floor((Date.now()-new Date(iso).getTime())/DAY));
-const agoTxt=n=>n===0?'היום':n===1?'אתמול':n===2?'לפני יומיים':`לפני ${n} ימים`;
+const agoTxt=n=>n==null?'תאריך לא ידוע':n===0?'היום':n===1?'אתמול':n===2?'לפני יומיים':`לפני ${n} ימים`;
 const IC={
   arrow:'<svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>',
   check:'✓'
@@ -1021,7 +1021,7 @@ function buildWorkflow(){
 const DOMS=[CAREER]; let selDom=0, selAg=0;
 
 /* ═════════ data — jobs ═════════ */
-const JOBS={
+const DEMO_JOBS={
   'j-mobileye':{co:'Mobileye',ini:'Me',c:['#0E7C86','#19A7A6'],title:'Computer Vision Student',loc:'ירושלים · משרת סטודנט',fit:4.5,
     reasons:['OpenCV ו-TensorFlow — אותו stack של AI Smart Crosswalk','משרת סטודנט, מתאים לשנה ג׳','צוות מחקר שעובד עם Python ו-C++'],
     gaps:['C++ מודרני (17/20) מופיע כדרישה'],tags:['Python','OpenCV','Deep Learning'],src:'אתר החברה',posted:1,salary:'₪60–75 לשעה',
@@ -1052,8 +1052,18 @@ const JOBS={
     reasons:['React ו-TypeScript','רכיבי drag & drop מורכבים'],gaps:['בדיקות E2E'],tags:['React','TypeScript'],src:'אתר החברה',posted:14,salary:'',
     desc:'פיתוח רכיבי עורך מתקדמים בצוות Editor.',deck:false},
 };
+/* משרות אמיתיות: אם נבנה עם קובץ התוצאות של דורון (memory/feed/jobs.json), רק הן מוצגות */
+const REAL=typeof FEED!=='undefined'&&FEED&&Array.isArray(FEED.jobs);
+const PALETTE=[['#0F6E54','#2BA37E'],['#14532D','#3F8F5F'],['#0E7C86','#19A7A6'],['#2F5D50','#5E9C88'],['#365314','#65A30D'],['#134E4A','#2DD4BF']];
+function coIni(n){const w=String(n||'?').replace(/[^A-Za-z0-9\u0590-\u05FF ]/g,'').trim().split(/\s+/);return (w.length>1?w[0][0]+w[1][0]:w[0].slice(0,2))||'?'}
+function fromFeed(f){const o={};f.jobs.forEach((j,i)=>{let h=0;for(const ch of j.co)h=(h*31+ch.charCodeAt(0))>>>0;
+  o[j.id]={co:j.co,ini:coIni(j.co),c:PALETTE[h%PALETTE.length],title:j.title,loc:j.loc,fit:j.fit,reasons:j.reasons||[],gaps:j.gaps||[],
+    partial:!!j.partial,tags:j.tags||[],src:j.src,posted:j.posted_days,salary:j.salary||'',desc:String(j.desc||'').replace(/[*#_`>\\]/g,'').replace(/\s+/g,' ').trim(),url:j.url,deck:true}});return o}
+const JOBS=REAL?fromFeed(FEED):DEMO_JOBS;
+function feedWhen(){if(!REAL)return'';const d=new Date(FEED.generated_at),h=Math.round((Date.now()-d)/36e5);
+  return h<1?'מהשעה האחרונה':h<24?`מלפני ${h===1?'שעה':h===2?'שעתיים':h+' שעות'}`:`מ-${d.toLocaleDateString('he-IL')}`}
 const DECK=Object.keys(JOBS).filter(k=>JOBS[k].deck);
-const FILTERED_OUT=3;
+const FILTERED_OUT=REAL?(FEED.stats.too_senior||0):3;
 
 /* ═════════ applications: stages ═════════ */
 const STATUSES={saved:'שמור',applied:'הוגש',screening:'סינון',interview:'ראיון',offer:'הצעה',rejected:'נדחה',ghosted:'אין מענה',withdrew:'ויתרתי'};
@@ -1114,7 +1124,7 @@ const REFERRALS={
   'j-guardz':[{name:'Daniel Cohen',role:'Engineering Manager',why:'פרסם השבוע על גיוס ג׳וניורים'}],
   'j-riskified':[{name:'רוני שפירא',role:'Backend Engineer',why:'בוגר HIT'}],
 };
-const refNote=(r,j)=>`היי ${r.name}, ראיתי שאתה ב-${j.co} ואני מתעניין במשרת ה-${nb(j.title)}. אני סטודנט שנה ג׳ במדעי המחשב ב-HIT. אשמח לשמוע ממך על הצוות, ואם זה מתאים, גם להמלצה.`;
+const refNote=(r,j)=>`היי ${r.name}, ראיתי שאתה ב-${j.co} ואני מתעניין במשרת ה-${nb(j.title)}. אני סטודנט למדעי המחשב. אשמח לשמוע ממך על הצוות, ואם זה מתאים, גם להמלצה.`;
 const PREP={
   screening:{title:'שאלות סינון',lead:'מגייסים שולחים היום שאלות קצרות לפני השיחה הראשונה, בטקסט או בווידאו. אלה השאלות שכדאי להכין:',
     qs:[{tag:'מוטיבציה',q:'למה דווקא החברה הזו?',h:'שני משפטים: משהו ספציפי במוצר שלהם, וקשר לפרויקט שלך.'},
@@ -1133,11 +1143,11 @@ function defaultState(){return{
   v:2,onboarded:false,
   profile:{name:'Or Smolarchik',first:'אור',cv:'',cvName:'',key:'',ans:{}},qi:0,team:{},
   decisions:{},skipReasons:{},
-  apps:[
+  apps:REAL?[]:[
     {id:'a-monday',jobId:'j-monday',status:'interview',date:daysAgoISO(6),iv:'רביעי, 14:00'},
     {id:'a-wix',jobId:'j-wix',status:'applied',date:daysAgoISO(9)},
   ],
-  todos:[
+  todos:REAL?[]:[
     {id:'t1',text:'להעלות את Lifeboard ל-GitHub עם README מסודר',done:false},
     {id:'t2',text:'לבקש המלצה מהמרצה בקורס מערכות מבוזרות',done:false},
     {id:'t3',text:'לעדכן את קורות החיים עם הפרויקט האחרון',done:true},
@@ -1150,12 +1160,13 @@ function defaultState(){return{
   ],
   notif:true,todoOpen:false,
 }}
-let S=LS.get('state2',null);
+const SKEY=REAL?'state3':'state2';  // גרסה אמיתית מתחילה נקייה, בלי נתוני הדגמה
+let S=LS.get(SKEY,null);
 const initials=n=>{n=String(n||'?').trim();return /^[\u0590-\u05FF]/.test(n)?[...n][0]:n.slice(0,2)};
 const salaryTxt=j=>j.salary||'לא פורסם';
-if(!S){const old=LS.get('state',null);S=defaultState();if(old){S.onboarded=!!old.onboarded;S.qi=old.qi||0;if(old.profile)S.profile=Object.assign(S.profile,old.profile);}}
+if(!S){const old=REAL?null:LS.get('state',null);S=defaultState();if(old){S.onboarded=!!old.onboarded;S.qi=old.qi||0;if(old.profile)S.profile=Object.assign(S.profile,old.profile);}}
 else S=Object.assign(defaultState(),S);
-function save(){LS.set('state2',S)}
+function save(){LS.set(SKEY,S)}
 function applyTeam(){CAREER.agents.forEach((a,i)=>{a.name=(S.team&&S.team[a.key])||TEAM_DEFAULT[i].name});buildWorkflow()}
 if(!S.team)S.team={};
 if(S.profile&&S.profile.first==='Or')S.profile.first='אור';
@@ -1733,13 +1744,13 @@ const ICO={
 /* ═════════ לוח בקרה ═════════ */
 function nextSteps(){
   const out=[],hp=hotPosts(),q=queue();
-  if(hp.length) out.push({ic:ICO.li,c:'i-amber',b:hp.length===1?'פוסט חם מחכה לתגובה':`${hp.length} פוסטים חמים מחכים לתגובה`,s:`הראשון פורסם לפני ${Math.min(...hp.map(p=>p.mins))} דק׳`,w:['עכשיו','w-urgent'],go:"goPage('linkedin')"});
+  if(hp.length&&!REAL) out.push({ic:ICO.li,c:'i-amber',b:hp.length===1?'פוסט חם מחכה לתגובה':`${hp.length} פוסטים חמים מחכים לתגובה`,s:`הראשון פורסם לפני ${Math.min(...hp.map(p=>p.mins))} דק׳`,w:['עכשיו','w-urgent'],go:"goPage('linkedin')"});
   S.apps.filter(a=>a.status==='interview').forEach(a=>out.push({ic:ICO.cal,c:'i-amber',b:`ראיון ב-${JOBS[a.jobId].co}${a.iv?', '+a.iv:''}`,s:'ההכנה מוכנה',w:['השבוע','w-soon'],go:`openApp('${a.id}','prep')`}));
   S.apps.filter(a=>a.status==='screening').forEach(a=>out.push({ic:ICO.cal,c:'i-sky',b:`שאלות סינון מ-${JOBS[a.jobId].co}`,s:'הכנו לך תשובות לדוגמה',go:`openApp('${a.id}','prep')`}));
   if(q.length) out.push({ic:ICO.jobs,c:'i-green',b:q.length===1?'משרה חדשה מחכה לך':`${q.length} משרות חדשות מחכות לך`,s:q.slice(0,2).map(id=>JOBS[id].co).join(', ')+(q.length>2?` ועוד ${q.length-2}`:''),go:"goPage('jobs')"});
   S.apps.filter(followDue).forEach(a=>out.push({ic:ICO.mail,c:'i-teal',b:`${JOBS[a.jobId].co} לא ענו ${daysSince(a.date)} ימים`,s:'הודעת המשך מוכנה',go:`openApp('${a.id}','details')`}));
   S.apps.filter(a=>a.status==='saved').forEach(a=>out.push({ic:ICO.send,c:'i-green',b:`${JOBS[a.jobId].co}: שמרת ועוד לא הגשת`,s:'המכתב מוכן',go:`openApp('${a.id}','letter')`}));
-  const fl=fixesLeft().length; if(fl) out.push({ic:ICO.spark,c:'i-teal',b:fl===1?'שיפור אחד לפרופיל LinkedIn':`${fl} שיפורים לפרופיל LinkedIn`,s:'טקסט מוכן להעתקה',go:"goPage('linkedin','liFixes')"});
+  const fl=REAL?0:fixesLeft().length; if(fl) out.push({ic:ICO.spark,c:'i-teal',b:fl===1?'שיפור אחד לפרופיל LinkedIn':`${fl} שיפורים לפרופיל LinkedIn`,s:'טקסט מוכן להעתקה',go:"goPage('linkedin','liFixes')"});
   return out;
 }
 function renderHome(){
@@ -1753,7 +1764,7 @@ function renderHome(){
   const shown=steps.slice(0,5);
   $('homeScroll').innerHTML=`
     <div class="greet"><h2 class="greet-h">${hi}, ${escB(prof().first)}</h2><p>${escB(date)}</p></div>
-    ${prof().key?'':`<div class="notice">מוצגות דוגמאות עד שתחבר את הסוכנים. <button class="link" style="color:var(--brand);font-weight:600" onclick="goPage('settings')">לחיבור</button></div>`}
+    ${REAL?`<div class="notice">המשרות אמיתיות, מהחיפוש של דורון ${escB(feedWhen())}. מסכי LinkedIn וההכנה לראיונות עוד מציגים דוגמאות.</div>`:prof().key?'':`<div class="notice">מוצגות דוגמאות עד שתחבר את הסוכנים. <button class="link" style="color:var(--brand);font-weight:600" onclick="goPage('settings')">לחיבור</button></div>`}
     <div class="brief"><div class="brief-top"><span>הבריף של ${escB(N('assistant'))}</span><span class="new num">${new Date().toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'})}</span></div><p>${escB(brief)}</p></div>
     <section class="next glass" aria-labelledby="nxH"><div class="next-h"><h2 id="nxH">הצעדים הבאים</h2>${steps.length>5?`<span>5 מתוך ${steps.length}</span>`:''}</div>
       ${shown.length?shown.map(x=>`<button class="nx" onclick="${x.go}"><span class="ic ${x.c}" aria-hidden="true">${x.ic}</span><span class="tx"><b>${escB(x.b)}</b><span>${escB(x.s)}</span></span>${x.w?`<span class="when ${x.w[1]}">${x.w[0]}</span>`:''}<span class="chev" aria-hidden="true"></span></button>`).join('')
@@ -1821,7 +1832,7 @@ function cardInner(j){
   return`<div class="jc-top">${logo(j)}<div style="flex:1;min-width:0"><div class="jc-title" lang="en" dir="ltr" style="text-align:right">${escB(j.title)}</div><div class="jc-co">${escB(j.co)} · ${escB(j.loc)}</div></div></div>
     <div class="fit"><div class="fit-num num">${j.fit.toFixed(1)}<small>/5</small></div><div class="fit-right"><div class="fit-lbl">${fitLbl(j.fit)}</div>${pills(j.fit)}</div></div>
     <div class="jc-reasons">${j.reasons.slice(0,2).map(r=>`<div class="jc-r"><span class="ic ok" aria-hidden="true">✓</span><span>${escB(r)}</span></div>`).join('')}${j.gaps.slice(0,1).map(g=>`<div class="jc-r"><span class="ic gap" aria-hidden="true">!</span><span>חסר: ${escB(g)}</span></div>`).join('')}</div>
-    <div class="jc-desc">${escB(j.desc)}</div>
+    <div class="jc-desc" dir="auto">${escB(j.desc)}</div>
     <div class="jc-tags">${j.tags.map(t=>`<span class="chip" lang="en">${escB(t)}</span>`).join('')}</div>
     <div class="jc-foot"><span>${escB(j.src)} · ${agoTxt(j.posted)}</span>${j.salary?`<span>${escB(j.salary)}</span>`:''}</div>`;
 }
@@ -1859,9 +1870,11 @@ function openJobInfo(id){
   openSheet(`<div style="display:flex;gap:13px;align-items:center">${logo(j)}<div style="min-width:0"><h3 id="sheetTitle" lang="en" dir="ltr" style="text-align:right">${escB(j.title)}</h3><div class="sheet-sub">${escB(j.co)} · ${escB(j.loc)}</div></div></div>
     <div class="fit" style="margin:16px 0 0"><div class="fit-num num">${j.fit.toFixed(1)}<small>/5</small></div><div class="fit-right"><div class="fit-lbl">${fitLbl(j.fit)}</div>${pills(j.fit)}</div></div>
     <div class="s-sec"><h4>למה זה מתאים לך</h4>${j.reasons.map(r=>`<div class="jc-r" style="margin-bottom:7px"><span class="ic ok" aria-hidden="true">✓</span><span>${escB(r)}</span></div>`).join('')}</div>
-    <div class="s-sec"><h4>מה חסר</h4>${j.gaps.map(g=>`<div class="jc-r" style="margin-bottom:7px"><span class="ic gap" aria-hidden="true">!</span><span>${escB(g)}</span></div>`).join('')}</div>
-    <div class="s-sec"><h4>על המשרה</h4><p style="font-size:14px;line-height:1.65;color:var(--ink2)">${escB(j.desc)}</p></div>
+    ${j.partial?`<div class="s-sec"><p style="font-size:13px;color:var(--ink3)">לא היה תיאור מלא של המשרה, אז הדירוג לפי הכותרת בלבד ולא נכתב מה חסר.</p></div>`:''}
+    ${j.gaps.length?`<div class="s-sec"><h4>מה חסר</h4>`:'<div hidden>'}${j.gaps.map(g=>`<div class="jc-r" style="margin-bottom:7px"><span class="ic gap" aria-hidden="true">!</span><span>${escB(g)}</span></div>`).join('')}</div>
+    <div class="s-sec"><h4>על המשרה</h4><p dir="auto" style="font-size:14px;line-height:1.65;color:var(--ink2);text-align:start">${escB(j.desc)}</p></div>
     <div class="s-sec"><h4>פרטים</h4><div class="kv"><span>שכר</span><b>${escB(salaryTxt(j))}</b></div><div class="kv"><span>פורסם</span><b>${escB(j.src)}, ${agoTxt(j.posted)}</b></div></div>
+    ${j.url?`<a class="btn btn-ghost" style="margin-top:14px;width:100%" href="${escB(j.url)}" target="_blank" rel="noopener">למודעה המלאה ב-${escB(j.src)} ↗</a>`:''}
     ${inDeck?`<div class="duo" style="margin-top:20px"><button class="btn btn-ghost" onclick="closeSheet();decide('skip')">דלג</button><button class="btn btn-primary" style="flex:2" onclick="closeSheet();decide('save')">שמור</button></div>`:''}`);
 }
 
