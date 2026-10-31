@@ -91,3 +91,15 @@ def test_legacy_client_is_drop_in():
     c = lr.router_client("researcher", "judge")
     r = c.chat.completions.create(model="qwen/qwen3.8-27b", messages=[{"role": "user", "content": "x"}], max_tokens=50)
     assert r.choices[0].message.content == "ok from openai/gpt-oss-120b"
+
+
+def test_router_uses_models_groq_actually_offers():
+    import agent_core.llm_router as r
+    r._live = ["openai/gpt-oss-120b", "qwen/qwen3.8-27b", "whisper-large-v3", "llama-3.1-8b-instant", "openai/gpt-oss-20b"]
+    try:
+        judge = r._models_for("judge")
+        assert judge[0] == "openai/gpt-oss-120b" and "qwen/qwen3.8-27b" in judge
+        assert "llama-3.3-70b-versatile" not in judge and not any("whisper" in m for m in judge)
+        assert judge.index("qwen/qwen3.8-27b") < judge.index("openai/gpt-oss-20b")
+    finally:
+        r._live = None

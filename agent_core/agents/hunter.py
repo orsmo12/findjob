@@ -136,6 +136,35 @@ def cheap_rank(j: dict, plan: dict, cv: str) -> int:
     return s
 
 
+# ── השלמת תיאור מהעמוד הציבורי של המשרה ──────────────────────────────────────
+def _html_text(html: str) -> str:
+    import html as H
+    html = re.sub(r"<(br|/p|/li|/div|/h\d)[^>]*>", "\n", html, flags=re.I)
+    html = re.sub(r"<li[^>]*>", "• ", html, flags=re.I)
+    txt = H.unescape(re.sub(r"<[^>]+>", "", html))
+    return re.sub(r"\n\s*\n+", "\n", txt).strip()
+
+
+def enrich(job: dict) -> dict:
+    """מודעות LinkedIn מגיעות בלי תיאור. מביאים אותו מהעמוד הציבורי של המשרה (בלי התחברות)."""
+    if len(job.get("description", "")) >= 300 or "linkedin.com/jobs/view/" not in job.get("url", ""):
+        return job
+    m = re.search(r"/jobs/view/(?:[^/?]*-)?(\d+)", job["url"])
+    if not m:
+        return job
+    try:
+        import httpx
+        r = httpx.get(f"https://www.linkedin.com/jobs-guest/jobs/api/jobPosting/{m.group(1)}", timeout=15,
+                      headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)", "Accept-Language": "en-US,en;q=0.9"})
+        if r.status_code == 200:
+            mm = re.search(r'show-more-less-html__markup[^>]*>(.*?)</div>', r.text, re.S)
+            if mm:
+                job["description"] = _html_text(mm.group(1))[:6000]
+    except Exception as e:  # noqa: BLE001
+        print(f"[דורון] לא הצלחתי להביא תיאור: {job['title']} ({type(e).__name__})")
+    return job
+
+
 # ── דירוג ב-AI ─────────────────────────────────────────────────────────────────
 RANK_PROMPT = """You rate how well a job fits a candidate. Use ONLY facts written in the CV, the preferences and the job ad.
 Never invent experience, numbers or requirements.
@@ -175,9 +204,11 @@ def rate(job: dict, cv: str, prefs: str) -> dict | None:
     desc = job.get("description", "")
     prompt = RANK_PROMPT.format(cv=cv[:5000], prefs=prefs, title=job["title"], company=job["company"],
                                 location=job["location"], desc=(desc[:3500] or "(no description available)"))
-    r = parse_rating(chat("hunter", "rate_job", [{"role": "user", "content": prompt}], tier="judge", max_tokens=450, json_mode=True))
+    r = parse_rating(chat("hunter", "rate_job", [{"role": "user", "content": prompt}], tier="judge", max_tokens=1000))  # בלי json_mode: חלק מהמודלים נכשלים בו; parse_rating מחלץ את ה-JSON
     if r:
         r["partial"] = len(desc) < 300
+        if r["partial"]:
+            r["gaps"] = []  # בלי המודעה המלאה אין לנו דרישות אמיתיות להשוות אליהן
     return r
 
 
@@ -199,7 +230,7 @@ def to_card(j: dict, r: dict) -> dict:
             "posted_days": days, "salary": j.get("salary", ""), "desc": j.get("description", "")[:600], "url": j["url"]}
 
 
-def run(profile: dict, plan: dict, raw: list[dict] | None = None, rate_top: int = 15, min_fit: float = 3.5) -> dict:
+def run(profile: dict, plan: dict, raw: list[dict] | None = None, rate_top: int = 15, min_fit: float = 3.5, remember: bool = True) -> dict:
     cv = profile.get("cv_text", "")
     jobs = dedupe(raw if raw is not None else collect(plan))
     seen = set(json.loads(SEEN.read_text())) if SEEN.exists() else set()
@@ -207,9 +238,14 @@ def run(profile: dict, plan: dict, raw: list[dict] | None = None, rate_top: int 
     jobs.sort(key=lambda j: -cheap_rank(j, plan, cv))
     cards, deferred = [], 0
     for j in jobs[:rate_top]:
+        enrich(j)
+        if too_senior(j, plan):  # עכשיו כשיש תיאור מלא, בודקים שוב את שנות הניסיון
+            stats["too_senior"] += 1; continue
         try:
             r = rate(j, cv, prefs_text(plan))
-        except BudgetDeferred:
+        except BudgetDeferred as e:
+            if not deferred:
+                print(f"[דורון] דירוג נדחה: {e}")
             deferred += 1; continue
         if not r:
             continue
@@ -223,5 +259,6 @@ def run(profile: dict, plan: dict, raw: list[dict] | None = None, rate_top: int 
             "plan": {k: plan.get(k) for k in ("queries", "locations", "levels", "why")}, "jobs": cards}
     FEED.parent.mkdir(parents=True, exist_ok=True)
     FEED.write_text(json.dumps(feed, ensure_ascii=False, indent=2), encoding="utf-8")
-    SEEN.write_text(json.dumps(sorted(seen | {c["id"] for c in cards})), encoding="utf-8")
+    if remember:  # בריצת ניסיון לא מסמנים "כבר ראית"
+        SEEN.write_text(json.dumps(sorted(seen | {c["id"] for c in cards})), encoding="utf-8")
     return feed

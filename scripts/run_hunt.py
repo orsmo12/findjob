@@ -25,7 +25,10 @@ if "--plan" in sys.argv:
     sys.exit(0)
 
 from agent_core.agents.hunter import run
-feed = run(prof, plan)
+test = "--test" in sys.argv
+if test:
+    print("(ריצת ניסיון: המשרות לא יסומנו כ'כבר ראית')")
+feed = run(prof, plan, remember=not test)
 s = feed["stats"]
 print(f"\nדורון: נאספו {s['collected']}, סוננו {s['too_senior']} בכירות מדי, {s['already_seen']} כבר ראית,"
       f" דורגו {s['rated']}, מוצגות {s['shown']}" + (f", {s['deferred']} נדחו למחר (מכסה)" if s['deferred'] else ""))

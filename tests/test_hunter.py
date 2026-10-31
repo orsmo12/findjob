@@ -57,3 +57,13 @@ def test_bad_model_output_is_ignored():
     assert h.parse_rating("no json here") is None
     r = h.parse_rating('{"fit": 9, "reasons": ["a","b","c","d"], "gaps": []}')
     assert r["fit"] == 5.0 and len(r["reasons"]) == 3
+
+
+def test_partial_rating_claims_no_gaps():
+    h.chat = lambda *a, **k: '{"fit": 4.0, "reasons": ["React"], "gaps": ["Node.js"], "seniority_ok": true}'
+    r = h.rate({"title": "Dev", "company": "X", "location": "TA", "description": ""}, CV, "")
+    assert r["partial"] is True and r["gaps"] == []
+
+
+def test_html_text():
+    assert h._html_text("<p>Hi&amp;bye</p><ul><li>Python</li></ul>") == "Hi&bye\n• Python"

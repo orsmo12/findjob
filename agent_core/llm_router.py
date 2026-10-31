@@ -46,10 +46,35 @@ def _groq_client():
     return _groq
 
 
+_live = None
+# סדר העדפה אם הרשימה הקבועה לא זמינה: מודלים גדולים קודם, בלי מודלי קול/בטיחות
+_PREFER = ("gpt-oss-120b", "llama-4", "kimi", "qwen", "llama-3.3", "gpt-oss-20b", "llama-3.1-8b")
+_SKIP = ("whisper", "guard", "tts", "playai", "orpheus", "compound", "prompt-guard", "allam")
+
+
+def _models_for(tier: str) -> list[str]:
+    """המודלים ש-Groq באמת מציע עכשיו. מודלים יוצאים משימוש, אז לא סומכים על רשימה קבועה."""
+    global _live
+    if _live is None:
+        try:
+            _live = [m.id for m in _groq_client().models.list().data]
+        except Exception:  # noqa: BLE001
+            _live = []
+    if not _live:
+        return TIERS[tier]
+    fixed = [m for m in TIERS[tier] if m in _live]
+    extra = [m for m in _live if m not in fixed and not any(k in m for k in _SKIP)]
+    rank = lambda m: next((i for i, k in enumerate(_PREFER) if k in m), len(_PREFER))
+    extra.sort(key=rank)
+    if tier != "light":
+        extra = [m for m in extra if "8b" not in m and "20b" not in m] + [m for m in extra if "8b" in m or "20b" in m]
+    return (fixed + extra)[:4]
+
+
 def set_client(client) -> None:
     """לבדיקות: מזריקים לקוח מדומה."""
-    global _groq
-    _groq = client
+    global _groq, _live
+    _groq, _live = client, []
 
 
 def _is_rate_limit(err: Exception) -> bool:
@@ -70,11 +95,26 @@ def _strip_think(text: str) -> str:
 
 
 def chat(agent: str, task: str, messages: list, tier: str = "judge",
-         max_tokens: int = 600, temperature: float | None = None, json_mode: bool = False) -> str:
+         max_tokens: int = 600, temperature: float | None = None, json_mode: bool = False,
+         max_wait: float = 75.0) -> str:
+    """max_wait: מגבלות הדקה של Groq מתאפסות תוך שניות — מחכים במקום לדחות למחר."""
+    try:
+        return _chat_once(agent, task, messages, tier, max_tokens, temperature, json_mode)
+    except bg.BudgetDeferred:
+        waits = [bg.wait_hint(m) for m in _models_for(tier)]
+        soon = min([w for w in waits if w > 0] or [0])
+        if not soon or soon > max_wait:
+            raise
+        import time
+        time.sleep(soon + 1)
+        return _chat_once(agent, task, messages, tier, max_tokens, temperature, json_mode)
+
+
+def _chat_once(agent, task, messages, tier, max_tokens, temperature, json_mode) -> str:
     if temperature is None:
         temperature = {"light": 0.1, "judge": 0.2, "write": 0.6}[tier]
     tried = []
-    for model in TIERS[tier]:
+    for model in _models_for(tier):
         if not bg.is_available(model):
             tried.append(f"{model}: בגבול")
             continue
@@ -92,7 +132,7 @@ def chat(agent: str, task: str, messages: list, tier: str = "judge",
                 bg.block(model, _retry_after(err))
                 tried.append(f"{model}: 429")
                 continue
-            tried.append(f"{model}: {type(err).__name__}")
+            tried.append(f"{model}: {type(err).__name__}: {str(err)[:160]}")
             continue
     if tier == "write" and os.environ.get("ENABLE_CLAUDE") == "1" and os.environ.get("ANTHROPIC_API_KEY"):
         import anthropic
