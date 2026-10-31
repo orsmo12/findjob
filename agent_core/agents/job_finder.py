@@ -68,141 +68,18 @@ def _ats_score_keywords(resume: str, job_description: str, cv_profile: Optional[
     return base
 
 
-# ── LinkedIn Playwright Scraper ────────────────────────────────────────────────
-
-COOKIES_PATH = Path(__file__).parent.parent / "linkedin_cookies.json"
-
-LINKEDIN_SEARCH_URL = (
-    "https://www.linkedin.com/jobs/search/"
-    "?keywords={query}&location={location}&f_TPR=r259200"  # 72 שעות אחרונות
-)
+# ── LinkedIn ───────────────────────────────────────────────────────────────────
+# אין גישה לחשבון: משרות LinkedIn מגיעות רק כמודעות ציבוריות דרך JobSpy.
 
 
-async def _scrape_linkedin_playwright(
-    query: str,
-    location: str,
-    max_results: int,
-) -> list[JobResult]:
-    """
-    מסרק LinkedIn עם Playwright + cookies session של המשתמש.
-
-    דורש קובץ `agent_core/linkedin_cookies.json` שמכיל את ה-cookies
-    של session מחובר של LinkedIn.
-
-    כיצד לייצר: הרץ `python scripts/save_linkedin_session.py`
-    """
-    try:
-        from playwright.async_api import async_playwright
-    except ImportError:
-        print("[LinkedIn] ❌ playwright לא מותקן — הרץ: pip install playwright && playwright install chromium")
-        return []
-
-    if not COOKIES_PATH.exists():
-        print(f"[LinkedIn] ⚠️  לא נמצא {COOKIES_PATH}")
-        print("[LinkedIn] הרץ: python scripts/save_linkedin_session.py")
-        return []
-
-    jobs: list[JobResult] = []
-    url = LINKEDIN_SEARCH_URL.format(
-        query=query.replace(" ", "%20"),
-        location=location.replace(" ", "%20"),
-    )
-
-    async with async_playwright() as pw:
-        browser = await pw.chromium.launch(headless=True)
-        context = await browser.new_context(
-            user_agent=(
-                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                "AppleWebKit/537.36 (KHTML, like Gecko) "
-                "Chrome/120.0.0.0 Safari/537.36"
-            ),
-            viewport={"width": 1280, "height": 720},
-        )
-
-        # טען cookies
-        try:
-            cookies = json.loads(COOKIES_PATH.read_text(encoding="utf-8"))
-            await context.add_cookies(cookies)
-            print(f"[LinkedIn] ✅ Cookies נטענו ({len(cookies)} cookies)")
-        except Exception as e:
-            print(f"[LinkedIn] ❌ שגיאה בטעינת cookies: {e}")
-            await browser.close()
-            return []
-
-        page = await context.new_page()
-
-        try:
-            print(f"[LinkedIn] 🔍 מחפש: '{query}' ב-'{location}'")
-            await page.goto(url, timeout=30000, wait_until="networkidle")
-
-            # בדוק שמחוברים
-            if "authwall" in page.url or "login" in page.url:
-                print("[LinkedIn] ❌ Session פג — הרץ מחדש save_linkedin_session.py")
-                await browser.close()
-                return []
-
-            # חכה שהמשרות יטענו
-            try:
-                await page.wait_for_selector(".job-card-container", timeout=10000)
-            except Exception:
-                print("[LinkedIn] ⚠️  לא נמצאו job cards — דף ריק?")
-                await browser.close()
-                return []
-
-            # גלול לטעון עוד תוצאות
-            for _ in range(3):
-                await page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
-                await page.wait_for_timeout(1500)
-
-            job_cards = await page.query_selector_all(".job-card-container")
-            print(f"[LinkedIn] נמצאו {len(job_cards)} כרטיסי משרה")
-
-            for card in job_cards[:max_results]:
-                try:
-                    title_el = await card.query_selector(".job-card-list__title")
-                    company_el = await card.query_selector(".job-card-container__primary-description")
-                    location_el = await card.query_selector(".job-card-container__metadata-item")
-                    link_el = await card.query_selector("a.job-card-list__title")
-
-                    title   = (await title_el.inner_text()).strip() if title_el else ""
-                    company = (await company_el.inner_text()).strip() if company_el else ""
-                    loc     = (await location_el.inner_text()).strip() if location_el else location
-                    href    = await link_el.get_attribute("href") if link_el else ""
-                    job_url = f"https://www.linkedin.com{href}" if href and href.startswith("/") else href
-
-                    if title:
-                        jobs.append({
-                            "title":       title,
-                            "company":     company,
-                            "location":    loc,
-                            "salary":      "",    # LinkedIn לא תמיד מראה שכר
-                            "url":         job_url or "",
-                            "description": "",    # נשלים בסוכן linkedin_scout
-                            "ats_score":   0,     # יחושב אחרי
-                            "source":      "linkedin",
-                        })
-                except Exception as card_err:
-                    print(f"[LinkedIn] שגיאה בכרטיס: {card_err}")
-
-        except Exception as e:
-            print(f"[LinkedIn] ❌ שגיאת Playwright: {e}")
-        finally:
-            await browser.close()
-
-    print(f"[LinkedIn] ✅ נמצאו {len(jobs)} משרות")
-    return jobs
+def _scrape_linkedin_playwright(*_a, **_k):
+    """הוסר: התחברות ל-LinkedIn עם ה-cookies שלך. findjob לא פועל בחשבונות שלך."""
+    raise RuntimeError("disabled by policy: no logged-in access to user accounts")
 
 
-def _scrape_linkedin_sync(query: str, location: str, max_results: int) -> list[JobResult]:
-    """Wrapper סינכרוני ל-async Playwright."""
-    try:
-        return asyncio.run(_scrape_linkedin_playwright(query, location, max_results))
-    except RuntimeError:
-        # אם כבר יש event loop (למשל בתוך Jupyter/FastAPI)
-        import nest_asyncio
-        nest_asyncio.apply()
-        loop = asyncio.get_event_loop()
-        return loop.run_until_complete(_scrape_linkedin_playwright(query, location, max_results))
+def _scrape_linkedin_sync(*_a, **_k) -> list[JobResult]:
+    """הוסר: התחברות ל-LinkedIn. משרות LinkedIn מגיעות כמודעות ציבוריות דרך JobSpy."""
+    return []
 
 
 # ── JobSpy scraper (Indeed / Glassdoor / Google) ───────────────────────────────
@@ -212,7 +89,7 @@ def _scrape_jobspy(query: str, location: str, max_results: int) -> list[JobResul
     try:
         from jobspy import scrape_jobs
         jobs_df = scrape_jobs(
-            site_name=["indeed", "glassdoor", "google"],
+            site_name=["indeed", "glassdoor", "google", "linkedin"],  # linkedin = מודעות ציבוריות, בלי התחברות
             search_term=query,
             location=location,
             results_wanted=max_results,
@@ -351,9 +228,9 @@ def job_finder_node(state: CareerState) -> dict:
     # ── סריקה מקבילית ─────────────────────────────────────────────────────────
     all_jobs: list[JobResult] = []
 
-    # 1. LinkedIn (Playwright)
-    linkedin_jobs = _scrape_linkedin_sync(query, location, max_results // 2)
-    all_jobs.extend(linkedin_jobs)
+    # 1. LinkedIn — רק משרות ציבוריות דרך JobSpy (בלי התחברות לחשבון שלך).
+    #    כלל: findjob לעולם לא נכנס לחשבונות שלך ולא פועל בשמך. ראה docs/AGENTS.md
+    linkedin_jobs: list[JobResult] = []
 
     # 2. Indeed / Glassdoor / Google (JobSpy)
     jobspy_jobs = _scrape_jobspy(query, location, max_results)

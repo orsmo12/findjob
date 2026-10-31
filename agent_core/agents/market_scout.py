@@ -72,40 +72,8 @@ def market_scout_node(state: CareerState) -> dict:
 
 
 def _scrape_linkedin_posts(search_query: str, cv_profile: dict) -> list:
-    cookies_path = "agent_core/linkedin_cookies.json"
-    if not os.path.exists(cookies_path):
-        print("[חוקר שוק] LinkedIn cookies לא זמינים — מדלג scraping")
-        return []
-    try:
-        from playwright.sync_api import sync_playwright
-        domain   = cv_profile.get("domain", "")
-        keywords = f"{search_query} {domain} hiring Israel"
-        posts = []
-        with sync_playwright() as p:
-            browser = p.chromium.launch(headless=True)
-            context = browser.new_context()
-            with open(cookies_path) as f:
-                cookies = json.load(f)
-            context.add_cookies(cookies)
-            page = context.new_page()
-            search_url = (
-                f"https://www.linkedin.com/search/results/content/"
-                f"?keywords={keywords.replace(' ', '%20')}&datePosted=past-week"
-            )
-            page.goto(search_url, timeout=15000)
-            page.wait_for_timeout(2000)
-            post_elements = page.query_selector_all("[data-urn]")[:10]
-            for el in post_elements:
-                text = el.inner_text()
-                if len(text) > 50:
-                    posts.append({"text": text[:300], "timestamp": datetime.now().isoformat()})
-            browser.close()
-            print(f"[חוקר שוק] LinkedIn: {len(posts)} פוסטים")
-            return posts
-    except Exception as e:
-        print(f"[חוקר שוק] LinkedIn scraping שגיאה: {e}")
-        return []
-
+    # הוסר: גלישה ב-LinkedIn עם ה-cookies שלך. פוסטים יגיעו מחיפוש ציבורי (קובי) או משיתוף שלך.
+    return []
 
 def _analyze_company(company_name, job, cv_profile, onboarding, linkedin_posts) -> dict:
     seniority   = cv_profile.get("seniority", "junior")
