@@ -194,7 +194,7 @@ function decide(kind){
   busy=true;
   if(card){card.classList.add('fly');card.style.transform=`translateX(${kind==='save'?130:-130}%) rotate(${kind==='save'?14:-14}deg)`;card.style.opacity='0';}
   S.decisions[id]=kind;
-  if(kind==='save'&&!S.apps.find(a=>a.jobId===id)) S.apps.unshift({id:'a-'+id,jobId:id,status:'saved',date:new Date().toISOString(),letter:letterFor(j)});
+  if(kind==='save'&&!S.apps.find(a=>a.jobId===id)) S.apps.unshift({id:'a-'+id,jobId:id,status:'saved',date:new Date().toISOString(),letter:REAL?'':letterFor(j)});
   save();lastAct={id,kind};
   setTimeout(()=>{busy=false;renderJobs();syncChrome()},340);
   if(kind==='save') toast(`${j.co} נשמרה בהגשות`,{undo:undoLast});

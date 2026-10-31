@@ -42,3 +42,4 @@ memory/
 my_resume.txt
 *.tsbuildinfo
 hunt_log.txt
+push_log.txt

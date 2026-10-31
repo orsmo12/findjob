@@ -45,3 +45,16 @@ def save_feed(user_id: str, feed: dict) -> None:
     r = httpx.post(_url("runs"), headers=_h(), json={"user_id": user_id, "agent": "hunter",
                                                      "stats": feed["stats"], "plan": feed["plan"]}, timeout=30)
     r.raise_for_status()
+
+
+def saved_without_letter(user_id: str) -> list[dict]:
+    r = httpx.get(_url("jobs"), headers=_h(), timeout=30, params={
+        "select": "id,card", "user_id": f"eq.{user_id}", "decision": "eq.save", "letter": "is.null"})
+    r.raise_for_status()
+    return r.json()
+
+
+def save_letter(user_id: str, job_id: str, letter: dict) -> None:
+    r = httpx.patch(_url("jobs"), headers=_h(), json={"letter": letter},
+                    params={"user_id": f"eq.{user_id}", "id": f"eq.{job_id}"}, timeout=30)
+    r.raise_for_status()

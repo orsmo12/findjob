@@ -25,20 +25,21 @@ async function cloudLoad(){
   const uid=ME.id;
   const [{data:pr},{data:jobs},{data:runs}]=await Promise.all([
     SB.from('profiles').select('*').eq('user_id',uid).maybeSingle(),
-    SB.from('jobs').select('id,card,decision,created_at').eq('user_id',uid).order('created_at',{ascending:false}).limit(200),
+    SB.from('jobs').select('id,card,decision,letter,created_at').eq('user_id',uid).order('created_at',{ascending:false}).limit(200),
     SB.from('runs').select('stats,created_at').eq('user_id',uid).order('created_at',{ascending:false}).limit(1)]);
   if(pr){const p=prof();p.first=pr.first||p.first;p.name=pr.name||p.name;p.cv=pr.cv_text||p.cv;p.ans=Object.assign({},pr.answers||{},p.ans||{});
-    if(pr.team&&Object.keys(pr.team).length)S.team=pr.team;if(pr.cv_text)S.onboarded=true}
+    if(pr.team&&Object.keys(pr.team).length)S.team=pr.team;const st=pr.state||{};['apps','todos','stories'].forEach(k=>{if(Array.isArray(st[k]))S[k]=st[k]});if(pr.cv_text)S.onboarded=true}
   prof().key='cloud';
   if(runs&&runs.length){
     const live=(jobs||[]).filter(r=>r.decision!=='skip'||S.decisions[r.id]);
-    setFeed({generated_at:runs[0].created_at,stats:runs[0].stats||{},jobs:live.map(r=>r.card).sort((a,b)=>b.fit-a.fit)});
+    setFeed({generated_at:runs[0].created_at,stats:runs[0].stats||{},jobs:live.map(r=>Object.assign({},r.card,{letter:r.letter||null})).sort((a,b)=>b.fit-a.fit)});
     (jobs||[]).forEach(r=>{if(r.decision)S.decisions[r.id]=r.decision});
   }
+  S.apps=(S.apps||[]).filter(a=>JOBS[a.jobId]);
   _decSnap=Object.assign({},S.decisions);_profSnap=profRow();
   LS.set(SKEY,S);if(typeof applyTeam==='function')applyTeam();
 }
-function profRow(){const p=prof();return JSON.stringify({first:p.first||'',name:p.name||'',cv_text:p.cv||'',answers:p.ans||{},team:S.team||{}})}
+function profRow(){const p=prof();return JSON.stringify({first:p.first||'',name:p.name||'',cv_text:p.cv||'',answers:p.ans||{},team:S.team||{},state:{apps:S.apps,todos:S.todos,stories:S.stories}})}
 function cloudSync(){clearTimeout(_syncT);_syncT=setTimeout(async()=>{
   if(!ME)return;
   const row=profRow();

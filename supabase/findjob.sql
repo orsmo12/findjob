@@ -8,6 +8,7 @@ create table if not exists public.profiles (
   cv_text    text default '',
   answers    jsonb default '{}'::jsonb,
   team       jsonb default '{}'::jsonb,
+  state      jsonb default '{}'::jsonb,  -- הגשות, משימות וסיפורים מהאפליקציה
   updated_at timestamptz default now()
 );
 
@@ -17,6 +18,7 @@ create table if not exists public.jobs (
   card       jsonb not null,           -- הכרטיס כפי שהאפליקציה מציגה
   fit        real,
   decision   text,                     -- null / save / skip
+  letter     jsonb,                    -- מכתב הפנייה של שי: {text, lang, checked}
   created_at timestamptz default now(),
   primary key (user_id, id)
 );
@@ -40,3 +42,7 @@ drop policy if exists "own jobs" on public.jobs;
 create policy "own jobs" on public.jobs for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 drop policy if exists "own runs" on public.runs;
 create policy "own runs" on public.runs for select using (auth.uid() = user_id);
+
+-- אם הטבלאות נוצרו בגרסה קודמת:
+alter table public.profiles add column if not exists state jsonb default '{}'::jsonb;
+alter table public.jobs     add column if not exists letter jsonb;

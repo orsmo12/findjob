@@ -251,7 +251,7 @@ def to_card(j: dict, r: dict, cv: str = "") -> dict:
             "fit": r["fit"], "reasons": r["reasons"], "gaps": r["gaps"], "partial": r["partial"],
             "tags": tags_for(j.get("description", ""), cv),
             "src": {"indeed": "Indeed", "linkedin": "LinkedIn", "google": "Google Jobs"}.get(j["source"], j["source"]),
-            "posted_days": days, "salary": j.get("salary", ""), "desc": j.get("description", "")[:600], "url": j["url"]}
+            "posted_days": days, "salary": j.get("salary", ""), "desc": j.get("description", "")[:600], "ad": j.get("description", "")[:4000], "url": j["url"]}
 
 
 def run(profile: dict, plan: dict, raw: list[dict] | None = None, rate_top: int = 15, min_fit: float = 3.5, remember: bool = True,
