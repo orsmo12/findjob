@@ -17,5 +17,5 @@ else:
     feed=('const FEED='+open(sys.argv[1]).read()+';\n') if len(sys.argv)>1 else ''
     out=sys.argv[2] if len(sys.argv)>2 else 'findjob.html'
 js=feed+open('app1_head.js').read()+open('app1_tail.js').read()+"\n/* ═════════ OFFICE — copied verbatim from Life Building (unchanged) ═════════ */\n"+open('office.js').read()+"\n"+open('app2.js').read()+"\n"+open('app3.js').read()+"\n"+open('onb_q.js').read()+"\n"+open('plan.js').read()+"\n"+open('app4.js').read()+("\n"+open('cloud.js').read()+"\ncloudBoot();\n" if cloud else "\ninit();\n")
-sb='<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>\n' if cloud else ''
+sb='<link rel="manifest" href="/manifest.webmanifest">\n<link rel="apple-touch-icon" href="/icon.svg">\n<meta name="apple-mobile-web-app-capable" content="yes">\n<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>\n' if cloud else ''
 open(out,'w').write(head+css+"\n</style>\n"+sb+"</head>\n<body>\n"+body+"\n<script>\n"+js+"</script>\n</body>\n</html>\n")

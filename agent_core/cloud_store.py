@@ -15,7 +15,9 @@ def configured() -> bool:
 
 def _h(extra: dict | None = None) -> dict:
     k = os.environ["SUPABASE_SERVICE_KEY"]
-    h = {"apikey": k, "Authorization": f"Bearer {k}", "Content-Type": "application/json"}
+    h = {"apikey": k, "Content-Type": "application/json"}
+    if not k.startswith("sb_"):  # מפתחות ישנים (JWT) צריכים גם Authorization
+        h["Authorization"] = f"Bearer {k}"
     h.update(extra or {})
     return h
 

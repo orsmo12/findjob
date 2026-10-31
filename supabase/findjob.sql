@@ -46,3 +46,9 @@ create policy "own runs" on public.runs for select using (auth.uid() = user_id);
 -- אם הטבלאות נוצרו בגרסה קודמת:
 alter table public.profiles add column if not exists state jsonb default '{}'::jsonb;
 alter table public.jobs     add column if not exists letter jsonb;
+
+-- הרשאות ל-API (אם "Automatically expose new tables" כבוי)
+grant usage on schema public to anon, authenticated, service_role;
+grant select, insert, update, delete on public.profiles, public.jobs to authenticated;
+grant select on public.runs to authenticated;
+grant all on public.profiles, public.jobs, public.runs to service_role;
