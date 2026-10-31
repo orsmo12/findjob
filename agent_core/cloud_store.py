@@ -14,7 +14,8 @@ def configured() -> bool:
 
 
 def _h(extra: dict | None = None) -> dict:
-    k = os.environ["SUPABASE_SERVICE_KEY"]
+    from agent_core.llm_router import clean_key
+    k = clean_key(os.environ["SUPABASE_SERVICE_KEY"], "SUPABASE_SERVICE_KEY")
     h = {"apikey": k, "Content-Type": "application/json"}
     if not k.startswith("sb_"):  # מפתחות ישנים (JWT) צריכים גם Authorization
         h["Authorization"] = f"Bearer {k}"
@@ -23,7 +24,8 @@ def _h(extra: dict | None = None) -> dict:
 
 
 def _url(table: str) -> str:
-    return os.environ["SUPABASE_URL"].rstrip("/") + "/rest/v1/" + table
+    from agent_core.llm_router import clean_key
+    return clean_key(os.environ["SUPABASE_URL"], "SUPABASE_URL").rstrip("/") + "/rest/v1/" + table
 
 
 def profiles_ready() -> list[dict]:

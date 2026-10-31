@@ -35,11 +35,19 @@ CLAUDE_MODEL = os.environ.get("CLAUDE_MODEL", "claude-haiku-4-5")
 _groq = None
 
 
+def clean_key(v: str | None, name: str = "") -> str:
+    """מפתח שהודבק עם רווח, ירידת שורה, מרכאות או עם 'NAME=' לפניו — מנקים. אחרת החיבור נכשל בשקט."""
+    v = (v or "").strip().strip('"').strip("'").strip()
+    if name and v.startswith(name + "="):
+        v = v[len(name) + 1:].strip().strip('"').strip("'")
+    return v
+
+
 def _groq_client():
     global _groq
     if _groq is None:
         from groq import Groq
-        key = os.environ.get("GROQ_API_KEY")
+        key = clean_key(os.environ.get("GROQ_API_KEY"), "GROQ_API_KEY")
         if not key:
             raise RuntimeError("GROQ_API_KEY חסר ב-.env — הסוכנים לא מחוברים")
         _groq = Groq(api_key=key)

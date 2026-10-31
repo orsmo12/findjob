@@ -16,6 +16,11 @@ from agent_core.agents.hunter import run
 if not db.configured():
     sys.exit("SUPABASE_URL / SUPABASE_SERVICE_KEY חסרים")
 
+import os
+from agent_core.llm_router import clean_key
+k = clean_key(os.environ.get("GROQ_API_KEY"), "GROQ_API_KEY")
+raw = os.environ.get("GROQ_API_KEY") or ""
+print(f"מפתח Groq: {'תקין' if k.startswith('gsk_') and len(k) > 40 else 'לא תקין'} (אורך {len(k)}, נוקה: {'כן' if raw != k else 'לא'})")
 users = db.profiles_ready()
 print(f"{len(users)} משתמשים עם קורות חיים")
 for u in users:

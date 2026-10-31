@@ -103,3 +103,9 @@ def test_router_uses_models_groq_actually_offers():
         assert judge.index("qwen/qwen3.8-27b") < judge.index("openai/gpt-oss-20b")
     finally:
         r._live = None
+
+
+def test_clean_key_handles_paste_mistakes():
+    from agent_core.llm_router import clean_key
+    assert clean_key(' "gsk_abc"\n', "GROQ_API_KEY") == "gsk_abc"
+    assert clean_key("GROQ_API_KEY=gsk_abc", "GROQ_API_KEY") == "gsk_abc"
