@@ -23,18 +23,18 @@ const IC={
 /* ═════════ data — agents (single registry shared with the Office) ═════════ */
 // index → Office character. key → backend node in agent_core.
 const TEAM_DEFAULT=[
-  {key:'strategist',name:'יואב',role:'יועץ אסטרטגי',state:'working',sched:'כל יום ראשון, 07:00',
-   desc:'קובע מה מחפשים: כותרות תפקיד, אזורים, רמת בכירות וחברות יעד. מציב את יעדי השבוע ולומד מכל משרה ששמרת או דילגת עליה.'},
-  {key:'hunter',name:'דורון',role:'צייד משרות',state:'working',sched:'כל לילה, 02:00',
-   desc:'אוסף משרות חדשות מכמה מקורות, מסנן בכירות, אזור ומשרות שנסגרו, ומדרג כל משרה מ-1 עד 5 מול הפרופיל שלך עם סיבות ומה חסר.'},
-  {key:'researcher',name:'גיל',role:'חוקר חברות',state:'idle',sched:'כשמשרה נשמרת',
-   desc:'בודק כל חברה ששמרת: שלב, טכנולוגיות ושכר אם פורסם. מחפש עובדים שיכולים להמליץ עליך ומזהה משרות שמתפרסמות שוב ושוב בלי גיוס.'},
-  {key:'coach',name:'מאיה',role:'מאמנת ראיונות',state:'idle',sched:'כשנקבע סינון או ראיון',
-   desc:'מכינה שאלות צפויות לפי המשרה והחברה, בונה איתך תשובות מתוך בנק הסיפורים שלך ומתרגלת איתך בצ׳אט.'},
-  {key:'linkedin',name:'קובי',role:'מנהל LinkedIn',state:'sleeping',sched:'כל בוקר, 07:30',
-   desc:'מוצא פוסטים ואנשים רלוונטיים, מכין תגובות והודעות חיבור, מציע שיפורים לפרופיל ומנסח פוסט שבועי. אתה תמיד זה שמפרסם.'},
-  {key:'assistant',name:'שי',role:'עוזר אישי',state:'working',sched:'כל בוקר, 07:45',
-   desc:'כותב מכתבי פנייה והודעות המשך, מזכיר מתי לפעול, ומסכם לך כל בוקר מה חשוב. זמין לשאלות בצ׳אט.'},
+  {key:'strategist',name:'יואב',role:'יועץ אסטרטגי',state:'working',sched:'כל לילה, לפני החיפוש',
+   desc:'קובע מה מחפשים, רק מקורות החיים והשאלון שלך: כותרות תפקיד, אזורים, רמת בכירות וחברות יעד. מתעדכן בכל שינוי בפרופיל.'},
+  {key:'hunter',name:'דורון',role:'צייד משרות',state:'working',sched:'כל לילה, בסביבות 05:15',
+   desc:'אוסף משרות מ-LinkedIn (מודעות ציבוריות), Indeed ולוחות המשרות של חברות היעד. מסנן בכירות ומשרות שכבר ראית, ומדרג כל משרה מ-1 עד 5 מול הפרופיל שלך, עם סיבות ומה חסר.'},
+  {key:'researcher',name:'גיל',role:'חוקר חברות',state:'idle',sched:'כל שעתיים, למשרות ששמרת',
+   desc:'מכין סקירה קצרה על כל חברה ששמרת, רק ממקורות ציבוריים ועם קישור לכל עובדה. מכין חיפושים מוכנים ב-LinkedIn לאנשים שיכולים להמליץ עליך.'},
+  {key:'coach',name:'מאיה',role:'מאמנת ראיונות',state:'idle',sched:'כל שעתיים, למשרות ששמרת',
+   desc:'מכינה שאלות הכנה לפי הדרישות שבמודעה, עם רמז איך לענות מתוך הניסיון שלך. עוברת על פרופיל ה-LinkedIn שהעלית ומציעה שיפורים.'},
+  {key:'linkedin',name:'קובי',role:'מנהל LinkedIn',state:'sleeping',sched:'כל לילה',
+   desc:'מוצא פוסטים ציבוריים מהשבוע על גיוס וקריירה, מכין שתי הצעות תגובה לכל אחד ומנסח טיוטת פוסט שבועית. אתה תמיד זה שמגיב ומפרסם.'},
+  {key:'assistant',name:'שי',role:'עוזר אישי',state:'working',sched:'כל שעתיים, ובצ׳אט בכל רגע',
+   desc:'כותב מכתב פנייה לכל משרה ששמרת, רק מתוך קורות החיים, מזכיר מתי לשלוח הודעת המשך, וזמין לשאלות ולתרגול ראיונות בצ׳אט.'},
 ];
 // index → Office character (palette/desk). key → backend agent in agent_core.
 const CAREER={id:'career',icon:'💼',lbl:'קריירה',color:'#0F8A64',lt:'#E6F4EE',desc:'חיפוש עבודה',prog:72,workflow:[],
@@ -43,6 +43,7 @@ const AG=key=>CAREER.agents.find(a=>a.key===key)||CAREER.agents[0];
 const N=key=>AG(key).name;
 function buildWorkflow(){
   const n=k=>N(k);
+  if(typeof CLOUDM!=='undefined'&&CLOUDM&&window.__runsReady){CAREER.workflow=realWorkflow(n);return}
   CAREER.workflow=[
     {cmd:`${n('hunter')}.חיפוש לילה`,out:'41 משרות נאספו · 6 עברו את הסף · 3 סוננו כבכירות מדי',tag:'הושלם',state:'idle'},
     {cmd:`${n('researcher')}.מחקר`,out:'Mobileye: תקציר חברה וממליצים אפשריים',tag:'עובד',state:'working'},
@@ -51,6 +52,20 @@ function buildWorkflow(){
     {cmd:`${n('linkedin')}.רדאר`,out:'3 פוסטים רלוונטיים מהיומיים האחרונים',tag:'עובד',state:'working'},
     {cmd:`${n('strategist')}.תכנון`,out:'יעד השבוע: 5 הגשות טובות · 5 תגובות · פוסט אחד',tag:'מתוזמן',state:'idle'},
   ];
+}
+/* תהליך העבודה מהריצות האמיתיות: הריצה האחרונה של כל סוכן */
+function realWorkflow(n){
+  const last=k=>RUNS.find(r=>(r.agent||'hunter')===k&&r.stats&&r.stats.msg);
+  const saved=Object.values(JOBS).filter(j=>S.decisions&&Object.keys(S.decisions).some(id=>S.decisions[id]==='save'&&JOBS[id]===j));
+  const pend=k=>saved.filter(j=>!j[k]).map(j=>j.co);
+  const row=(k,cmd,r,wait)=>r?{cmd:`${n(k)}.${cmd}`,out:r.stats.msg,tag:'הושלם',state:'idle'}:{cmd:`${n(k)}.${cmd}`,out:wait,tag:'מתוזמן',state:'idle'};
+  const job=(k,cmd,f,label)=>{const p=pend(f);return p.length?{cmd:`${n(k)}.${cmd}`,out:`${label} ל-${p.slice(0,2).join(', ')}${p.length>2?` ועוד ${p.length-2}`:''}`,tag:'בתור',state:'working'}:row(k,cmd,last(k),'יתחיל כשתשמור משרה')};
+  return[row('hunter','חיפוש לילה',last('hunter'),'הלילה, בסביבות 05:00'),
+    job('researcher','מחקר','brief','סקירת חברה עם מקורות'),
+    job('assistant','מכתב','letter','מכתב פנייה'),
+    job('coach','הכנה','prep','שאלות הכנה'),
+    row('linkedin','רדאר',last('linkedin'),'פוסטים מהשבוע, בריצה הלילית'),
+    row('strategist','תכנון',last('strategist'),'תוכנית חיפוש לפי הפרופיל שלך')];
 }
 // The Office engine reads DOMS[selDom]; findjob has exactly one domain.
 const DOMS=[CAREER]; let selDom=0, selAg=0;

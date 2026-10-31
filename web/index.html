@@ -1001,18 +1001,18 @@ const IC={
 /* ═════════ data — agents (single registry shared with the Office) ═════════ */
 // index → Office character. key → backend node in agent_core.
 const TEAM_DEFAULT=[
-  {key:'strategist',name:'יואב',role:'יועץ אסטרטגי',state:'working',sched:'כל יום ראשון, 07:00',
-   desc:'קובע מה מחפשים: כותרות תפקיד, אזורים, רמת בכירות וחברות יעד. מציב את יעדי השבוע ולומד מכל משרה ששמרת או דילגת עליה.'},
-  {key:'hunter',name:'דורון',role:'צייד משרות',state:'working',sched:'כל לילה, 02:00',
-   desc:'אוסף משרות חדשות מכמה מקורות, מסנן בכירות, אזור ומשרות שנסגרו, ומדרג כל משרה מ-1 עד 5 מול הפרופיל שלך עם סיבות ומה חסר.'},
-  {key:'researcher',name:'גיל',role:'חוקר חברות',state:'idle',sched:'כשמשרה נשמרת',
-   desc:'בודק כל חברה ששמרת: שלב, טכנולוגיות ושכר אם פורסם. מחפש עובדים שיכולים להמליץ עליך ומזהה משרות שמתפרסמות שוב ושוב בלי גיוס.'},
-  {key:'coach',name:'מאיה',role:'מאמנת ראיונות',state:'idle',sched:'כשנקבע סינון או ראיון',
-   desc:'מכינה שאלות צפויות לפי המשרה והחברה, בונה איתך תשובות מתוך בנק הסיפורים שלך ומתרגלת איתך בצ׳אט.'},
-  {key:'linkedin',name:'קובי',role:'מנהל LinkedIn',state:'sleeping',sched:'כל בוקר, 07:30',
-   desc:'מוצא פוסטים ואנשים רלוונטיים, מכין תגובות והודעות חיבור, מציע שיפורים לפרופיל ומנסח פוסט שבועי. אתה תמיד זה שמפרסם.'},
-  {key:'assistant',name:'שי',role:'עוזר אישי',state:'working',sched:'כל בוקר, 07:45',
-   desc:'כותב מכתבי פנייה והודעות המשך, מזכיר מתי לפעול, ומסכם לך כל בוקר מה חשוב. זמין לשאלות בצ׳אט.'},
+  {key:'strategist',name:'יואב',role:'יועץ אסטרטגי',state:'working',sched:'כל לילה, לפני החיפוש',
+   desc:'קובע מה מחפשים, רק מקורות החיים והשאלון שלך: כותרות תפקיד, אזורים, רמת בכירות וחברות יעד. מתעדכן בכל שינוי בפרופיל.'},
+  {key:'hunter',name:'דורון',role:'צייד משרות',state:'working',sched:'כל לילה, בסביבות 05:15',
+   desc:'אוסף משרות מ-LinkedIn (מודעות ציבוריות), Indeed ולוחות המשרות של חברות היעד. מסנן בכירות ומשרות שכבר ראית, ומדרג כל משרה מ-1 עד 5 מול הפרופיל שלך, עם סיבות ומה חסר.'},
+  {key:'researcher',name:'גיל',role:'חוקר חברות',state:'idle',sched:'כל שעתיים, למשרות ששמרת',
+   desc:'מכין סקירה קצרה על כל חברה ששמרת, רק ממקורות ציבוריים ועם קישור לכל עובדה. מכין חיפושים מוכנים ב-LinkedIn לאנשים שיכולים להמליץ עליך.'},
+  {key:'coach',name:'מאיה',role:'מאמנת ראיונות',state:'idle',sched:'כל שעתיים, למשרות ששמרת',
+   desc:'מכינה שאלות הכנה לפי הדרישות שבמודעה, עם רמז איך לענות מתוך הניסיון שלך. עוברת על פרופיל ה-LinkedIn שהעלית ומציעה שיפורים.'},
+  {key:'linkedin',name:'קובי',role:'מנהל LinkedIn',state:'sleeping',sched:'כל לילה',
+   desc:'מוצא פוסטים ציבוריים מהשבוע על גיוס וקריירה, מכין שתי הצעות תגובה לכל אחד ומנסח טיוטת פוסט שבועית. אתה תמיד זה שמגיב ומפרסם.'},
+  {key:'assistant',name:'שי',role:'עוזר אישי',state:'working',sched:'כל שעתיים, ובצ׳אט בכל רגע',
+   desc:'כותב מכתב פנייה לכל משרה ששמרת, רק מתוך קורות החיים, מזכיר מתי לשלוח הודעת המשך, וזמין לשאלות ולתרגול ראיונות בצ׳אט.'},
 ];
 // index → Office character (palette/desk). key → backend agent in agent_core.
 const CAREER={id:'career',icon:'💼',lbl:'קריירה',color:'#0F8A64',lt:'#E6F4EE',desc:'חיפוש עבודה',prog:72,workflow:[],
@@ -1021,6 +1021,7 @@ const AG=key=>CAREER.agents.find(a=>a.key===key)||CAREER.agents[0];
 const N=key=>AG(key).name;
 function buildWorkflow(){
   const n=k=>N(k);
+  if(typeof CLOUDM!=='undefined'&&CLOUDM&&window.__runsReady){CAREER.workflow=realWorkflow(n);return}
   CAREER.workflow=[
     {cmd:`${n('hunter')}.חיפוש לילה`,out:'41 משרות נאספו · 6 עברו את הסף · 3 סוננו כבכירות מדי',tag:'הושלם',state:'idle'},
     {cmd:`${n('researcher')}.מחקר`,out:'Mobileye: תקציר חברה וממליצים אפשריים',tag:'עובד',state:'working'},
@@ -1029,6 +1030,20 @@ function buildWorkflow(){
     {cmd:`${n('linkedin')}.רדאר`,out:'3 פוסטים רלוונטיים מהיומיים האחרונים',tag:'עובד',state:'working'},
     {cmd:`${n('strategist')}.תכנון`,out:'יעד השבוע: 5 הגשות טובות · 5 תגובות · פוסט אחד',tag:'מתוזמן',state:'idle'},
   ];
+}
+/* תהליך העבודה מהריצות האמיתיות: הריצה האחרונה של כל סוכן */
+function realWorkflow(n){
+  const last=k=>RUNS.find(r=>(r.agent||'hunter')===k&&r.stats&&r.stats.msg);
+  const saved=Object.values(JOBS).filter(j=>S.decisions&&Object.keys(S.decisions).some(id=>S.decisions[id]==='save'&&JOBS[id]===j));
+  const pend=k=>saved.filter(j=>!j[k]).map(j=>j.co);
+  const row=(k,cmd,r,wait)=>r?{cmd:`${n(k)}.${cmd}`,out:r.stats.msg,tag:'הושלם',state:'idle'}:{cmd:`${n(k)}.${cmd}`,out:wait,tag:'מתוזמן',state:'idle'};
+  const job=(k,cmd,f,label)=>{const p=pend(f);return p.length?{cmd:`${n(k)}.${cmd}`,out:`${label} ל-${p.slice(0,2).join(', ')}${p.length>2?` ועוד ${p.length-2}`:''}`,tag:'בתור',state:'working'}:row(k,cmd,last(k),'יתחיל כשתשמור משרה')};
+  return[row('hunter','חיפוש לילה',last('hunter'),'הלילה, בסביבות 05:00'),
+    job('researcher','מחקר','brief','סקירת חברה עם מקורות'),
+    job('assistant','מכתב','letter','מכתב פנייה'),
+    job('coach','הכנה','prep','שאלות הכנה'),
+    row('linkedin','רדאר',last('linkedin'),'פוסטים מהשבוע, בריצה הלילית'),
+    row('strategist','תכנון',last('strategist'),'תוכנית חיפוש לפי הפרופיל שלך')];
 }
 // The Office engine reads DOMS[selDom]; findjob has exactly one domain.
 const DOMS=[CAREER]; let selDom=0, selAg=0;
@@ -1194,8 +1209,8 @@ const queue=()=>DECK.filter(id=>!S.decisions[id]);
 const appOf=id=>S.apps.find(a=>a.id===id);
 const followDue=a=>a.status==='applied'&&daysSince(a.date)>=7;
 const appNeedsMe=a=>a.status==='saved'||followDue(a)||a.status==='screening'||a.status==='interview';
-const hotPosts=()=>POSTS.filter(p=>p.mins<60&&!S.li.handled[p.id]);
-const fixesLeft=()=>LI_FIXES.filter(f=>!S.li.fixes[f.id]);
+const hotPosts=()=>CLOUDM?((typeof LI!=='undefined'&&LI.posts)||[]).filter(p=>!S.li.handled[p.id]):REAL?[]:POSTS.filter(p=>p.mins<60&&!S.li.handled[p.id]);
+const fixesLeft=()=>CLOUDM?((typeof LI!=='undefined'&&LI.fixes)||[]).filter(f=>!S.li.fixes[f.id]):REAL?[]:LI_FIXES.filter(f=>!S.li.fixes[f.id]);
 const liScore=()=>Math.min(100,62+Object.keys(S.li.fixes).length*8);
 const nb=x=>String(x).replace(/ /g,'\u00A0');
 const letterFor=j=>`שלום,
@@ -1760,13 +1775,13 @@ const ICO={
 /* ═════════ לוח בקרה ═════════ */
 function nextSteps(){
   const out=[],hp=hotPosts(),q=queue();
-  if(hp.length&&!REAL) out.push({ic:ICO.li,c:'i-amber',b:hp.length===1?'פוסט חם מחכה לתגובה':`${hp.length} פוסטים חמים מחכים לתגובה`,s:`הראשון פורסם לפני ${Math.min(...hp.map(p=>p.mins))} דק׳`,w:['עכשיו','w-urgent'],go:"goPage('linkedin')"});
+  if(hp.length&&(CLOUDM||!REAL)) out.push({ic:ICO.li,c:'i-amber',b:hp.length===1?'פוסט ששווה להגיב עליו':`${hp.length} פוסטים ששווה להגיב עליהם`,s:CLOUDM?'תגובות מוכנות להעתקה':`הראשון פורסם לפני ${Math.min(...hp.map(p=>p.mins))} דק׳`,w:CLOUDM?null:['עכשיו','w-urgent'],go:"goPage('linkedin')"});
   S.apps.filter(a=>a.status==='interview').forEach(a=>out.push({ic:ICO.cal,c:'i-amber',b:`ראיון ב-${JOBS[a.jobId].co}${a.iv?', '+a.iv:''}`,s:'ההכנה מוכנה',w:['השבוע','w-soon'],go:`openApp('${a.id}','prep')`}));
   S.apps.filter(a=>a.status==='screening').forEach(a=>out.push({ic:ICO.cal,c:'i-sky',b:`שאלות סינון מ-${JOBS[a.jobId].co}`,s:'הכנו לך תשובות לדוגמה',go:`openApp('${a.id}','prep')`}));
   if(q.length) out.push({ic:ICO.jobs,c:'i-green',b:q.length===1?'משרה חדשה מחכה לך':`${q.length} משרות חדשות מחכות לך`,s:q.slice(0,2).map(id=>JOBS[id].co).join(', ')+(q.length>2?` ועוד ${q.length-2}`:''),go:"goPage('jobs')"});
   S.apps.filter(followDue).forEach(a=>out.push({ic:ICO.mail,c:'i-teal',b:`${JOBS[a.jobId].co} לא ענו ${daysSince(a.date)} ימים`,s:'הודעת המשך מוכנה',go:`openApp('${a.id}','details')`}));
   S.apps.filter(a=>a.status==='saved').forEach(a=>out.push({ic:ICO.send,c:'i-green',b:`${JOBS[a.jobId].co}: שמרת ועוד לא הגשת`,s:'המכתב מוכן',go:`openApp('${a.id}','letter')`}));
-  const fl=REAL?0:fixesLeft().length; if(fl) out.push({ic:ICO.spark,c:'i-teal',b:fl===1?'שיפור אחד לפרופיל LinkedIn':`${fl} שיפורים לפרופיל LinkedIn`,s:'טקסט מוכן להעתקה',go:"goPage('linkedin','liFixes')"});
+  const fl=(REAL&&!CLOUDM)?0:fixesLeft().length; if(fl) out.push({ic:ICO.spark,c:'i-teal',b:fl===1?'שיפור אחד לפרופיל LinkedIn':`${fl} שיפורים לפרופיל LinkedIn`,s:'טקסט מוכן להעתקה',go:"goPage('linkedin','liFixes')"});
   return out;
 }
 function renderHome(){
@@ -1780,7 +1795,7 @@ function renderHome(){
   const shown=steps.slice(0,5);
   $('homeScroll').innerHTML=`
     <div class="greet"><h2 class="greet-h">${hi}, ${escB(prof().first)}</h2><p>${escB(date)}</p></div>
-    ${REAL?`<div class="notice">${FEEDD?`המשרות אמיתיות, מהחיפוש של ${N('hunter')} ${escB(feedWhen())}.`:prof().cv?`${N('hunter')} יחפש לך משרות בריצה הלילית הקרובה.`:`כדי ש${N('hunter')} יתחיל לחפש, צריך קורות חיים. <button class="link" style="color:var(--brand);font-weight:600" onclick="goPage('profile')">להעלאה</button>`} מסכי LinkedIn וההכנה לראיונות עוד מציגים דוגמאות.</div>`:prof().key?'':`<div class="notice">מוצגות דוגמאות עד שתחבר את הסוכנים. <button class="link" style="color:var(--brand);font-weight:600" onclick="goPage('settings')">לחיבור</button></div>`}
+    ${REAL?`<div class="notice">${FEEDD?`המשרות אמיתיות, מהחיפוש של ${N('hunter')} ${escB(feedWhen())}.`:prof().cv?`${N('hunter')} יחפש לך משרות בריצה הלילית הקרובה.`:`כדי ש${N('hunter')} יתחיל לחפש, צריך קורות חיים. <button class="link" style="color:var(--brand);font-weight:600" onclick="goPage('profile')">להעלאה</button>`} ${CLOUDM?'':'מסכי LinkedIn וההכנה לראיונות עוד מציגים דוגמאות.'}</div>`:prof().key?'':`<div class="notice">מוצגות דוגמאות עד שתחבר את הסוכנים. <button class="link" style="color:var(--brand);font-weight:600" onclick="goPage('settings')">לחיבור</button></div>`}
     <div class="brief"><div class="brief-top"><span>הבריף של ${escB(N('assistant'))}</span><span class="new num">${new Date().toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'})}</span></div><p>${escB(brief)}</p></div>
     <section class="next glass" aria-labelledby="nxH"><div class="next-h"><h2 id="nxH">הצעדים הבאים</h2>${steps.length>5?`<span>5 מתוך ${steps.length}</span>`:''}</div>
       ${shown.length?shown.map(x=>`<button class="nx" onclick="${x.go}"><span class="ic ${x.c}" aria-hidden="true">${x.ic}</span><span class="tx"><b>${escB(x.b)}</b><span>${escB(x.s)}</span></span>${x.w?`<span class="when ${x.w[1]}">${x.w[0]}</span>`:''}<span class="chev" aria-hidden="true"></span></button>`).join('')
@@ -1986,6 +2001,7 @@ function setStatus(id,k){const a=appOf(id);if(a.status!==k){a.status=k;if(k==='a
 
 /* ═════════ LinkedIn ═════════ */
 function renderLinkedIn(){
+  if(CLOUDM){renderLinkedInReal();return}
   const L=S.li, c=Math.min(L.comments,WEEK_GOAL.comments), sc=liScore();
   $('liScroll').innerHTML=`
     <section class="li-head glass" aria-labelledby="goalH">
@@ -2009,8 +2025,8 @@ function renderLinkedIn(){
       <div class="done-row" style="margin-top:10px"><span>פרסמת?</span><button class="mark" onclick="S.li.posts=S.li.posts?0:1;save();renderLinkedIn();syncChrome()">${L.posts?'בטל סימון':'פרסמתי ✓'}</button></div></section>`;
 }
 function postCard(p){
-  const L=S.li,h=L.handled[p.id],sel=L.drafts[p.id]??0,txt=L['edit_'+p.id]??p.drafts[sel].t;
-  const fresh=p.mins<60?`לפני ${p.mins} דק׳`:`לפני ${Math.round(p.mins/60)} שעות`;
+  const L=S.li,h=L.handled[p.id],sel=Math.min(L.drafts[p.id]??0,p.drafts.length-1),txt=L['edit_'+p.id]??p.drafts[sel].t;
+  const fresh=p.mins==null?'השבוע':p.mins<60?`לפני ${p.mins} דק׳`:`לפני ${Math.round(p.mins/60)} שעות`;
   return`<article class="post glass${h?' handled':''}" aria-label="פוסט של ${escB(p.author)}">
     <div class="post-top">${pav(p.author)}<div class="tx"><b>${escB(p.author)}</b><span>${escB(p.role)}</span></div><span class="fresh${p.mins<60?'':' old'}">${fresh}</span></div>
     <span class="why" style="align-self:flex-start;margin-top:-4px">${escB(p.why)}</span>
@@ -2020,7 +2036,7 @@ function postCard(p){
       <div class="tabs mini" role="radiogroup" aria-labelledby="dh-${p.id}">${p.drafts.map((d,i)=>`<button role="radio" aria-checked="${sel===i}" onclick="pickDraft('${p.id}',${i})">${escB(d.k)}</button>`).join('')}</div>
     </div>
     <label for="ed-${p.id}" class="vh">התגובה</label><textarea class="textbox${p.lang==='en'?' ltr':''}" id="ed-${p.id}" rows="5" oninput="S.li['edit_${p.id}']=this.value;save()">${esc(txt)}</textarea>
-    <div class="duo"><button class="btn btn-ghost" onclick="copyText($('ed-${p.id}').value,'התגובה הועתקה')">${ICO.copy}העתק</button><a class="btn btn-primary ext" href="${LI_URL}feed/" target="_blank" rel="noopener" onclick="copyText($('ed-${p.id}').value,'התגובה הועתקה. הדבק אותה מתחת לפוסט')">פתח את הפוסט${ICO.open}</a></div>
+    <div class="duo"><button class="btn btn-ghost" onclick="copyText($('ed-${p.id}').value,'התגובה הועתקה')">${ICO.copy}העתק</button><a class="btn btn-primary ext" href="${escB(p.url||LI_URL+'feed/')}" target="_blank" rel="noopener" onclick="copyText($('ed-${p.id}').value,'התגובה הועתקה. הדבק אותה מתחת לפוסט')">פתח את הפוסט${ICO.open}</a></div>
     <div class="done-row"><span>הגבת?</span><button class="mark" onclick="handle('${p.id}')">הגבתי ✓</button></div>`}
   </article>`;
 }
@@ -2032,7 +2048,7 @@ function fixRow(f){const on=!!S.li.fixes[f.id];
     <div class="tx"><b>${escB(f.t)}</b><span>${escB(f.why)}</span>
       ${!on&&f.copy?`<div class="copybox" lang="en">${escB(f.copy)}</div><div class="duo"><button class="btn btn-sm btn-ghost" onclick="copyFix('${f.id}')">${ICO.copy}העתק</button><a class="btn btn-sm btn-primary ext" href="${LI_URL}in/me/" target="_blank" rel="noopener">פתח את הפרופיל${ICO.open}</a></div>`:''}
       ${!on&&!f.copy?`<div class="duo"><a class="btn btn-sm btn-ghost ext" href="${LI_URL}in/me/" target="_blank" rel="noopener">פתח את הפרופיל${ICO.open}</a></div>`:''}</div></div>`}
-function copyFix(id){copyText(LI_FIXES.find(f=>f.id===id).copy,'הטקסט הועתק. הדבק אותו בפרופיל')}
+function copyFix(id){copyText((CLOUDM?(LI.fixes||[]):LI_FIXES).find(f=>f.id===id).copy,'הטקסט הועתק. הדבק אותו בפרופיל')}
 function toggleFix(id){S.li.fixes[id]?delete S.li.fixes[id]:S.li.fixes[id]=true;save();renderLinkedIn();syncChrome();if(S.li.fixes[id])toast(`הפרופיל עלה ל-${liScore()} מתוך 100`)}
 function personRow(p){const on=!!S.li.people[p.id];
   return`<div class="person" style="flex-wrap:wrap">${pav(p.name)}<div class="tx"><b>${escB(p.name)}</b><span>${escB(p.role)}</span><span class="why">${escB(p.why)}</span></div>${on?'<span class="handled-tag">✓ נשלח</span>':''}
@@ -2045,9 +2061,11 @@ function personRow(p){const on=!!S.li.people[p.id];
 let omAll=false;
 function renderOfficeMsgs(){
   const el=$('omList');if(!el)return;
-  const list=omAll?UPDATES:UPDATES.slice(0,5);
+  const U=CLOUDM?realUpdates():UPDATES;
+  if(CLOUDM&&!U.length){el.innerHTML=`<p class="card-sub" style="padding:10px 4px">כאן יופיע מה שהסוכנים עשו בפועל: חיפושים, מכתבים, סקירות. הריצה הבאה הלילה.</p>`;return}
+  const list=omAll?U:U.slice(0,5);
   el.innerHTML=list.map((u,i)=>{const a=CAREER.agents[u.a];return`<button class="om-item" onclick="openAgSheet(${u.a})"><span class="om-face"><canvas id="om-${i}" width="96" height="96"></canvas></span><span class="om-tx"><b>${a.name}</b><i>${u.time}</i><p>${escB(u.body)}</p></span></button>`}).join('')
-    +(UPDATES.length>5?`<button class="om-more" onclick="omAll=!omAll;renderOfficeMsgs()">${omAll?'הצג פחות':`הצג עוד ${UPDATES.length-5}`}</button>`:'');
+    +(U.length>5?`<button class="om-more" onclick="omAll=!omAll;renderOfficeMsgs()">${omAll?'הצג פחות':`הצג עוד ${U.length-5}`}</button>`:'');
   list.forEach((u,i)=>face($('om-'+i),u.a));
 }
 
@@ -2076,6 +2094,30 @@ function refHtml(j,id){
     ${rows.map(r=>`<a class="person ext" href="${liSearch(r.q)}" target="_blank" rel="noopener">${pav(r.t)}<div class="tx"><b dir="auto">${escB(r.t)}</b><span>${escB(r.s)}</span></div>${ICO.open}</a>`).join('')}
     <div class="s-sec"><h4>הודעה לדוגמה</h4><label for="refNote" class="vh">הודעה</label><textarea class="textbox" id="refNote" rows="5">${esc(note)}</textarea>
     <button class="btn btn-ghost btn-block" onclick="copyText($('refNote').value,'ההודעה הועתקה')">${ICO.copy}העתק</button></div>`;
+}
+
+/* LinkedIn אמיתי: פוסטים מהשבוע (קובי), שיפורי פרופיל מה-PDF שלך (מאיה), טיוטת פוסט שבועית */
+function renderLinkedInReal(){
+  const L=S.li,c=Math.min(L.comments,WEEK_GOAL.comments),posts=LI.posts||[],fixes=LI.fixes||[],draft=LI.draft||'';
+  const fixed=fixes.filter(f=>L.fixes[f.id]).length;
+  $('liScroll').innerHTML=`
+    <section class="li-head glass" aria-labelledby="goalH">
+      <span class="ring" style="--p:${Math.round(c/WEEK_GOAL.comments*100)}" aria-hidden="true"><b class="num">${c}/${WEEK_GOAL.comments}<small>תגובות</small></b></span>
+      <span class="tx"><b id="goalH">היעד שלך השבוע</b><span>${c>=WEEK_GOAL.comments?'השגת את יעד התגובות. כל הכבוד':'5 תגובות טובות ופוסט אחד. אתה מגיב ומפרסם בעצמך, אנחנו מכינים'}</span>
+        <span class="li-goal-line">פוסט השבוע: ${L.posts?'<b>פורסם ✓</b>':'עוד לא'}</span></span>
+    </section>
+    <div class="sec-h"><h2>פוסטים ששווה להגיב עליהם</h2><span>מהשבוע האחרון</span></div>
+    ${posts.length?posts.map(p=>postCard(Object.assign({role:'',mins:null},p))).join(''):`<section class="card-solid"><p class="card-sub" style="padding:6px 2px">${escB(N('linkedin'))} מחפש כל לילה פוסטים ציבוריים מהשבוע על גיוס ג׳וניורים וקריירה בהייטק. ${LI.updated?'הלילה לא נמצאו פוסטים שמתאימים לך.':'הם יופיעו כאן אחרי הריצה הלילית.'}</p></section>`}
+    <div class="sec-h" id="liFixes"><h2>הפרופיל שלך</h2><span>${fixes.length?`${fixed} מתוך ${fixes.length} בוצעו`:''}</span></div>
+    ${fixes.length?`<section class="card-solid" aria-label="שיפורים לפרופיל">${fixes.map(fixRow).join('')}</section>`
+      :`<section class="card-solid"><p class="card-sub" style="padding:6px 2px">${prof().li_text?`${escB(N('coach'))} עוברת על הפרופיל שהעלית. השיפורים יופיעו כאן תוך שעתיים בערך.`:`כדי לקבל שיפורים אמיתיים, העלה PDF של פרופיל ה-LinkedIn שלך בעמוד הפרופיל.`}</p>
+        ${prof().li_text?'':`<button class="btn btn-sm btn-primary btn-block" onclick="goPage('profile')">לעמוד הפרופיל</button>`}</section>`}
+    <div class="sec-h"><h2>הפוסט של השבוע</h2><span>${L.posts?'פורסם ✓':'טיוטה'}</span></div>
+    <section class="card-solid">${draft||L.postText?`<label for="postDraft" class="vh">טיוטת פוסט</label><textarea class="textbox" id="postDraft" rows="10" oninput="S.li.postText=this.value;save()">${esc(L.postText||draft)}</textarea>
+      <div class="hint-line ok">✓ מבוסס רק על מה שכתוב בקורות החיים שלך</div>
+      <div class="duo"><button class="btn btn-ghost" onclick="copyText($('postDraft').value,'הפוסט הועתק')">${ICO.copy}העתק</button><a class="btn btn-primary ext" href="${LI_URL}feed/" target="_blank" rel="noopener" onclick="copyText($('postDraft').value,'הפוסט הועתק. הדבק אותו בפוסט חדש')">פתח את LinkedIn${ICO.open}</a></div>
+      <div class="done-row" style="margin-top:10px"><span>פרסמת?</span><button class="mark" onclick="S.li.posts=S.li.posts?0:1;save();renderLinkedIn();syncChrome()">${L.posts?'בטל סימון':'פרסמתי ✓'}</button></div>`
+      :`<p class="card-sub" style="padding:6px 2px">${escB(N('linkedin'))} יכין טיוטה על אחד הפרויקטים שלך בריצה הלילית.</p>`}</section>`;
 }
 
 /* ═════════ ONBOARDING ═════════ */
@@ -2249,6 +2291,10 @@ function renderProfile(){
       <div class="row"><span class="ri">${ROW_IC.doc}</span><span class="rl"><b>${escB(p.cvName||(p.cv?'הודבקו כטקסט':'עוד לא הועלו'))}</b><span>${p.cv||p.cvName?'כל הסוכנים עובדים לפיהם':'בלעדיהם הסוכנים לא יכולים להתאים לך משרות'}</span></span>${p.cv||p.cvName?'<span class="pill-ok">פעיל</span>':'<span class="pill-warn">חסר</span>'}</div>
       <div class="duo"><label for="cvFile" class="btn btn-sm btn-ghost">${p.cvName?'להחליף קובץ':'להעלות קובץ'}</label><button class="btn btn-sm btn-ghost" onclick="editCvText()">לערוך כטקסט</button></div></section>
 
+    ${CLOUDM?`<section class="card glass" aria-labelledby="liH"><h2 class="card-h" id="liH">פרופיל LinkedIn</h2>
+      <div class="card-sub">${p.li_text?`${escB(N('coach'))} עוברת על הפרופיל ומכינה שיפורים. הם יופיעו במסך LinkedIn.`:`כדי ש${escB(N('coach'))} תציע שיפורים אמיתיים לפרופיל, צריך עותק שלו: ב-LinkedIn נכנסים לפרופיל ← "עוד" (More) ← "שמירה כ-PDF", ומעלים כאן.`}</div>
+      <label for="liFile" class="btn btn-sm ${p.li_text?'btn-ghost':'btn-primary'} btn-block">${p.li_text?'להעלות גרסה חדשה':'להעלות PDF של הפרופיל'}</label>
+      <input type="file" id="liFile" class="vh" accept=".pdf,application/pdf" onchange="onLiFile(this)"></section>`:''}
     <section class="card glass" aria-labelledby="qH"><h2 class="card-h" id="qH">עליי</h2>
       <div class="card-sub">${done<total?`ענית על ${done} מתוך ${total} שאלות. כל תשובה עוזרת לסוכנים לדייק.`:'ענית על כל השאלות. אפשר לעדכן בכל רגע.'}</div>
       <div class="quota-bar" style="margin-bottom:6px" aria-hidden="true"><div class="quota-fill" style="width:${Math.round(done/total*100)}%;background:linear-gradient(90deg,var(--brand2),var(--brand-hi))"></div></div>
@@ -2261,7 +2307,7 @@ function renderProfile(){
       <div class="card-sub">${escB(N('strategist'))} בנה את זה מקורות החיים ומהתשובות שלך, ומעדכן בכל שינוי.</div>
       <ul class="plan-list">${planWhy().map(w=>`<li>${escB(w)}</li>`).join('')}</ul>
       <h3 class="sub-h">חברות יעד</h3>
-      <div class="card-sub">${escB(N('hunter'))} בודק אותן ישירות, בנוסף לחיפוש הפתוח בכל החברות.</div>
+      <div class="card-sub">${escB(N('hunter'))} בודק ישירות את אלה שיש להן לוח משרות ציבורי, בנוסף לחיפוש הפתוח בכל החברות.</div>
       <div class="learned">${targetCompanies().map(c=>`<span class="chip" title="${escB(c.why.join(' · '))}">${escB(c.name)}<button aria-label="להסיר את ${escB(c.name)}" onclick="removeTarget('${escB(c.name).replace(/'/g,"\\'")}')">×</button></span>`).join('')}</div>
       <div class="todo-foot" style="padding:12px 0 0;border:0"><label for="tgIn" class="vh">חברה להוספה</label><input id="tgIn" placeholder="להוסיף חברה" onkeydown="if(event.key==='Enter')addTarget()"><button class="btn btn-sm btn-ghost" onclick="addTarget()">הוסף</button></div>
       ${(S.targets&&(S.targets.added.length||S.targets.removed.length))?`<button class="link" style="font-size:13px;color:var(--brand);margin-top:8px" onclick="S.targets={added:[],removed:[]};save();renderProfile()">להחזיר לבחירה של ${escB(N('strategist'))}</button>`:''}</section>
@@ -2321,6 +2367,7 @@ async function readCv(f){try{
   if(/\.docx$/i.test(f.name)){await loadScript('https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js');
     return (await mammoth.extractRawText({arrayBuffer:await f.arrayBuffer()})).value}
 }catch(e){console.warn(e)}return''}
+function onLiFile(inp){const f=inp.files[0];if(!f)return;readCv(f).then(t=>{if(t&&t.trim().length>80){prof().li_text=t.slice(0,15000);save();renderProfile();toast(`${N('coach')} תעבור על הפרופיל בשעתיים הקרובות`)}else toast('לא הצלחתי לקרוא את הקובץ. ודא שזה ה-PDF ש-LinkedIn מייצר',{ms:4200})});inp.value=''}
 function afterCv(){if($('onb').classList.contains('open'))renderOnb();else{renderProfile();toast('קורות החיים עודכנו')}}
 
 /* ═════════ הגדרות ═════════ */
@@ -2356,6 +2403,7 @@ function addMsg(who,text){const d=document.createElement('div');d.className='msg
 function chatAsk(t){$('chatInput').value=t;sendChat()}
 function sendChat(){
   const v=$('chatInput').value.trim();if(!v)return;addMsg('me',v);$('chatInput').value='';
+  if(CLOUDM){cloudChat(v);return}
   const q=queue();let r;
   if(/היום|לעשות|כדאי/.test(v)){const n=nextSteps();r=n.length?'הכי חשוב עכשיו:\n'+n.slice(0,3).map((x,i)=>`${i+1}. ${x.b}`).join('\n'):'אין משהו דחוף. זה זמן טוב לעבור על בנק הסיפורים בפרופיל.'}
   else if(/מתאימ|משרה/.test(v)) r=q.length?`הכי חזקה כרגע: ${JOBS[q[0]].title} ב-${JOBS[q[0]].co}, התאמה ${JOBS[q[0]].fit} מתוך 5. ${JOBS[q[0]].reasons[0]}.`:'עברת על כל המשרות של היום. בהגשות יש משרות ששמרת ומחכות להגשה.';
@@ -2374,7 +2422,7 @@ function init(){
 /* ═════════ CLOUD — חיבור ל-Supabase (רק בגרסה המאוחסנת) ═════════
    התחברות בקישור למייל. הפרופיל, קורות החיים והשאלון נשמרים בענן, והסוכנים קוראים אותם משם בלילה.
    המשרות שדורון מצא נטענות מהענן. כל משתמש רואה רק את הנתונים שלו (RLS). */
-let SB=null,ME=null,_profSnap='',_decSnap={},_syncT=null;
+let SB=null,ME=null,LI={},RUNS=[],CHAT=[],_profSnap='',_decSnap={},_syncT=null;
 function cloudLogin(msg){
   const o=$('onb');o.classList.add('open');o.classList.remove('qmode');
   $('onbSteps').innerHTML='';$('onbBack').style.visibility='hidden';
@@ -2399,20 +2447,21 @@ async function cloudLoad(){
   const [{data:pr},{data:jobs},{data:runs}]=await Promise.all([
     SB.from('profiles').select('*').eq('user_id',uid).maybeSingle(),
     SB.from('jobs').select('id,card,decision,letter,brief,prep,created_at').eq('user_id',uid).order('created_at',{ascending:false}).limit(200),
-    SB.from('runs').select('stats,created_at').eq('user_id',uid).order('created_at',{ascending:false}).limit(1)]);
+    SB.from('runs').select('agent,stats,created_at').eq('user_id',uid).order('created_at',{ascending:false}).limit(40)]);
   if(pr){const p=prof();p.first=pr.first||p.first;p.name=pr.name||p.name;p.cv=pr.cv_text||p.cv;p.ans=Object.assign({},pr.answers||{},p.ans||{});
-    if(pr.team&&Object.keys(pr.team).length)S.team=pr.team;const st=pr.state||{};['apps','todos','stories'].forEach(k=>{if(Array.isArray(st[k]))S[k]=st[k]});if(pr.cv_text)S.onboarded=true}
+    if(pr.team&&Object.keys(pr.team).length)S.team=pr.team;const st=pr.state||{};['apps','todos','stories'].forEach(k=>{if(Array.isArray(st[k]))S[k]=st[k]});if(st.targets)S.targets=st.targets;p.li_text=pr.li_text||'';LI=pr.li||{};if(pr.cv_text)S.onboarded=true}
   prof().key='cloud';
-  if(runs&&runs.length){
+  RUNS=runs||[];const hr=RUNS.filter(r=>(r.agent||'hunter')==='hunter');
+  if(hr.length){
     const live=(jobs||[]).filter(r=>r.decision!=='skip'||S.decisions[r.id]);
-    setFeed({generated_at:runs[0].created_at,stats:runs[0].stats||{},jobs:live.map(r=>Object.assign({},r.card,{letter:r.letter||null,brief:r.brief||null,prep:r.prep||null})).sort((a,b)=>b.fit-a.fit)});
+    setFeed({generated_at:hr[0].created_at,stats:hr[0].stats||{},jobs:live.map(r=>Object.assign({},r.card,{letter:r.letter||null,brief:r.brief||null,prep:r.prep||null})).sort((a,b)=>b.fit-a.fit)});
     (jobs||[]).forEach(r=>{if(r.decision)S.decisions[r.id]=r.decision});
   }
   S.apps=(S.apps||[]).filter(a=>JOBS[a.jobId]);
   _decSnap=Object.assign({},S.decisions);_profSnap=profRow();
-  LS.set(SKEY,S);if(typeof applyTeam==='function')applyTeam();
+  LS.set(SKEY,S);window.__runsReady=true;if(typeof applyTeam==='function')applyTeam();buildWorkflow();
 }
-function profRow(){const p=prof();return JSON.stringify({first:p.first||'',name:p.name||'',cv_text:p.cv||'',answers:p.ans||{},team:S.team||{},state:{apps:S.apps,todos:S.todos,stories:S.stories}})}
+function profRow(){const p=prof();return JSON.stringify({first:p.first||'',name:p.name||'',cv_text:p.cv||'',answers:p.ans||{},team:S.team||{},state:{apps:S.apps,todos:S.todos,stories:S.stories,targets:S.targets||{added:[],removed:[]}},li_text:p.li_text||''})}
 function cloudSync(){clearTimeout(_syncT);_syncT=setTimeout(async()=>{
   if(!ME)return;
   const row=profRow();
@@ -2431,6 +2480,25 @@ async function cloudBoot(){
   closeOnb();init();
 }
 function cloudLogout(){SB.auth.signOut().then(()=>{LS.clear();location.reload()})}
+
+/* צ׳אט אמיתי עם שי: שרת קטן ב-Vercel, רק עם הנתונים שלך */
+async function cloudChat(v){
+  CHAT.push({role:'user',content:v});
+  const typing=document.createElement('div');typing.className='msg bot typing';typing.textContent='…';$('chatMsgs').appendChild(typing);$('chatMsgs').scrollTop=1e6;
+  let reply='';
+  try{const {data:{session}}=await SB.auth.getSession();
+    const r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:CHAT.slice(-12),token:session&&session.access_token})});
+    const d=await r.json().catch(()=>({}));
+    reply=d.reply||(d.error==='no_key'?'הצ׳אט עוד לא מחובר לשרת. זה צעד אחד בהגדרות של Vercel.':r.status===401?'צריך להתחבר מחדש.':'יש עומס כרגע. נסה שוב בעוד דקה.');
+  }catch(e){reply='אין חיבור כרגע. נסה שוב.'}
+  typing.remove();CHAT.push({role:'assistant',content:reply});addMsg('bot',reply);
+}
+/* הודעות המשרד: מה הסוכנים עשו בפועל */
+function realUpdates(){
+  const seat=k=>{const i=CAREER.agents.findIndex(a=>a.key===k);return i<0?0:i};
+  const ago=t=>{const m=Math.round((Date.now()-new Date(t))/6e4);return m<60?`לפני ${Math.max(1,m)} דק׳`:m<1440?`לפני ${Math.round(m/60)===1?'שעה':Math.round(m/60)+' שעות'}`:m<2880?'אתמול':new Date(t).toLocaleDateString('he-IL')};
+  return RUNS.filter(r=>r.stats&&r.stats.msg).map(r=>({a:seat(r.agent||'hunter'),time:ago(r.created_at),body:r.stats.msg}));
+}
 
 cloudBoot();
 </script>

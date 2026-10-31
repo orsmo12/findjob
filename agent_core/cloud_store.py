@@ -46,9 +46,10 @@ def save_feed(user_id: str, feed: dict) -> None:
     if rows:
         r = httpx.post(_url("jobs"), headers=_h({"Prefer": "resolution=ignore-duplicates"}), json=rows, timeout=30)
         r.raise_for_status()
-    r = httpx.post(_url("runs"), headers=_h(), json={"user_id": user_id, "agent": "hunter",
-                                                     "stats": feed["stats"], "plan": feed["plan"]}, timeout=30)
-    r.raise_for_status()
+    s = feed["stats"]
+    msg = (f"סרקתי {s['collected']} משרות חדשות. {s['shown']} מתאימות לך"
+           + (f", ו-{s['too_senior']} בכירות מדי סיננתי." if s.get("too_senior") else "."))
+    add_run(user_id, "hunter", msg, s, feed["plan"])
 
 
 def saved_without_letter(user_id: str) -> list[dict]:
@@ -76,4 +77,16 @@ def saved_missing(user_id: str) -> list[dict]:
 def update_job(user_id: str, job_id: str, fields: dict) -> None:
     r = httpx.patch(_url("jobs"), headers=_h(), json=fields,
                     params={"user_id": f"eq.{user_id}", "id": f"eq.{job_id}"}, timeout=30)
+    r.raise_for_status()
+
+
+def add_run(user_id: str, agent: str, msg: str, stats: dict | None = None, plan: dict | None = None) -> None:
+    """הודעה במשרד: מה הסוכן עשה בפועל."""
+    st = dict(stats or {}); st["msg"] = msg
+    r = httpx.post(_url("runs"), headers=_h(), json={"user_id": user_id, "agent": agent, "stats": st, "plan": plan}, timeout=30)
+    r.raise_for_status()
+
+
+def update_profile(user_id: str, fields: dict) -> None:
+    r = httpx.patch(_url("profiles"), headers=_h(), json=fields, params={"user_id": f"eq.{user_id}"}, timeout=30)
     r.raise_for_status()

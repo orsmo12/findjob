@@ -12,12 +12,15 @@ from agent_core.agents.letters import write_letter
 from agent_core.agents.research import brief
 from agent_core.agents.prep import prepare
 from agent_core.budget_guard import BudgetDeferred
+from agent_core.agents import linkedin_coach as K
+from agent_core.profile import build_search_plan
 
 if not db.configured():
     sys.exit("SUPABASE_URL / SUPABASE_SERVICE_KEY חסרים")
 
 for u in db.profiles_ready():
     cv, name = u["cv_text"], u.get("name") or u.get("first") or ""
+    done = {"letter": [], "brief": [], "prep": []}
     for row in db.saved_missing(u["user_id"]):
         job, upd = row["card"], {}
         try:
@@ -33,5 +36,26 @@ for u in db.profiles_ready():
             print(f"{row['id']}: {type(e).__name__}: {e}")
         if upd:
             db.update_job(u["user_id"], row["id"], upd)
+            for k in upd:
+                if k != "brief" or upd[k].get("found"):
+                    done[k].append(job["co"])
             print(f"{u['user_id'][:8]} · {job['co']}: {', '.join(upd)}"
                   + (" (לא נמצא מידע על החברה)" if "brief" in upd and not upd["brief"].get("found") else ""))
+    names = lambda xs: ", ".join(xs[:3]) + (f" ועוד {len(xs) - 3}" if len(xs) > 3 else "")
+    if done["letter"]:
+        db.add_run(u["user_id"], "assistant", f"מכתב פנייה מוכן ל-{names(done['letter'])}. כל פרט בו נבדק מול קורות החיים.")
+    if done["brief"]:
+        db.add_run(u["user_id"], "researcher", f"הכנתי סקירה עם מקורות על {names(done['brief'])}.")
+    if done["prep"]:
+        db.add_run(u["user_id"], "coach", f"שאלות הכנה מוכנות ל-{names(done['prep'])}, לפי מה שכתוב במודעה.")
+    # מאיה: שיפורי פרופיל LinkedIn — רק כשהעלית PDF חדש של הפרופיל
+    li = dict(u.get("li") or {})
+    lt = u.get("li_text") or ""
+    if lt and li.get("fixes_for") != K.li_hash(lt):
+        try:
+            plan = build_search_plan({"cv_text": cv, "answers": u.get("answers") or {}}).to_dict()
+            li["fixes"] = K.profile_fixes(cv, lt, plan); li["fixes_for"] = K.li_hash(lt)
+            db.update_profile(u["user_id"], {"li": li})
+            db.add_run(u["user_id"], "coach", f"עברתי על פרופיל ה-LinkedIn שלך: {len(li['fixes'])} שיפורים, עם טקסט מוכן להעתקה.")
+        except BudgetDeferred:
+            print("מכסה: הפרופיל בריצה הבאה")

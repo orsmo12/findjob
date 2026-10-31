@@ -54,3 +54,5 @@ grant select on public.runs to authenticated;
 grant all on public.profiles, public.jobs, public.runs to service_role;
 alter table public.jobs add column if not exists brief jsonb;   -- גיל: סקירת חברה עם מקורות
 alter table public.jobs add column if not exists prep jsonb;    -- מאיה: שאלות הכנה
+alter table public.profiles add column if not exists li jsonb default '{}'::jsonb;  -- קובי ומאיה: פוסטים, טיוטה, שיפורים
+alter table public.profiles add column if not exists li_text text default '';        -- טקסט מ-PDF של פרופיל ה-LinkedIn

@@ -250,7 +250,8 @@ def to_card(j: dict, r: dict, cv: str = "") -> dict:
     return {"id": j["id"], "co": j["company"], "title": j["title"], "loc": j["location"],
             "fit": r["fit"], "reasons": r["reasons"], "gaps": r["gaps"], "partial": r["partial"],
             "tags": tags_for(j.get("description", ""), cv),
-            "src": {"indeed": "Indeed", "linkedin": "LinkedIn", "google": "Google Jobs"}.get(j["source"], j["source"]),
+            "src": {"indeed": "Indeed", "linkedin": "LinkedIn", "google": "Google Jobs", "greenhouse": "אתר החברה",
+                    "lever": "אתר החברה", "ashby": "אתר החברה"}.get(j["source"], j["source"]),
             "posted_days": days, "salary": j.get("salary", ""), "desc": j.get("description", "")[:600], "ad": j.get("description", "")[:4000], "url": j["url"]}
 
 

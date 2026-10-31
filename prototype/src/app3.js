@@ -90,6 +90,7 @@ function setStatus(id,k){const a=appOf(id);if(a.status!==k){a.status=k;if(k==='a
 
 /* ═════════ LinkedIn ═════════ */
 function renderLinkedIn(){
+  if(CLOUDM){renderLinkedInReal();return}
   const L=S.li, c=Math.min(L.comments,WEEK_GOAL.comments), sc=liScore();
   $('liScroll').innerHTML=`
     <section class="li-head glass" aria-labelledby="goalH">
@@ -113,8 +114,8 @@ function renderLinkedIn(){
       <div class="done-row" style="margin-top:10px"><span>פרסמת?</span><button class="mark" onclick="S.li.posts=S.li.posts?0:1;save();renderLinkedIn();syncChrome()">${L.posts?'בטל סימון':'פרסמתי ✓'}</button></div></section>`;
 }
 function postCard(p){
-  const L=S.li,h=L.handled[p.id],sel=L.drafts[p.id]??0,txt=L['edit_'+p.id]??p.drafts[sel].t;
-  const fresh=p.mins<60?`לפני ${p.mins} דק׳`:`לפני ${Math.round(p.mins/60)} שעות`;
+  const L=S.li,h=L.handled[p.id],sel=Math.min(L.drafts[p.id]??0,p.drafts.length-1),txt=L['edit_'+p.id]??p.drafts[sel].t;
+  const fresh=p.mins==null?'השבוע':p.mins<60?`לפני ${p.mins} דק׳`:`לפני ${Math.round(p.mins/60)} שעות`;
   return`<article class="post glass${h?' handled':''}" aria-label="פוסט של ${escB(p.author)}">
     <div class="post-top">${pav(p.author)}<div class="tx"><b>${escB(p.author)}</b><span>${escB(p.role)}</span></div><span class="fresh${p.mins<60?'':' old'}">${fresh}</span></div>
     <span class="why" style="align-self:flex-start;margin-top:-4px">${escB(p.why)}</span>
@@ -124,7 +125,7 @@ function postCard(p){
       <div class="tabs mini" role="radiogroup" aria-labelledby="dh-${p.id}">${p.drafts.map((d,i)=>`<button role="radio" aria-checked="${sel===i}" onclick="pickDraft('${p.id}',${i})">${escB(d.k)}</button>`).join('')}</div>
     </div>
     <label for="ed-${p.id}" class="vh">התגובה</label><textarea class="textbox${p.lang==='en'?' ltr':''}" id="ed-${p.id}" rows="5" oninput="S.li['edit_${p.id}']=this.value;save()">${esc(txt)}</textarea>
-    <div class="duo"><button class="btn btn-ghost" onclick="copyText($('ed-${p.id}').value,'התגובה הועתקה')">${ICO.copy}העתק</button><a class="btn btn-primary ext" href="${LI_URL}feed/" target="_blank" rel="noopener" onclick="copyText($('ed-${p.id}').value,'התגובה הועתקה. הדבק אותה מתחת לפוסט')">פתח את הפוסט${ICO.open}</a></div>
+    <div class="duo"><button class="btn btn-ghost" onclick="copyText($('ed-${p.id}').value,'התגובה הועתקה')">${ICO.copy}העתק</button><a class="btn btn-primary ext" href="${escB(p.url||LI_URL+'feed/')}" target="_blank" rel="noopener" onclick="copyText($('ed-${p.id}').value,'התגובה הועתקה. הדבק אותה מתחת לפוסט')">פתח את הפוסט${ICO.open}</a></div>
     <div class="done-row"><span>הגבת?</span><button class="mark" onclick="handle('${p.id}')">הגבתי ✓</button></div>`}
   </article>`;
 }
@@ -136,7 +137,7 @@ function fixRow(f){const on=!!S.li.fixes[f.id];
     <div class="tx"><b>${escB(f.t)}</b><span>${escB(f.why)}</span>
       ${!on&&f.copy?`<div class="copybox" lang="en">${escB(f.copy)}</div><div class="duo"><button class="btn btn-sm btn-ghost" onclick="copyFix('${f.id}')">${ICO.copy}העתק</button><a class="btn btn-sm btn-primary ext" href="${LI_URL}in/me/" target="_blank" rel="noopener">פתח את הפרופיל${ICO.open}</a></div>`:''}
       ${!on&&!f.copy?`<div class="duo"><a class="btn btn-sm btn-ghost ext" href="${LI_URL}in/me/" target="_blank" rel="noopener">פתח את הפרופיל${ICO.open}</a></div>`:''}</div></div>`}
-function copyFix(id){copyText(LI_FIXES.find(f=>f.id===id).copy,'הטקסט הועתק. הדבק אותו בפרופיל')}
+function copyFix(id){copyText((CLOUDM?(LI.fixes||[]):LI_FIXES).find(f=>f.id===id).copy,'הטקסט הועתק. הדבק אותו בפרופיל')}
 function toggleFix(id){S.li.fixes[id]?delete S.li.fixes[id]:S.li.fixes[id]=true;save();renderLinkedIn();syncChrome();if(S.li.fixes[id])toast(`הפרופיל עלה ל-${liScore()} מתוך 100`)}
 function personRow(p){const on=!!S.li.people[p.id];
   return`<div class="person" style="flex-wrap:wrap">${pav(p.name)}<div class="tx"><b>${escB(p.name)}</b><span>${escB(p.role)}</span><span class="why">${escB(p.why)}</span></div>${on?'<span class="handled-tag">✓ נשלח</span>':''}
@@ -149,9 +150,11 @@ function personRow(p){const on=!!S.li.people[p.id];
 let omAll=false;
 function renderOfficeMsgs(){
   const el=$('omList');if(!el)return;
-  const list=omAll?UPDATES:UPDATES.slice(0,5);
+  const U=CLOUDM?realUpdates():UPDATES;
+  if(CLOUDM&&!U.length){el.innerHTML=`<p class="card-sub" style="padding:10px 4px">כאן יופיע מה שהסוכנים עשו בפועל: חיפושים, מכתבים, סקירות. הריצה הבאה הלילה.</p>`;return}
+  const list=omAll?U:U.slice(0,5);
   el.innerHTML=list.map((u,i)=>{const a=CAREER.agents[u.a];return`<button class="om-item" onclick="openAgSheet(${u.a})"><span class="om-face"><canvas id="om-${i}" width="96" height="96"></canvas></span><span class="om-tx"><b>${a.name}</b><i>${u.time}</i><p>${escB(u.body)}</p></span></button>`}).join('')
-    +(UPDATES.length>5?`<button class="om-more" onclick="omAll=!omAll;renderOfficeMsgs()">${omAll?'הצג פחות':`הצג עוד ${UPDATES.length-5}`}</button>`:'');
+    +(U.length>5?`<button class="om-more" onclick="omAll=!omAll;renderOfficeMsgs()">${omAll?'הצג פחות':`הצג עוד ${U.length-5}`}</button>`:'');
   list.forEach((u,i)=>face($('om-'+i),u.a));
 }
 
@@ -180,4 +183,28 @@ function refHtml(j,id){
     ${rows.map(r=>`<a class="person ext" href="${liSearch(r.q)}" target="_blank" rel="noopener">${pav(r.t)}<div class="tx"><b dir="auto">${escB(r.t)}</b><span>${escB(r.s)}</span></div>${ICO.open}</a>`).join('')}
     <div class="s-sec"><h4>הודעה לדוגמה</h4><label for="refNote" class="vh">הודעה</label><textarea class="textbox" id="refNote" rows="5">${esc(note)}</textarea>
     <button class="btn btn-ghost btn-block" onclick="copyText($('refNote').value,'ההודעה הועתקה')">${ICO.copy}העתק</button></div>`;
+}
+
+/* LinkedIn אמיתי: פוסטים מהשבוע (קובי), שיפורי פרופיל מה-PDF שלך (מאיה), טיוטת פוסט שבועית */
+function renderLinkedInReal(){
+  const L=S.li,c=Math.min(L.comments,WEEK_GOAL.comments),posts=LI.posts||[],fixes=LI.fixes||[],draft=LI.draft||'';
+  const fixed=fixes.filter(f=>L.fixes[f.id]).length;
+  $('liScroll').innerHTML=`
+    <section class="li-head glass" aria-labelledby="goalH">
+      <span class="ring" style="--p:${Math.round(c/WEEK_GOAL.comments*100)}" aria-hidden="true"><b class="num">${c}/${WEEK_GOAL.comments}<small>תגובות</small></b></span>
+      <span class="tx"><b id="goalH">היעד שלך השבוע</b><span>${c>=WEEK_GOAL.comments?'השגת את יעד התגובות. כל הכבוד':'5 תגובות טובות ופוסט אחד. אתה מגיב ומפרסם בעצמך, אנחנו מכינים'}</span>
+        <span class="li-goal-line">פוסט השבוע: ${L.posts?'<b>פורסם ✓</b>':'עוד לא'}</span></span>
+    </section>
+    <div class="sec-h"><h2>פוסטים ששווה להגיב עליהם</h2><span>מהשבוע האחרון</span></div>
+    ${posts.length?posts.map(p=>postCard(Object.assign({role:'',mins:null},p))).join(''):`<section class="card-solid"><p class="card-sub" style="padding:6px 2px">${escB(N('linkedin'))} מחפש כל לילה פוסטים ציבוריים מהשבוע על גיוס ג׳וניורים וקריירה בהייטק. ${LI.updated?'הלילה לא נמצאו פוסטים שמתאימים לך.':'הם יופיעו כאן אחרי הריצה הלילית.'}</p></section>`}
+    <div class="sec-h" id="liFixes"><h2>הפרופיל שלך</h2><span>${fixes.length?`${fixed} מתוך ${fixes.length} בוצעו`:''}</span></div>
+    ${fixes.length?`<section class="card-solid" aria-label="שיפורים לפרופיל">${fixes.map(fixRow).join('')}</section>`
+      :`<section class="card-solid"><p class="card-sub" style="padding:6px 2px">${prof().li_text?`${escB(N('coach'))} עוברת על הפרופיל שהעלית. השיפורים יופיעו כאן תוך שעתיים בערך.`:`כדי לקבל שיפורים אמיתיים, העלה PDF של פרופיל ה-LinkedIn שלך בעמוד הפרופיל.`}</p>
+        ${prof().li_text?'':`<button class="btn btn-sm btn-primary btn-block" onclick="goPage('profile')">לעמוד הפרופיל</button>`}</section>`}
+    <div class="sec-h"><h2>הפוסט של השבוע</h2><span>${L.posts?'פורסם ✓':'טיוטה'}</span></div>
+    <section class="card-solid">${draft||L.postText?`<label for="postDraft" class="vh">טיוטת פוסט</label><textarea class="textbox" id="postDraft" rows="10" oninput="S.li.postText=this.value;save()">${esc(L.postText||draft)}</textarea>
+      <div class="hint-line ok">✓ מבוסס רק על מה שכתוב בקורות החיים שלך</div>
+      <div class="duo"><button class="btn btn-ghost" onclick="copyText($('postDraft').value,'הפוסט הועתק')">${ICO.copy}העתק</button><a class="btn btn-primary ext" href="${LI_URL}feed/" target="_blank" rel="noopener" onclick="copyText($('postDraft').value,'הפוסט הועתק. הדבק אותו בפוסט חדש')">פתח את LinkedIn${ICO.open}</a></div>
+      <div class="done-row" style="margin-top:10px"><span>פרסמת?</span><button class="mark" onclick="S.li.posts=S.li.posts?0:1;save();renderLinkedIn();syncChrome()">${L.posts?'בטל סימון':'פרסמתי ✓'}</button></div>`
+      :`<p class="card-sub" style="padding:6px 2px">${escB(N('linkedin'))} יכין טיוטה על אחד הפרויקטים שלך בריצה הלילית.</p>`}</section>`;
 }

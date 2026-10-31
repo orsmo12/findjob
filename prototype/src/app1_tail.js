@@ -111,8 +111,8 @@ const queue=()=>DECK.filter(id=>!S.decisions[id]);
 const appOf=id=>S.apps.find(a=>a.id===id);
 const followDue=a=>a.status==='applied'&&daysSince(a.date)>=7;
 const appNeedsMe=a=>a.status==='saved'||followDue(a)||a.status==='screening'||a.status==='interview';
-const hotPosts=()=>POSTS.filter(p=>p.mins<60&&!S.li.handled[p.id]);
-const fixesLeft=()=>LI_FIXES.filter(f=>!S.li.fixes[f.id]);
+const hotPosts=()=>CLOUDM?((typeof LI!=='undefined'&&LI.posts)||[]).filter(p=>!S.li.handled[p.id]):REAL?[]:POSTS.filter(p=>p.mins<60&&!S.li.handled[p.id]);
+const fixesLeft=()=>CLOUDM?((typeof LI!=='undefined'&&LI.fixes)||[]).filter(f=>!S.li.fixes[f.id]):REAL?[]:LI_FIXES.filter(f=>!S.li.fixes[f.id]);
 const liScore=()=>Math.min(100,62+Object.keys(S.li.fixes).length*8);
 const nb=x=>String(x).replace(/ /g,'\u00A0');
 const letterFor=j=>`שלום,
