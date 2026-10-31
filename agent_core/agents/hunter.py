@@ -208,10 +208,21 @@ def rate(job: dict, cv: str, prefs: str) -> dict | None:
                                 location=job["location"], desc=(desc[:3500] or "(no description available)"))
     r = parse_rating(chat("hunter", "rate_job", [{"role": "user", "content": prompt}], tier="judge", max_tokens=1000))  # בלי json_mode: חלק מהמודלים נכשלים בו; parse_rating מחלץ את ה-JSON
     if r:
+        r["reasons"] = grounded(r["reasons"], cv)        # סיבה = עובדה מקורות החיים
+        r["gaps"] = grounded(r["gaps"], desc)             # חסר = דרישה שכתובה במודעה
         r["partial"] = len(desc) < 300
         if r["partial"]:
             r["gaps"] = []  # בלי המודעה המלאה אין לנו דרישות אמיתיות להשוות אליהן
     return r
+
+
+LATIN = re.compile(r"[A-Za-z][A-Za-z0-9+#.\-]{2,}")
+
+
+def grounded(items: list[str], source: str) -> list[str]:
+    """בדיקת מקור: כל שם באנגלית (טכנולוגיה, מוסד, חברה) חייב להופיע בטקסט המקור. אחרת המשפט נזרק."""
+    src = source.lower()
+    return [t for t in items if all(w.lower().strip(".-") in src for w in LATIN.findall(t))]
 
 
 def prefs_text(plan: dict) -> str:
@@ -243,10 +254,13 @@ def to_card(j: dict, r: dict, cv: str = "") -> dict:
             "posted_days": days, "salary": j.get("salary", ""), "desc": j.get("description", "")[:600], "url": j["url"]}
 
 
-def run(profile: dict, plan: dict, raw: list[dict] | None = None, rate_top: int = 15, min_fit: float = 3.5, remember: bool = True) -> dict:
+def run(profile: dict, plan: dict, raw: list[dict] | None = None, rate_top: int = 15, min_fit: float = 3.5, remember: bool = True,
+        seen: set[str] | None = None, persist: bool = True) -> dict:
+    """persist=False: לא כותבים קבצים מקומיים (בענן התוצאות נשמרות ב-Supabase)."""
     cv = profile.get("cv_text", "")
     jobs = dedupe(raw if raw is not None else collect(plan))
-    seen = set(json.loads(SEEN.read_text())) if SEEN.exists() else set()
+    if seen is None:
+        seen = set(json.loads(SEEN.read_text())) if SEEN.exists() else set()
     jobs, stats = prefilter(jobs, plan, seen)
     jobs.sort(key=lambda j: -cheap_rank(j, plan, cv))
     cards, deferred = [], 0
@@ -270,6 +284,8 @@ def run(profile: dict, plan: dict, raw: list[dict] | None = None, rate_top: int 
     stats.update(rated=min(len(jobs), rate_top) - deferred, deferred=deferred, shown=len(cards))
     feed = {"generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"), "stats": stats,
             "plan": {k: plan.get(k) for k in ("queries", "locations", "levels", "why")}, "jobs": cards}
+    if not persist:
+        return feed
     FEED.parent.mkdir(parents=True, exist_ok=True)
     FEED.write_text(json.dumps(feed, ensure_ascii=False, indent=2), encoding="utf-8")
     if remember:  # בריצת ניסיון לא מסמנים "כבר ראית"

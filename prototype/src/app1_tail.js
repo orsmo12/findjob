@@ -99,7 +99,7 @@ const initials=n=>{n=String(n||'?').trim();return /^[\u0590-\u05FF]/.test(n)?[..
 const salaryTxt=j=>j.salary||'לא פורסם';
 if(!S){const old=REAL?null:LS.get('state',null);S=defaultState();if(old){S.onboarded=!!old.onboarded;S.qi=old.qi||0;if(old.profile)S.profile=Object.assign(S.profile,old.profile);}}
 else S=Object.assign(defaultState(),S);
-function save(){LS.set(SKEY,S)}
+function save(){LS.set(SKEY,S);if(CLOUDM&&typeof cloudSync==='function')cloudSync()}
 function applyTeam(){CAREER.agents.forEach((a,i)=>{a.name=(S.team&&S.team[a.key])||TEAM_DEFAULT[i].name});buildWorkflow()}
 if(!S.team)S.team={};
 if(S.profile&&S.profile.first==='Or')S.profile.first='אור';

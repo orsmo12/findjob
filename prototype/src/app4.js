@@ -75,15 +75,30 @@ function saveStory(id){const t=$('stT').value.trim(),b=$('stB').value;if(!t){$('
 function editCvText(){openSheet(`<h3 id="sheetTitle">קורות חיים כטקסט</h3><div class="sheet-sub">הסוכנים עובדים לפי הטקסט הזה</div><div class="field" style="margin-top:14px"><label for="cvEdit" class="vh">קורות חיים</label><textarea id="cvEdit" rows="12">${esc(prof().cv)}</textarea></div><button class="btn btn-primary btn-block" onclick="prof().cv=$('cvEdit').value;save();closeSheet();renderProfile();toast('קורות החיים נשמרו')">שמירה</button>`)}
 function onCvFile(inp){
   const f=inp.files[0];if(!f)return;prof().cvName=f.name;
-  if(/\.(txt|md)$/i.test(f.name)){const r=new FileReader();r.onload=()=>{prof().cv=String(r.result).slice(0,20000);save();afterCv()};r.readAsText(f)}else{save();afterCv()}
+  readCv(f).then(t=>{if(t&&t.trim().length>30)prof().cv=t.slice(0,20000);else toast('לא הצלחתי לקרוא טקסט מהקובץ. אפשר להדביק אותו כטקסט',{ms:4200});save();afterCv()});
   inp.value='';
 }
+/* קריאת קורות חיים בדפדפן: PDF (pdf.js), Word (mammoth), טקסט. הקובץ לא נשלח לשום מקום */
+function loadScript(src){return new Promise((ok,no)=>{if(document.querySelector(`script[src="${src}"]`))return ok();const e=document.createElement('script');e.src=src;e.onload=ok;e.onerror=no;document.head.appendChild(e)})}
+async function readCv(f){try{
+  if(/\.(txt|md)$/i.test(f.name))return await f.text();
+  if(/\.pdf$/i.test(f.name)||f.type==='application/pdf'){
+    const base='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/';await loadScript(base+'pdf.min.js');
+    pdfjsLib.GlobalWorkerOptions.workerSrc=base+'pdf.worker.min.js';
+    const doc=await pdfjsLib.getDocument({data:await f.arrayBuffer()}).promise;let out='';
+    for(let i=1;i<=doc.numPages;i++){const c=await (await doc.getPage(i)).getTextContent();let y=null;
+      for(const it of c.items){const ny=it.transform[5];if(y!==null&&Math.abs(ny-y)>3)out+='\n';else if(out&&!out.endsWith(' ')&&!out.endsWith('\n'))out+=' ';out+=it.str;y=ny}out+='\n'}
+    return out.replace(/[ \t]+\n/g,'\n').replace(/\n{3,}/g,'\n\n')}
+  if(/\.docx$/i.test(f.name)){await loadScript('https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js');
+    return (await mammoth.extractRawText({arrayBuffer:await f.arrayBuffer()})).value}
+}catch(e){console.warn(e)}return''}
 function afterCv(){if($('onb').classList.contains('open'))renderOnb();else{renderProfile();toast('קורות החיים עודכנו')}}
 
 /* ═════════ הגדרות ═════════ */
 function renderSettings(){
   const p=prof();
   $('setScroll').innerHTML=`
+    ${CLOUDM&&ME?`<section class="card glass" aria-labelledby="accH"><h2 class="card-h" id="accH">החשבון</h2><div class="card-sub" dir="ltr" style="text-align:right">${escB(ME.email||'')}</div><button class="btn btn-sm btn-ghost btn-block" style="margin-top:12px" onclick="cloudLogout()">יציאה</button></section>`:''}
     <section class="card glass" aria-labelledby="aiH"><h2 class="card-h" id="aiH">הסוכנים</h2>
       ${p.key?`<div class="ok-line">הסוכנים מחוברים ועובדים</div>`:`<div class="warn-line">הסוכנים עוד לא מחוברים</div><div class="card-sub" style="margin:6px 0 0">עד שתחבר, מוצגות דוגמאות.</div>`}
       <button class="btn btn-sm ${p.key?'btn-ghost':'btn-primary'} btn-block" style="margin-top:12px" onclick="openOnb(3)">${p.key?'להחליף מפתח':'לחבר עכשיו'}</button></section>

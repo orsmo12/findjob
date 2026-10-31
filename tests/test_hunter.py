@@ -72,3 +72,8 @@ def test_html_text():
 def test_tags_only_when_in_ad_and_cv():
     assert h.tags_for("We use Python, React and Kotlin", "Python React Java") == ["Python", "React"]
     assert h.tags_for("C++ and C#", "C") == []
+
+
+def test_reasons_must_come_from_cv():
+    cv = "Third-year CS student at HIT. Python, React."
+    assert h.grounded(["סטודנט ב-Bar-Ilan", "ניסיון ב-Python ו-React", "סטודנט שנה ג׳"], cv) == ["ניסיון ב-Python ו-React", "סטודנט שנה ג׳"]

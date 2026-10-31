@@ -88,15 +88,18 @@ const DEMO_JOBS={
     desc:'פיתוח רכיבי עורך מתקדמים בצוות Editor.',deck:false},
 };
 /* משרות אמיתיות: אם נבנה עם קובץ התוצאות של דורון (memory/feed/jobs.json), רק הן מוצגות */
-const REAL=typeof FEED!=='undefined'&&FEED&&Array.isArray(FEED.jobs);
+const CLOUDM=typeof CLOUD!=='undefined'&&!!CLOUD;   // גרסת הענן: משתמש מחובר, נתונים ב-Supabase
+let FEEDD=(typeof FEED!=='undefined'&&FEED)?FEED:null;
+const REAL=CLOUDM||!!(FEEDD&&Array.isArray(FEEDD.jobs));
 const PALETTE=[['#0F6E54','#2BA37E'],['#14532D','#3F8F5F'],['#0E7C86','#19A7A6'],['#2F5D50','#5E9C88'],['#365314','#65A30D'],['#134E4A','#2DD4BF']];
 function coIni(n){const w=String(n||'?').replace(/[^A-Za-z0-9\u0590-\u05FF ]/g,'').trim().split(/\s+/);return (w.length>1?w[0][0]+w[1][0]:w[0].slice(0,2))||'?'}
 function fromFeed(f){const o={};f.jobs.forEach((j,i)=>{let h=0;for(const ch of j.co)h=(h*31+ch.charCodeAt(0))>>>0;
   o[j.id]={co:j.co,ini:coIni(j.co),c:PALETTE[h%PALETTE.length],title:j.title,loc:j.loc,fit:j.fit,reasons:j.reasons||[],gaps:j.gaps||[],
     partial:!!j.partial,tags:j.tags||[],src:j.src,posted:j.posted_days,salary:j.salary||'',desc:String(j.desc||'').replace(/[*#_`>\\]/g,'').replace(/\s+/g,' ').trim(),url:j.url,deck:true}});return o}
-const JOBS=REAL?fromFeed(FEED):DEMO_JOBS;
-function feedWhen(){if(!REAL)return'';const d=new Date(FEED.generated_at),h=Math.round((Date.now()-d)/36e5);
+let JOBS=CLOUDM?{}:FEEDD?fromFeed(FEEDD):DEMO_JOBS;
+function feedWhen(){if(!FEEDD)return'';const d=new Date(FEEDD.generated_at),h=Math.round((Date.now()-d)/36e5);
   return h<1?'מהשעה האחרונה':h<24?`מלפני ${h===1?'שעה':h===2?'שעתיים':h+' שעות'}`:`מ-${d.toLocaleDateString('he-IL')}`}
-const DECK=Object.keys(JOBS).filter(k=>JOBS[k].deck);
-const FILTERED_OUT=REAL?(FEED.stats.too_senior||0):3;
+let DECK=Object.keys(JOBS).filter(k=>JOBS[k].deck);
+let FILTERED_OUT=REAL?((FEEDD&&FEEDD.stats&&FEEDD.stats.too_senior)||0):3;
+function setFeed(f){FEEDD=f;JOBS=fromFeed(f);DECK=Object.keys(JOBS);FILTERED_OUT=(f.stats&&f.stats.too_senior)||0}
 
