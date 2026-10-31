@@ -198,6 +198,23 @@ def _scrape_israeli_boards(query: str, max_results: int) -> list[JobResult]:
 
 # ── Main Node ───────────────────────────────────────────────────────────────────
 
+SENIOR_WORDS = re.compile(r"\b(senior|sr\.?|staff|principal|lead|head|manager|architect|director|vp)\b", re.I)
+YEARS_RE = re.compile(r"(\d{1,2})\s*\+?\s*(?:-\s*\d+\s*)?(?:years|yrs|שנות|שנים)", re.I)
+
+
+def _too_senior(job: dict, plan: dict) -> bool:
+    """True אם המשרה מעל הרמה שנגזרה מהפרופיל (כותרת בכירה או דרישת שנים גבוהה)."""
+    levels = set(plan.get("levels", []))
+    if levels & {"student", "intern", "junior", "entry"} and SENIOR_WORDS.search(job.get("title", "")):
+        return True
+    max_years = plan.get("max_years")
+    if max_years:
+        years = [int(y) for y in YEARS_RE.findall(job.get("description", "") or "")]
+        if years and min(years) > max_years:
+            return True
+    return False
+
+
 def job_finder_node(state: CareerState) -> dict:
     """
     LangGraph node: מחפש משרות ממספר מקורות.
@@ -232,13 +249,32 @@ def job_finder_node(state: CareerState) -> dict:
     #    כלל: findjob לעולם לא נכנס לחשבונות שלך ולא פועל בשמך. ראה docs/AGENTS.md
     linkedin_jobs: list[JobResult] = []
 
-    # 2. Indeed / Glassdoor / Google (JobSpy)
-    jobspy_jobs = _scrape_jobspy(query, location, max_results)
+    # 2. Indeed / Glassdoor / Google / LinkedIn ציבורי (JobSpy) — לפי תוכנית החיפוש של המשתמש
+    plan = state.get("search_plan") or {}
+    if plan and iteration == 0:
+        pairs = [(q, l) for q in plan.get("queries", [query])[:3] for l in plan.get("locations", [location])[:2]]
+    else:
+        pairs = [(query, location)]
+    jobspy_jobs: list[JobResult] = []
+    for q, l in pairs:
+        jobspy_jobs.extend(_scrape_jobspy(q, l, max(5, max_results // len(pairs) + 2)))
     all_jobs.extend(jobspy_jobs)
 
     # 3. AllJobs (ישראלי)
     israeli_jobs = _scrape_israeli_boards(query, max_results // 3)
     all_jobs.extend(israeli_jobs)
+
+    # ── סינון לפי הפרופיל (בקוד, בלי AI): בכירות ושנות ניסיון ─────────────────
+    too_senior = 0
+    if plan:
+        kept = []
+        for j in all_jobs:
+            if _too_senior(j, plan):
+                too_senior += 1
+            else:
+                kept.append(j)
+        all_jobs = kept
+        print(f"[Job Finder] סוננו {too_senior} משרות בכירות מדי לפי הפרופיל")
 
     # ── סינון זיכרון ──────────────────────────────────────────────────────────
     try:

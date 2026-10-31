@@ -52,8 +52,8 @@ app.add_middleware(
 # ── Models ────────────────────────────────────────────────────────────────────
 
 class SearchRequest(BaseModel):
-    query:       str = Field(default="Junior Python Developer", description="שאילתת חיפוש")
-    location:    str = Field(default="Tel Aviv",                description="מיקום")
+    query:       str | None = Field(default=None, description="ריק = לפי תוכנית החיפוש מהפרופיל")
+    location:    str | None = Field(default=None, description="ריק = לפי תוכנית החיפוש מהפרופיל")
     resume:      str = Field(default="",                        description="CV כטקסט")
     max_results: int = Field(default=8,                         ge=1, le=30)
 
@@ -122,9 +122,12 @@ class CoverLetterResponse(BaseModel):
 # ── עזרים ─────────────────────────────────────────────────────────────────────
 
 def _build_initial_state(req: SearchRequest) -> dict:
+    from agent_core.profile import load_profile, build_search_plan
+    plan = build_search_plan(load_profile())
     return {
-        "search_query":    req.query,
-        "location":        req.location,
+        "search_plan":     plan.to_dict(),
+        "search_query":    req.query or plan.queries()[0],
+        "location":        req.location or plan.locations[0],
         "resume_text":     req.resume,
         "max_results":     req.max_results,
         "raw_jobs":        [],
@@ -306,3 +309,12 @@ def team():
     """צוות הסוכנים: key, שם ברירת מחדל, תפקיד ותזמון. המקור: agent_core/team.py"""
     from agent_core.team import TEAM
     return TEAM
+
+
+@app.get("/plan")
+def search_plan():
+    """תוכנית החיפוש וחברות היעד, כפי שיואב גזר מהפרופיל. מוצג למשתמש בשקיפות."""
+    from agent_core.profile import load_profile, build_search_plan, select_targets
+    prof = load_profile()
+    plan = build_search_plan(prof)
+    return {"plan": plan.to_dict(), "targets": select_targets(plan, prof)}

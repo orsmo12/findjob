@@ -35,6 +35,11 @@ RESUME_FILE = project_root / "my_resume.txt"
 MY_RESUME = ""
 
 def load_resume() -> str:
+    from agent_core.profile import load_profile
+    cv = (load_profile().get("cv_text") or "").strip()
+    if cv:
+        print("[Scheduler] CV נטען מהפרופיל")
+        return cv
     if RESUME_FILE.exists():
         text = RESUME_FILE.read_text(encoding="utf-8").strip()
         if text:
@@ -44,11 +49,19 @@ def load_resume() -> str:
 
 
 # ── הגדרות חיפוש ─────────────────────────────────────────────────────────────
-SEARCH_CONFIG = {
-    "search_query": "Junior Python Developer",
-    "location":     "Tel Aviv",
-    "max_results":  10,
-}
+def build_search_config() -> dict:
+    """יואב: תוכנית החיפוש נבנית מקורות החיים ומהשאלון של המשתמש, לא מערכים קבועים."""
+    from agent_core.profile import load_profile, build_search_plan
+    plan = build_search_plan(load_profile())
+    for line in plan.why:
+        print(f"[יואב] {line}")
+    return {
+        "search_query": plan.queries()[0],
+        "location":     plan.locations[0],
+        "search_plan":  plan.to_dict(),
+        "max_results":  12,
+    }
+
 
 TARGET_HOUR = 10   # זמן הרצה יומית
 
@@ -70,7 +83,7 @@ def run_pipeline():
         print("[Scheduler] ריצה ראשונה — מתחיל לבנות זיכרון")
 
     initial_state = {
-        **SEARCH_CONFIG,
+        **build_search_config(),
         "resume_text":     load_resume(),
         "raw_jobs":        [],
         "filtered_jobs":   [],

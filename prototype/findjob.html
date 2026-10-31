@@ -792,6 +792,11 @@ a.btn{text-decoration:none}
 .tm-in:focus{border-color:var(--brand);background:#fff;box-shadow:0 0 0 3px var(--brand-lt)}
 .tm-info{width:32px;height:32px;border-radius:50%;background:rgba(18,40,32,.06);color:var(--ink2);font-weight:600;font-size:14px;flex-shrink:0}
 
+.plan-list{list-style:none;display:flex;flex-direction:column;gap:7px;margin:4px 0 14px}
+.plan-list li{display:flex;gap:9px;font-size:14px;line-height:1.5}
+.plan-list li::before{content:'';width:7px;height:7px;border-radius:50%;background:var(--brand-hi);margin-top:7px;flex-shrink:0}
+.sub-h{font-size:14px;font-weight:600;margin:4px 0 2px}
+
 </style>
 </head>
 <body>
@@ -2123,6 +2128,38 @@ function qDone(){
 }
 
 
+
+/* ═════════ search plan (mirror of agent_core/profile.py) ═════════ */
+const CATALOG=[{"name": "Check Point", "sectors": ["cyber"], "size": "enterprise", "city": "Tel Aviv", "hires_juniors": true}, {"name": "CyberArk", "sectors": ["cyber"], "size": "enterprise", "city": "Petah Tikva", "hires_juniors": true}, {"name": "Wiz", "sectors": ["cyber", "devtools"], "size": "scaleup", "city": "Tel Aviv", "hires_juniors": false}, {"name": "Snyk", "sectors": ["cyber", "devtools"], "size": "scaleup", "city": "Tel Aviv", "hires_juniors": false}, {"name": "Armis", "sectors": ["cyber"], "size": "scaleup", "city": "Tel Aviv", "hires_juniors": false}, {"name": "Cato Networks", "sectors": ["cyber"], "size": "scaleup", "city": "Tel Aviv", "hires_juniors": true}, {"name": "Orca Security", "sectors": ["cyber"], "size": "scaleup", "city": "Tel Aviv", "hires_juniors": false}, {"name": "Guardz", "sectors": ["cyber"], "size": "startup", "city": "Tel Aviv", "hires_juniors": true}, {"name": "Island", "sectors": ["cyber"], "size": "scaleup", "city": "Tel Aviv", "hires_juniors": false}, {"name": "monday.com", "sectors": ["saas"], "size": "enterprise", "city": "Tel Aviv", "hires_juniors": true}, {"name": "Wix", "sectors": ["saas", "web"], "size": "enterprise", "city": "Tel Aviv", "hires_juniors": true}, {"name": "Elementor", "sectors": ["saas", "web"], "size": "scaleup", "city": "Ramat Gan", "hires_juniors": true}, {"name": "Fiverr", "sectors": ["marketplace"], "size": "enterprise", "city": "Tel Aviv", "hires_juniors": true}, {"name": "Riskified", "sectors": ["fintech", "data"], "size": "scaleup", "city": "Tel Aviv", "hires_juniors": true}, {"name": "Payoneer", "sectors": ["fintech"], "size": "enterprise", "city": "Petah Tikva", "hires_juniors": true}, {"name": "Lemonade", "sectors": ["fintech", "ai"], "size": "scaleup", "city": "Tel Aviv", "hires_juniors": false}, {"name": "Melio", "sectors": ["fintech"], "size": "scaleup", "city": "Tel Aviv", "hires_juniors": false}, {"name": "Tipalti", "sectors": ["fintech"], "size": "scaleup", "city": "Herzliya", "hires_juniors": true}, {"name": "Rapyd", "sectors": ["fintech"], "size": "scaleup", "city": "Tel Aviv", "hires_juniors": false}, {"name": "Pagaya", "sectors": ["fintech", "ai", "data"], "size": "scaleup", "city": "Tel Aviv", "hires_juniors": true}, {"name": "Nayax", "sectors": ["fintech", "hardware"], "size": "enterprise", "city": "Herzliya", "hires_juniors": true}, {"name": "HiBob", "sectors": ["saas"], "size": "scaleup", "city": "Tel Aviv", "hires_juniors": true}, {"name": "AppsFlyer", "sectors": ["data", "adtech"], "size": "enterprise", "city": "Herzliya", "hires_juniors": true}, {"name": "Taboola", "sectors": ["adtech", "ai"], "size": "enterprise", "city": "Tel Aviv", "hires_juniors": true}, {"name": "Outbrain", "sectors": ["adtech"], "size": "enterprise", "city": "Netanya", "hires_juniors": true}, {"name": "Similarweb", "sectors": ["data"], "size": "enterprise", "city": "Tel Aviv", "hires_juniors": true}, {"name": "Gong", "sectors": ["ai", "saas"], "size": "scaleup", "city": "Ramat Gan", "hires_juniors": false}, {"name": "JFrog", "sectors": ["devtools"], "size": "enterprise", "city": "Netanya", "hires_juniors": true}, {"name": "Tabnine", "sectors": ["ai", "devtools"], "size": "startup", "city": "Tel Aviv", "hires_juniors": false}, {"name": "AI21 Labs", "sectors": ["ai"], "size": "scaleup", "city": "Tel Aviv", "hires_juniors": false}, {"name": "Lightricks", "sectors": ["ai", "consumer"], "size": "scaleup", "city": "Jerusalem", "hires_juniors": true}, {"name": "Mobileye", "sectors": ["ai", "automotive", "hardware"], "size": "enterprise", "city": "Jerusalem", "hires_juniors": true}, {"name": "Hailo", "sectors": ["ai", "hardware"], "size": "scaleup", "city": "Tel Aviv", "hires_juniors": true}, {"name": "Via", "sectors": ["mobility", "data"], "size": "scaleup", "city": "Tel Aviv", "hires_juniors": false}, {"name": "vHive", "sectors": ["ai", "hardware"], "size": "startup", "city": "Tel Aviv", "hires_juniors": true}, {"name": "Earnix", "sectors": ["fintech", "data"], "size": "scaleup", "city": "Ramat Gan", "hires_juniors": true}, {"name": "NVIDIA Israel", "sectors": ["ai", "hardware"], "size": "enterprise", "city": "Yokneam", "hires_juniors": true}, {"name": "Intel Israel", "sectors": ["hardware"], "size": "enterprise", "city": "Haifa", "hires_juniors": true}];
+const ROLE_SECTORS={'AI / ML':['ai'],'סייבר':['cyber'],'Data / BI':['data'],'DevOps / Cloud':['devtools'],'Embedded':['hardware']};
+const REGION_CITIES={'תל אביב':['Tel Aviv'],'גוש דן והמרכז':['Tel Aviv','Ramat Gan','Petah Tikva','Herzliya'],'השרון':['Herzliya',"Ra'anana",'Netanya','Kfar Saba'],'ירושלים':['Jerusalem'],'חיפה והצפון':['Haifa','Yokneam'],'באר שבע והדרום':['Beer Sheva']};
+function planWhy(){
+  const a=ans(),w=[];
+  w.push(a.status==='סטודנט/ית'?(a.track==='משרה מלאה אחרי התואר'?'משרות ג׳וניור למשרה מלאה אחרי התואר':'משרות סטודנט, התמחויות וג׳וניור')
+    :a.status?{'בוגר/ת טרי/ה, מחפש/ת עבודה ראשונה':'משרה ראשונה: ג׳וניור','משתחרר/ת משירות':'משרה ראשונה: ג׳וניור','ג׳וניור עם ניסיון של עד שנתיים':'משרות ג׳וניור'}[a.status]||'משרות לפי הניסיון שלך'
+    :'משרות ג׳וניור, עד שתספר לנו מה המצב שלך');
+  w.push(a.roles&&a.roles.length?'בתפקידים: '+a.roles.join(', '):'בכל תפקידי הפיתוח, עד שתבחר תפקידים');
+  w.push(a.locs&&a.locs.length?'באזורים: '+a.locs.join(', ')+(a.mode==='מהבית'?', מהבית בלבד':''):'בכל הארץ');
+  if(a.exp) w.push(`בלי משרות שדורשות יותר ניסיון ממה שיש לך (${a.exp})`);
+  if(learnedChips().some(([r,n])=>r==='בכירה מדי'&&n>=2)) w.push('דילגת על משרות בכירות, אז מסננים חזק יותר');
+  return w;
+}
+function targetCompanies(){
+  const a=ans(),tc=S.targets||{added:[],removed:[]},sectors=new Set((a.roles||[]).flatMap(r=>ROLE_SECTORS[r]||[]).concat((a.prio||[]).includes('טכנולוגיות מעניינות')?['ai']:[]));
+  const cities=new Set((a.locs||[]).flatMap(r=>REGION_CITIES[r]||[])),junior=a.status!=='עובד/ת ומחפש/ת לעבור';
+  const size=(a.prio||[]).includes('סטארט-אפ קטן')?['startup','scaleup']:(a.prio||[]).includes('חברה גדולה ויציבה')?['enterprise']:[];
+  const added=new Set(tc.added.map(x=>x.toLowerCase()));
+  const out=CATALOG.filter(c=>!tc.removed.includes(c.name)&&!added.has(c.name.toLowerCase())).map(c=>{let s=0;const why=[];
+    if(c.sectors.some(x=>sectors.has(x))){s+=3;why.push('בתחום שבחרת')}
+    if(size.includes(c.size)){s+=2;why.push({startup:'סטארט-אפ',scaleup:'חברה צומחת',enterprise:'חברה גדולה'}[c.size])}
+    if(!cities.size||cities.has(c.city)||a.mode==='מהבית')s+=1;else s-=2;
+    if(c.hires_juniors&&junior){s+=2;why.push('מגייסת ג׳וניורים')}
+    return{...c,s,why}}).filter(c=>c.s>0).sort((x,y)=>y.s-x.s).slice(0,12);
+  return [...tc.added.map(n=>({name:n,why:['הוספת בעצמך']})),...out];
+}
+function removeTarget(n){S.targets=S.targets||{added:[],removed:[]};S.targets.added=S.targets.added.filter(x=>x!==n);if(!S.targets.removed.includes(n)&&CATALOG.some(c=>c.name===n))S.targets.removed.push(n);save();renderProfile();toast(`${n} הוסרה מחברות היעד`)}
+function addTarget(){const el=$('tgIn'),v=el.value.trim();if(!v){el.focus();return}S.targets=S.targets||{added:[],removed:[]};S.targets.removed=S.targets.removed.filter(x=>x!==v);if(!S.targets.added.includes(v))S.targets.added.unshift(v);save();renderProfile();toast(`${v} נוספה. ${N('hunter')} יבדוק אותה בחיפוש הבא`)}
+
 /* ═════════ הפרופיל שלי ═════════ */
 const ROW_IC={doc:'<svg viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8z"/><path d="M14 3v5h5"/></svg>',
   target:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/></svg>',
@@ -2152,6 +2189,15 @@ function renderProfile(){
       <button class="row" onclick="openQuestions('roles')"><span class="ri">${ROW_IC.doc}</span><span class="rl"><b lang="en">${escB((a.roles||[]).join(', ')||'תפקידים')}</b><span>${escB(a.field||'רקע מקצועי: עוד לא ענית')}</span></span><span class="chev" aria-hidden="true"></span></button>
       <button class="row" onclick="openQuestions('locs')"><span class="ri">${ROW_IC.pin}</span><span class="rl"><b>${escB((a.locs||[]).join(', ')||'אזור עבודה')}</b><span>${escB([a.mode,a.start&&('התחלה: '+a.start)].filter(Boolean).join(' · ')||'עוד לא ענית')}</span></span><span class="chev" aria-hidden="true"></span></button>
       <button class="btn btn-sm ${done<total?'btn-primary':'btn-ghost'} btn-block" style="margin-top:8px" onclick="openQuestions()">${done<total?'להמשיך את השאלון':'לעבור על כל התשובות'}</button></section>
+
+    <section class="card glass" id="planCard" aria-labelledby="plH"><h2 class="card-h" id="plH">מה מחפשים בשבילך</h2>
+      <div class="card-sub">${escB(N('strategist'))} בנה את זה מקורות החיים ומהתשובות שלך, ומעדכן בכל שינוי.</div>
+      <ul class="plan-list">${planWhy().map(w=>`<li>${escB(w)}</li>`).join('')}</ul>
+      <h3 class="sub-h">חברות יעד</h3>
+      <div class="card-sub">${escB(N('hunter'))} בודק אותן ישירות, בנוסף לחיפוש הפתוח בכל החברות.</div>
+      <div class="learned">${targetCompanies().map(c=>`<span class="chip" title="${escB(c.why.join(' · '))}">${escB(c.name)}<button aria-label="להסיר את ${escB(c.name)}" onclick="removeTarget('${escB(c.name).replace(/'/g,"\\'")}')">×</button></span>`).join('')}</div>
+      <div class="todo-foot" style="padding:12px 0 0;border:0"><label for="tgIn" class="vh">חברה להוספה</label><input id="tgIn" placeholder="להוסיף חברה" onkeydown="if(event.key==='Enter')addTarget()"><button class="btn btn-sm btn-ghost" onclick="addTarget()">הוסף</button></div>
+      ${(S.targets&&(S.targets.added.length||S.targets.removed.length))?`<button class="link" style="font-size:13px;color:var(--brand);margin-top:8px" onclick="S.targets={added:[],removed:[]};save();renderProfile()">להחזיר לבחירה של ${escB(N('strategist'))}</button>`:''}</section>
 
     <section class="card glass" aria-labelledby="tmH"><h2 class="card-h" id="tmH">הצוות שלי</h2>
       <div class="card-sub">אפשר לתת לכל סוכן שם אחר. התפקיד נשאר אותו תפקיד.</div>
