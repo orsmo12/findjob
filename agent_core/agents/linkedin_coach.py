@@ -170,4 +170,4 @@ def profile_fixes(cv: str, li_text: str, plan: dict) -> list[dict]:
 
 
 def li_hash(li_text: str) -> str:
-    return "v2-" + hashlib.sha1((li_text or "").strip().encode()).hexdigest()[:12]  # v2: בדיקת מקור מעודכנת
+    return "v3-" + hashlib.sha1((li_text or "").strip().encode()).hexdigest()[:12]  # v2: בדיקת מקור מעודכנת
