@@ -4,6 +4,7 @@ function openOnb(step=0){onbSingle=step>0&&S.onboarded;onbStep=step;onbDraft=JSO
 function closeOnb(){$('onb').classList.remove('open','qmode')}
 function onbGo(d){onbStep=Math.max(0,Math.min(4,onbStep+d));if(onbStep===3&&CLOUDM)onbStep+=d>0?1:-1;if(onbStep===2)qi=Math.min(S.qi||0,Math.max(0,visibleQs().length-1));renderOnb()}
 function renderOnb(){
+  if(CLOUDM&&onbStep===3){if(onbSingle){closeOnb();return}onbStep=4}  // בענן המפתחות שמורים בשרת, אין מה לחבר
   if(onbStep===2){renderQ();return}
   $('onb').classList.remove('qmode');
   const p=onbDraft;p.cv=prof().cv;p.cvName=prof().cvName;

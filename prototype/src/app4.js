@@ -100,8 +100,8 @@ function renderSettings(){
   $('setScroll').innerHTML=`
     ${CLOUDM&&ME?`<section class="card glass" aria-labelledby="accH"><h2 class="card-h" id="accH">החשבון</h2><div class="card-sub" dir="ltr" style="text-align:right">${escB(ME.email||'')}</div><button class="btn btn-sm btn-ghost btn-block" style="margin-top:12px" onclick="cloudLogout()">יציאה</button></section>`:''}
     <section class="card glass" aria-labelledby="aiH"><h2 class="card-h" id="aiH">הסוכנים</h2>
-      ${p.key?`<div class="ok-line">הסוכנים מחוברים ועובדים</div>`:`<div class="warn-line">הסוכנים עוד לא מחוברים</div><div class="card-sub" style="margin:6px 0 0">עד שתחבר, מוצגות דוגמאות.</div>`}
-      <button class="btn btn-sm ${p.key?'btn-ghost':'btn-primary'} btn-block" style="margin-top:12px" onclick="openOnb(3)">${p.key?'להחליף מפתח':'לחבר עכשיו'}</button></section>
+      ${CLOUDM?`<div class="ok-line">הסוכנים מחוברים ורצים בענן</div><div class="card-sub" style="margin:6px 0 0">${N('hunter')} מחפש כל לילה, ו${N('assistant')} מכין מכתבים כל שעתיים.</div>`:p.key?`<div class="ok-line">הסוכנים מחוברים ועובדים</div>`:`<div class="warn-line">הסוכנים עוד לא מחוברים</div><div class="card-sub" style="margin:6px 0 0">עד שתחבר, מוצגות דוגמאות.</div>`}
+      <button class="btn btn-sm ${p.key?'btn-ghost':'btn-primary'} btn-block" style="margin-top:12px" onclick="openOnb(3)" ${CLOUDM?'hidden':''}>${p.key?'להחליף מפתח':'לחבר עכשיו'}</button></section>
 
     <section class="card glass" aria-labelledby="ntH"><h2 class="card-h" id="ntH">התראות</h2>
       <div class="row"><span class="ri">${ROW_IC.bell}</span><span class="rl"><b id="nb">בריף בוקר</b><span>כל יום ב-08:00, הודעה אחת עם מה שחשוב</span></span><button class="switch${S.notif?' on':''}" role="switch" aria-checked="${S.notif}" aria-labelledby="nb" onclick="S.notif=!S.notif;save();renderSettings()"></button></div></section>
