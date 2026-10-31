@@ -52,3 +52,5 @@ grant usage on schema public to anon, authenticated, service_role;
 grant select, insert, update, delete on public.profiles, public.jobs to authenticated;
 grant select on public.runs to authenticated;
 grant all on public.profiles, public.jobs, public.runs to service_role;
+alter table public.jobs add column if not exists brief jsonb;   -- גיל: סקירת חברה עם מקורות
+alter table public.jobs add column if not exists prep jsonb;    -- מאיה: שאלות הכנה

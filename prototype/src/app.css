@@ -650,3 +650,11 @@ a.btn{text-decoration:none}
 .plan-list li{display:flex;gap:9px;font-size:14px;line-height:1.5}
 .plan-list li::before{content:'';width:7px;height:7px;border-radius:50%;background:var(--brand-hi);margin-top:7px;flex-shrink:0}
 .sub-h{font-size:14px;font-weight:600;margin:4px 0 2px}
+
+/* מקורות בסקירת חברה */
+.src-n{display:inline-grid;place-items:center;min-width:18px;height:18px;padding:0 4px;border-radius:6px;background:var(--mint-lt,#E3F1EA);color:var(--brand,#0F6E54);font-size:11px;font-weight:700;text-decoration:none;vertical-align:1px}
+.src-list{display:flex;flex-direction:column;gap:6px;margin-top:12px}
+.src-list a{display:grid;grid-template-columns:auto 1fr;gap:2px 8px;align-items:center;padding:8px 10px;border-radius:12px;background:rgba(255,255,255,.55);border:1px solid rgba(15,110,84,.10);text-decoration:none;color:var(--ink,#13241D);font-size:13px;min-height:44px}
+.src-list a small{grid-column:2;color:var(--ink3,#6B7C74);font-size:11.5px}
+a.person{text-decoration:none;color:inherit;min-height:44px}
+a.person>svg{flex:0 0 18px;width:18px;height:18px;fill:none;stroke:var(--ink3);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}

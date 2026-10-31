@@ -1,4 +1,4 @@
-name: findjob letters
+name: findjob assistant (letters, research, prep)
 on:
   schedule:
     - cron: "23 5-21/2 * * *"   # כל שעתיים, בערך 07:00–23:00 שעון ישראל
@@ -6,13 +6,13 @@ on:
 jobs:
   letters:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with: { python-version: "3.12" }
-      - run: pip install groq httpx
-      - run: python -u scripts/letters_job.py
+      - run: pip install groq httpx ddgs==9.14.4
+      - run: python -u scripts/assistant_job.py
         env:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}

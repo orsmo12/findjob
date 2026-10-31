@@ -28,10 +28,10 @@ function refreshApps(){if(curPg==='apps')renderApps();if(curPg==='main')renderHo
 let appTab='details';
 function openApp(id,tab){
   const a=appOf(id);if(!a)return;
-  const hasPrep=a.status==='interview'||a.status==='screening';
+  const hasPrep=REAL||a.status==='interview'||a.status==='screening';
   appTab=tab==='prep'&&!hasPrep?'details':(tab||'details');
   const j=JOBS[a.jobId];
-  const tabs=[['details','פרטים'],['letter','מכתב'],['ref','ממליצים'],...(hasPrep?[['prep',a.status==='interview'?'הכנה':'סינון']]:[])];
+  const tabs=[['details','פרטים'],['letter','מכתב'],['ref',REAL?'קשרים':'ממליצים'],...(hasPrep?[['prep',REAL?'הכנה':a.status==='interview'?'הכנה':'סינון']]:[])];
   openSheet(`<div style="display:flex;gap:13px;align-items:center">${logo(j)}<div style="min-width:0"><h3 id="sheetTitle" lang="en" dir="ltr" style="text-align:right">${escB(j.title)}</h3><div class="sheet-sub">${escB(j.co)} · ${escB(j.loc)}</div></div></div>
     <div class="tabs" role="tablist">${tabs.map(([k,l])=>`<button role="tab" id="tab-${k}" aria-selected="${appTab===k}" onclick="appTab='${k}';paintAppTab('${id}')">${l}</button>`).join('')}</div>
     <div id="appTab" role="tabpanel"></div>`);
@@ -51,12 +51,15 @@ function paintAppTab(id){
         <div class="kv"><span>שכר</span><b>${escB(salaryTxt(j))}</b></div></div>
       ${fu?`<div class="s-sec"><h4>הודעת המשך</h4><textarea class="textbox" id="fuText" rows="7" aria-label="הודעת המשך">${esc(a.follow||followText(j))}</textarea>
         <div class="duo"><button class="btn btn-ghost" onclick="copyText($('fuText').value,'ההודעה הועתקה')">${ICO.copy}העתק</button><button class="btn btn-primary" onclick="sentFollow('${id}')">שלחתי</button></div></div>`:''}
+      ${REAL?briefHtml(j):''}
       <div class="s-sec"><a class="btn btn-ghost btn-block ext" href="${j.url||LI_URL+'jobs/'}" target="_blank" rel="noopener">פתח את המשרה${ICO.open}</a></div>`;
   }else if(appTab==='letter'){
     el.innerHTML=`<div class="s-sec" style="margin-top:12px"><label for="letterBox" class="vh">מכתב פנייה</label><textarea class="textbox" id="letterBox" rows="13" oninput="appOf('${id}').letter=this.value;save()">${esc(a.letter||(j.letter&&j.letter.text)||(REAL?'':letterFor(j)))}</textarea>
       ${REAL&&!a.letter&&!j.letter?`<div class="hint-line">${N('assistant')} מכין את המכתב. הוא יופיע כאן תוך שעתיים בערך.</div>`:j.letter&&!j.letter.checked?`<div class="hint-line">חלק מהמשפטים הוסרו כי לא נמצאו בקורות החיים. כדאי לקרוא לפני ששולחים.</div>`:`<div class="hint-line ok">✓ כל שם, טכנולוגיה ומספר במכתב נבדקו מול קורות החיים והמודעה</div>`}
       <div class="duo"><button class="btn btn-ghost" onclick="copyText($('letterBox').value,'המכתב הועתק')">${ICO.copy}העתק</button><a class="btn btn-primary ext" href="${j.url||LI_URL+'jobs/'}" target="_blank" rel="noopener" onclick="copyText($('letterBox').value,'המכתב הועתק. הדבק אותו בטופס')">פתח את המשרה${ICO.open}</a></div>
       ${a.status==='saved'?`<button class="btn btn-ghost btn-block" style="margin-top:8px" onclick="markApplied('${id}');closeSheet()">הגשתי</button>`:''}</div>`;
+  }else if(appTab==='ref'&&REAL){
+    el.innerHTML=refHtml(j,id);
   }else if(appTab==='ref'){
     const refs=REFERRALS[a.jobId]||[];
     el.innerHTML=refs.length?`<p style="font-size:13.5px;color:var(--ink2);margin:12px 0 4px">המלצה מבפנים מקפיצה מועמדות לראש הערימה. ${escB(N('researcher'))} מצא:</p>`+refs.map((r,i)=>`
@@ -64,6 +67,13 @@ function paintAppTab(id){
       <label for="ref${i}" class="vh">הודעה ל${escB(r.name)}</label><textarea class="textbox" id="ref${i}" rows="5">${esc(refNote(r,j))}</textarea>
       <div class="duo"><button class="btn btn-ghost" onclick="copyText($('ref${i}').value,'ההודעה הועתקה')">${ICO.copy}העתק</button><a class="btn btn-primary ext" href="${liSearch(r.name+' '+j.co)}" target="_blank" rel="noopener" onclick="copyText($('ref${i}').value,'ההודעה הועתקה. הדבק אותה בהודעה')">פתח בלינקדאין${ICO.open}</a></div>`).join('')
       :`<div class="empty" style="padding:28px 8px"><h3>עוד לא מצאנו קשר בחברה</h3><p>${escB(N('researcher'))} ימשיך לחפש אנשים מ-HIT, מהשירות ומהקשרים שלך.</p></div>`;
+  }else if(REAL){
+    const qs=j.prep&&j.prep.questions||[];
+    el.innerHTML=!j.prep?`<div class="empty" style="padding:28px 8px"><h3>${escB(N('coach'))} מכינה שאלות</h3><p>השאלות נבנות לפי הדרישות במודעה ולפי קורות החיים שלך. הן יופיעו כאן תוך שעתיים בערך.</p></div>`
+      :!qs.length?`<div class="empty" style="padding:28px 8px"><h3>לא היו מספיק פרטים במודעה</h3><p>אפשר לתרגל שאלות כלליות בצ׳אט.</p></div>`
+      :`<p style="font-size:13.5px;color:var(--ink2);margin:12px 0 6px">שאלות סבירות לשיחה הראשונה, לפי מה שכתוב במודעה. לחץ על שאלה כדי לראות איך לבנות תשובה מתוך הניסיון שלך.</p>
+      <div class="card-solid" style="padding:4px 14px">${qs.map(q=>`<details class="q"><summary><span class="qtag" dir="auto">${escB(q.tag)}</span><span class="qtxt">${escB(q.q)}</span></summary><div class="hint">${escB(q.h)}</div></details>`).join('')}</div>
+      <button class="btn btn-primary btn-block" style="margin-top:14px" onclick="closeSheet();toggleChat(true);chatAsk('בוא נתרגל ראיון ל-${escB(j.co)}')">לתרגל עם ${escB(N('coach'))}</button>`;
   }else{
     const P=PREP[a.status];
     el.innerHTML=`<p style="font-size:13.5px;color:var(--ink2);margin:12px 0 6px">${escB(P.lead)}</p>
@@ -143,4 +153,31 @@ function renderOfficeMsgs(){
   el.innerHTML=list.map((u,i)=>{const a=CAREER.agents[u.a];return`<button class="om-item" onclick="openAgSheet(${u.a})"><span class="om-face"><canvas id="om-${i}" width="96" height="96"></canvas></span><span class="om-tx"><b>${a.name}</b><i>${u.time}</i><p>${escB(u.body)}</p></span></button>`}).join('')
     +(UPDATES.length>5?`<button class="om-more" onclick="omAll=!omAll;renderOfficeMsgs()">${omAll?'הצג פחות':`הצג עוד ${UPDATES.length-5}`}</button>`:'');
   list.forEach((u,i)=>face($('om-'+i),u.a));
+}
+
+/* גיל: סקירת חברה עם מקורות. כל עובדה עם מספר המקור שלה */
+function briefHtml(j){
+  const b=j.brief;
+  if(!b)return`<div class="s-sec"><h4>על החברה</h4><p class="card-sub">${escB(N('researcher'))} מכין סקירה על ${escB(j.co)} עם מקורות. היא תופיע כאן תוך שעתיים בערך.</p></div>`;
+  if(!b.found)return`<div class="s-sec"><h4>על החברה</h4><p class="card-sub">${escB(N('researcher'))} לא מצא מידע ציבורי אמין על ${escB(j.co)}, אז לא נכתב כלום. לפעמים זו חברת השמה שמסתירה את שם הלקוח.</p></div>`;
+  const sup=i=>i==null?'':`<a class="src-n" href="${escB(b.sources[i].url)}" target="_blank" rel="noopener" aria-label="מקור ${i+1}">${i+1}</a>`;
+  return`<div class="s-sec"><h4>על החברה</h4>
+    ${b.what?`<p style="font-size:14px;line-height:1.6;margin-bottom:8px">${escB(b.what)} ${sup(b.what_src)}</p>`:''}
+    ${b.facts.map(f=>`<div class="jc-r" style="margin-bottom:6px"><span class="ic" aria-hidden="true">•</span><span>${escB(f.text)} ${sup(f.src)}</span></div>`).join('')}
+    ${b.why_you&&b.why_you.length?`<h4 style="margin-top:12px">איך זה מתחבר אליך</h4>${b.why_you.map(w=>`<div class="jc-r" style="margin-bottom:6px"><span class="ic ok" aria-hidden="true">✓</span><span>${escB(w)}</span></div>`).join('')}`:''}
+    <div class="src-list">${b.sources.map((s,i)=>`<a href="${escB(s.url)}" target="_blank" rel="noopener"><span class="src-n">${i+1}</span><span dir="auto">${escB(s.title)}</span><small>${escB(s.domain)}</small></a>`).join('')}</div></div>`;
+}
+/* קשרים: חיפושים מוכנים ב-LinkedIn. החיפוש וההודעה נעשים בחשבון שלך, על ידך */
+const SCHOOLS=['HIT','Technion','Tel Aviv University','Hebrew University','Bar-Ilan','Ben-Gurion','Reichman','Ariel University','Afeka','Open University','University of Haifa','Shenkar','Ruppin','Sapir','Azrieli','Jerusalem College of Technology'];
+function refHtml(j,id){
+  const cv=prof().cv||'',school=SCHOOLS.find(s=>cv.toLowerCase().includes(s.toLowerCase()));
+  const role=(j.title.match(/frontend|backend|full.?stack|data|machine learning|ml|ai|qa|devops|mobile|software/i)||['software'])[0];
+  const rows=[school&&{t:`בוגרי ${school} ב-${j.co}`,s:'קשר משותף מקל לפתוח שיחה',q:`${j.co} ${school}`},
+    {t:`מפתחים ב-${j.co}`,s:`אנשי ${role} מהצוות שתעבוד איתו`,q:`${j.co} ${role}`},
+    {t:`גיוס ב-${j.co}`,s:'מגייסים ורכזי גיוס',q:`${j.co} recruiter`}].filter(Boolean);
+  const note=`היי, ראיתי שאתה ב-${j.co}. אני ${prof().first||''}${school?`, סטודנט ב-${school}`:''}, ומתעניין במשרת ה-${nb(j.title)}. אשמח לשמוע ממך כמה מילים על הצוות, ואם זה מתאים, גם להמלצה. תודה!`;
+  return`<p style="font-size:13.5px;color:var(--ink2);margin:12px 0 8px">המלצה מבפנים מקפיצה מועמדות. אלה חיפושים מוכנים ב-LinkedIn. אתה פותח, בוחר עם מי לדבר ושולח בעצמך.</p>
+    ${rows.map(r=>`<a class="person ext" href="${liSearch(r.q)}" target="_blank" rel="noopener">${pav(r.t)}<div class="tx"><b dir="auto">${escB(r.t)}</b><span>${escB(r.s)}</span></div>${ICO.open}</a>`).join('')}
+    <div class="s-sec"><h4>הודעה לדוגמה</h4><label for="refNote" class="vh">הודעה</label><textarea class="textbox" id="refNote" rows="5">${esc(note)}</textarea>
+    <button class="btn btn-ghost btn-block" onclick="copyText($('refNote').value,'ההודעה הועתקה')">${ICO.copy}העתק</button></div>`;
 }

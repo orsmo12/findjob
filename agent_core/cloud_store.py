@@ -62,3 +62,18 @@ def save_letter(user_id: str, job_id: str, letter: dict) -> None:
     r = httpx.patch(_url("jobs"), headers=_h(), json={"letter": letter},
                     params={"user_id": f"eq.{user_id}", "id": f"eq.{job_id}"}, timeout=30)
     r.raise_for_status()
+
+
+def saved_missing(user_id: str) -> list[dict]:
+    """משרות ששמרת שחסר להן מכתב, סקירה או הכנה."""
+    r = httpx.get(_url("jobs"), headers=_h(), timeout=30, params={
+        "select": "id,card,letter,brief,prep", "user_id": f"eq.{user_id}", "decision": "eq.save",
+        "or": "(letter.is.null,brief.is.null,prep.is.null)"})
+    r.raise_for_status()
+    return r.json()
+
+
+def update_job(user_id: str, job_id: str, fields: dict) -> None:
+    r = httpx.patch(_url("jobs"), headers=_h(), json=fields,
+                    params={"user_id": f"eq.{user_id}", "id": f"eq.{job_id}"}, timeout=30)
+    r.raise_for_status()
