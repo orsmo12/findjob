@@ -109,7 +109,7 @@ def too_senior(job: dict, plan: dict) -> bool:
     mx = plan.get("max_years")
     if mx:
         ys = [int(y) for y in YEARS_RE.findall(job.get("description", ""))]
-        if ys and min(ys) > mx:
+        if ys and min(ys) > mx + 1:  # שנה אחת "מתיחה" מותרת: מודעות לג׳וניור כותבות לא פעם 2+ שנים
             return True
     return False
 

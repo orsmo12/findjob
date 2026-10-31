@@ -30,3 +30,10 @@ def test_profile_fix_copy_grounded():
                               '{"t": "About", "why": "y", "copy": "Ex-Google engineer with 10 years"}]}')
     fx = K.profile_fixes(CV, "Or Smolarchik. Student at HIT. Skills: React" * 3, {"titles": ["Full Stack Developer"]})
     assert [f["t"] for f in fx] == ["כותרת"]
+
+
+def test_grounding_allows_plain_words_blocks_known_names():
+    src = "CS student at HIT. React, OpenCV."
+    assert K.grounded("Aspiring Full-Stack Developer | Seeking Junior Roles | React · OpenCV", src)
+    assert not K.grounded("Experienced with Kubernetes and React", src)
+    assert not K.grounded("Led a team of 12 engineers", src)

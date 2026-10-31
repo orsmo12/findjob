@@ -34,9 +34,24 @@ def _names(text: str) -> list[str]:
     return out
 
 
+# שמות שכדאי לתפוס אם הומצאו: טכנולוגיות וחברות מוכרות. מילה רגילה באנגלית (Aspiring, Seeking) לא נחסמת.
+KNOWN = {w.lower() for w in """Python Java JavaScript TypeScript Go Golang Rust Ruby PHP Kotlin Swift Scala C# C++ SQL NoSQL
+React Angular Vue Svelte Next.js Node.js Node Express Django Flask FastAPI Spring .NET GraphQL REST gRPC Kafka RabbitMQ Redis
+MongoDB PostgreSQL MySQL Elasticsearch Docker Kubernetes Terraform Ansible Jenkins AWS Azure GCP Linux Git GitHub GitLab
+TensorFlow PyTorch Keras OpenCV LangChain LangGraph Pandas NumPy Spark Hadoop Airflow Tableau Figma Selenium Playwright Cypress
+Google Microsoft Amazon Meta Apple Intel Nvidia IBM Oracle Salesforce Wix Monday Mobileye Waze Fiverr Check Point CyberArk
+Technion Bar-Ilan Ben-Gurion Reichman HIT Afeka Ariel Harvard Stanford MIT 8200 Talpiot Mamram""".split()}
+
+
 def grounded(text: str, source: str) -> bool:
+    """שם מוכר (טכנולוגיה, חברה, מוסד), שם עם אותיות גדולות באמצע (OpenCV) ומספר — חייבים להופיע במקור."""
     s = source.lower()
-    return all(n.lower() in s for n in _names(text)) and all(n.strip(".,") in s for n in NUM.findall(text) if n.strip(".,"))
+    for n in _names(text):
+        camel = any(any(c.isupper() for c in part[1:]) for part in n.split("-"))  # OpenCV כן, Full-Stack לא
+        risky = n.lower() in KNOWN or camel or any(c in n for c in "+#") or any(c.isdigit() for c in n)
+        if risky and n.lower() not in s:
+            return False
+    return all(n.strip(".,") in s for n in NUM.findall(text) if n.strip(".,"))
 
 
 def _json(raw: str) -> dict:
@@ -139,14 +154,17 @@ def profile_fixes(cv: str, li_text: str, plan: dict) -> list[dict]:
         return []
     d = _json(chat("coach", "linkedin_profile", [{"role": "user", "content": FIX_PROMPT.format(
         roles=", ".join(plan.get("titles", [])[:3]), cv=cv[:4000], li=li_text[:5000])}], tier="judge", max_tokens=1200))
+    if not d.get("fixes"):
+        print("[מאיה] המודל לא החזיר שיפורים בפורמט תקין")
     out = []
     for i, f in enumerate((d.get("fixes") or [])[:5]):
         copy = str(f.get("copy", ""))[:1200]
         if copy and not grounded(copy, cv + " " + li_text + " " + " ".join(plan.get("titles", []))):
+            print(f"[מאיה] נזרק שיפור עם פרט שלא מופיע בקורות החיים או בפרופיל: {f.get('t')}")
             continue
         out.append({"id": f"f{i + 1}", "t": str(f.get("t", ""))[:80], "why": str(f.get("why", ""))[:160], "copy": copy})
     return out
 
 
 def li_hash(li_text: str) -> str:
-    return hashlib.sha1((li_text or "").strip().encode()).hexdigest()[:12]
+    return "v2-" + hashlib.sha1((li_text or "").strip().encode()).hexdigest()[:12]  # v2: בדיקת מקור מעודכנת

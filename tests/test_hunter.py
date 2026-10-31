@@ -18,6 +18,8 @@ RAW = [
      "description": "8 years", "source": "indeed", "posted": "", "salary": ""},
     {"title": "Backend Developer", "company": "Mid", "location": "Tel Aviv", "url": "u3",
      "description": "Requires 4+ years of Python", "source": "indeed", "posted": "", "salary": ""},
+    {"title": "Junior Developer", "company": "Stretch", "location": "Tel Aviv", "url": "u5",
+     "description": "2+ years of Python", "source": "indeed", "posted": "", "salary": ""},
     {"title": "QA Tester", "company": "Low", "location": "Tel Aviv", "url": "u4",
      "description": "", "source": "google", "posted": "", "salary": ""},
 ]
@@ -39,7 +41,7 @@ def test_pipeline_dedupes_filters_rates_and_writes_feed():
     h.chat = fake_chat
     feed = h.run({"cv_text": CV}, PLAN, raw=[dict(j) for j in RAW])
     s = feed["stats"]
-    assert s["collected"] == 4                      # הכפילות של Acme אוחדה
+    assert s["collected"] == 5                      # הכפילות של Acme אוחדה; "2+ שנים" עובר כמתיחה
     assert s["too_senior"] == 2                     # Senior בכותרת + דרישה ל-4 שנים
     assert [j["co"] for j in feed["jobs"]] == ["Acme"]   # QA קיבל 2.1 ולא מוצג
     card = feed["jobs"][0]
