@@ -60,3 +60,25 @@ def test_no_hardcoded_user_in_agents():
         if f.exists():
             txt = f.read_text(encoding="utf-8")
             assert "Junior Python Developer" not in txt, f"{f.name}: חיפוש קבוע במקום תוכנית מהפרופיל"
+
+
+SAMPLE_CV = """Dana Levi
+Ramat Gan, Israel • dana@example.com
+Profile: Second-year Computer Science student.
+Education: B.Sc. in Computer Science, 2023 – Present
+Skills: Python, React, HTML, CSS, Node, Express, OpenCV, TensorFlow, SQL
+"""
+
+
+def test_cv_fills_defaults_when_questionnaire_is_empty():
+    p = build_search_plan({"cv_text": SAMPLE_CV, "answers": {}})
+    assert p.levels == ["student", "intern", "junior"]
+    assert "Ramat Gan" in p.locations
+    assert any("Full Stack" in t for t in p.titles) and any("Machine Learning" in t for t in p.titles)
+    assert any("מקורות החיים" in w for w in p.why)
+
+
+def test_questionnaire_overrides_cv():
+    p = build_search_plan({"cv_text": SAMPLE_CV, "answers": {"roles": ["QA ואוטומציה"], "locs": ["ירושלים"]}})
+    assert p.titles == ["QA Automation Engineer"] and p.locations == ["Jerusalem"]
+    assert not any("תפקידים" in w and "מקורות החיים" in w for w in p.why)

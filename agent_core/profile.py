@@ -13,6 +13,7 @@ profile.py — המשתמש כמו שהסוכנים רואים אותו.
 
 from __future__ import annotations
 import json
+import re
 from dataclasses import dataclass, field, asdict
 from pathlib import Path
 
@@ -92,15 +93,54 @@ def save_profile(p: dict) -> None:
     PROFILE_FILE.write_text(json.dumps(p, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
+# ── אותות מקורות החיים: ברירות מחדל עד שהשאלון עונה (השאלון תמיד גובר) ─────────
+CITY_REGION = {
+    "givatayim": "גוש דן והמרכז", "גבעתיים": "גוש דן והמרכז", "ramat gan": "גוש דן והמרכז", "רמת גן": "גוש דן והמרכז",
+    "tel aviv": "תל אביב", "תל אביב": "תל אביב", "holon": "גוש דן והמרכז", "חולון": "גוש דן והמרכז",
+    "bat yam": "גוש דן והמרכז", "petah tikva": "גוש דן והמרכז", "פתח תקווה": "גוש דן והמרכז", "bnei brak": "גוש דן והמרכז",
+    "herzliya": "השרון", "הרצליה": "השרון", "ra'anana": "השרון", "netanya": "השרון", "kfar saba": "השרון",
+    "jerusalem": "ירושלים", "ירושלים": "ירושלים", "haifa": "חיפה והצפון", "חיפה": "חיפה והצפון",
+    "beer sheva": "באר שבע והדרום", "באר שבע": "באר שבע והדרום",
+}
+SKILL_ROLES = [  # (מילים בקורות החיים, תפקיד)
+    (("react", "vue", "angular", "html", "css"), "Frontend"),
+    (("backend", "back-end", "full-stack", "full stack", "socket.io", "node", "express", "fastapi", "django", "flask", "spring", "sql"), "Backend"),
+    (("opencv", "tensorflow", "keras", "pytorch", "machine learning", "deep learning", "langgraph", "llm"), "AI / ML"),
+    (("docker", "kubernetes", "aws", "gcp", "terraform"), "DevOps / Cloud"),
+    (("selenium", "playwright", "cypress", "qa"), "QA ואוטומציה"),
+]
+
+
+def cv_signals(cv: str) -> dict:
+    """חילוץ דטרמיניסטי וזהיר מקורות החיים. מחזיר רק מה שכתוב במפורש."""
+    t = (cv or "").lower()
+    out: dict = {}
+    head = t[:400]
+    for city, region in CITY_REGION.items():
+        if city in head:
+            out["locs"] = [region]; break
+    if re.search(r"\bstudent\b|סטודנט", t) and re.search(r"(20\d\d)\s*[–-]\s*(present|current|היום|כיום)", t):
+        out["status"] = "סטודנט/ית"
+    roles = [role for words, role in SKILL_ROLES if sum(w in t for w in words) >= 2]
+    if "Frontend" in roles and "Backend" in roles:
+        roles = ["Full-Stack"] + [r for r in roles if r not in ("Frontend", "Backend")]
+    if roles:
+        out["roles"] = roles
+    return out
+
+
 def build_search_plan(profile: dict) -> SearchPlan:
     """יואב: מתרגם את השאלון לתוכנית חיפוש. דטרמיניסטי, בלי AI, וניתן להסבר."""
-    a = profile.get("answers", {}) or {}
+    asked = profile.get("answers", {}) or {}
+    from_cv = cv_signals(profile.get("cv_text", ""))
+    a = {**from_cv, **{k: v for k, v in asked.items() if v}}     # השאלון גובר על קורות החיים
     why: list[str] = []
+    src = lambda key: " (מקורות החיים, אפשר לשנות בשאלון)" if key in from_cv and key not in asked else ""
 
     status, exp, track = a.get("status"), a.get("exp"), a.get("track")
     if status == "סטודנט/ית":
         levels = ["student", "intern", "junior"]
-        why.append("סטודנט: משרות סטודנט, התמחויות וג׳וניור")
+        why.append("סטודנט: משרות סטודנט, התמחויות וג׳וניור" + src("status"))
     elif status in ("בוגר/ת טרי/ה, מחפש/ת עבודה ראשונה", "משתחרר/ת משירות"):
         levels = ["junior", "entry"]; why.append("עבודה ראשונה: ג׳וניור ו-Entry level")
     elif status == "ג׳וניור עם ניסיון של עד שנתיים":
@@ -122,12 +162,12 @@ def build_search_plan(profile: dict) -> SearchPlan:
         titles = ["Software Engineer", "Software Developer"]
         why.append("עוד לא בחרת תפקידים: חיפוש כללי של Software Engineer")
     else:
-        why.append("תפקידים: " + ", ".join(roles))
+        why.append("תפקידים: " + ", ".join(roles) + src("roles"))
 
     locs = [c for r in (a.get("locs") or []) for c in REGIONS.get(r, [])]
     locations = list(dict.fromkeys(locs)) or ["Israel"]
     remote_only = a.get("mode") == "מהבית"
-    why.append("אזורים: " + (", ".join(a.get("locs")) if a.get("locs") else "כל הארץ") + (" · עבודה מהבית בלבד" if remote_only else ""))
+    why.append("אזורים: " + (", ".join(a.get("locs")) if a.get("locs") else "כל הארץ") + src("locs") + (" · עבודה מהבית בלבד" if remote_only else ""))
 
     prio = a.get("prio") or []
     prefer_size = (["startup", "scaleup"] if "סטארט-אפ קטן" in prio else []) + (["enterprise"] if "חברה גדולה ויציבה" in prio else [])
