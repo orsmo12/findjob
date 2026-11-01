@@ -23,15 +23,15 @@ const IC={
 /* ═════════ data — agents (single registry shared with the Office) ═════════ */
 // index → Office character. key → backend node in agent_core.
 const TEAM_DEFAULT=[
-  {key:'strategist',name:'יואב',role:'יועץ אסטרטגי',state:'working',sched:'כל לילה, לפני החיפוש',
+  {key:'strategist',name:'יואב',role:'יועץ אסטרטגי',state:'working',sched:'כל 12 שעות, לפני כל סריקה',
    desc:'קובע מה מחפשים, רק מקורות החיים והשאלון שלך: כותרות תפקיד, אזורים, רמת בכירות וחברות יעד. מתעדכן בכל שינוי בפרופיל.'},
-  {key:'hunter',name:'דורון',role:'צייד משרות',state:'working',sched:'כל לילה, בסביבות 05:15',
-   desc:'אוסף משרות מ-LinkedIn (מודעות ציבוריות), Indeed ולוחות המשרות של חברות היעד. מסנן בכירות ומשרות שכבר ראית, ומדרג כל משרה מ-1 עד 5 מול הפרופיל שלך, עם סיבות ומה חסר.'},
+  {key:'hunter',name:'דורון',role:'צייד משרות',state:'working',sched:'כל 12 שעות: 05:15 ו-17:15',
+   desc:'אוסף משרות מ-LinkedIn (מודעות ציבוריות), Indeed ולוחות המשרות של חברות היעד. מסנן בכירות ומשרות שכבר ראית, ומדרג כל משרה מ-1 עד 5 מול הפרופיל שלך, עם סיבות ומה חסר. בכל סריקה בודק שהמשרות ששמרת עדיין פתוחות להגשה.'},
   {key:'researcher',name:'גיל',role:'חוקר חברות',state:'idle',sched:'כל שעתיים, למשרות ששמרת',
    desc:'מכין סקירה קצרה על כל חברה ששמרת, רק ממקורות ציבוריים ועם קישור לכל עובדה. מכין חיפושים מוכנים ב-LinkedIn לאנשים שיכולים להמליץ עליך.'},
   {key:'coach',name:'מאיה',role:'מאמנת ראיונות',state:'idle',sched:'כל שעתיים, למשרות ששמרת',
-   desc:'מכינה שאלות הכנה לפי הדרישות שבמודעה, עם רמז איך לענות מתוך הניסיון שלך. עוברת על פרופיל ה-LinkedIn שהעלית ומציעה שיפורים.'},
-  {key:'linkedin',name:'קובי',role:'מנהל LinkedIn',state:'sleeping',sched:'כל לילה',
+   desc:'מכינה שאלות הכנה לפי הדרישות שבמודעה, עם רמז איך לענות מתוך הניסיון שלך, ומטלות בית לדוגמה ממקורות ציבוריים עם פתרון מוצע. עוברת על פרופיל ה-LinkedIn שהעלית ומציעה שיפורים.'},
+  {key:'linkedin',name:'קובי',role:'מנהל LinkedIn',state:'sleeping',sched:'כל 12 שעות',
    desc:'מוצא פוסטים ציבוריים מהשבוע על גיוס וקריירה, מכין שתי הצעות תגובה לכל אחד ומנסח טיוטת פוסט שבועית. אתה תמיד זה שמגיב ומפרסם.'},
   {key:'assistant',name:'שי',role:'עוזר אישי',state:'working',sched:'כל שעתיים, ובצ׳אט בכל רגע',
    desc:'כותב מכתב פנייה לכל משרה ששמרת, רק מתוך קורות החיים, מזכיר מתי לשלוח הודעת המשך, וזמין לשאלות ולתרגול ראיונות בצ׳אט.'},
@@ -57,7 +57,7 @@ function buildWorkflow(){
 function realWorkflow(n){
   const ago=t=>{const m=Math.round((Date.now()-new Date(t))/6e4);return m<1?'עכשיו':m<60?`לפני ${m} דק׳`:m<1440?`לפני ${Math.round(m/60)===1?'שעה':Math.round(m/60)+' שעות'}`:new Date(t).toLocaleDateString('he-IL')};
   const logs=RUNS.filter(r=>r.stats&&r.stats.log).slice(0,60);
-  if(!logs.length)return[{cmd:`${n('strategist')}.ממתין`,out:'כאן תראה בזמן אמת מה כל סוכן עושה. הריצה הבאה: הלילה, בסביבות 05:15.',tag:'מתוזמן',state:'idle'}];
+  if(!logs.length)return[{cmd:`${n('strategist')}.ממתין`,out:'כאן תראה בזמן אמת מה כל סוכן עושה. הסריקה הבאה: 05:15 או 17:15.',tag:'מתוזמן',state:'idle'}];
   const live=Date.now()-new Date(logs[0].created_at)<4*6e4;
   return logs.map((r,i)=>({cmd:`${n(r.agent||'hunter')}.${r.stats.to?'← '+n(r.stats.to):''}`.replace(/\.$/,''),out:r.stats.log,
     tag:ago(r.created_at),state:live&&i===0?'working':'idle'}));
@@ -105,9 +105,9 @@ const PALETTE=[['#0F6E54','#2BA37E'],['#14532D','#3F8F5F'],['#0E7C86','#19A7A6']
 function coIni(n){const w=String(n||'?').replace(/[^A-Za-z0-9\u0590-\u05FF ]/g,'').trim().split(/\s+/);return (w.length>1?w[0][0]+w[1][0]:w[0].slice(0,2))||'?'}
 function fromFeed(f){const o={};f.jobs.forEach((j,i)=>{let h=0;for(const ch of j.co)h=(h*31+ch.charCodeAt(0))>>>0;
   o[j.id]={co:j.co,ini:coIni(j.co),c:PALETTE[h%PALETTE.length],title:j.title,loc:j.loc,fit:j.fit,reasons:j.reasons||[],gaps:j.gaps||[],
-    partial:!!j.partial,tags:j.tags||[],src:j.src,posted:j.posted_days,salary:j.salary||'',desc:String(j.desc||'').replace(/[*#_`>\\]/g,'').replace(/\s+/g,' ').trim(),url:j.url,letter:j.letter||null,brief:j.brief||null,prep:j.prep||null,deck:true}});return o}
+    partial:!!j.partial,tags:j.tags||[],src:j.src,posted:j.posted_days,salary:j.salary||'',desc:String(j.desc||'').replace(/[*#_`>\\]/g,'').replace(/\s+/g,' ').trim(),url:j.url,letter:j.letter||null,brief:j.brief||null,prep:j.prep||null,closed_at:j.closed_at||null,deck:true}});return o}
 let JOBS=CLOUDM?{}:FEEDD?fromFeed(FEEDD):DEMO_JOBS;
-function feedWhen(){if(!FEEDD)return'';const d=new Date(FEEDD.generated_at),h=Math.round((Date.now()-d)/36e5);
+function feedWhen(){if(!FEEDD||!FEEDD.generated_at)return'';const d=new Date(FEEDD.generated_at),h=Math.round((Date.now()-d)/36e5);
   return h<1?'מהשעה האחרונה':h<24?`מלפני ${h===1?'שעה':h===2?'שעתיים':h+' שעות'}`:`מ-${d.toLocaleDateString('he-IL')}`}
 let DECK=Object.keys(JOBS).filter(k=>JOBS[k].deck);
 let FILTERED_OUT=REAL?((FEEDD&&FEEDD.stats&&FEEDD.stats.too_senior)||0):3;

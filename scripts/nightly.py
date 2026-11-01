@@ -13,6 +13,8 @@ from agent_core import cloud_store as db
 from agent_core.profile import build_search_plan
 from agent_core.agents.hunter import run, collect
 from agent_core import activity as act
+from agent_core.agents.live import check as still_open
+import httpx as _httpx
 from agent_core.agents.ats import collect_targets
 from agent_core.profile import select_targets, load_catalog
 from agent_core.profile import SearchPlan
@@ -57,6 +59,26 @@ for u in users:
     except Exception as e:  # משתמש אחד שנכשל לא עוצר את האחרים
         print(f"{u['user_id'][:8]}: חיפוש נכשל: {type(e).__name__}: {e}")
         act.log("hunter", "החיפוש נעצר בגלל תקלה. אנסה שוב בריצה הבאה.")
+        act.flush()
+    act.start(u["user_id"])
+    try:  # דורון: האם המשרות ששמרת עדיין פתוחות להגשה
+        saved = db.saved_open(u["user_id"])
+        closed = []
+        with _httpx.Client(timeout=12, follow_redirects=True, headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/124"}) as cx:
+            for row in saved:
+                st = still_open(row["card"].get("url", ""), cx)
+                c = row["card"]
+                act.log("hunter", f"בודק אם {c['title']} ב-{c['co']} עדיין פתוחה: "
+                        + {"open": "פתוחה ✓", "closed": "נסגרה ✗", "unknown": "האתר לא ענה, משאיר אותה"}[st])
+                if st == "closed":
+                    db.update_job(u["user_id"], row["id"], {"card": {**c, "closed_at": datetime.now(timezone.utc).isoformat()}})
+                    closed.append(c)
+        if closed:
+            db.add_run(u["user_id"], "hunter", ("המשרות האלה נסגרו ולא מקבלות יותר מועמדים: " if len(closed) > 1 else "המשרה הזו נסגרה ולא מקבלת יותר מועמדים: ")
+                       + "; ".join(f"{c['title']} ב-{c['co']}" for c in closed) + ". הוצאתי מההגשות, והיא בהיסטוריה.")
+        act.flush()
+    except Exception as e:  # noqa: BLE001
+        print(f"{u['user_id'][:8]}: בדיקת משרות נכשלה: {type(e).__name__}: {e}")
         act.flush()
     act.start(u["user_id"])
     try:  # קובי: פוסטים חמים כל לילה, טיוטת פוסט פעם בשבוע

@@ -11,6 +11,7 @@ from agent_core import cloud_store as db
 from agent_core.agents.letters import write_letter
 from agent_core.agents.research import brief
 from agent_core.agents.prep import prepare
+from agent_core.agents.tasks import build_tasks
 from agent_core.budget_guard import BudgetDeferred
 from agent_core import activity as act
 from agent_core.agents import linkedin_coach as K
@@ -31,8 +32,16 @@ for u in db.profiles_ready():
                 upd["letter"] = write_letter(cv, job, name)
             if not row.get("brief"):
                 upd["brief"] = brief(job["co"], job["title"], cv)
-            if not row.get("prep"):
-                upd["prep"] = prepare(cv, job)
+            prep = row.get("prep")
+            if not prep:
+                prep = prepare(cv, job); upd["prep"] = prep
+            if prep.get("tasks") is None or prep.get("more_tasks"):
+                used = {t["url"] for t in prep.get("tasks") or []} | set(prep.get("used_tasks") or [])
+                fresh = build_tasks(job, need=4, exclude=used)
+                prep = {**prep, "tasks": (prep.get("tasks") or []) + fresh, "more_tasks": False}
+                if not fresh and row.get("prep") and row["prep"].get("more_tasks"):
+                    prep["no_more_tasks"] = True
+                upd["prep"] = prep
         except BudgetDeferred:
             print("מכסה: ממשיכים בריצה הבאה")
         except Exception as e:  # noqa: BLE001

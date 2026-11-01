@@ -91,7 +91,7 @@ function defaultState(){return{
     {id:'s2',t:'AI Smart Crosswalk: נתונים אמיתיים',b:'מצב: מערכת Computer Vision למעבר חצייה חכם.\nמשימה: \nפעולה: \nתוצאה: '},
     {id:'s3',t:'סגן מ״פ: החלטה תחת לחץ',b:'מצב: \nמשימה: \nפעולה: \nתוצאה: '},
   ],
-  notif:true,todoOpen:false,
+  history:[],notif:true,todoOpen:false,
 }}
 const SKEY=REAL?'state3':'state2';  // גרסה אמיתית מתחילה נקייה, בלי נתוני הדגמה
 let S=LS.get(SKEY,null);

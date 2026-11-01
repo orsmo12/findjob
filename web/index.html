@@ -820,6 +820,26 @@ a.person>svg{flex:0 0 18px;width:18px;height:18px;fill:none;stroke:var(--ink3);s
 .q .q-done{margin-inline-start:auto;color:var(--brand,#0F6E54);font-weight:700}
 .q textarea{margin-top:10px}
 
+/* הגשות: החלקה להסרה, היסטוריה, משרה סגורה */
+.swipe{position:relative;border-radius:22px;overflow:hidden;touch-action:pan-y}
+.swipe+.swipe{margin-top:12px}
+.swipe-bg{position:absolute;inset:0;display:flex;justify-content:space-between;align-items:center;padding:0 22px;background:#E5484D;color:#fff;font-weight:700;font-size:14px;opacity:0;transition:opacity .15s}
+.swipe.dragging .swipe-bg{opacity:.75}.swipe.arm .swipe-bg{opacity:1}
+.swipe .app{position:relative;margin:0;touch-action:pan-y}
+.closed-tag{font-size:12px;font-weight:600;color:#B54708;background:#FEF0C7;border-radius:10px;padding:4px 10px;margin:0 0 8px;display:inline-block}
+.history{margin-top:18px;border-radius:18px;background:rgba(255,255,255,.5);border:1px solid rgba(15,110,84,.10);padding:4px 14px}
+.history summary{cursor:pointer;min-height:44px;display:flex;align-items:center;gap:8px;font-weight:600;font-size:14px;color:var(--ink2)}
+.hist-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px solid rgba(15,110,84,.08)}
+.hist-row .tx{flex:1;min-width:0}.hist-row .tx b{display:block;font-size:13.5px;font-weight:600}.hist-row .tx span{font-size:12px;color:var(--ink3)}
+/* מטלות בית */
+.task{border-top:1px solid rgba(15,110,84,.10);padding:14px 0 4px;margin-top:10px}
+.task-top{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:6px}.task-top b{font-size:15px}
+.task-src{font-size:11.5px;font-weight:600;padding:2px 8px;border-radius:8px;background:rgba(15,110,84,.08);color:var(--ink2)}
+.task-src.ok{background:var(--brand-lt,#E3F1EA);color:var(--brand,#0F6E54)}
+.task p{font-size:14px;line-height:1.6;margin:0 0 6px}.task ul,.task ol{margin:4px 0 8px;padding-inline-start:20px;font-size:13.5px;line-height:1.6}
+.task details summary{cursor:pointer;min-height:40px;display:flex;align-items:center;font-weight:600;font-size:13.5px;color:var(--brand,#0F6E54)}
+.swipe.dragging .app,.swipe .app[style*="translateX"]{background:#F6FAF7}
+
 </style>
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" href="/icon.svg">
@@ -1022,15 +1042,15 @@ const IC={
 /* ═════════ data — agents (single registry shared with the Office) ═════════ */
 // index → Office character. key → backend node in agent_core.
 const TEAM_DEFAULT=[
-  {key:'strategist',name:'יואב',role:'יועץ אסטרטגי',state:'working',sched:'כל לילה, לפני החיפוש',
+  {key:'strategist',name:'יואב',role:'יועץ אסטרטגי',state:'working',sched:'כל 12 שעות, לפני כל סריקה',
    desc:'קובע מה מחפשים, רק מקורות החיים והשאלון שלך: כותרות תפקיד, אזורים, רמת בכירות וחברות יעד. מתעדכן בכל שינוי בפרופיל.'},
-  {key:'hunter',name:'דורון',role:'צייד משרות',state:'working',sched:'כל לילה, בסביבות 05:15',
-   desc:'אוסף משרות מ-LinkedIn (מודעות ציבוריות), Indeed ולוחות המשרות של חברות היעד. מסנן בכירות ומשרות שכבר ראית, ומדרג כל משרה מ-1 עד 5 מול הפרופיל שלך, עם סיבות ומה חסר.'},
+  {key:'hunter',name:'דורון',role:'צייד משרות',state:'working',sched:'כל 12 שעות: 05:15 ו-17:15',
+   desc:'אוסף משרות מ-LinkedIn (מודעות ציבוריות), Indeed ולוחות המשרות של חברות היעד. מסנן בכירות ומשרות שכבר ראית, ומדרג כל משרה מ-1 עד 5 מול הפרופיל שלך, עם סיבות ומה חסר. בכל סריקה בודק שהמשרות ששמרת עדיין פתוחות להגשה.'},
   {key:'researcher',name:'גיל',role:'חוקר חברות',state:'idle',sched:'כל שעתיים, למשרות ששמרת',
    desc:'מכין סקירה קצרה על כל חברה ששמרת, רק ממקורות ציבוריים ועם קישור לכל עובדה. מכין חיפושים מוכנים ב-LinkedIn לאנשים שיכולים להמליץ עליך.'},
   {key:'coach',name:'מאיה',role:'מאמנת ראיונות',state:'idle',sched:'כל שעתיים, למשרות ששמרת',
-   desc:'מכינה שאלות הכנה לפי הדרישות שבמודעה, עם רמז איך לענות מתוך הניסיון שלך. עוברת על פרופיל ה-LinkedIn שהעלית ומציעה שיפורים.'},
-  {key:'linkedin',name:'קובי',role:'מנהל LinkedIn',state:'sleeping',sched:'כל לילה',
+   desc:'מכינה שאלות הכנה לפי הדרישות שבמודעה, עם רמז איך לענות מתוך הניסיון שלך, ומטלות בית לדוגמה ממקורות ציבוריים עם פתרון מוצע. עוברת על פרופיל ה-LinkedIn שהעלית ומציעה שיפורים.'},
+  {key:'linkedin',name:'קובי',role:'מנהל LinkedIn',state:'sleeping',sched:'כל 12 שעות',
    desc:'מוצא פוסטים ציבוריים מהשבוע על גיוס וקריירה, מכין שתי הצעות תגובה לכל אחד ומנסח טיוטת פוסט שבועית. אתה תמיד זה שמגיב ומפרסם.'},
   {key:'assistant',name:'שי',role:'עוזר אישי',state:'working',sched:'כל שעתיים, ובצ׳אט בכל רגע',
    desc:'כותב מכתב פנייה לכל משרה ששמרת, רק מתוך קורות החיים, מזכיר מתי לשלוח הודעת המשך, וזמין לשאלות ולתרגול ראיונות בצ׳אט.'},
@@ -1056,7 +1076,7 @@ function buildWorkflow(){
 function realWorkflow(n){
   const ago=t=>{const m=Math.round((Date.now()-new Date(t))/6e4);return m<1?'עכשיו':m<60?`לפני ${m} דק׳`:m<1440?`לפני ${Math.round(m/60)===1?'שעה':Math.round(m/60)+' שעות'}`:new Date(t).toLocaleDateString('he-IL')};
   const logs=RUNS.filter(r=>r.stats&&r.stats.log).slice(0,60);
-  if(!logs.length)return[{cmd:`${n('strategist')}.ממתין`,out:'כאן תראה בזמן אמת מה כל סוכן עושה. הריצה הבאה: הלילה, בסביבות 05:15.',tag:'מתוזמן',state:'idle'}];
+  if(!logs.length)return[{cmd:`${n('strategist')}.ממתין`,out:'כאן תראה בזמן אמת מה כל סוכן עושה. הסריקה הבאה: 05:15 או 17:15.',tag:'מתוזמן',state:'idle'}];
   const live=Date.now()-new Date(logs[0].created_at)<4*6e4;
   return logs.map((r,i)=>({cmd:`${n(r.agent||'hunter')}.${r.stats.to?'← '+n(r.stats.to):''}`.replace(/\.$/,''),out:r.stats.log,
     tag:ago(r.created_at),state:live&&i===0?'working':'idle'}));
@@ -1104,9 +1124,9 @@ const PALETTE=[['#0F6E54','#2BA37E'],['#14532D','#3F8F5F'],['#0E7C86','#19A7A6']
 function coIni(n){const w=String(n||'?').replace(/[^A-Za-z0-9\u0590-\u05FF ]/g,'').trim().split(/\s+/);return (w.length>1?w[0][0]+w[1][0]:w[0].slice(0,2))||'?'}
 function fromFeed(f){const o={};f.jobs.forEach((j,i)=>{let h=0;for(const ch of j.co)h=(h*31+ch.charCodeAt(0))>>>0;
   o[j.id]={co:j.co,ini:coIni(j.co),c:PALETTE[h%PALETTE.length],title:j.title,loc:j.loc,fit:j.fit,reasons:j.reasons||[],gaps:j.gaps||[],
-    partial:!!j.partial,tags:j.tags||[],src:j.src,posted:j.posted_days,salary:j.salary||'',desc:String(j.desc||'').replace(/[*#_`>\\]/g,'').replace(/\s+/g,' ').trim(),url:j.url,letter:j.letter||null,brief:j.brief||null,prep:j.prep||null,deck:true}});return o}
+    partial:!!j.partial,tags:j.tags||[],src:j.src,posted:j.posted_days,salary:j.salary||'',desc:String(j.desc||'').replace(/[*#_`>\\]/g,'').replace(/\s+/g,' ').trim(),url:j.url,letter:j.letter||null,brief:j.brief||null,prep:j.prep||null,closed_at:j.closed_at||null,deck:true}});return o}
 let JOBS=CLOUDM?{}:FEEDD?fromFeed(FEEDD):DEMO_JOBS;
-function feedWhen(){if(!FEEDD)return'';const d=new Date(FEEDD.generated_at),h=Math.round((Date.now()-d)/36e5);
+function feedWhen(){if(!FEEDD||!FEEDD.generated_at)return'';const d=new Date(FEEDD.generated_at),h=Math.round((Date.now()-d)/36e5);
   return h<1?'מהשעה האחרונה':h<24?`מלפני ${h===1?'שעה':h===2?'שעתיים':h+' שעות'}`:`מ-${d.toLocaleDateString('he-IL')}`}
 let DECK=Object.keys(JOBS).filter(k=>JOBS[k].deck);
 let FILTERED_OUT=REAL?((FEEDD&&FEEDD.stats&&FEEDD.stats.too_senior)||0):3;
@@ -1205,7 +1225,7 @@ function defaultState(){return{
     {id:'s2',t:'AI Smart Crosswalk: נתונים אמיתיים',b:'מצב: מערכת Computer Vision למעבר חצייה חכם.\nמשימה: \nפעולה: \nתוצאה: '},
     {id:'s3',t:'סגן מ״פ: החלטה תחת לחץ',b:'מצב: \nמשימה: \nפעולה: \nתוצאה: '},
   ],
-  notif:true,todoOpen:false,
+  history:[],notif:true,todoOpen:false,
 }}
 const SKEY=REAL?'state3':'state2';  // גרסה אמיתית מתחילה נקייה, בלי נתוני הדגמה
 let S=LS.get(SKEY,null);
@@ -1811,7 +1831,7 @@ function renderHome(){
   const shown=steps.slice(0,5);
   $('homeScroll').innerHTML=`
     <div class="greet"><h2 class="greet-h">${hi}, ${escB(prof().first)}</h2><p>${escB(date)}</p></div>
-    ${REAL?`<div class="notice">${FEEDD?`המשרות אמיתיות, מהחיפוש של ${N('hunter')} ${escB(feedWhen())}.`:prof().cv?`${N('hunter')} יחפש לך משרות בריצה הלילית הקרובה.`:`כדי ש${N('hunter')} יתחיל לחפש, צריך קורות חיים. <button class="link" style="color:var(--brand);font-weight:600" onclick="goPage('profile')">להעלאה</button>`} ${CLOUDM?'':'מסכי LinkedIn וההכנה לראיונות עוד מציגים דוגמאות.'}</div>`:prof().key?'':`<div class="notice">מוצגות דוגמאות עד שתחבר את הסוכנים. <button class="link" style="color:var(--brand);font-weight:600" onclick="goPage('settings')">לחיבור</button></div>`}
+    ${REAL?`<div class="notice">${FEEDD&&FEEDD.generated_at?`המשרות אמיתיות, מהחיפוש של ${N('hunter')} ${escB(feedWhen())}.`:prof().cv?`${N('hunter')} יחפש לך משרות בסריקה הקרובה (05:15 או 17:15).`:`כדי ש${N('hunter')} יתחיל לחפש, צריך קורות חיים. <button class="link" style="color:var(--brand);font-weight:600" onclick="goPage('profile')">להעלאה</button>`} ${CLOUDM?'':'מסכי LinkedIn וההכנה לראיונות עוד מציגים דוגמאות.'}</div>`:prof().key?'':`<div class="notice">מוצגות דוגמאות עד שתחבר את הסוכנים. <button class="link" style="color:var(--brand);font-weight:600" onclick="goPage('settings')">לחיבור</button></div>`}
     <div class="brief"><div class="brief-top"><span>הבריף של ${escB(N('assistant'))}</span><span class="new num">${new Date().toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'})}</span></div><p>${escB(brief)}</p></div>
     <section class="next glass" aria-labelledby="nxH"><div class="next-h"><h2 id="nxH">הצעדים הבאים</h2>${steps.length>5?`<span>5 מתוך ${steps.length}</span>`:''}</div>
       ${shown.length?shown.map(x=>`<button class="nx" onclick="${x.go}"><span class="ic ${x.c}" aria-hidden="true">${x.ic}</span><span class="tx"><b>${escB(x.b)}</b><span>${escB(x.s)}</span></span>${x.w?`<span class="when ${x.w[1]}">${x.w[0]}</span>`:''}<span class="chev" aria-hidden="true"></span></button>`).join('')
@@ -1864,7 +1884,7 @@ function renderJobs(){
   if(!q.length){
     $('deckActions').style.display='none';
     const sv=S.apps.filter(a=>a.status==='saved').length;
-    deck.innerHTML=`<div class="empty"><div class="empty-ic">✓</div><h3>סיימת את המשרות של היום</h3><p>${escB(N('hunter'))} יחפש שוב הלילה.${sv?(sv===1?' בינתיים משרה אחת ששמרת מחכה להגשה.':` בינתיים ${sv} משרות ששמרת מחכות להגשה.`):''}</p>${sv?`<button class="btn btn-primary" onclick="goPage('apps')">להגשות</button>`:`<button class="btn btn-ghost" onclick="goPage('main')">ללוח הבקרה</button>`}</div>`;
+    deck.innerHTML=`<div class="empty"><div class="empty-ic">✓</div><h3>סיימת את המשרות של היום</h3><p>${escB(N('hunter'))} יחפש שוב בסריקה הבאה (05:15 או 17:15).${sv?(sv===1?' בינתיים משרה אחת ששמרת מחכה להגשה.':` בינתיים ${sv} משרות ששמרת מחכות להגשה.`):''}</p>${sv?`<button class="btn btn-primary" onclick="goPage('apps')">להגשות</button>`:`<button class="btn btn-ghost" onclick="goPage('main')">ללוח הבקרה</button>`}</div>`;
     return;
   }
   $('deckActions').style.display='';
@@ -1936,18 +1956,19 @@ function renderApps(){
   if(trFilter!=='all'&&!cnt(trFilter)) trFilter='all';
   $('seg').innerHTML=SEGS.filter(([k])=>k==='all'||cnt(k)).map(([k,l])=>`<button class="chip${trFilter===k?' sel':''}" role="tab" aria-selected="${trFilter===k}" onclick="trFilter='${k}';renderApps()">${l} <b class="num">${cnt(k)}</b></button>`).join('');
   const list=S.apps.filter(a=>inSeg(a,trFilter));
-  if(!list.length){$('appsList').innerHTML=`<div class="empty"><div class="empty-ic">📋</div><h3>עוד אין כאן משרות</h3><p>משרות שתשמור יגיעו לכאן, עם מכתב פנייה מוכן.</p><button class="btn btn-primary" onclick="goPage('jobs')">למשרות החדשות</button></div>`;return}
+  if(!list.length){$('appsList').innerHTML=historyHtml(true)+`<div class="empty"><div class="empty-ic">📋</div><h3>עוד אין כאן משרות</h3><p>משרות שתשמור יגיעו לכאן, עם מכתב פנייה מוכן.</p><button class="btn btn-primary" onclick="goPage('jobs')">למשרות החדשות</button></div>`;return}
   const order={interview:0,screening:1,offer:2,saved:3,applied:4,rejected:5,ghosted:6,withdrew:7};
   $('appsList').innerHTML=list.slice().sort((x,y)=>order[x.status]-order[y.status]).map(a=>{
     const j=JOBS[a.jobId],fu=followDue(a);
-    return`<article class="app glass">
+    return`<div class="swipe" data-id="${a.id}"><div class="swipe-bg" aria-hidden="true"><span>הסרה</span><span>הסרה</span></div><article class="app glass">${j.closed_at?`<div class="closed-tag">המשרה נסגרה למועמדים חדשים</div>`:''}
       <button class="app-top" style="width:100%;text-align:right" onclick="openApp('${a.id}')" aria-label="${escB(j.title)} ב-${escB(j.co)}, ${STATUSES[a.status]}">
         ${logo(j)}<span class="app-info"><span class="app-title" lang="en" dir="ltr" style="display:block;text-align:right">${escB(j.title)}</span><span class="app-sub" style="display:block">${escB(j.co)} · ${escB(appSub(a))}</span></span>
         <span class="status st-${a.status}">${STATUSES[a.status]}</span></button>
       ${fu?`<div class="follow"><span>${daysSince(a.date)} ימים בלי תשובה. הודעה קצרה עכשיו מעלה את הסיכוי לתגובה.</span><button class="btn btn-sm btn-ghost" onclick="openApp('${a.id}','details')">להודעה</button></div>`:''}
       ${a.status==='saved'?`<div class="app-actions"><button class="btn btn-sm btn-ghost" onclick="openApp('${a.id}','letter')">למכתב</button><button class="btn btn-sm btn-primary" onclick="markApplied('${a.id}')">הגשתי</button></div>`:''}
-      ${a.status==='interview'||a.status==='screening'?`<div class="app-actions"><button class="btn btn-sm btn-primary" onclick="openApp('${a.id}','prep')">${a.status==='interview'?'להכנה לראיון':'לשאלות הסינון'}</button></div>`:''}
-    </article>`}).join('');
+      ${a.status==='interview'||a.status==='screening'?`<div class="app-actions"><button class="btn btn-sm btn-primary" onclick="${REAL?`openPrep('${a.jobId}')`:`openApp('${a.id}','prep')`}">${a.status==='interview'?'להכנה לראיון':'לשאלות הסינון'}</button></div>`:''}
+    </article></div>`}).join('')+historyHtml();
+  bindAppSwipes();
 }
 function markApplied(id){const a=appOf(id);a.status='applied';a.date=new Date().toISOString();save();refreshApps();toast('סימנתי שהגשת. אזכיר לך לשלוח הודעת המשך בעוד שבוע')}
 function refreshApps(){if(curPg==='apps')renderApps();if(curPg==='main')renderHome();syncChrome()}
@@ -1981,7 +2002,11 @@ function paintAppTab(id){
         <div class="duo"><button class="btn btn-ghost" onclick="copyText($('fuText').value,'ההודעה הועתקה')">${ICO.copy}העתק</button><button class="btn btn-primary" onclick="sentFollow('${id}')">שלחתי</button></div></div>`:''}
       ${REAL?`<div class="s-sec"><button class="btn btn-ghost btn-block" onclick="openPrep('${a.jobId}')">${ICO.spark||''}הכנה לראיון${j.prep&&j.prep.questions&&j.prep.questions.length?` · ${j.prep.questions.length} שאלות מוכנות`:''}</button></div>`:''}
       ${REAL?briefHtml(j):''}
-      <div class="s-sec"><a class="btn btn-ghost btn-block ext" href="${j.url||LI_URL+'jobs/'}" target="_blank" rel="noopener">פתח את המשרה${ICO.open}</a></div>`;
+      <div class="s-sec"><h4>עריכה</h4>
+        <div class="field"><label for="edIv">מועד ראיון או שיחה</label><input id="edIv" value="${escB(a.iv||'')}" placeholder="למשל: רביעי, 14:00" onchange="appOf('${id}').iv=this.value.trim();save();refreshApps()"></div>
+        <div class="field"><label for="edNote">הערות שלי</label><textarea id="edNote" class="textbox" rows="3" placeholder="עם מי דיברתי, מה ביקשו, מה הלאה…" onchange="appOf('${id}').note=this.value;save()">${esc(a.note||'')}</textarea></div></div>
+      <div class="s-sec"><a class="btn btn-ghost btn-block ext" href="${j.url||LI_URL+'jobs/'}" target="_blank" rel="noopener">פתח את המשרה${ICO.open}</a>
+        <button class="btn btn-ghost btn-block" style="margin-top:8px;color:var(--rose)" onclick="closeSheet();removeApp('${id}')">להסיר מההגשות</button></div>`;
   }else if(appTab==='letter'){
     el.innerHTML=`<div class="s-sec" style="margin-top:12px"><label for="letterBox" class="vh">מכתב פנייה</label><textarea class="textbox" id="letterBox" rows="13" oninput="appOf('${id}').letter=this.value;save()">${esc(a.letter||(j.letter&&j.letter.text)||(REAL?'':letterFor(j)))}</textarea>
       ${REAL&&!a.letter&&!j.letter?`<div class="hint-line">${N('assistant')} מכין את המכתב. הוא יופיע כאן תוך שעתיים בערך.</div>`:j.letter&&!j.letter.checked?`<div class="hint-line">חלק מהמשפטים הוסרו כי לא נמצאו בקורות החיים. כדאי לקרוא לפני ששולחים.</div>`:`<div class="hint-line ok">✓ כל שם, טכנולוגיה ומספר במכתב נבדקו מול קורות החיים והמודעה</div>`}
@@ -2080,7 +2105,7 @@ let omAll=false;
 function renderOfficeMsgs(){
   const el=$('omList');if(!el)return;
   const U=CLOUDM?realUpdates():UPDATES;
-  if(CLOUDM&&!U.length){el.innerHTML=`<p class="card-sub" style="padding:10px 4px">כאן יופיע מה שהסוכנים עשו בפועל: חיפושים, מכתבים, סקירות. הריצה הבאה הלילה.</p>`;return}
+  if(CLOUDM&&!U.length){el.innerHTML=`<p class="card-sub" style="padding:10px 4px">כאן יופיע מה שהסוכנים עשו בפועל: חיפושים, מכתבים, סקירות. הסריקה הבאה: 05:15 או 17:15.</p>`;return}
   const list=omAll?U:U.slice(0,5);
   el.innerHTML=list.map((u,i)=>{const a=CAREER.agents[u.a];return`<button class="om-item" onclick="openAgSheet(${u.a})"><span class="om-face"><canvas id="om-${i}" width="96" height="96"></canvas></span><span class="om-tx"><b>${a.name}</b><i>${u.time}</i><p>${escB(u.body)}</p></span></button>`}).join('')
     +(U.length>5?`<button class="om-more" onclick="omAll=!omAll;renderOfficeMsgs()">${omAll?'הצג פחות':`הצג עוד ${U.length-5}`}</button>`:'');
@@ -2125,7 +2150,7 @@ function renderLinkedInReal(){
         <span class="li-goal-line">פוסט השבוע: ${L.posts?'<b>פורסם ✓</b>':'עוד לא'}</span></span>
     </section>
     <div class="sec-h"><h2>פוסטים ששווה להגיב עליהם</h2><span>מהשבוע האחרון</span></div>
-    ${posts.length?posts.map(p=>postCard(Object.assign({role:'',mins:null},p))).join(''):`<section class="card-solid"><p class="card-sub" style="padding:6px 2px">${escB(N('linkedin'))} מחפש כל לילה פוסטים ציבוריים מהשבוע על גיוס ג׳וניורים וקריירה בהייטק. ${LI.updated?'הלילה לא נמצאו פוסטים שמתאימים לך.':'הם יופיעו כאן אחרי הריצה הלילית.'}</p></section>`}
+    ${posts.length?posts.map(p=>postCard(Object.assign({role:'',mins:null},p))).join(''):`<section class="card-solid"><p class="card-sub" style="padding:6px 2px">${escB(N('linkedin'))} מחפש פעמיים ביום פוסטים ציבוריים מהשבוע על גיוס ג׳וניורים וקריירה בהייטק. ${LI.updated?'בסריקה האחרונה לא נמצאו פוסטים שמתאימים לך.':'הם יופיעו כאן אחרי הסריקה הבאה.'}</p></section>`}
     <div class="sec-h" id="liFixes"><h2>הפרופיל שלך</h2><span>${fixes.length?`${fixed} מתוך ${fixes.length} בוצעו`:''}</span></div>
     ${fixes.length?`<section class="card-solid" aria-label="שיפורים לפרופיל">${fixes.map(fixRow).join('')}</section>`
       :`<section class="card-solid"><p class="card-sub" style="padding:6px 2px">${prof().li_text?`${escB(N('coach'))} עוברת על הפרופיל שהעלית. השיפורים יופיעו כאן תוך שעתיים בערך.`:`כדי לקבל שיפורים אמיתיים, העלה PDF של פרופיל ה-LinkedIn שלך בעמוד הפרופיל.`}</p>
@@ -2135,7 +2160,7 @@ function renderLinkedInReal(){
       <div class="hint-line ok">✓ מבוסס רק על מה שכתוב בקורות החיים שלך</div>
       <div class="duo"><button class="btn btn-ghost" onclick="copyText($('postDraft').value,'הפוסט הועתק')">${ICO.copy}העתק</button><a class="btn btn-primary ext" href="${LI_URL}feed/" target="_blank" rel="noopener" onclick="copyText($('postDraft').value,'הפוסט הועתק. הדבק אותו בפוסט חדש')">פתח את LinkedIn${ICO.open}</a></div>
       <div class="done-row" style="margin-top:10px"><span>פרסמת?</span><button class="mark" onclick="S.li.posts=S.li.posts?0:1;save();renderLinkedIn();syncChrome()">${L.posts?'בטל סימון':'פרסמתי ✓'}</button></div>`
-      :`<p class="card-sub" style="padding:6px 2px">${escB(N('linkedin'))} יכין טיוטה על אחד הפרויקטים שלך בריצה הלילית.</p>`}</section>`;
+      :`<p class="card-sub" style="padding:6px 2px">${escB(N('linkedin'))} יכין טיוטה על אחד הפרויקטים שלך בסריקה הבאה.</p>`}</section>`;
 }
 
 /* ═════════ הכנה לראיון: מסך אחד עם כל מה שצריך, לכל משרה ששמרת ═════════ */
@@ -2170,7 +2195,35 @@ function renderPrep(){
         :`${b.what?`<p style="font-size:14px;line-height:1.6;margin-bottom:6px">${escB(b.what)}</p>`:''}${b.facts.slice(0,3).map(f=>`<div class="jc-r" style="margin-bottom:6px"><span class="ic" aria-hidden="true">•</span><span>${escB(f.text)}</span></div>`).join('')}
           <button class="link" style="color:var(--brand);font-weight:600;margin-top:4px" onclick="openApp('${a.id}','details')">לסקירה המלאה עם המקורות</button>`}</section>
 
+    ${tasksHtml(a,j)}
+
     ${storiesHtml()}`;
+}
+/* מטלות בית לדוגמה: 2 מוצגות, "מטלה אחרת" מחליפה מהמאגר */
+function tasksHtml(a,j){
+  const pool=(j.prep&&j.prep.tasks)||null;
+  const head=`<section class="card glass" aria-labelledby="ptH"><h2 class="card-h" id="ptH">מטלות בית לדוגמה</h2>`;
+  if(!pool)return head+`<p class="card-sub">${escB(N('coach'))} מחפשת מטלות בית אמיתיות למשרה כזו, עם מקור ופתרון. הן יופיעו כאן תוך שעתיים בערך.</p></section>`;
+  if(!pool.length)return head+`<p class="card-sub">לא נמצאו מטלות ציבוריות שמתאימות לתפקיד הזה.</p>${j.prep.no_more_tasks?'':`<button class="btn btn-sm btn-ghost btn-block" onclick="requestMoreTasks('${a.jobId}')">לחפש שוב</button>`}</section>`;
+  a.tasks=(a.tasks||[0,1]).filter(i=>i<pool.length);a.usedTasks=a.usedTasks||[];
+  for(let i=0;a.tasks.length<Math.min(2,pool.length)&&i<pool.length;i++)if(!a.tasks.includes(i)&&!a.usedTasks.includes(i))a.tasks.push(i);
+  return head+`<div class="card-sub">מטלות שחברות נותנות למועמדים לתפקידים כאלה, ממאגרים ציבוריים. לכל אחת מקור, ופתרון מוצע של ${escB(N('coach'))}.</div>
+    ${a.tasks.map((ti,slot)=>{const t=pool[ti];
+      const who=t.same_company?`<span class="task-src ok">מטלה של ${escB(t.company)} ✓</span>`:t.company?`<span class="task-src">מטלה של ${escB(t.company)}</span>`:`<span class="task-src">מקור ציבורי, לא מהחברה</span>`;
+      return`<article class="task"><div class="task-top"><b>${escB(t.title)}</b>${who}</div>
+        <p>${escB(t.summary)}</p>
+        ${t.req&&t.req.length?`<ul>${t.req.map(r=>`<li><span dir="auto">${escB(r)}</span></li>`).join('')}</ul>`:''}
+        ${t.time?`<div class="card-sub">זמן: ${escB(t.time)}</div>`:''}
+        <details><summary>פתרון מוצע של ${escB(N('coach'))}</summary><ol>${t.solution.map(x=>`<li><span dir="auto">${escB(x)}</span></li>`).join('')}</ol>${t.why?`<p class="card-sub">${escB(t.why)}</p>`:''}</details>
+        <div class="duo"><a class="btn btn-sm btn-ghost ext" href="${escB(t.url)}" target="_blank" rel="noopener"><span dir="ltr">${escB(t.repo)}</span>${ICO.open}</a><button class="btn btn-sm btn-ghost" onclick="swapTask('${a.jobId}',${slot})">מטלה אחרת</button></div></article>`}).join('')}</section>`;
+}
+function swapTask(jobId,slot){
+  const a=S.apps.find(x=>x.jobId===jobId),pool=JOBS[jobId].prep.tasks;
+  a.usedTasks=a.usedTasks||[];a.usedTasks.push(a.tasks[slot]);
+  const next=pool.findIndex((t,i)=>!a.tasks.includes(i)&&!a.usedTasks.includes(i));
+  if(next<0){if(JOBS[jobId].prep.no_more_tasks){toast('אין כרגע מטלות נוספות לתפקיד הזה');a.usedTasks.pop();return}
+    save();requestMoreTasks(jobId);return}
+  a.tasks[slot]=next;save();renderPrep();toast('הוחלפה מטלה');
 }
 function prepAnswer(i,v){const a=S.apps.find(x=>x.jobId===prepJob);if(!a)return;a.answers=a.answers||{};if(v.trim())a.answers[i]=v;else delete a.answers[i];save()}
 function storiesHtml(){
@@ -2179,6 +2232,47 @@ function storiesHtml(){
     ${S.stories.length?S.stories.map(st=>`<button class="row" onclick="editStory('${st.id}')"><span class="ri">${ROW_IC.book}</span><span class="rl"><b>${escB(st.t)}</b><span>${/תוצאה: *$/.test(st.b)?'חסרה התוצאה':'מוכן'}</span></span><span class="chev" aria-hidden="true"></span></button>`).join('')
       :`<p class="card-sub">עוד אין סיפורים. כדאי להתחיל מפרויקט אחד מקורות החיים: מה הייתה הבעיה, מה עשית, ומה יצא.</p>`}
     <button class="btn btn-sm btn-ghost btn-block" style="margin-top:8px" onclick="editStory()">להוסיף סיפור</button></section>`;
+}
+
+/* ═════════ הסרה בהחלקה + היסטוריה ═════════ */
+let lastRemoved=null;
+function removeApp(id){
+  const a=appOf(id);if(!a)return;const j=JOBS[a.jobId];
+  S.apps=S.apps.filter(x=>x.id!==id);S.history=S.history||[];
+  S.history.unshift({jobId:a.jobId,co:j.co,title:j.title,url:j.url,reason:'removed',date:new Date().toISOString(),app:a});
+  if(S.decisions[a.jobId]==='save')S.decisions[a.jobId]='removed';  // הסוכנים מפסיקים לעבוד עליה
+  lastRemoved=a.jobId;save();refreshApps();
+  toast(`${j.title} הוסרה מההגשות`,{undo:()=>restoreApp(lastRemoved),ms:5200});
+}
+function restoreApp(jobId){
+  const h=(S.history||[]).find(x=>x.jobId===jobId);if(!h)return;
+  if(h.reason==='closed'){toast('המשרה נסגרה, אי אפשר להחזיר אותה להגשות');return}
+  S.history=S.history.filter(x=>x!==h);
+  S.apps.unshift(h.app||{id:'a-'+jobId,jobId,status:'saved',date:new Date().toISOString(),letter:''});
+  S.decisions[jobId]='save';save();refreshApps();toast('המשרה חזרה להגשות');
+}
+function historyHtml(onlyIfAny){
+  const H=(S.history||[]).filter(h=>JOBS[h.jobId]||h.title);
+  if(!H.length)return'';
+  const why={closed:'נסגרה למועמדים',removed:'הסרת'};
+  return`<details class="history"${onlyIfAny?' open':''}><summary>היסטוריה <b class="num">${H.length}</b></summary>
+    ${H.map(h=>`<div class="hist-row"><span class="tx"><b dir="auto">${escB(h.title)}</b><span>${escB(h.co)} · ${why[h.reason]||''} · ${new Date(h.date).toLocaleDateString('he-IL')}</span></span>
+      ${h.reason==='removed'?`<button class="btn btn-sm btn-ghost" onclick="restoreApp('${h.jobId}')">להחזיר</button>`:h.url?`<a class="btn btn-sm btn-ghost ext" href="${escB(h.url)}" target="_blank" rel="noopener">למודעה${ICO.open}</a>`:''}</div>`).join('')}
+  </details>`;
+}
+function bindAppSwipes(){
+  document.querySelectorAll('#appsList .swipe').forEach(w=>{
+    const card=w.querySelector('.app');let x0=null,y0=0,dx=0,drag=false;
+    card.addEventListener('pointerdown',e=>{if(e.target.closest('textarea,input'))return;x0=e.clientX;y0=e.clientY;dx=0;drag=false});
+    card.addEventListener('pointermove',e=>{if(x0===null)return;const mx=e.clientX-x0,my=e.clientY-y0;
+      if(!drag&&Math.abs(mx)>12&&Math.abs(mx)>Math.abs(my)*1.4){drag=true;card.setPointerCapture(e.pointerId);w.classList.add('dragging')}
+      if(drag){dx=mx;card.style.transform=`translateX(${dx}px)`;w.classList.toggle('arm',Math.abs(dx)>w.offsetWidth*.35)}});
+    const end=()=>{if(x0===null)return;x0=null;w.classList.remove('dragging');
+      if(drag&&Math.abs(dx)>w.offsetWidth*.35){card.style.transition='transform .2s ease';card.style.transform=`translateX(${dx>0?'110%':'-110%'})`;setTimeout(()=>removeApp(w.dataset.id),180)}
+      else{card.style.transition='transform .2s ease';card.style.transform='';setTimeout(()=>card.style.transition='',220)}
+      if(drag){card.addEventListener('click',ev=>{ev.stopPropagation();ev.preventDefault()},{capture:true,once:true})}drag=false;w.classList.remove('arm')};
+    card.addEventListener('pointerup',end);card.addEventListener('pointercancel',end);
+  });
 }
 
 /* ═════════ ONBOARDING ═════════ */
@@ -2212,7 +2306,7 @@ function renderOnb(){
     foot=`<button class="btn btn-primary btn-block" id="onbKeyBtn" ${/^gsk_\w{20,}/.test(p.key)?'':'disabled'} onclick="onbNext()">${onbSingle?'שמור':'לחבר ולהמשיך'}</button><button class="link-btn" onclick="${onbSingle?'closeOnb()':'onbGo(1)'}">${onbSingle?'ביטול':'אחבר אחר כך'}</button>`;
   }else{
     body=`<div class="empty-ic" style="margin:20px 0 22px;background:var(--mint-lt)">✓</div><h1>הכל מוכן, ${escB(p.first)}</h1>
-      <p class="lead">${CLOUDM?N('hunter')+' יחפש לך משרות בריצה הלילית הקרובה, לפי קורות החיים והתשובות שלך.':p.key?N('hunter')+' כבר מחפש לך משרות.':'כשתחבר את הסוכנים, '+N('hunter')+' יתחיל לחפש לך משרות.'} בינתיים הכנו ${DECK.length} משרות לדוגמה: מחליקים ימינה כדי לשמור ושמאלה כדי לדלג.</p>`;
+      <p class="lead">${CLOUDM?N('hunter')+' יחפש לך משרות בסריקה הקרובה (05:15 או 17:15), לפי קורות החיים והתשובות שלך.':p.key?N('hunter')+' כבר מחפש לך משרות.':'כשתחבר את הסוכנים, '+N('hunter')+' יתחיל לחפש לך משרות.'} בינתיים הכנו ${DECK.length} משרות לדוגמה: מחליקים ימינה כדי לשמור ושמאלה כדי לדלג.</p>`;
     foot=`<button class="btn btn-primary btn-block" onclick="finishOnb('jobs')">למשרות</button><button class="link-btn" onclick="finishOnb('main')">ללוח הבקרה</button>`;
   }
   $('onbBody').innerHTML=body;$('onbFoot').innerHTML=foot;$('onbBody').scrollTop=0;
@@ -2432,7 +2526,7 @@ function renderSettings(){
   $('setScroll').innerHTML=`
     ${CLOUDM&&ME?`<section class="card glass" aria-labelledby="accH"><h2 class="card-h" id="accH">החשבון</h2><div class="card-sub" dir="ltr" style="text-align:right">${escB(ME.email||'')}</div><button class="btn btn-sm btn-ghost btn-block" style="margin-top:12px" onclick="cloudLogout()">יציאה</button></section>`:''}
     <section class="card glass" aria-labelledby="aiH"><h2 class="card-h" id="aiH">הסוכנים</h2>
-      ${CLOUDM?`<div class="ok-line">הסוכנים מחוברים ורצים בענן</div><div class="card-sub" style="margin:6px 0 0">${N('hunter')} מחפש כל לילה, ו${N('assistant')} מכין מכתבים כל שעתיים.</div>`:p.key?`<div class="ok-line">הסוכנים מחוברים ועובדים</div>`:`<div class="warn-line">הסוכנים עוד לא מחוברים</div><div class="card-sub" style="margin:6px 0 0">עד שתחבר, מוצגות דוגמאות.</div>`}
+      ${CLOUDM?`<div class="ok-line">הסוכנים מחוברים ורצים בענן</div><div class="card-sub" style="margin:6px 0 0">${N('hunter')} מחפש כל 12 שעות ובודק שהמשרות ששמרת עדיין פתוחות. ${N('assistant')}, ${N('researcher')} ו${N('coach')} מכינים מכתב, סקירה והכנה כל שעתיים.</div>`:p.key?`<div class="ok-line">הסוכנים מחוברים ועובדים</div>`:`<div class="warn-line">הסוכנים עוד לא מחוברים</div><div class="card-sub" style="margin:6px 0 0">עד שתחבר, מוצגות דוגמאות.</div>`}
       <button class="btn btn-sm ${p.key?'btn-ghost':'btn-primary'} btn-block" style="margin-top:12px" onclick="openOnb(3)" ${CLOUDM?'hidden':''}>${p.key?'להחליף מפתח':'לחבר עכשיו'}</button></section>
 
     <section class="card glass" aria-labelledby="ntH"><h2 class="card-h" id="ntH">התראות</h2>
@@ -2508,12 +2602,13 @@ async function cloudLoad(){
     if(pr.team&&Object.keys(pr.team).length)S.team=pr.team;const st=pr.state||{};['apps','todos','stories'].forEach(k=>{if(Array.isArray(st[k]))S[k]=st[k]});if(st.targets)S.targets=st.targets;p.li_text=pr.li_text||'';LI=Object.assign({},pr.li||{},{fixes:((pr.li_fixes||{}).fixes)||[]});if(pr.cv_text)S.onboarded=true}
   prof().key='cloud';
   RUNS=runs||[];const hr=RUNS.filter(r=>(r.agent||'hunter')==='hunter');
-  if(hr.length){
+  if(hr.length||(jobs&&jobs.length)){
     const live=(jobs||[]).filter(r=>r.decision!=='skip'||S.decisions[r.id]);
-    setFeed({generated_at:hr[0].created_at,stats:hr[0].stats||{},jobs:live.map(r=>Object.assign({},r.card,{letter:r.letter||null,brief:r.brief||null,prep:r.prep||null})).sort((a,b)=>b.fit-a.fit)});
+    setFeed({generated_at:hr.length?hr[0].created_at:null,stats:hr.length?(hr[0].stats||{}):{},jobs:live.map(r=>Object.assign({},r.card,{letter:r.letter||null,brief:r.brief||null,prep:r.prep||null,closed_at:(r.card&&r.card.closed_at)||null})).sort((a,b)=>b.fit-a.fit)});
     (jobs||[]).forEach(r=>{if(r.decision)S.decisions[r.id]=r.decision});
   }
   S.apps=(S.apps||[]).filter(a=>JOBS[a.jobId]);
+  closedToHistory();
   _decSnap=Object.assign({},S.decisions);_profSnap=profRow();
   LS.set(SKEY,S);window.__runsReady=true;if(typeof applyTeam==='function')applyTeam();buildWorkflow();
 }
@@ -2585,6 +2680,21 @@ async function submitAddJob(){
   save();closeSheet();
   toast(`${c.title} ב-${c.co}: התאמה ${c.fit} מתוך 5. נכנסה להגשות.${c.seniority_ok===false?' שים לב: היא דורשת יותר ניסיון.':''}`,{ms:5200});
   goPage('apps');setTimeout(()=>openApp('a-'+c.id,'details'),250);
+}
+
+/* משרה שנסגרה: אם עוד לא הגשת — יוצאת מההגשות להיסטוריה. אם כבר הגשת — נשארת, עם סימון */
+function closedToHistory(){
+  S.history=S.history||[];const moved=[];
+  S.apps=S.apps.filter(a=>{const j=JOBS[a.jobId];if(a.status==='saved'&&j&&j.closed_at){
+    S.history.unshift({jobId:a.jobId,co:j.co,title:j.title,url:j.url,reason:'closed',date:j.closed_at});moved.push(j);return false}return true});
+  if(moved.length)setTimeout(()=>toast(moved.length===1?`${moved[0].title} ב-${moved[0].co} נסגרה למועמדים. העברתי להיסטוריה.`:`${moved.length} משרות ששמרת נסגרו. העברתי להיסטוריה.`,{ms:5200}),1600);
+}
+/* מטלה אחרת: קודם מהמאגר שמאיה כבר הכינה, ואם נגמר — בקשה למטלות נוספות */
+async function requestMoreTasks(jobId){
+  const j=JOBS[jobId];if(!j||!j.prep)return;
+  j.prep=Object.assign({},j.prep,{more_tasks:true});
+  const {error}=await SB.from('jobs').update({prep:j.prep}).eq('user_id',ME.id).eq('id',jobId);
+  toast(error?'לא הצלחתי לבקש. נסה שוב':`${N('coach')} תביא מטלות נוספות תוך שעתיים בערך`);renderPrep();
 }
 
 cloudBoot();

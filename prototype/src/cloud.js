@@ -31,12 +31,13 @@ async function cloudLoad(){
     if(pr.team&&Object.keys(pr.team).length)S.team=pr.team;const st=pr.state||{};['apps','todos','stories'].forEach(k=>{if(Array.isArray(st[k]))S[k]=st[k]});if(st.targets)S.targets=st.targets;p.li_text=pr.li_text||'';LI=Object.assign({},pr.li||{},{fixes:((pr.li_fixes||{}).fixes)||[]});if(pr.cv_text)S.onboarded=true}
   prof().key='cloud';
   RUNS=runs||[];const hr=RUNS.filter(r=>(r.agent||'hunter')==='hunter');
-  if(hr.length){
+  if(hr.length||(jobs&&jobs.length)){
     const live=(jobs||[]).filter(r=>r.decision!=='skip'||S.decisions[r.id]);
-    setFeed({generated_at:hr[0].created_at,stats:hr[0].stats||{},jobs:live.map(r=>Object.assign({},r.card,{letter:r.letter||null,brief:r.brief||null,prep:r.prep||null})).sort((a,b)=>b.fit-a.fit)});
+    setFeed({generated_at:hr.length?hr[0].created_at:null,stats:hr.length?(hr[0].stats||{}):{},jobs:live.map(r=>Object.assign({},r.card,{letter:r.letter||null,brief:r.brief||null,prep:r.prep||null,closed_at:(r.card&&r.card.closed_at)||null})).sort((a,b)=>b.fit-a.fit)});
     (jobs||[]).forEach(r=>{if(r.decision)S.decisions[r.id]=r.decision});
   }
   S.apps=(S.apps||[]).filter(a=>JOBS[a.jobId]);
+  closedToHistory();
   _decSnap=Object.assign({},S.decisions);_profSnap=profRow();
   LS.set(SKEY,S);window.__runsReady=true;if(typeof applyTeam==='function')applyTeam();buildWorkflow();
 }
@@ -108,4 +109,19 @@ async function submitAddJob(){
   save();closeSheet();
   toast(`${c.title} ב-${c.co}: התאמה ${c.fit} מתוך 5. נכנסה להגשות.${c.seniority_ok===false?' שים לב: היא דורשת יותר ניסיון.':''}`,{ms:5200});
   goPage('apps');setTimeout(()=>openApp('a-'+c.id,'details'),250);
+}
+
+/* משרה שנסגרה: אם עוד לא הגשת — יוצאת מההגשות להיסטוריה. אם כבר הגשת — נשארת, עם סימון */
+function closedToHistory(){
+  S.history=S.history||[];const moved=[];
+  S.apps=S.apps.filter(a=>{const j=JOBS[a.jobId];if(a.status==='saved'&&j&&j.closed_at){
+    S.history.unshift({jobId:a.jobId,co:j.co,title:j.title,url:j.url,reason:'closed',date:j.closed_at});moved.push(j);return false}return true});
+  if(moved.length)setTimeout(()=>toast(moved.length===1?`${moved[0].title} ב-${moved[0].co} נסגרה למועמדים. העברתי להיסטוריה.`:`${moved.length} משרות ששמרת נסגרו. העברתי להיסטוריה.`,{ms:5200}),1600);
+}
+/* מטלה אחרת: קודם מהמאגר שמאיה כבר הכינה, ואם נגמר — בקשה למטלות נוספות */
+async function requestMoreTasks(jobId){
+  const j=JOBS[jobId];if(!j||!j.prep)return;
+  j.prep=Object.assign({},j.prep,{more_tasks:true});
+  const {error}=await SB.from('jobs').update({prep:j.prep}).eq('user_id',ME.id).eq('id',jobId);
+  toast(error?'לא הצלחתי לבקש. נסה שוב':`${N('coach')} תביא מטלות נוספות תוך שעתיים בערך`);renderPrep();
 }

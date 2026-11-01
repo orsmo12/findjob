@@ -1,7 +1,7 @@
 name: findjob nightly
 on:
   schedule:
-    - cron: "17 3 * * *"     # כל יום ב-05:17/06:17 שעון ישראל (GitHub עובד ב-UTC)
+    - cron: "17 3,15 * * *"  # כל 12 שעות: 05:17 ו-17:17 שעון ישראל (GitHub עובד ב-UTC)
   workflow_dispatch: {}       # כפתור "Run workflow" להרצה ידנית
 concurrency:
   group: findjob-agents      # סוכן אחד בכל פעם: חולקים את מכסת Groq
@@ -20,3 +20,4 @@ jobs:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

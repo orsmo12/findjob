@@ -673,3 +673,23 @@ a.person>svg{flex:0 0 18px;width:18px;height:18px;fill:none;stroke:var(--ink3);s
 .prep-head{display:flex;align-items:center;gap:12px}
 .q .q-done{margin-inline-start:auto;color:var(--brand,#0F6E54);font-weight:700}
 .q textarea{margin-top:10px}
+
+/* הגשות: החלקה להסרה, היסטוריה, משרה סגורה */
+.swipe{position:relative;border-radius:22px;overflow:hidden;touch-action:pan-y}
+.swipe+.swipe{margin-top:12px}
+.swipe-bg{position:absolute;inset:0;display:flex;justify-content:space-between;align-items:center;padding:0 22px;background:#E5484D;color:#fff;font-weight:700;font-size:14px;opacity:0;transition:opacity .15s}
+.swipe.dragging .swipe-bg{opacity:.75}.swipe.arm .swipe-bg{opacity:1}
+.swipe .app{position:relative;margin:0;touch-action:pan-y}
+.closed-tag{font-size:12px;font-weight:600;color:#B54708;background:#FEF0C7;border-radius:10px;padding:4px 10px;margin:0 0 8px;display:inline-block}
+.history{margin-top:18px;border-radius:18px;background:rgba(255,255,255,.5);border:1px solid rgba(15,110,84,.10);padding:4px 14px}
+.history summary{cursor:pointer;min-height:44px;display:flex;align-items:center;gap:8px;font-weight:600;font-size:14px;color:var(--ink2)}
+.hist-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px solid rgba(15,110,84,.08)}
+.hist-row .tx{flex:1;min-width:0}.hist-row .tx b{display:block;font-size:13.5px;font-weight:600}.hist-row .tx span{font-size:12px;color:var(--ink3)}
+/* מטלות בית */
+.task{border-top:1px solid rgba(15,110,84,.10);padding:14px 0 4px;margin-top:10px}
+.task-top{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:6px}.task-top b{font-size:15px}
+.task-src{font-size:11.5px;font-weight:600;padding:2px 8px;border-radius:8px;background:rgba(15,110,84,.08);color:var(--ink2)}
+.task-src.ok{background:var(--brand-lt,#E3F1EA);color:var(--brand,#0F6E54)}
+.task p{font-size:14px;line-height:1.6;margin:0 0 6px}.task ul,.task ol{margin:4px 0 8px;padding-inline-start:20px;font-size:13.5px;line-height:1.6}
+.task details summary{cursor:pointer;min-height:40px;display:flex;align-items:center;font-weight:600;font-size:13.5px;color:var(--brand,#0F6E54)}
+.swipe.dragging .app,.swipe .app[style*="translateX"]{background:#F6FAF7}

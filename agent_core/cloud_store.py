@@ -69,8 +69,15 @@ def save_letter(user_id: str, job_id: str, letter: dict) -> None:
 def saved_missing(user_id: str) -> list[dict]:
     """משרות ששמרת שחסר להן מכתב, סקירה או הכנה."""
     r = httpx.get(_url("jobs"), headers=_h(), timeout=30, params={
-        "select": "id,card,letter,brief,prep", "user_id": f"eq.{user_id}", "decision": "eq.save",
-        "or": "(letter.is.null,brief.is.null,prep.is.null)"})
+        "select": "id,card,letter,brief,prep", "user_id": f"eq.{user_id}", "decision": "eq.save", "card->>closed_at": "is.null",
+        "or": "(letter.is.null,brief.is.null,prep.is.null,prep->tasks.is.null,prep->>more_tasks.eq.true)"})
+    if r.status_code == 400:  # גיבוי אם הסינון לפי JSON לא נתמך: מביאים הכל ומסננים כאן
+        r = httpx.get(_url("jobs"), headers=_h(), timeout=30, params={
+            "select": "id,card,letter,brief,prep", "user_id": f"eq.{user_id}", "decision": "eq.save"})
+        r.raise_for_status()
+        return [x for x in r.json() if not (x.get("card") or {}).get("closed_at") and (
+            not x.get("letter") or not x.get("brief") or not x.get("prep")
+            or (x["prep"] or {}).get("tasks") is None or (x["prep"] or {}).get("more_tasks"))]
     r.raise_for_status()
     return r.json()
 
@@ -97,3 +104,11 @@ def add_logs(rows: list[dict]) -> None:
     """שורות יומן לתהליך העבודה במשרד (בקשה אחת)."""
     r = httpx.post(_url("runs"), headers=_h(), json=rows, timeout=30)
     r.raise_for_status()
+
+
+def saved_open(user_id: str) -> list[dict]:
+    """משרות ששמרת ועוד לא סומנו כסגורות — לבדיקה אם הן עדיין פתוחות."""
+    r = httpx.get(_url("jobs"), headers=_h(), timeout=30, params={
+        "select": "id,card", "user_id": f"eq.{user_id}", "decision": "eq.save", "card->>closed_at": "is.null"})
+    r.raise_for_status()
+    return r.json()
