@@ -8,6 +8,8 @@ import re
 
 import httpx
 
+from agent_core import activity as act
+
 BOARDS = {
     "greenhouse": "https://boards-api.greenhouse.io/v1/boards/{slug}/jobs?content=true",
     "lever": "https://api.lever.co/v0/postings/{slug}?mode=json",
@@ -68,7 +70,9 @@ def collect_targets(targets: list[dict], plan: dict, timeout: float = 8.0) -> tu
                     except ValueError:
                         continue
                     hit = True
-                    jobs += [j for j in items if any(w in j["title"].lower() for w in words)]
+                    rel = [j for j in items if any(w in j["title"].lower() for w in words)]
+                    jobs += rel
+                    act.log("hunter", f"דף הקריירה של {c['name']} ({board}): {len(items)} משרות בישראל, {len(rel)} בתחום שלך")
                     found.append(f"{c['name']} ({board})")
                     break
                 if hit:

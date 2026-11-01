@@ -1,5 +1,5 @@
 /* ═════════ shell ═════════ */
-const TITLES={main:'לוח בקרה',jobs:'משרות חדשות',apps:'הגשות',linkedin:'LinkedIn',office:'המשרד',profile:'הפרופיל שלי',settings:'הגדרות'};
+const TITLES={main:'לוח בקרה',jobs:'משרות חדשות',apps:'הגשות',prep:'הכנה לראיון',linkedin:'LinkedIn',office:'המשרד',profile:'הפרופיל שלי',settings:'הגדרות'};
 let curPg='main';
 function goPage(id,anchor){
   if(typeof offAnimId!=='undefined') cancelAnimationFrame(offAnimId);
@@ -12,7 +12,7 @@ function goPage(id,anchor){
   document.querySelectorAll('.dr-item[data-pg]').forEach(b=>{const on=b.dataset.pg===id;b.classList.toggle('active',on);on?b.setAttribute('aria-current','page'):b.removeAttribute('aria-current')});
   $('topbar').classList.remove('scrolled');
   const sc=document.querySelector('#pg-'+id+' .scroll'); if(sc) sc.scrollTop=0;
-  ({main:renderHome,jobs:renderJobs,apps:renderApps,linkedin:renderLinkedIn,profile:renderProfile,settings:renderSettings})[id]?.();
+  ({main:renderHome,jobs:renderJobs,apps:renderApps,prep:renderPrep,linkedin:renderLinkedIn,profile:renderProfile,settings:renderSettings})[id]?.();
   if(id==='office'){setTimeout(()=>{sizeOff();drawOff();},80);renderOffice();renderOfficeMsgs();}
   if(anchor) setTimeout(()=>$(anchor)?.scrollIntoView({behavior:'smooth',block:'start'}),60);
   syncChrome();
@@ -27,7 +27,7 @@ function syncChrome(){
   ['tbAvatar','drAvatar'].forEach(i=>$(i).textContent=ini);
   $('drName').textContent=prof().name; $('drGoal').textContent=goalTxt();
 }
-function openIvShortcut(){const iv=S.apps.find(a=>a.status==='interview');if(iv){goPage('apps');openApp(iv.id,'prep')}}
+function openIvShortcut(){const iv=S.apps.find(a=>a.status==='interview');if(iv)openPrep(iv.jobId)}
 function toggleDrawer(){$('drawerOverlay').classList.contains('open')?closeDrawer():openDrawer()}
 function openDrawer(){syncChrome();$('drawerOverlay').classList.add('open');document.body.classList.add('drawer-open');$('menuBtn').setAttribute('aria-expanded','true');$('menuBtn').setAttribute('aria-label','סגירת התפריט')}
 function closeDrawer(){$('drawerOverlay').classList.remove('open');document.body.classList.remove('drawer-open');$('menuBtn').setAttribute('aria-expanded','false');$('menuBtn').setAttribute('aria-label','פתיחת התפריט')}
@@ -85,8 +85,8 @@ const ICO={
 function nextSteps(){
   const out=[],hp=hotPosts(),q=queue();
   if(hp.length&&(CLOUDM||!REAL)) out.push({ic:ICO.li,c:'i-amber',b:hp.length===1?'פוסט ששווה להגיב עליו':`${hp.length} פוסטים ששווה להגיב עליהם`,s:CLOUDM?'תגובות מוכנות להעתקה':`הראשון פורסם לפני ${Math.min(...hp.map(p=>p.mins))} דק׳`,w:CLOUDM?null:['עכשיו','w-urgent'],go:"goPage('linkedin')"});
-  S.apps.filter(a=>a.status==='interview').forEach(a=>out.push({ic:ICO.cal,c:'i-amber',b:`ראיון ב-${JOBS[a.jobId].co}${a.iv?', '+a.iv:''}`,s:'ההכנה מוכנה',w:['השבוע','w-soon'],go:`openApp('${a.id}','prep')`}));
-  S.apps.filter(a=>a.status==='screening').forEach(a=>out.push({ic:ICO.cal,c:'i-sky',b:`שאלות סינון מ-${JOBS[a.jobId].co}`,s:'הכנו לך תשובות לדוגמה',go:`openApp('${a.id}','prep')`}));
+  S.apps.filter(a=>a.status==='interview').forEach(a=>out.push({ic:ICO.cal,c:'i-amber',b:`ראיון ב-${JOBS[a.jobId].co}${a.iv?', '+a.iv:''}`,s:'ההכנה מוכנה',w:['השבוע','w-soon'],go:`openPrep('${a.jobId}')`}));
+  S.apps.filter(a=>a.status==='screening').forEach(a=>out.push({ic:ICO.cal,c:'i-sky',b:`שאלות סינון מ-${JOBS[a.jobId].co}`,s:'ההכנה מחכה לך',go:`openPrep('${a.jobId}')`}));
   if(q.length) out.push({ic:ICO.jobs,c:'i-green',b:q.length===1?'משרה חדשה מחכה לך':`${q.length} משרות חדשות מחכות לך`,s:q.slice(0,2).map(id=>JOBS[id].co).join(', ')+(q.length>2?` ועוד ${q.length-2}`:''),go:"goPage('jobs')"});
   S.apps.filter(followDue).forEach(a=>out.push({ic:ICO.mail,c:'i-teal',b:`${JOBS[a.jobId].co} לא ענו ${daysSince(a.date)} ימים`,s:'הודעת המשך מוכנה',go:`openApp('${a.id}','details')`}));
   S.apps.filter(a=>a.status==='saved').forEach(a=>out.push({ic:ICO.send,c:'i-green',b:`${JOBS[a.jobId].co}: שמרת ועוד לא הגשת`,s:'המכתב מוכן',go:`openApp('${a.id}','letter')`}));
@@ -148,6 +148,7 @@ function bindTodoDrag(h){
 /* ═════════ משרות חדשות ═════════ */
 let lastAct=null, busy=false;
 function renderJobs(){
+  $('addJobBtn').hidden=!CLOUDM;
   const q=queue(),done=DECK.length-q.length,saved=DECK.filter(id=>S.decisions[id]==='save').length;
   $('jobsCount').textContent=q.length?`משרה ${done+1} מתוך ${DECK.length}${saved?` · ${saved} נשמרו`:''}`:`עברת על כל ${DECK.length} המשרות${saved?` · ${saved} נשמרו`:''}`;
   $('jobsFiltered').textContent=`${FILTERED_OUT} סוננו כבכירות מדי`;

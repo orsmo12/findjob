@@ -11,6 +11,7 @@ import json
 import re
 
 from agent_core.llm_router import chat
+from agent_core import activity as act
 
 LATIN = re.compile(r"[A-Za-z][A-Za-z0-9+#.\-]{2,}")
 
@@ -49,4 +50,6 @@ def prepare(cv: str, job: dict) -> dict:
         names = [w.strip(".-,") for w in LATIN.findall(text)]
         if all(n.lower() in src for n in names if n[0].isupper() or any(c.isupper() for c in n[1:])):
             out.append({"tag": str(q.get("tag", ""))[:30], "q": str(q.get("q", ""))[:220], "h": str(q.get("hint", ""))[:400]})
+    act.log("coach", f"הכנתי {len(out[:5])} שאלות ל-{job['co']} לפי הדרישות במודעה"
+            + (f" (זרקתי {len(qs[:6]) - len(out)} עם פרטים שלא כתובים אצלך)" if len(qs[:6]) > len(out) else ""))
     return {"questions": out[:5]}

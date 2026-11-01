@@ -28,10 +28,10 @@ function refreshApps(){if(curPg==='apps')renderApps();if(curPg==='main')renderHo
 let appTab='details';
 function openApp(id,tab){
   const a=appOf(id);if(!a)return;
-  const hasPrep=REAL||a.status==='interview'||a.status==='screening';
+  const hasPrep=!REAL&&(a.status==='interview'||a.status==='screening');
   appTab=tab==='prep'&&!hasPrep?'details':(tab||'details');
   const j=JOBS[a.jobId];
-  const tabs=[['details','פרטים'],['letter','מכתב'],['ref',REAL?'קשרים':'ממליצים'],...(hasPrep?[['prep',REAL?'הכנה':a.status==='interview'?'הכנה':'סינון']]:[])];
+  const tabs=[['details','פרטים'],['letter','מכתב'],['ref',REAL?'קשרים':'ממליצים'],...(hasPrep?[['prep',a.status==='interview'?'הכנה':'סינון']]:[])];
   openSheet(`<div style="display:flex;gap:13px;align-items:center">${logo(j)}<div style="min-width:0"><h3 id="sheetTitle" lang="en" dir="ltr" style="text-align:right">${escB(j.title)}</h3><div class="sheet-sub">${escB(j.co)} · ${escB(j.loc)}</div></div></div>
     <div class="tabs" role="tablist">${tabs.map(([k,l])=>`<button role="tab" id="tab-${k}" aria-selected="${appTab===k}" onclick="appTab='${k}';paintAppTab('${id}')">${l}</button>`).join('')}</div>
     <div id="appTab" role="tabpanel"></div>`);
@@ -51,6 +51,7 @@ function paintAppTab(id){
         <div class="kv"><span>שכר</span><b>${escB(salaryTxt(j))}</b></div></div>
       ${fu?`<div class="s-sec"><h4>הודעת המשך</h4><textarea class="textbox" id="fuText" rows="7" aria-label="הודעת המשך">${esc(a.follow||followText(j))}</textarea>
         <div class="duo"><button class="btn btn-ghost" onclick="copyText($('fuText').value,'ההודעה הועתקה')">${ICO.copy}העתק</button><button class="btn btn-primary" onclick="sentFollow('${id}')">שלחתי</button></div></div>`:''}
+      ${REAL?`<div class="s-sec"><button class="btn btn-ghost btn-block" onclick="openPrep('${a.jobId}')">${ICO.spark||''}הכנה לראיון${j.prep&&j.prep.questions&&j.prep.questions.length?` · ${j.prep.questions.length} שאלות מוכנות`:''}</button></div>`:''}
       ${REAL?briefHtml(j):''}
       <div class="s-sec"><a class="btn btn-ghost btn-block ext" href="${j.url||LI_URL+'jobs/'}" target="_blank" rel="noopener">פתח את המשרה${ICO.open}</a></div>`;
   }else if(appTab==='letter'){
@@ -86,7 +87,7 @@ function openStatus(id){
   const a=appOf(id),j=JOBS[a.jobId];
   openSheet(`<h3 id="sheetTitle">שלב ההגשה</h3><div class="sheet-sub">${escB(j.co)}</div><div class="s-sec" role="radiogroup" aria-label="שלב">${Object.entries(STATUSES).map(([k,l])=>`<button class="opt${a.status===k?' sel':''}" role="radio" aria-checked="${a.status===k}" onclick="setStatus('${id}','${k}')"><span class="status st-${k}">${l}</span><span class="radio" aria-hidden="true"></span></button>`).join('')}</div>`);
 }
-function setStatus(id,k){const a=appOf(id);if(a.status!==k){a.status=k;if(k==='applied')a.date=new Date().toISOString();save()}refreshApps();openApp(id,(k==='interview'||k==='screening')?'prep':'details');toast(`השלב עודכן: ${STATUSES[k]}`)}
+function setStatus(id,k){const a=appOf(id);if(a.status!==k){a.status=k;if(k==='applied')a.date=new Date().toISOString();save()}refreshApps();if(REAL&&(k==='interview'||k==='screening')){closeSheet();openPrep(appOf(id).jobId)}else openApp(id,(k==='interview'||k==='screening')?'prep':'details');toast(`השלב עודכן: ${STATUSES[k]}`)}
 
 /* ═════════ LinkedIn ═════════ */
 function renderLinkedIn(){
@@ -207,4 +208,47 @@ function renderLinkedInReal(){
       <div class="duo"><button class="btn btn-ghost" onclick="copyText($('postDraft').value,'הפוסט הועתק')">${ICO.copy}העתק</button><a class="btn btn-primary ext" href="${LI_URL}feed/" target="_blank" rel="noopener" onclick="copyText($('postDraft').value,'הפוסט הועתק. הדבק אותו בפוסט חדש')">פתח את LinkedIn${ICO.open}</a></div>
       <div class="done-row" style="margin-top:10px"><span>פרסמת?</span><button class="mark" onclick="S.li.posts=S.li.posts?0:1;save();renderLinkedIn();syncChrome()">${L.posts?'בטל סימון':'פרסמתי ✓'}</button></div>`
       :`<p class="card-sub" style="padding:6px 2px">${escB(N('linkedin'))} יכין טיוטה על אחד הפרויקטים שלך בריצה הלילית.</p>`}</section>`;
+}
+
+/* ═════════ הכנה לראיון: מסך אחד עם כל מה שצריך, לכל משרה ששמרת ═════════ */
+let prepJob=null;
+function openPrep(jobId){prepJob=jobId;goPage('prep')}
+function prepApps(){const order={interview:0,screening:1,applied:2,saved:3};
+  return S.apps.filter(a=>JOBS[a.jobId]&&order[a.status]!=null).sort((x,y)=>order[x.status]-order[y.status])}
+function renderPrep(){
+  const apps=prepApps();
+  if(!apps.length){$('prepScroll').innerHTML=`<div class="empty" style="padding:48px 12px"><h3>עוד אין משרה להתכונן אליה</h3><p>שמור משרה, ו${escB(N('coach'))} תכין שאלות לפי מה שכתוב במודעה. ${escB(N('researcher'))} יכין סקירה על החברה.</p><button class="btn btn-primary" onclick="goPage('jobs')">למשרות</button></div>`+storiesHtml();return}
+  if(!apps.some(a=>a.jobId===prepJob))prepJob=apps[0].jobId;
+  const a=apps.find(x=>x.jobId===prepJob),j=JOBS[prepJob],qs=(j.prep&&j.prep.questions)||[],b=j.brief;
+  a.answers=a.answers||{};
+  $('prepScroll').innerHTML=`
+    <div class="prep-jobs" role="tablist" aria-label="בחירת משרה">${apps.map(x=>`<button role="tab" aria-selected="${x.jobId===prepJob}" onclick="prepJob='${x.jobId}';renderPrep()"><b dir="auto">${escB(JOBS[x.jobId].co)}</b><span>${STATUSES[x.status]}${x.iv?' · '+escB(x.iv):''}</span></button>`).join('')}</div>
+
+    <section class="card glass prep-head">${logo(j)}<div style="min-width:0;flex:1"><h2 class="card-h" dir="auto" style="margin:0">${escB(j.title)}</h2><div class="card-sub" style="margin:2px 0 0">${escB(j.co)} · ${STATUSES[a.status]}${a.iv?' · '+escB(a.iv):''}</div></div>
+      <button class="btn btn-sm btn-ghost" onclick="openApp('${a.id}','details')">המשרה</button></section>
+
+    <section class="card glass" aria-labelledby="pqH"><h2 class="card-h" id="pqH">שאלות שכדאי להתכונן אליהן</h2>
+      ${!j.prep?`<p class="card-sub">${escB(N('coach'))} מכינה שאלות לפי הדרישות במודעה. הן יופיעו כאן תוך שעתיים בערך.</p>`
+        :!qs.length?`<p class="card-sub">במודעה לא היו מספיק פרטים לשאלות ממוקדות. אפשר לתרגל שאלות כלליות בצ׳אט.</p>`
+        :`<div class="card-sub">לפי מה שכתוב במודעה. לחץ על שאלה, קרא את הרמז, וכתוב תשובה משלך. היא נשמרת.</div>
+        ${qs.map((q,i)=>`<details class="q"${i===0?' open':''}><summary><span class="qtag" dir="auto">${escB(q.tag)}</span><span class="qtxt">${escB(q.q)}</span>${a.answers[i]?'<span class="q-done" aria-label="ענית">✓</span>':''}</summary>
+          <div class="hint">${escB(q.h)}</div>
+          <label class="vh" for="ans${i}">התשובה שלי</label><textarea class="textbox" id="ans${i}" rows="4" placeholder="התשובה שלי…" onchange="prepAnswer(${i},this.value)">${esc(a.answers[i]||'')}</textarea></details>`).join('')}`}
+      <button class="btn btn-primary btn-block" style="margin-top:12px" onclick="toggleChat(true);chatAsk('בוא נתרגל ראיון ל-${escB(j.title).replace(/'/g,'')} ב-${escB(j.co).replace(/'/g,'')}. תשאל שאלה אחת בכל פעם.')">לתרגל בצ׳אט</button></section>
+
+    <section class="card glass" aria-labelledby="pcH"><h2 class="card-h" id="pcH">מה לדעת על ${escB(j.co)}</h2>
+      ${!b?`<p class="card-sub">${escB(N('researcher'))} מכין סקירה עם מקורות. היא תופיע כאן תוך שעתיים בערך.</p>`
+        :!b.found?`<p class="card-sub">לא נמצא מידע ציבורי אמין על החברה. כדאי לשאול בשיחה על המוצר והצוות.</p>`
+        :`${b.what?`<p style="font-size:14px;line-height:1.6;margin-bottom:6px">${escB(b.what)}</p>`:''}${b.facts.slice(0,3).map(f=>`<div class="jc-r" style="margin-bottom:6px"><span class="ic" aria-hidden="true">•</span><span>${escB(f.text)}</span></div>`).join('')}
+          <button class="link" style="color:var(--brand);font-weight:600;margin-top:4px" onclick="openApp('${a.id}','details')">לסקירה המלאה עם המקורות</button>`}</section>
+
+    ${storiesHtml()}`;
+}
+function prepAnswer(i,v){const a=S.apps.find(x=>x.jobId===prepJob);if(!a)return;a.answers=a.answers||{};if(v.trim())a.answers[i]=v;else delete a.answers[i];save()}
+function storiesHtml(){
+  return`<section class="card glass" aria-labelledby="pstH"><h2 class="card-h" id="pstH">בנק הסיפורים שלך</h2>
+    <div class="card-sub">סיפורים אמיתיים שלך בשיטת STAR: מצב, משימה, פעולה, תוצאה. מכינים פעם אחת ומשתמשים בכל ראיון.</div>
+    ${S.stories.length?S.stories.map(st=>`<button class="row" onclick="editStory('${st.id}')"><span class="ri">${ROW_IC.book}</span><span class="rl"><b>${escB(st.t)}</b><span>${/תוצאה: *$/.test(st.b)?'חסרה התוצאה':'מוכן'}</span></span><span class="chev" aria-hidden="true"></span></button>`).join('')
+      :`<p class="card-sub">עוד אין סיפורים. כדאי להתחיל מפרויקט אחד מקורות החיים: מה הייתה הבעיה, מה עשית, ומה יצא.</p>`}
+    <button class="btn btn-sm btn-ghost btn-block" style="margin-top:8px" onclick="editStory()">להוסיף סיפור</button></section>`;
 }

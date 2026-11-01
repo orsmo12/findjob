@@ -12,6 +12,7 @@ from __future__ import annotations
 import re
 
 from agent_core.llm_router import chat
+from agent_core import activity as act
 
 PROMPT = """Write a short cover letter (110-160 words) for this job, in {lang}.
 
@@ -80,12 +81,15 @@ def write_letter(cv: str, job: dict, name: str) -> dict:
     ad = job.get("ad") or job.get("desc") or ""
     lang = ad_language(ad) if ad else "English"
     prompt = PROMPT.format(lang=lang, name=name or "", cv=cv[:5000], title=job["title"], company=job["co"], ad=ad[:3500] or "(no description)")
+    act.log("assistant", f"כותב מכתב פנייה ל-{job['co']} ({'אנגלית' if lang == 'English' else 'עברית'}, כשפת המודעה)")
     text = chat("assistant", "cover_letter", [{"role": "user", "content": prompt}], tier="write", max_tokens=1500)
     bad = unsupported(text, cv, ad, job["co"], name)
     if bad:
+        act.log("assistant", f"בבדיקת מקור מצאתי פרטים שלא כתובים אצלך ({', '.join(bad[:3])}). כותב מחדש.")
         fix = prompt + f"\n\nYour previous draft mentioned things NOT in the CV or ad: {', '.join(bad)}. Rewrite without them."
         text = chat("assistant", "cover_letter_retry", [{"role": "user", "content": fix}], tier="write", max_tokens=1500)
         bad = unsupported(text, cv, ad, job["co"], name)
         if bad:
+            act.log("assistant", "עדיין היו פרטים לא מבוססים. מחקתי את המשפטים האלה.")
             text = _drop_bad_sentences(text, bad)
     return {"text": text.strip(), "lang": lang, "checked": not unsupported(text, cv, ad, job["co"], name)}

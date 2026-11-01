@@ -47,8 +47,9 @@ def save_feed(user_id: str, feed: dict) -> None:
         r = httpx.post(_url("jobs"), headers=_h({"Prefer": "resolution=ignore-duplicates"}), json=rows, timeout=30)
         r.raise_for_status()
     s = feed["stats"]
-    msg = (f"סרקתי {s['collected']} משרות חדשות. {s['shown']} מתאימות לך"
-           + (f", ו-{s['too_senior']} בכירות מדי סיננתי." if s.get("too_senior") else "."))
+    names = [f"{c['title']} ב-{c['co']}" for c in feed["jobs"][:3]]
+    msg = (f"מצאתי {s['shown']} משרות חדשות שמתאימות לך: {'; '.join(names)}" + (" ועוד." if s['shown'] > 3 else ".")
+           if s["shown"] else f"הלילה עברתי על {s['collected']} משרות ולא מצאתי חדשה שמתאימה לך. אמשיך לחפש מחר.")
     add_run(user_id, "hunter", msg, s, feed["plan"])
 
 
@@ -89,4 +90,10 @@ def add_run(user_id: str, agent: str, msg: str, stats: dict | None = None, plan:
 
 def update_profile(user_id: str, fields: dict) -> None:
     r = httpx.patch(_url("profiles"), headers=_h(), json=fields, params={"user_id": f"eq.{user_id}"}, timeout=30)
+    r.raise_for_status()
+
+
+def add_logs(rows: list[dict]) -> None:
+    """שורות יומן לתהליך העבודה במשרד (בקשה אחת)."""
+    r = httpx.post(_url("runs"), headers=_h(), json=rows, timeout=30)
     r.raise_for_status()

@@ -805,6 +805,21 @@ a.btn{text-decoration:none}
 a.person{text-decoration:none;color:inherit;min-height:44px}
 a.person>svg{flex:0 0 18px;width:18px;height:18px;fill:none;stroke:var(--ink3);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 
+/* הוספת משרה מקישור */
+.jobs-wrap .add-link{align-self:center;margin-top:10px;display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:0 12px;border-radius:12px;background:var(--brand-lt,#E3F1EA);color:var(--brand,#0F6E54);font-weight:600;font-size:13px}
+.jobs-wrap .add-link svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
+/* מסך הכנה לראיון */
+.prep-jobs{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 12px;scrollbar-width:none}
+.prep-jobs::-webkit-scrollbar{display:none}
+.prep-jobs button{flex:0 0 auto;display:flex;flex-direction:column;align-items:flex-start;gap:1px;min-height:48px;padding:8px 14px;border-radius:14px;background:rgba(255,255,255,.6);border:1px solid rgba(15,110,84,.12);text-align:start}
+.prep-jobs button b{font-size:13.5px;font-weight:600}
+.prep-jobs button span{font-size:11.5px;color:var(--ink3,#6B7C74)}
+.prep-jobs button[aria-selected=true]{background:var(--brand,#0F6E54);border-color:transparent}
+.prep-jobs button[aria-selected=true] b,.prep-jobs button[aria-selected=true] span{color:#fff}
+.prep-head{display:flex;align-items:center;gap:12px}
+.q .q-done{margin-inline-start:auto;color:var(--brand,#0F6E54);font-weight:700}
+.q textarea{margin-top:10px}
+
 </style>
 </head>
 <body>
@@ -843,6 +858,7 @@ a.person>svg{flex:0 0 18px;width:18px;height:18px;fill:none;stroke:var(--ink3);s
         <button role="listitem" class="dr-item" data-pg="main" onclick="goPage('main')"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7.5" height="9" rx="2"/><rect x="13.5" y="3" width="7.5" height="5" rx="2"/><rect x="13.5" y="11" width="7.5" height="10" rx="2"/><rect x="3" y="15" width="7.5" height="6" rx="2"/></svg><span class="lbl">לוח בקרה</span></button>
         <button role="listitem" class="dr-item" data-pg="jobs" onclick="goPage('jobs')"><svg viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="3"/><path d="M9 8h6M9 12h6M9 16h3"/></svg><span class="lbl">משרות חדשות</span><span class="dr-badge" id="bdJobs" hidden></span></button>
         <button role="listitem" class="dr-item" data-pg="apps" onclick="goPage('apps')"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h10M4 18h6"/><circle cx="18" cy="16" r="3"/></svg><span class="lbl">הגשות</span><span class="dr-badge" id="bdApps" hidden></span></button>
+        <button role="listitem" class="dr-item" data-pg="prep" onclick="goPage('prep')"><svg viewBox="0 0 24 24"><path d="M4 5h11a3 3 0 013 3v11H7a3 3 0 01-3-3z"/><path d="M8 9h6M8 13h4"/><path d="M18 8h2v12H8"/></svg><span class="lbl">הכנה לראיון</span></button>
         <button role="listitem" class="dr-item dr-sub" id="drIv" hidden onclick="openIvShortcut()"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></svg><span class="lbl" id="drIvTxt"></span></button>
         <button role="listitem" class="dr-item" data-pg="linkedin" onclick="goPage('linkedin')"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="M8 10v6M8 7.5v.01M12 16v-3.5a2 2 0 014 0V16M12 10v6"/></svg><span class="lbl">LinkedIn</span><span class="dr-badge" id="bdLi" hidden></span></button>
       </div>
@@ -876,6 +892,7 @@ a.person>svg{flex:0 0 18px;width:18px;height:18px;fill:none;stroke:var(--ink3);s
           <button class="act save" aria-label="שמור את המשרה" onclick="decide('save')"><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg></button>
           <button class="act info" aria-label="פרטי המשרה" onclick="openJobInfo()"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg></button>
         </div>
+        <button class="add-link" id="addJobBtn" hidden onclick="openAddJob()"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 14a4 4 0 005.7 0l3-3a4 4 0 00-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 00-5.7 0l-3 3a4 4 0 005.7 5.7l1-1"/></svg>מצאת משרה בעצמך? הוספה מקישור</button>
       </div>
     </section>
 
@@ -884,6 +901,10 @@ a.person>svg{flex:0 0 18px;width:18px;height:18px;fill:none;stroke:var(--ink3);s
         <div class="seg" id="seg" role="tablist" aria-label="שלבי הגשה"></div>
         <div id="appsList" class="stack"></div>
       </div>
+    </section>
+
+    <section class="pg" id="pg-prep" aria-labelledby="tbTitle">
+      <div class="scroll" id="prepScroll"></div>
     </section>
 
     <section class="pg" id="pg-linkedin" aria-labelledby="tbTitle">
@@ -1026,19 +1047,14 @@ function buildWorkflow(){
     {cmd:`${n('strategist')}.תכנון`,out:'יעד השבוע: 5 הגשות טובות · 5 תגובות · פוסט אחד',tag:'מתוזמן',state:'idle'},
   ];
 }
-/* תהליך העבודה מהריצות האמיתיות: הריצה האחרונה של כל סוכן */
+/* תהליך העבודה: היומן החי של הסוכנים — מה כל אחד עושה, ומה הוא מעביר למי. החדש למעלה */
 function realWorkflow(n){
-  const last=k=>RUNS.find(r=>(r.agent||'hunter')===k&&r.stats&&r.stats.msg);
-  const saved=Object.values(JOBS).filter(j=>S.decisions&&Object.keys(S.decisions).some(id=>S.decisions[id]==='save'&&JOBS[id]===j));
-  const pend=k=>saved.filter(j=>!j[k]).map(j=>j.co);
-  const row=(k,cmd,r,wait)=>r?{cmd:`${n(k)}.${cmd}`,out:r.stats.msg,tag:'הושלם',state:'idle'}:{cmd:`${n(k)}.${cmd}`,out:wait,tag:'מתוזמן',state:'idle'};
-  const job=(k,cmd,f,label)=>{const p=pend(f);return p.length?{cmd:`${n(k)}.${cmd}`,out:`${label} ל-${p.slice(0,2).join(', ')}${p.length>2?` ועוד ${p.length-2}`:''}`,tag:'בתור',state:'working'}:row(k,cmd,last(k),'יתחיל כשתשמור משרה')};
-  return[row('hunter','חיפוש לילה',last('hunter'),'הלילה, בסביבות 05:00'),
-    job('researcher','מחקר','brief','סקירת חברה עם מקורות'),
-    job('assistant','מכתב','letter','מכתב פנייה'),
-    job('coach','הכנה','prep','שאלות הכנה'),
-    row('linkedin','רדאר',last('linkedin'),'פוסטים מהשבוע, בריצה הלילית'),
-    row('strategist','תכנון',last('strategist'),'תוכנית חיפוש לפי הפרופיל שלך')];
+  const ago=t=>{const m=Math.round((Date.now()-new Date(t))/6e4);return m<1?'עכשיו':m<60?`לפני ${m} דק׳`:m<1440?`לפני ${Math.round(m/60)===1?'שעה':Math.round(m/60)+' שעות'}`:new Date(t).toLocaleDateString('he-IL')};
+  const logs=RUNS.filter(r=>r.stats&&r.stats.log).slice(0,60);
+  if(!logs.length)return[{cmd:`${n('strategist')}.ממתין`,out:'כאן תראה בזמן אמת מה כל סוכן עושה. הריצה הבאה: הלילה, בסביבות 05:15.',tag:'מתוזמן',state:'idle'}];
+  const live=Date.now()-new Date(logs[0].created_at)<4*6e4;
+  return logs.map((r,i)=>({cmd:`${n(r.agent||'hunter')}.${r.stats.to?'← '+n(r.stats.to):''}`.replace(/\.$/,''),out:r.stats.log,
+    tag:ago(r.created_at),state:live&&i===0?'working':'idle'}));
 }
 // The Office engine reads DOMS[selDom]; findjob has exactly one domain.
 const DOMS=[CAREER]; let selDom=0, selAg=0;
@@ -1179,7 +1195,7 @@ function defaultState(){return{
     {id:'t3',text:'לעדכן את קורות החיים עם הפרויקט האחרון',done:true},
   ],
   li:{handled:{},drafts:{},fixes:{},people:{},comments:0,posts:0},
-  stories:[
+  stories:REAL?[]:[
     {id:'s1',t:'Lifeboard: מגבלת API',b:'מצב: הסוכנים של Lifeboard צורכים מכסת API מוגבלת.\nמשימה: לשמור על ריצה יומית בלי לשלם.\nפעולה: תכננתי שומר תקציב שמתעדף משימות ודוחה את השאר.\nתוצאה: '},
     {id:'s2',t:'AI Smart Crosswalk: נתונים אמיתיים',b:'מצב: מערכת Computer Vision למעבר חצייה חכם.\nמשימה: \nפעולה: \nתוצאה: '},
     {id:'s3',t:'סגן מ״פ: החלטה תחת לחץ',b:'מצב: \nמשימה: \nפעולה: \nתוצאה: '},
@@ -1685,7 +1701,7 @@ function drawOff(){
 
 
 /* ═════════ shell ═════════ */
-const TITLES={main:'לוח בקרה',jobs:'משרות חדשות',apps:'הגשות',linkedin:'LinkedIn',office:'המשרד',profile:'הפרופיל שלי',settings:'הגדרות'};
+const TITLES={main:'לוח בקרה',jobs:'משרות חדשות',apps:'הגשות',prep:'הכנה לראיון',linkedin:'LinkedIn',office:'המשרד',profile:'הפרופיל שלי',settings:'הגדרות'};
 let curPg='main';
 function goPage(id,anchor){
   if(typeof offAnimId!=='undefined') cancelAnimationFrame(offAnimId);
@@ -1698,7 +1714,7 @@ function goPage(id,anchor){
   document.querySelectorAll('.dr-item[data-pg]').forEach(b=>{const on=b.dataset.pg===id;b.classList.toggle('active',on);on?b.setAttribute('aria-current','page'):b.removeAttribute('aria-current')});
   $('topbar').classList.remove('scrolled');
   const sc=document.querySelector('#pg-'+id+' .scroll'); if(sc) sc.scrollTop=0;
-  ({main:renderHome,jobs:renderJobs,apps:renderApps,linkedin:renderLinkedIn,profile:renderProfile,settings:renderSettings})[id]?.();
+  ({main:renderHome,jobs:renderJobs,apps:renderApps,prep:renderPrep,linkedin:renderLinkedIn,profile:renderProfile,settings:renderSettings})[id]?.();
   if(id==='office'){setTimeout(()=>{sizeOff();drawOff();},80);renderOffice();renderOfficeMsgs();}
   if(anchor) setTimeout(()=>$(anchor)?.scrollIntoView({behavior:'smooth',block:'start'}),60);
   syncChrome();
@@ -1713,7 +1729,7 @@ function syncChrome(){
   ['tbAvatar','drAvatar'].forEach(i=>$(i).textContent=ini);
   $('drName').textContent=prof().name; $('drGoal').textContent=goalTxt();
 }
-function openIvShortcut(){const iv=S.apps.find(a=>a.status==='interview');if(iv){goPage('apps');openApp(iv.id,'prep')}}
+function openIvShortcut(){const iv=S.apps.find(a=>a.status==='interview');if(iv)openPrep(iv.jobId)}
 function toggleDrawer(){$('drawerOverlay').classList.contains('open')?closeDrawer():openDrawer()}
 function openDrawer(){syncChrome();$('drawerOverlay').classList.add('open');document.body.classList.add('drawer-open');$('menuBtn').setAttribute('aria-expanded','true');$('menuBtn').setAttribute('aria-label','סגירת התפריט')}
 function closeDrawer(){$('drawerOverlay').classList.remove('open');document.body.classList.remove('drawer-open');$('menuBtn').setAttribute('aria-expanded','false');$('menuBtn').setAttribute('aria-label','פתיחת התפריט')}
@@ -1771,8 +1787,8 @@ const ICO={
 function nextSteps(){
   const out=[],hp=hotPosts(),q=queue();
   if(hp.length&&(CLOUDM||!REAL)) out.push({ic:ICO.li,c:'i-amber',b:hp.length===1?'פוסט ששווה להגיב עליו':`${hp.length} פוסטים ששווה להגיב עליהם`,s:CLOUDM?'תגובות מוכנות להעתקה':`הראשון פורסם לפני ${Math.min(...hp.map(p=>p.mins))} דק׳`,w:CLOUDM?null:['עכשיו','w-urgent'],go:"goPage('linkedin')"});
-  S.apps.filter(a=>a.status==='interview').forEach(a=>out.push({ic:ICO.cal,c:'i-amber',b:`ראיון ב-${JOBS[a.jobId].co}${a.iv?', '+a.iv:''}`,s:'ההכנה מוכנה',w:['השבוע','w-soon'],go:`openApp('${a.id}','prep')`}));
-  S.apps.filter(a=>a.status==='screening').forEach(a=>out.push({ic:ICO.cal,c:'i-sky',b:`שאלות סינון מ-${JOBS[a.jobId].co}`,s:'הכנו לך תשובות לדוגמה',go:`openApp('${a.id}','prep')`}));
+  S.apps.filter(a=>a.status==='interview').forEach(a=>out.push({ic:ICO.cal,c:'i-amber',b:`ראיון ב-${JOBS[a.jobId].co}${a.iv?', '+a.iv:''}`,s:'ההכנה מוכנה',w:['השבוע','w-soon'],go:`openPrep('${a.jobId}')`}));
+  S.apps.filter(a=>a.status==='screening').forEach(a=>out.push({ic:ICO.cal,c:'i-sky',b:`שאלות סינון מ-${JOBS[a.jobId].co}`,s:'ההכנה מחכה לך',go:`openPrep('${a.jobId}')`}));
   if(q.length) out.push({ic:ICO.jobs,c:'i-green',b:q.length===1?'משרה חדשה מחכה לך':`${q.length} משרות חדשות מחכות לך`,s:q.slice(0,2).map(id=>JOBS[id].co).join(', ')+(q.length>2?` ועוד ${q.length-2}`:''),go:"goPage('jobs')"});
   S.apps.filter(followDue).forEach(a=>out.push({ic:ICO.mail,c:'i-teal',b:`${JOBS[a.jobId].co} לא ענו ${daysSince(a.date)} ימים`,s:'הודעת המשך מוכנה',go:`openApp('${a.id}','details')`}));
   S.apps.filter(a=>a.status==='saved').forEach(a=>out.push({ic:ICO.send,c:'i-green',b:`${JOBS[a.jobId].co}: שמרת ועוד לא הגשת`,s:'המכתב מוכן',go:`openApp('${a.id}','letter')`}));
@@ -1834,6 +1850,7 @@ function bindTodoDrag(h){
 /* ═════════ משרות חדשות ═════════ */
 let lastAct=null, busy=false;
 function renderJobs(){
+  $('addJobBtn').hidden=!CLOUDM;
   const q=queue(),done=DECK.length-q.length,saved=DECK.filter(id=>S.decisions[id]==='save').length;
   $('jobsCount').textContent=q.length?`משרה ${done+1} מתוך ${DECK.length}${saved?` · ${saved} נשמרו`:''}`:`עברת על כל ${DECK.length} המשרות${saved?` · ${saved} נשמרו`:''}`;
   $('jobsFiltered').textContent=`${FILTERED_OUT} סוננו כבכירות מדי`;
@@ -1934,10 +1951,10 @@ function refreshApps(){if(curPg==='apps')renderApps();if(curPg==='main')renderHo
 let appTab='details';
 function openApp(id,tab){
   const a=appOf(id);if(!a)return;
-  const hasPrep=REAL||a.status==='interview'||a.status==='screening';
+  const hasPrep=!REAL&&(a.status==='interview'||a.status==='screening');
   appTab=tab==='prep'&&!hasPrep?'details':(tab||'details');
   const j=JOBS[a.jobId];
-  const tabs=[['details','פרטים'],['letter','מכתב'],['ref',REAL?'קשרים':'ממליצים'],...(hasPrep?[['prep',REAL?'הכנה':a.status==='interview'?'הכנה':'סינון']]:[])];
+  const tabs=[['details','פרטים'],['letter','מכתב'],['ref',REAL?'קשרים':'ממליצים'],...(hasPrep?[['prep',a.status==='interview'?'הכנה':'סינון']]:[])];
   openSheet(`<div style="display:flex;gap:13px;align-items:center">${logo(j)}<div style="min-width:0"><h3 id="sheetTitle" lang="en" dir="ltr" style="text-align:right">${escB(j.title)}</h3><div class="sheet-sub">${escB(j.co)} · ${escB(j.loc)}</div></div></div>
     <div class="tabs" role="tablist">${tabs.map(([k,l])=>`<button role="tab" id="tab-${k}" aria-selected="${appTab===k}" onclick="appTab='${k}';paintAppTab('${id}')">${l}</button>`).join('')}</div>
     <div id="appTab" role="tabpanel"></div>`);
@@ -1957,6 +1974,7 @@ function paintAppTab(id){
         <div class="kv"><span>שכר</span><b>${escB(salaryTxt(j))}</b></div></div>
       ${fu?`<div class="s-sec"><h4>הודעת המשך</h4><textarea class="textbox" id="fuText" rows="7" aria-label="הודעת המשך">${esc(a.follow||followText(j))}</textarea>
         <div class="duo"><button class="btn btn-ghost" onclick="copyText($('fuText').value,'ההודעה הועתקה')">${ICO.copy}העתק</button><button class="btn btn-primary" onclick="sentFollow('${id}')">שלחתי</button></div></div>`:''}
+      ${REAL?`<div class="s-sec"><button class="btn btn-ghost btn-block" onclick="openPrep('${a.jobId}')">${ICO.spark||''}הכנה לראיון${j.prep&&j.prep.questions&&j.prep.questions.length?` · ${j.prep.questions.length} שאלות מוכנות`:''}</button></div>`:''}
       ${REAL?briefHtml(j):''}
       <div class="s-sec"><a class="btn btn-ghost btn-block ext" href="${j.url||LI_URL+'jobs/'}" target="_blank" rel="noopener">פתח את המשרה${ICO.open}</a></div>`;
   }else if(appTab==='letter'){
@@ -1992,7 +2010,7 @@ function openStatus(id){
   const a=appOf(id),j=JOBS[a.jobId];
   openSheet(`<h3 id="sheetTitle">שלב ההגשה</h3><div class="sheet-sub">${escB(j.co)}</div><div class="s-sec" role="radiogroup" aria-label="שלב">${Object.entries(STATUSES).map(([k,l])=>`<button class="opt${a.status===k?' sel':''}" role="radio" aria-checked="${a.status===k}" onclick="setStatus('${id}','${k}')"><span class="status st-${k}">${l}</span><span class="radio" aria-hidden="true"></span></button>`).join('')}</div>`);
 }
-function setStatus(id,k){const a=appOf(id);if(a.status!==k){a.status=k;if(k==='applied')a.date=new Date().toISOString();save()}refreshApps();openApp(id,(k==='interview'||k==='screening')?'prep':'details');toast(`השלב עודכן: ${STATUSES[k]}`)}
+function setStatus(id,k){const a=appOf(id);if(a.status!==k){a.status=k;if(k==='applied')a.date=new Date().toISOString();save()}refreshApps();if(REAL&&(k==='interview'||k==='screening')){closeSheet();openPrep(appOf(id).jobId)}else openApp(id,(k==='interview'||k==='screening')?'prep':'details');toast(`השלב עודכן: ${STATUSES[k]}`)}
 
 /* ═════════ LinkedIn ═════════ */
 function renderLinkedIn(){
@@ -2113,6 +2131,49 @@ function renderLinkedInReal(){
       <div class="duo"><button class="btn btn-ghost" onclick="copyText($('postDraft').value,'הפוסט הועתק')">${ICO.copy}העתק</button><a class="btn btn-primary ext" href="${LI_URL}feed/" target="_blank" rel="noopener" onclick="copyText($('postDraft').value,'הפוסט הועתק. הדבק אותו בפוסט חדש')">פתח את LinkedIn${ICO.open}</a></div>
       <div class="done-row" style="margin-top:10px"><span>פרסמת?</span><button class="mark" onclick="S.li.posts=S.li.posts?0:1;save();renderLinkedIn();syncChrome()">${L.posts?'בטל סימון':'פרסמתי ✓'}</button></div>`
       :`<p class="card-sub" style="padding:6px 2px">${escB(N('linkedin'))} יכין טיוטה על אחד הפרויקטים שלך בריצה הלילית.</p>`}</section>`;
+}
+
+/* ═════════ הכנה לראיון: מסך אחד עם כל מה שצריך, לכל משרה ששמרת ═════════ */
+let prepJob=null;
+function openPrep(jobId){prepJob=jobId;goPage('prep')}
+function prepApps(){const order={interview:0,screening:1,applied:2,saved:3};
+  return S.apps.filter(a=>JOBS[a.jobId]&&order[a.status]!=null).sort((x,y)=>order[x.status]-order[y.status])}
+function renderPrep(){
+  const apps=prepApps();
+  if(!apps.length){$('prepScroll').innerHTML=`<div class="empty" style="padding:48px 12px"><h3>עוד אין משרה להתכונן אליה</h3><p>שמור משרה, ו${escB(N('coach'))} תכין שאלות לפי מה שכתוב במודעה. ${escB(N('researcher'))} יכין סקירה על החברה.</p><button class="btn btn-primary" onclick="goPage('jobs')">למשרות</button></div>`+storiesHtml();return}
+  if(!apps.some(a=>a.jobId===prepJob))prepJob=apps[0].jobId;
+  const a=apps.find(x=>x.jobId===prepJob),j=JOBS[prepJob],qs=(j.prep&&j.prep.questions)||[],b=j.brief;
+  a.answers=a.answers||{};
+  $('prepScroll').innerHTML=`
+    <div class="prep-jobs" role="tablist" aria-label="בחירת משרה">${apps.map(x=>`<button role="tab" aria-selected="${x.jobId===prepJob}" onclick="prepJob='${x.jobId}';renderPrep()"><b dir="auto">${escB(JOBS[x.jobId].co)}</b><span>${STATUSES[x.status]}${x.iv?' · '+escB(x.iv):''}</span></button>`).join('')}</div>
+
+    <section class="card glass prep-head">${logo(j)}<div style="min-width:0;flex:1"><h2 class="card-h" dir="auto" style="margin:0">${escB(j.title)}</h2><div class="card-sub" style="margin:2px 0 0">${escB(j.co)} · ${STATUSES[a.status]}${a.iv?' · '+escB(a.iv):''}</div></div>
+      <button class="btn btn-sm btn-ghost" onclick="openApp('${a.id}','details')">המשרה</button></section>
+
+    <section class="card glass" aria-labelledby="pqH"><h2 class="card-h" id="pqH">שאלות שכדאי להתכונן אליהן</h2>
+      ${!j.prep?`<p class="card-sub">${escB(N('coach'))} מכינה שאלות לפי הדרישות במודעה. הן יופיעו כאן תוך שעתיים בערך.</p>`
+        :!qs.length?`<p class="card-sub">במודעה לא היו מספיק פרטים לשאלות ממוקדות. אפשר לתרגל שאלות כלליות בצ׳אט.</p>`
+        :`<div class="card-sub">לפי מה שכתוב במודעה. לחץ על שאלה, קרא את הרמז, וכתוב תשובה משלך. היא נשמרת.</div>
+        ${qs.map((q,i)=>`<details class="q"${i===0?' open':''}><summary><span class="qtag" dir="auto">${escB(q.tag)}</span><span class="qtxt">${escB(q.q)}</span>${a.answers[i]?'<span class="q-done" aria-label="ענית">✓</span>':''}</summary>
+          <div class="hint">${escB(q.h)}</div>
+          <label class="vh" for="ans${i}">התשובה שלי</label><textarea class="textbox" id="ans${i}" rows="4" placeholder="התשובה שלי…" onchange="prepAnswer(${i},this.value)">${esc(a.answers[i]||'')}</textarea></details>`).join('')}`}
+      <button class="btn btn-primary btn-block" style="margin-top:12px" onclick="toggleChat(true);chatAsk('בוא נתרגל ראיון ל-${escB(j.title).replace(/'/g,'')} ב-${escB(j.co).replace(/'/g,'')}. תשאל שאלה אחת בכל פעם.')">לתרגל בצ׳אט</button></section>
+
+    <section class="card glass" aria-labelledby="pcH"><h2 class="card-h" id="pcH">מה לדעת על ${escB(j.co)}</h2>
+      ${!b?`<p class="card-sub">${escB(N('researcher'))} מכין סקירה עם מקורות. היא תופיע כאן תוך שעתיים בערך.</p>`
+        :!b.found?`<p class="card-sub">לא נמצא מידע ציבורי אמין על החברה. כדאי לשאול בשיחה על המוצר והצוות.</p>`
+        :`${b.what?`<p style="font-size:14px;line-height:1.6;margin-bottom:6px">${escB(b.what)}</p>`:''}${b.facts.slice(0,3).map(f=>`<div class="jc-r" style="margin-bottom:6px"><span class="ic" aria-hidden="true">•</span><span>${escB(f.text)}</span></div>`).join('')}
+          <button class="link" style="color:var(--brand);font-weight:600;margin-top:4px" onclick="openApp('${a.id}','details')">לסקירה המלאה עם המקורות</button>`}</section>
+
+    ${storiesHtml()}`;
+}
+function prepAnswer(i,v){const a=S.apps.find(x=>x.jobId===prepJob);if(!a)return;a.answers=a.answers||{};if(v.trim())a.answers[i]=v;else delete a.answers[i];save()}
+function storiesHtml(){
+  return`<section class="card glass" aria-labelledby="pstH"><h2 class="card-h" id="pstH">בנק הסיפורים שלך</h2>
+    <div class="card-sub">סיפורים אמיתיים שלך בשיטת STAR: מצב, משימה, פעולה, תוצאה. מכינים פעם אחת ומשתמשים בכל ראיון.</div>
+    ${S.stories.length?S.stories.map(st=>`<button class="row" onclick="editStory('${st.id}')"><span class="ri">${ROW_IC.book}</span><span class="rl"><b>${escB(st.t)}</b><span>${/תוצאה: *$/.test(st.b)?'חסרה התוצאה':'מוכן'}</span></span><span class="chev" aria-hidden="true"></span></button>`).join('')
+      :`<p class="card-sub">עוד אין סיפורים. כדאי להתחיל מפרויקט אחד מקורות החיים: מה הייתה הבעיה, מה עשית, ומה יצא.</p>`}
+    <button class="btn btn-sm btn-ghost btn-block" style="margin-top:8px" onclick="editStory()">להוסיף סיפור</button></section>`;
 }
 
 /* ═════════ ONBOARDING ═════════ */
@@ -2314,11 +2375,6 @@ function renderProfile(){
         <button class="tm-info" aria-label="מה ${escB(g.name)} עושה" onclick="openAgSheet(${i})">?</button></div>`).join('')}
       ${Object.keys(S.team).length?`<button class="btn btn-sm btn-ghost btn-block" style="margin-top:8px" onclick="S.team={};save();applyTeam();renderProfile();syncChrome();toast('השמות חזרו לברירת המחדל')">לשמות המקוריים</button>`:''}</section>
 
-    <section class="card glass" aria-labelledby="stH"><h2 class="card-h" id="stH">בנק סיפורים לראיונות</h2>
-      <div class="card-sub">סיפורים אמיתיים שלך בשיטת STAR. ${escB(N('coach'))} משתמשת בהם כשהיא מכינה אותך לראיון.</div>
-      ${S.stories.map(st=>`<button class="row" onclick="editStory('${st.id}')"><span class="ri">${ROW_IC.book}</span><span class="rl"><b>${escB(st.t)}</b><span>${/תוצאה: *$/.test(st.b)?'חסרה התוצאה':'מוכן'}</span></span><span class="chev" aria-hidden="true"></span></button>`).join('')}
-      <button class="btn btn-sm btn-ghost btn-block" style="margin-top:8px" onclick="editStory()">להוסיף סיפור</button></section>
-
     <section class="card glass" id="learned" aria-labelledby="lH"><h2 class="card-h" id="lH">מה למדנו עליך</h2>
       ${learned.length?`<div class="card-sub">מהמשרות שדילגת עליהן. אם משהו לא נכון, אפשר להסיר.</div><div class="learned">${learned.map(([r,n])=>`<span class="chip">${escB(L[r]||r)} <span class="num" style="color:var(--ink3)">(${n})</span><button aria-label="להסיר: ${escB(L[r]||r)}" onclick="forget('${r}')">×</button></span>`).join('')}</div>`
         :`<div class="card-sub" style="margin:0">כשתדלג על משרה ותגיד למה, נלמד ונסנן בהתאם. ${FILTERED_OUT} משרות בכירות מדי כבר סוננו לפי התשובות שלך.</div>`}</section>`;
@@ -2338,10 +2394,10 @@ function editStory(id){
   openSheet(`<h3 id="sheetTitle">${id?'עריכת סיפור':'סיפור חדש'}</h3><div class="sheet-sub">מצב, משימה, פעולה ותוצאה. עדיף עם מספר אחד לפחות.</div>
     <div class="field" style="margin-top:14px"><label for="stT">כותרת</label><input id="stT" value="${escB(st.t)}" placeholder="למשל: Lifeboard, מגבלת API"></div>
     <div class="field"><label for="stB">הסיפור</label><textarea id="stB" rows="8">${esc(st.b)}</textarea></div>
-    <div class="duo">${id?`<button class="btn btn-ghost" onclick="S.stories=S.stories.filter(x=>x.id!=='${id}');save();closeSheet();renderProfile();toast('הסיפור נמחק')">מחיקה</button>`:''}<button class="btn btn-primary" style="flex:2" onclick="saveStory('${id}')">שמירה</button></div>`);
+    <div class="duo">${id?`<button class="btn btn-ghost" onclick="S.stories=S.stories.filter(x=>x.id!=='${id}');save();closeSheet();curPg==='prep'?renderPrep():renderProfile();toast('הסיפור נמחק')">מחיקה</button>`:''}<button class="btn btn-primary" style="flex:2" onclick="saveStory('${id}')">שמירה</button></div>`);
 }
 function saveStory(id){const t=$('stT').value.trim(),b=$('stB').value;if(!t){$('stT').focus();toast('צריך כותרת לסיפור');return}
-  if(id){Object.assign(S.stories.find(x=>x.id===id),{t,b})}else S.stories.push({id:'s'+Date.now(),t,b});save();closeSheet();renderProfile();toast('הסיפור נשמר')}
+  if(id){Object.assign(S.stories.find(x=>x.id===id),{t,b})}else S.stories.push({id:'s'+Date.now(),t,b});save();closeSheet();curPg==='prep'?renderPrep():renderProfile();toast('הסיפור נשמר')}
 function editCvText(){openSheet(`<h3 id="sheetTitle">קורות חיים כטקסט</h3><div class="sheet-sub">הסוכנים עובדים לפי הטקסט הזה</div><div class="field" style="margin-top:14px"><label for="cvEdit" class="vh">קורות חיים</label><textarea id="cvEdit" rows="12">${esc(prof().cv)}</textarea></div><button class="btn btn-primary btn-block" onclick="prof().cv=$('cvEdit').value;save();closeSheet();renderProfile();toast('קורות החיים נשמרו')">שמירה</button>`)}
 function onCvFile(inp){
   const f=inp.files[0];if(!f)return;prof().cvName=f.name;

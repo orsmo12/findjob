@@ -16,6 +16,7 @@ import re
 
 from agent_core.llm_router import chat
 from agent_core.agents.research import search_web
+from agent_core import activity as act
 
 LATIN = re.compile(r"[A-Za-z][A-Za-z0-9+#.\-]{2,}")
 NUM = re.compile(r"\d[\d.,%+]*")
@@ -73,7 +74,8 @@ def find_posts(plan: dict, limit: int = 5) -> list[dict]:
             from ddgs import DDGS
             res = DDGS().text(q, region="wt-wt", timelimit="w", max_results=8) or []
         except Exception as e:  # noqa: BLE001
-            print(f"[קובי] חיפוש נכשל: {type(e).__name__}"); res = []
+            act.log("linkedin", f"חיפוש פוסטים נכשל ({type(e).__name__}). ממשיך."); res = []
+        act.log("linkedin", f"מחפש פוסטים מהשבוע: {q.replace('site:linkedin.com/posts ', '')} → {len(res)} תוצאות")
         for r in res:
             url = r.get("href", "")
             if "linkedin.com/posts/" not in url or url in seen:
@@ -110,9 +112,11 @@ def hot_posts(plan: dict, cv: str, limit: int = 5) -> list[dict]:
         d = _json(chat("linkedin", "comment_drafts", [{"role": "user", "content": POST_PROMPT.format(
             author=p["author"], text=p["text"], cv=cv[:3000])}], tier="write", max_tokens=1200))
         if not d.get("relevant"):
+            act.log("linkedin", f"פוסט של {p['author']}: לא רלוונטי לחיפוש שלך. מדלג.")
             continue
         drafts = [x for x in (d.get("drafts") or [])[:2] if grounded(str(x.get("t", "")), cv + " " + p["text"] + " " + p["author"])]
         if drafts:
+            act.log("linkedin", f"פוסט של {p['author']}: {str(d.get('why', ''))[:60]}. הכנתי {len(drafts)} הצעות תגובה.")
             out.append({**p, "why": str(d.get("why", ""))[:90], "lang": "he" if d.get("lang") == "he" else "en",
                         "drafts": [{"k": str(x.get("k", ""))[:20], "t": str(x["t"])[:600]} for x in drafts]})
     return out
@@ -128,6 +132,7 @@ CV:
 
 
 def weekly_draft(cv: str) -> str:
+    act.log("linkedin", "כותב טיוטת פוסט שבועית על אחד הפרויקטים שלך")
     t = chat("linkedin", "weekly_post", [{"role": "user", "content": DRAFT_PROMPT.format(cv=cv[:4000])}], tier="write", max_tokens=600)
     parts = re.split(r"(?<=[.!?])\s+", t.strip())
     return " ".join(p for p in parts if grounded(p, cv)).strip()
@@ -161,13 +166,14 @@ def profile_fixes(cv: str, li_text: str, plan: dict) -> list[dict]:
     if not d.get("fixes"):
         d = _json(chat("coach", "linkedin_profile_retry", [{"role": "user", "content": prompt + "\n\nReturn ONLY the JSON object."}],
                        tier="judge", max_tokens=2500))
+    act.log("coach", "עוברת על פרופיל ה-LinkedIn שהעלית מול קורות החיים והתפקידים שאתה מחפש")
     if not d.get("fixes"):
-        print("[מאיה] המודל לא החזיר שיפורים בפורמט תקין")
+        act.log("coach", "לא קיבלתי תשובה תקינה מהמודל. אנסה בריצה הבאה.")
     out = []
     for i, f in enumerate((d.get("fixes") or [])[:5]):
         copy = str(f.get("copy", ""))[:1200]
         if copy and not grounded(copy, cv + " " + li_text + " " + " ".join(plan.get("titles", []))):
-            print(f"[מאיה] נזרק שיפור עם פרט שלא מופיע בקורות החיים או בפרופיל: {f.get('t')}")
+            act.log("coach", f"זרקתי הצעה \"{f.get('t')}\": היא מזכירה משהו שלא כתוב אצלך")
             continue
         out.append({"id": f"f{i + 1}", "t": str(f.get("t", ""))[:80], "why": str(f.get("why", ""))[:160], "copy": copy})
     return out

@@ -21,6 +21,7 @@ from pathlib import Path
 
 from agent_core.llm_router import chat
 from agent_core.budget_guard import BudgetDeferred
+from agent_core import activity as act
 
 ROOT = Path(__file__).resolve().parents[2]
 FEED = ROOT / "memory" / "feed" / "jobs.json"
@@ -66,8 +67,9 @@ def collect(plan: dict, per_search: int = 20) -> list[dict]:
                     description_format="markdown", linkedin_fetch_description=False,
                 )
             except Exception as e:  # מקור אחד שנכשל לא מפיל את כל החיפוש
-                print(f"[דורון] {q} / {loc}: {type(e).__name__}: {e}")
+                act.log("hunter", f"החיפוש '{q}' ב{loc} נכשל ({type(e).__name__}). ממשיך הלאה.")
                 continue
+            act.log("hunter", f"LinkedIn + Indeed: '{q}' ב{loc} → {len(df)} משרות")
             for _, row in df.iterrows():
                 r = row.to_dict()
                 out.append({
@@ -211,7 +213,7 @@ def rate(job: dict, cv: str, prefs: str) -> dict | None:
         r = parse_rating(chat("hunter", "rate_job_retry", [{"role": "user", "content": prompt + "\n\nReturn ONLY the JSON object, nothing else."}],
                               tier="judge", max_tokens=1600))
     if r is None:
-        print(f"[דורון] לא הצלחתי לדרג: {job['title']} @ {job['company']}")  # בלי json_mode: חלק מהמודלים נכשלים בו; parse_rating מחלץ את ה-JSON
+        act.log("hunter", f"לא הצלחתי לדרג את {job['title']} ב-{job['company']}. אנסה בריצה הבאה.")  # בלי json_mode: חלק מהמודלים נכשלים בו; parse_rating מחלץ את ה-JSON
     if r:
         r["reasons"] = grounded(r["reasons"], cv)        # סיבה = עובדה מקורות החיים
         r["gaps"] = grounded(r["gaps"], desc)             # חסר = דרישה שכתובה במודעה
@@ -264,11 +266,16 @@ def run(profile: dict, plan: dict, raw: list[dict] | None = None, rate_top: int 
         seen: set[str] | None = None, persist: bool = True) -> dict:
     """persist=False: לא כותבים קבצים מקומיים (בענן התוצאות נשמרות ב-Supabase)."""
     cv = profile.get("cv_text", "")
-    jobs = dedupe(raw if raw is not None else collect(plan))
+    raw = raw if raw is not None else collect(plan)
+    jobs = dedupe(raw)
+    act.log("hunter", f"איחדתי כפילויות: {len(raw)} → {len(jobs)} משרות שונות")
     if seen is None:
         seen = set(json.loads(SEEN.read_text())) if SEEN.exists() else set()
     jobs, stats = prefilter(jobs, plan, seen)
+    act.log("hunter", f"סיננתי {stats['too_senior']} בכירות מדי ו-{stats['already_seen']} שכבר ראית. נשארו {len(jobs)}.")
     jobs.sort(key=lambda j: -cheap_rank(j, plan, cv))
+    if jobs:
+        act.log("hunter", f"מדרג את {min(len(jobs), rate_top)} המבטיחות מול קורות החיים שלך")
     cards, deferred = [], 0
     for j in jobs[:rate_top]:
         enrich(j)
@@ -279,13 +286,18 @@ def run(profile: dict, plan: dict, raw: list[dict] | None = None, rate_top: int 
         except BudgetDeferred as e:
             if not deferred:
                 print(f"[דורון] דירוג נדחה: {e}")
+                act.log("hunter", "הגעתי למכסה היומית של ה-AI. שאר המשרות ידורגו בריצה הבאה.")
             deferred += 1; continue
         if not r:
             continue
         if not r["seniority_ok"]:
-            stats["too_senior"] += 1; stats["ai_senior"] = stats.get("ai_senior", 0) + 1; continue
+            stats["too_senior"] += 1; stats["ai_senior"] = stats.get("ai_senior", 0) + 1
+            act.log("hunter", f"{j['title']} ב-{j['company']}: דורשת יותר ניסיון ממה שיש לך. מדלג.")
+            continue
         stats.setdefault("fits", []).append(r["fit"])
-        if r["fit"] >= min_fit:
+        ok = r["fit"] >= min_fit
+        act.log("hunter", f"{j['title']} ב-{j['company']}: {r['fit']:.1f}/5 {'✓ מתאימה' if ok else '· מתחת לסף'}")
+        if ok:
             cards.append(to_card(j, r, cv))
     cards.sort(key=lambda c: -c["fit"])
     stats.update(rated=min(len(jobs), rate_top) - deferred, deferred=deferred, shown=len(cards))

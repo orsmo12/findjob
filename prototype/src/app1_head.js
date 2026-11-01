@@ -53,19 +53,14 @@ function buildWorkflow(){
     {cmd:`${n('strategist')}.תכנון`,out:'יעד השבוע: 5 הגשות טובות · 5 תגובות · פוסט אחד',tag:'מתוזמן',state:'idle'},
   ];
 }
-/* תהליך העבודה מהריצות האמיתיות: הריצה האחרונה של כל סוכן */
+/* תהליך העבודה: היומן החי של הסוכנים — מה כל אחד עושה, ומה הוא מעביר למי. החדש למעלה */
 function realWorkflow(n){
-  const last=k=>RUNS.find(r=>(r.agent||'hunter')===k&&r.stats&&r.stats.msg);
-  const saved=Object.values(JOBS).filter(j=>S.decisions&&Object.keys(S.decisions).some(id=>S.decisions[id]==='save'&&JOBS[id]===j));
-  const pend=k=>saved.filter(j=>!j[k]).map(j=>j.co);
-  const row=(k,cmd,r,wait)=>r?{cmd:`${n(k)}.${cmd}`,out:r.stats.msg,tag:'הושלם',state:'idle'}:{cmd:`${n(k)}.${cmd}`,out:wait,tag:'מתוזמן',state:'idle'};
-  const job=(k,cmd,f,label)=>{const p=pend(f);return p.length?{cmd:`${n(k)}.${cmd}`,out:`${label} ל-${p.slice(0,2).join(', ')}${p.length>2?` ועוד ${p.length-2}`:''}`,tag:'בתור',state:'working'}:row(k,cmd,last(k),'יתחיל כשתשמור משרה')};
-  return[row('hunter','חיפוש לילה',last('hunter'),'הלילה, בסביבות 05:00'),
-    job('researcher','מחקר','brief','סקירת חברה עם מקורות'),
-    job('assistant','מכתב','letter','מכתב פנייה'),
-    job('coach','הכנה','prep','שאלות הכנה'),
-    row('linkedin','רדאר',last('linkedin'),'פוסטים מהשבוע, בריצה הלילית'),
-    row('strategist','תכנון',last('strategist'),'תוכנית חיפוש לפי הפרופיל שלך')];
+  const ago=t=>{const m=Math.round((Date.now()-new Date(t))/6e4);return m<1?'עכשיו':m<60?`לפני ${m} דק׳`:m<1440?`לפני ${Math.round(m/60)===1?'שעה':Math.round(m/60)+' שעות'}`:new Date(t).toLocaleDateString('he-IL')};
+  const logs=RUNS.filter(r=>r.stats&&r.stats.log).slice(0,60);
+  if(!logs.length)return[{cmd:`${n('strategist')}.ממתין`,out:'כאן תראה בזמן אמת מה כל סוכן עושה. הריצה הבאה: הלילה, בסביבות 05:15.',tag:'מתוזמן',state:'idle'}];
+  const live=Date.now()-new Date(logs[0].created_at)<4*6e4;
+  return logs.map((r,i)=>({cmd:`${n(r.agent||'hunter')}.${r.stats.to?'← '+n(r.stats.to):''}`.replace(/\.$/,''),out:r.stats.log,
+    tag:ago(r.created_at),state:live&&i===0?'working':'idle'}));
 }
 // The Office engine reads DOMS[selDom]; findjob has exactly one domain.
 const DOMS=[CAREER]; let selDom=0, selAg=0;

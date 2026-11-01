@@ -12,6 +12,7 @@ import json
 import re
 
 from agent_core.llm_router import chat
+from agent_core import activity as act
 
 LATIN = re.compile(r"[A-Za-z][A-Za-z0-9+#.\-]{2,}")
 NUM = re.compile(r"\d[\d.,%+]*")
@@ -63,7 +64,9 @@ def _ok(text: str, source: str) -> bool:
 
 def brief(company: str, title: str, cv: str) -> dict:
     snips = gather(company)
+    act.log("researcher", f"מחפש מקורות ציבוריים על {company}: {len(snips)} תוצאות")
     if not snips:
+        act.log("researcher", f"לא נמצא שום מקור על {company}. לא כותב כלום.")
         return {"found": False, "sources": []}
     block = "\n".join(f"[{i}] {s['title']} — {s['text']}" for i, s in enumerate(snips))
     raw = chat("researcher", "company_brief", [{"role": "user", "content": PROMPT.format(
@@ -74,6 +77,7 @@ def brief(company: str, title: str, cv: str) -> dict:
     except ValueError:
         d = {}
     if not d.get("found"):
+        act.log("researcher", f"המקורות שמצאתי לא באמת עוסקים ב-{company}. לא כותב כלום.")
         return {"found": False, "sources": []}
     src_txt = lambda i: (snips[i]["title"] + " " + snips[i]["text"]) if isinstance(i, int) and 0 <= i < len(snips) else ""
     used, facts = set(), []
@@ -88,8 +92,12 @@ def brief(company: str, title: str, cv: str) -> dict:
     else:
         used.add(wi)
     why = [w[:180] for w in (d.get("why_you") or [])[:2] if _ok(str(w), cv + " " + company)]
+    dropped = len((d.get("facts") or [])[:4]) - len(facts)
+    if dropped:
+        act.log("researcher", f"זרקתי {dropped} עובדות שלא הופיעו במקור שצוין")
     if not what and not facts:
         return {"found": False, "sources": []}
+    act.log("researcher", f"סקירה על {company}: {len(facts)} עובדות, כל אחת עם מקור", to="assistant")
     order = sorted(used)
     remap = {old: new for new, old in enumerate(order)}
     return {"found": True, "what": what, "what_src": remap.get(wi),

@@ -26,7 +26,7 @@ async function cloudLoad(){
   const [{data:pr},{data:jobs},{data:runs}]=await Promise.all([
     SB.from('profiles').select('*').eq('user_id',uid).maybeSingle(),
     SB.from('jobs').select('id,card,decision,letter,brief,prep,created_at').eq('user_id',uid).order('created_at',{ascending:false}).limit(200),
-    SB.from('runs').select('agent,stats,created_at').eq('user_id',uid).order('created_at',{ascending:false}).limit(40)]);
+    SB.from('runs').select('agent,stats,created_at').eq('user_id',uid).order('created_at',{ascending:false}).limit(150)]);
   if(pr){const p=prof();p.first=pr.first||p.first;p.name=pr.name||p.name;p.cv=pr.cv_text||p.cv;p.ans=Object.assign({},pr.answers||{},p.ans||{});
     if(pr.team&&Object.keys(pr.team).length)S.team=pr.team;const st=pr.state||{};['apps','todos','stories'].forEach(k=>{if(Array.isArray(st[k]))S[k]=st[k]});if(st.targets)S.targets=st.targets;p.li_text=pr.li_text||'';LI=Object.assign({},pr.li||{},{fixes:((pr.li_fixes||{}).fixes)||[]});if(pr.cv_text)S.onboarded=true}
   prof().key='cloud';
@@ -77,4 +77,35 @@ function realUpdates(){
   const seat=k=>{const i=CAREER.agents.findIndex(a=>a.key===k);return i<0?0:i};
   const ago=t=>{const m=Math.round((Date.now()-new Date(t))/6e4);return m<60?`לפני ${Math.max(1,m)} דק׳`:m<1440?`לפני ${Math.round(m/60)===1?'שעה':Math.round(m/60)+' שעות'}`:m<2880?'אתמול':new Date(t).toLocaleDateString('he-IL')};
   return RUNS.filter(r=>r.stats&&r.stats.msg).map(r=>({a:seat(r.agent||'hunter'),time:ago(r.created_at),body:r.stats.msg}));
+}
+
+/* הוספת משרה מקישור: נכנסת לתהליך כמו משרה ששמרת */
+function openAddJob(){
+  openSheet(`<h3 id="sheetTitle">הוספת משרה מקישור</h3>
+    <p class="sheet-sub" style="margin-bottom:12px">מצאת משרה בעצמך? הדבק את הקישור. ${escB(N('hunter'))} ידרג אותה מול קורות החיים שלך, והיא תיכנס להגשות: ${escB(N('assistant'))} יכין מכתב, ${escB(N('researcher'))} סקירה ו${escB(N('coach'))} שאלות הכנה.</p>
+    <div class="field"><label for="ajUrl">קישור למשרה</label><input id="ajUrl" class="ltr" type="url" inputmode="url" placeholder="https://www.linkedin.com/jobs/view/…" autocomplete="off"></div>
+    <div class="field" id="ajTextWrap" hidden><label for="ajText">תיאור המשרה</label><textarea id="ajText" class="textbox" rows="7" placeholder="האתר לא נתן לקרוא את המשרה. העתק לכאן את כל הטקסט שלה."></textarea></div>
+    <div class="help" id="ajHelp"></div>
+    <button class="btn btn-primary btn-block" id="ajBtn" style="margin-top:12px" onclick="submitAddJob()">הוספה</button>`);
+  setTimeout(()=>{const i=$('ajUrl');i&&i.focus();navigator.clipboard&&navigator.clipboard.readText&&navigator.clipboard.readText().then(t=>{if(/^https?:\/\//.test(t||'')&&i&&!i.value)i.value=t.trim()}).catch(()=>{})},200);
+}
+async function submitAddJob(){
+  const url=($('ajUrl').value||'').trim(),text=($('ajText').value||'').trim(),h=$('ajHelp'),btn=$('ajBtn');
+  if(!/^https?:\/\//.test(url)&&text.length<200){h.textContent='צריך קישור שמתחיל ב-https://';h.style.color='var(--rose)';return}
+  btn.disabled=true;btn.textContent=`${N('hunter')} קורא את המשרה…`;h.textContent='';
+  let d={};
+  try{const {data:{session}}=await SB.auth.getSession();
+    const r=await fetch('/api/addjob',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url,text,token:session&&session.access_token})});
+    d=await r.json().catch(()=>({}));if(!r.ok&&!d.error)d.error='http'}catch(e){d={error:'net'}}
+  btn.disabled=false;btn.textContent='הוספה';
+  if(d.need_text){$('ajTextWrap').hidden=false;h.style.color='var(--ink2)';h.textContent='האתר לא מאפשר לקרוא את המשרה ישירות. העתק לשדה את התיאור שלה, ולחץ שוב על "הוספה".';$('ajText').focus();return}
+  if(d.not_job){h.style.color='var(--rose)';h.textContent='זה לא נראה כמו מודעת משרה. בדוק את הקישור.';return}
+  if(!d.card){h.style.color='var(--rose)';h.textContent=d.error==='auth'?'צריך להתחבר מחדש.':'משהו השתבש. נסה שוב בעוד דקה.';return}
+  const c=Object.assign({},d.card,{letter:null,brief:null,prep:null});
+  JOBS[c.id]=fromFeed({jobs:[c]})[c.id];if(!DECK.includes(c.id))DECK.push(c.id);
+  S.decisions[c.id]='save';_decSnap[c.id]='save';
+  if(!S.apps.find(a=>a.jobId===c.id))S.apps.unshift({id:'a-'+c.id,jobId:c.id,status:'saved',date:new Date().toISOString(),letter:''});
+  save();closeSheet();
+  toast(`${c.title} ב-${c.co}: התאמה ${c.fit} מתוך 5. נכנסה להגשות.${c.seniority_ok===false?' שים לב: היא דורשת יותר ניסיון.':''}`,{ms:5200});
+  goPage('apps');setTimeout(()=>openApp('a-'+c.id,'details'),250);
 }

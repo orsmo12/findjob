@@ -12,6 +12,7 @@ from agent_core.agents.letters import write_letter
 from agent_core.agents.research import brief
 from agent_core.agents.prep import prepare
 from agent_core.budget_guard import BudgetDeferred
+from agent_core import activity as act
 from agent_core.agents import linkedin_coach as K
 from agent_core.profile import build_search_plan
 
@@ -21,8 +22,10 @@ if not db.configured():
 for u in db.profiles_ready():
     cv, name = u["cv_text"], u.get("name") or u.get("first") or ""
     done = {"letter": [], "brief": [], "prep": []}
+    act.start(u["user_id"])
     for row in db.saved_missing(u["user_id"]):
         job, upd = row["card"], {}
+        act.log("assistant", f"נשמרה משרה: {job['title']} ב-{job['co']}. גיל — מחקר על החברה, מאיה — שאלות הכנה.", to="researcher")
         try:
             if not row.get("letter"):
                 upd["letter"] = write_letter(cv, job, name)
@@ -41,6 +44,7 @@ for u in db.profiles_ready():
                     done[k].append(job["co"])
             print(f"{u['user_id'][:8]} · {job['co']}: {', '.join(upd)}"
                   + (" (לא נמצא מידע על החברה)" if "brief" in upd and not upd["brief"].get("found") else ""))
+    act.flush()
     names = lambda xs: ", ".join(xs[:3]) + (f" ועוד {len(xs) - 3}" if len(xs) > 3 else "")
     if done["letter"]:
         db.add_run(u["user_id"], "assistant", f"מכתב פנייה מוכן ל-{names(done['letter'])}. כל פרט בו נבדק מול קורות החיים.")
@@ -60,3 +64,4 @@ for u in db.profiles_ready():
                        else "עברתי על פרופיל ה-LinkedIn שלך. לא מצאתי שיפור שאפשר להציע בלי להוסיף דברים שלא כתובים אצלך.")
         except BudgetDeferred:
             print("מכסה: הפרופיל בריצה הבאה")
+    act.flush()

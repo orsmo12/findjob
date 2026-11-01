@@ -86,7 +86,7 @@ function defaultState(){return{
     {id:'t3',text:'לעדכן את קורות החיים עם הפרויקט האחרון',done:true},
   ],
   li:{handled:{},drafts:{},fixes:{},people:{},comments:0,posts:0},
-  stories:[
+  stories:REAL?[]:[
     {id:'s1',t:'Lifeboard: מגבלת API',b:'מצב: הסוכנים של Lifeboard צורכים מכסת API מוגבלת.\nמשימה: לשמור על ריצה יומית בלי לשלם.\nפעולה: תכננתי שומר תקציב שמתעדף משימות ודוחה את השאר.\nתוצאה: '},
     {id:'s2',t:'AI Smart Crosswalk: נתונים אמיתיים',b:'מצב: מערכת Computer Vision למעבר חצייה חכם.\nמשימה: \nפעולה: \nתוצאה: '},
     {id:'s3',t:'סגן מ״פ: החלטה תחת לחץ',b:'מצב: \nמשימה: \nפעולה: \nתוצאה: '},
