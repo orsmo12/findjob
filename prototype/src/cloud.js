@@ -28,7 +28,7 @@ async function cloudLoad(){
     SB.from('jobs').select('id,card,decision,letter,brief,prep,created_at').eq('user_id',uid).order('created_at',{ascending:false}).limit(200),
     SB.from('runs').select('agent,stats,created_at').eq('user_id',uid).order('created_at',{ascending:false}).limit(150)]);
   if(pr){const p=prof();p.first=pr.first||p.first;p.name=pr.name||p.name;p.cv=pr.cv_text||p.cv;p.ans=Object.assign({},pr.answers||{},p.ans||{});
-    if(pr.team&&Object.keys(pr.team).length)S.team=pr.team;const st=pr.state||{};['apps','todos','stories'].forEach(k=>{if(Array.isArray(st[k]))S[k]=st[k]});if(st.targets)S.targets=st.targets;p.li_text=pr.li_text||'';LI=Object.assign({},pr.li||{},{fixes:((pr.li_fixes||{}).fixes)||[]});if(pr.cv_text)S.onboarded=true}
+    if(pr.team&&Object.keys(pr.team).length)S.team=pr.team;const st=pr.state||{};['apps','todos','stories'].forEach(k=>{if(Array.isArray(st[k]))S[k]=st[k]});if(st.targets)S.targets=st.targets;if(Array.isArray(st.history))S.history=st.history;if(Array.isArray(st.chat))S.chat=st.chat;p.li_text=pr.li_text||'';LI=Object.assign({},pr.li||{},{fixes:((pr.li_fixes||{}).fixes)||[]});if(pr.cv_text)S.onboarded=true}
   prof().key='cloud';
   RUNS=runs||[];const hr=RUNS.filter(r=>(r.agent||'hunter')==='hunter');
   if(hr.length||(jobs&&jobs.length)){
@@ -41,7 +41,7 @@ async function cloudLoad(){
   _decSnap=Object.assign({},S.decisions);_profSnap=profRow();
   LS.set(SKEY,S);window.__runsReady=true;if(typeof applyTeam==='function')applyTeam();buildWorkflow();
 }
-function profRow(){const p=prof();return JSON.stringify({first:p.first||'',name:p.name||'',cv_text:p.cv||'',answers:p.ans||{},team:S.team||{},state:{apps:S.apps,todos:S.todos,stories:S.stories,targets:S.targets||{added:[],removed:[]}},li_text:p.li_text||''})}
+function profRow(){const p=prof();return JSON.stringify({first:p.first||'',name:p.name||'',cv_text:p.cv||'',answers:p.ans||{},team:S.team||{},state:{apps:S.apps,todos:S.todos,stories:S.stories,targets:S.targets||{added:[],removed:[]},history:S.history||[],chat:(S.chat||[]).slice(-40)},li_text:p.li_text||''})}
 function cloudSync(){clearTimeout(_syncT);_syncT=setTimeout(async()=>{
   if(!ME)return;
   const row=profRow();
@@ -61,18 +61,71 @@ async function cloudBoot(){
 }
 function cloudLogout(){SB.auth.signOut().then(()=>{LS.clear();location.reload()})}
 
-/* צ׳אט אמיתי עם שי: שרת קטן ב-Vercel, רק עם הנתונים שלך */
+/* צ׳אט עם שי: רואה את כל הנתונים שלך, זוכר את השיחה, ויכול להציע פעולה — שמתבצעת רק באישור שלך */
+let chatFocus='';
 async function cloudChat(v){
-  CHAT.push({role:'user',content:v});
-  const typing=document.createElement('div');typing.className='msg bot typing';typing.textContent='…';$('chatMsgs').appendChild(typing);$('chatMsgs').scrollTop=1e6;
-  let reply='';
+  S.chat=S.chat||[];S.chat.push({role:'user',content:v});
+  const typing=document.createElement('div');typing.className='msg bot typing';typing.innerHTML='<i></i><i></i><i></i>';$('chatMsgs').appendChild(typing);$('chatMsgs').scrollTop=1e6;
+  let d={};
   try{const {data:{session}}=await SB.auth.getSession();
-    const r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:CHAT.slice(-12),token:session&&session.access_token})});
-    const d=await r.json().catch(()=>({}));
-    reply=d.reply||(d.error==='no_key'?'הצ׳אט עוד לא מחובר לשרת. זה צעד אחד בהגדרות של Vercel.':r.status===401?'צריך להתחבר מחדש.':'יש עומס כרגע. נסה שוב בעוד דקה.');
-  }catch(e){reply='אין חיבור כרגע. נסה שוב.'}
-  typing.remove();CHAT.push({role:'assistant',content:reply});addMsg('bot',reply);
+    const r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:S.chat.slice(-14),token:session&&session.access_token,focus:chatFocus})});
+    d=await r.json().catch(()=>({}));
+    if(!d.reply)d.reply=d.error==='no_key'?'הצ׳אט עוד לא מחובר לשרת.':r.status===401?'צריך להתחבר מחדש.':'יש עומס כרגע. נסה שוב בעוד דקה.';
+  }catch(e){d={reply:'אין חיבור כרגע. נסה שוב.'}}
+  typing.remove();
+  S.chat.push({role:'assistant',content:d.reply,action:d.action||null});S.chat=S.chat.slice(-40);save();
+  addBotMsg(d.reply,d.action,S.chat.length-1);chatSugs();
 }
+function mdLite(t){return escB(t).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>').replace(/^- (.+)$/gm,'<span class="li">• $1</span>')}
+function addBotMsg(text,action,idx){
+  const d=document.createElement('div');d.className='msg bot';d.innerHTML=mdLite(text);$('chatMsgs').appendChild(d);
+  if(action){const c=actionCard(action,idx);if(c)$('chatMsgs').appendChild(c)}
+  $('chatMsgs').scrollTop=1e6;
+}
+const ST_HE={saved:'שמור',applied:'הוגש',screening:'סינון',interview:'ראיון',offer:'הצעה',rejected:'נדחה',ghosted:'אין מענה',withdrew:'ויתרתי'};
+function actionText(x){const j=x.job_id&&JOBS[x.job_id],n=j?`${j.title} ב-${j.co}`:'';
+  return{set_status:`לעדכן את ${n} ל"${ST_HE[x.status]||x.status}"${x.iv?` (${x.iv})`:''}`,add_note:`להוסיף הערה ל-${n}: "${x.text}"`,
+    set_letter:`להחליף את מכתב הפנייה ל-${n} בגרסה החדשה`,add_job:`להוסיף משרה מהקישור`,save_job:`לשמור את ${n} ולהעביר להגשות`,
+    skip_job:`לדלג על ${n}`,remove_app:`להסיר את ${n} מההגשות`,add_todo:`להוסיף משימה: "${x.text}"`,add_story:`להוסיף לבנק הסיפורים: "${x.title}"`}[x.type]}
+function actionCard(x,idx){
+  const txt=actionText(x);if(!txt)return null;const h=S.chat[idx]||{};
+  const el=document.createElement('div');el.className='act-card';
+  el.innerHTML=h.done?`<span>✓ ${escB(txt)}</span>`:h.declined?`<span class="muted">בוטל: ${escB(txt)}</span>`:
+    `<span>${escB(txt)}?</span><div class="duo"><button class="btn btn-sm btn-ghost">ביטול</button><button class="btn btn-sm btn-primary">אישור</button></div>`;
+  const [no,yes]=el.querySelectorAll('button');
+  if(yes)yes.onclick=async()=>{const ok=await runAction(x);if(ok!==false){h.done=true;save();el.innerHTML=`<span>✓ ${escB(txt)}</span>`}};
+  if(no)no.onclick=()=>{h.declined=true;save();el.innerHTML=`<span class="muted">בוטל: ${escB(txt)}</span>`};
+  return el;
+}
+async function runAction(x){
+  const app=x.job_id&&S.apps.find(a=>a.jobId===x.job_id);
+  const needApp=()=>{if(!app){toast('המשרה לא נמצאת בהגשות');return false}return true};
+  switch(x.type){
+    case 'set_status':if(!needApp()||!ST_HE[x.status])return false;app.status=x.status;if(x.iv)app.iv=x.iv;if(x.status==='applied')app.date=new Date().toISOString();break;
+    case 'add_note':if(!needApp())return false;app.note=((app.note||'')+'\n'+x.text).trim();break;
+    case 'set_letter':if(!needApp())return false;app.letter=x.text;break;
+    case 'save_job':if(!JOBS[x.job_id])return false;S.decisions[x.job_id]='save';if(!app)S.apps.unshift({id:'a-'+x.job_id,jobId:x.job_id,status:'saved',date:new Date().toISOString(),letter:''});break;
+    case 'skip_job':S.decisions[x.job_id]='skip';break;
+    case 'remove_app':if(!needApp())return false;removeApp(app.id);return true;
+    case 'add_todo':S.todos.unshift({id:'t'+Date.now(),text:x.text,done:false});break;
+    case 'add_story':S.stories.push({id:'s'+Date.now(),t:x.title,b:x.body||''});break;
+    case 'add_job':toggleChat();openAddJob();setTimeout(()=>{const i=$('ajUrl');if(i)i.value=x.url||''},250);return true;
+    default:return false;
+  }
+  save();refreshApps();toast('בוצע');return true;
+}
+function chatSugs(){
+  const iv=S.apps.find(a=>a.status==='interview'),sv=S.apps.find(a=>a.status==='saved'),q=queue();
+  const s=[iv&&`תתרגל איתי ראיון ל-${JOBS[iv.jobId].co}`,q.length&&'איזו משרה חדשה הכי מתאימה לי?',sv&&`איך לשפר את המכתב ל-${JOBS[sv.jobId].co}?`,'מה הכי חשוב לעשות היום?'].filter(Boolean).slice(0,3);
+  $('chatSugs').innerHTML=s.map(t=>`<button onclick="chatAsk(this.textContent)">${escB(t)}</button>`).join('');
+}
+function renderChatHistory(){
+  const box=$('chatMsgs');if(box.dataset.loaded)return;box.dataset.loaded='1';box.innerHTML='';
+  (S.chat||[]).slice(-20).forEach((m,i,arr)=>{const idx=(S.chat.length-arr.length)+i;if(m.role==='user')addMsg('me',m.content);else addBotMsg(m.content,m.action,idx)});
+}
+function newChat(){S.chat=[];chatFocus='';save();const b=$('chatMsgs');b.innerHTML='';addMsg('bot',`שיחה חדשה. במה לעזור, ${prof().first||''}?`);chatSugs()}
+function askAboutJob(jobId){chatFocus=jobId;closeSheet();toggleChat(true);const j=JOBS[jobId];$('chatInput').value=`לגבי ${j.title} ב-${j.co}: `;$('chatInput').focus()}
+
 /* הודעות המשרד: מה הסוכנים עשו בפועל */
 function realUpdates(){
   const seat=k=>{const i=CAREER.agents.findIndex(a=>a.key===k);return i<0?0:i};

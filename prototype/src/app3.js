@@ -58,6 +58,7 @@ function paintAppTab(id){
         <div class="field"><label for="edIv">מועד ראיון או שיחה</label><input id="edIv" value="${escB(a.iv||'')}" placeholder="למשל: רביעי, 14:00" onchange="appOf('${id}').iv=this.value.trim();save();refreshApps()"></div>
         <div class="field"><label for="edNote">הערות שלי</label><textarea id="edNote" class="textbox" rows="3" placeholder="עם מי דיברתי, מה ביקשו, מה הלאה…" onchange="appOf('${id}').note=this.value;save()">${esc(a.note||'')}</textarea></div></div>
       <div class="s-sec"><a class="btn btn-ghost btn-block ext" href="${j.url||LI_URL+'jobs/'}" target="_blank" rel="noopener">פתח את המשרה${ICO.open}</a>
+        ${CLOUDM?`<button class="btn btn-ghost btn-block" style="margin-top:8px" onclick="askAboutJob('${a.jobId}')">לשאול את ${escB(N('assistant'))} על המשרה</button>`:''}
         <button class="btn btn-ghost btn-block" style="margin-top:8px;color:var(--rose)" onclick="closeSheet();removeApp('${id}')">להסיר מההגשות</button></div>`;
   }else if(appTab==='letter'){
     el.innerHTML=`<div class="s-sec" style="margin-top:12px"><label for="letterBox" class="vh">מכתב פנייה</label><textarea class="textbox" id="letterBox" rows="13" oninput="appOf('${id}').letter=this.value;save()">${esc(a.letter||(j.letter&&j.letter.text)||(REAL?'':letterFor(j)))}</textarea>

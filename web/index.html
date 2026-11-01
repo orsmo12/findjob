@@ -371,10 +371,9 @@ body.drawer-open .burger span:nth-child(3){top:6px;transform:rotate(-45deg)}
 .jobs-wrap{flex:1;display:flex;flex-direction:column;padding:4px 16px 0;direction:rtl;min-height:0}
 .jobs-meta{display:flex;justify-content:space-between;align-items:center;padding:2px 4px 10px;font-size:13px;color:var(--ink2)}
 .jobs-meta .filtered{font-size:12px;color:var(--ink3)}
-.deck-progress{display:flex;gap:4px;padding:0 4px 12px}
-.deck-progress i{flex:1;height:4px;border-radius:3px;background:rgba(18,40,32,.08)}
-.deck-progress i.done{background:var(--brand)}
-.deck-progress i.cur{background:rgba(15,138,100,.35)}
+.deck-progress{position:relative;height:6px;margin:0 4px 14px;border-radius:6px;background:rgba(18,40,32,.08);overflow:hidden}
+.deck-progress .dp-fill{position:absolute;inset-block:0;inset-inline-start:0;border-radius:6px;background:linear-gradient(90deg,var(--brand2,#12A07A),var(--brand,#0F6E54));transition:width .35s ease}
+#jobsCount{display:flex;align-items:baseline;gap:6px}#jobsCount b{font-size:15px;font-weight:700;color:var(--ink,#13241D)}#jobsCount span{font-size:12.5px;color:var(--ink3)}
 .deck{position:relative;flex:1;min-height:360px;max-height:540px}
 .jcard{position:absolute;inset:0;border-radius:var(--rad-xl);padding:20px;display:flex;flex-direction:column;
   background:var(--glass-strong);-webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur);border:1px solid var(--glass-brd);box-shadow:var(--g-shadow-lg);
@@ -840,6 +839,26 @@ a.person>svg{flex:0 0 18px;width:18px;height:18px;fill:none;stroke:var(--ink3);s
 .task details summary{cursor:pointer;min-height:40px;display:flex;align-items:center;font-weight:600;font-size:13.5px;color:var(--brand,#0F6E54)}
 .swipe.dragging .app,.swipe .app[style*="translateX"]{background:#F6FAF7}
 
+/* מסך ההכנה: בלי גלישה לרוחב */
+#prepScroll{overflow-x:hidden}
+#prepScroll .card,.task{min-width:0;overflow-wrap:anywhere}
+.task .duo>*{flex:1 1 0;min-width:0}
+.task .duo a.btn span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.task .duo a.btn svg{flex:0 0 auto}
+
+/* צ׳אט: פעולות באישור, רשימות, הקלדה */
+.chat-new{width:36px;height:36px;border-radius:11px;display:grid;place-items:center;margin-right:auto;color:var(--ink2)}
+.chat-new svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
+.chat-h .chat-new+.dr-x{margin-right:0}
+.msg .li{display:block;padding-inline-start:4px}
+.msg.typing{display:flex;gap:4px;padding:12px 14px}
+.msg.typing i{width:6px;height:6px;border-radius:50%;background:var(--ink3);animation:tdot 1s infinite}
+.msg.typing i:nth-child(2){animation-delay:.15s}.msg.typing i:nth-child(3){animation-delay:.3s}
+@keyframes tdot{0%,60%,100%{opacity:.3;transform:none}30%{opacity:1;transform:translateY(-3px)}}
+@media (prefers-reduced-motion:reduce){.msg.typing i{animation:none}}
+.act-card{align-self:flex-start;max-width:90%;background:var(--brand-lt,#E3F1EA);border:1px solid rgba(15,110,84,.18);border-radius:16px;padding:10px 12px;font-size:13.5px;line-height:1.5}
+.act-card .duo{margin-top:8px}.act-card .muted{color:var(--ink3)}
+
 </style>
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" href="/icon.svg">
@@ -1007,6 +1026,7 @@ a.person>svg{flex:0 0 18px;width:18px;height:18px;fill:none;stroke:var(--ink3);s
 <button id="chatBtn" aria-label="צ׳אט עם העוזר האישי" onclick="toggleChat()"><svg viewBox="0 0 24 24"><path d="M21 12a8 8 0 01-11.6 7.1L4 20l1-4.6A8 8 0 1121 12z"/></svg></button>
 <div id="chatPop" role="dialog" aria-label="צ׳אט עם העוזר האישי">
   <div class="chat-h"><div class="ag-face"><canvas id="chatFace" width="96" height="96"></canvas></div><div><b id="chatName"></b><span>העוזר האישי שלך</span></div>
+    <button class="chat-new" id="chatNew" aria-label="שיחה חדשה" title="שיחה חדשה" onclick="newChat()"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
     <button class="dr-x" aria-label="סגירת השיחה" onclick="toggleChat()"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
   <div class="chat-msgs" id="chatMsgs" aria-live="polite"></div>
   <div class="chat-sugs" id="chatSugs"></div>
@@ -1877,9 +1897,11 @@ let lastAct=null, busy=false;
 function renderJobs(){
   $('addJobBtn').hidden=!CLOUDM;
   const q=queue(),done=DECK.length-q.length,saved=DECK.filter(id=>S.decisions[id]==='save').length;
-  $('jobsCount').textContent=q.length?`משרה ${done+1} מתוך ${DECK.length}${saved?` · ${saved} נשמרו`:''}`:`עברת על כל ${DECK.length} המשרות${saved?` · ${saved} נשמרו`:''}`;
-  $('jobsFiltered').textContent=`${FILTERED_OUT} סוננו כבכירות מדי`;
-  $('deckProg').innerHTML=DECK.map((id,i)=>`<i class="${S.decisions[id]?'done':i===done?'cur':''}"></i>`).join('');
+  const skipped=DECK.filter(id=>S.decisions[id]&&S.decisions[id]!=='save').length;
+  $('jobsCount').innerHTML=q.length?`<b>${q.length===1?'נשארה משרה אחת':`נשארו ${q.length} משרות`}</b><span>מתוך ${DECK.length}</span>`:`<b>עברת על כל ${DECK.length} המשרות</b>`;
+  $('jobsFiltered').textContent=[saved&&`${saved} נשמרו`,skipped&&`${skipped} דילגת`,FILTERED_OUT&&`${FILTERED_OUT} סוננו כבכירות`].filter(Boolean).join(' · ');
+  $('deckProg').innerHTML=`<span class="dp-fill" style="width:${DECK.length?Math.round(done/DECK.length*100):0}%"></span>`;
+  $('deckProg').setAttribute('aria-hidden','true');
   const deck=$('deck');
   if(!q.length){
     $('deckActions').style.display='none';
@@ -1943,6 +1965,7 @@ function openJobInfo(id){
     <div class="s-sec"><h4>על המשרה</h4><p dir="auto" style="font-size:14px;line-height:1.65;color:var(--ink2);text-align:start">${escB(j.desc)}</p></div>
     <div class="s-sec"><h4>פרטים</h4><div class="kv"><span>שכר</span><b>${escB(salaryTxt(j))}</b></div><div class="kv"><span>פורסם</span><b>${escB(j.src)}, ${agoTxt(j.posted)}</b></div></div>
     ${j.url?`<a class="btn btn-ghost" style="margin-top:14px;width:100%" href="${escB(j.url)}" target="_blank" rel="noopener">למודעה המלאה ב-${escB(j.src)} ↗</a>`:''}
+    ${CLOUDM?`<button class="btn btn-ghost" style="margin-top:8px;width:100%" onclick="askAboutJob('${id}')">לשאול את ${escB(N('assistant'))} על המשרה</button>`:''}
     ${inDeck?`<div class="duo" style="margin-top:20px"><button class="btn btn-ghost" onclick="closeSheet();decide('skip')">דלג</button><button class="btn btn-primary" style="flex:2" onclick="closeSheet();decide('save')">שמור</button></div>`:''}`);
 }
 
@@ -2006,6 +2029,7 @@ function paintAppTab(id){
         <div class="field"><label for="edIv">מועד ראיון או שיחה</label><input id="edIv" value="${escB(a.iv||'')}" placeholder="למשל: רביעי, 14:00" onchange="appOf('${id}').iv=this.value.trim();save();refreshApps()"></div>
         <div class="field"><label for="edNote">הערות שלי</label><textarea id="edNote" class="textbox" rows="3" placeholder="עם מי דיברתי, מה ביקשו, מה הלאה…" onchange="appOf('${id}').note=this.value;save()">${esc(a.note||'')}</textarea></div></div>
       <div class="s-sec"><a class="btn btn-ghost btn-block ext" href="${j.url||LI_URL+'jobs/'}" target="_blank" rel="noopener">פתח את המשרה${ICO.open}</a>
+        ${CLOUDM?`<button class="btn btn-ghost btn-block" style="margin-top:8px" onclick="askAboutJob('${a.jobId}')">לשאול את ${escB(N('assistant'))} על המשרה</button>`:''}
         <button class="btn btn-ghost btn-block" style="margin-top:8px;color:var(--rose)" onclick="closeSheet();removeApp('${id}')">להסיר מההגשות</button></div>`;
   }else if(appTab==='letter'){
     el.innerHTML=`<div class="s-sec" style="margin-top:12px"><label for="letterBox" class="vh">מכתב פנייה</label><textarea class="textbox" id="letterBox" rows="13" oninput="appOf('${id}').letter=this.value;save()">${esc(a.letter||(j.letter&&j.letter.text)||(REAL?'':letterFor(j)))}</textarea>
@@ -2546,8 +2570,8 @@ const SUGS=['מה כדאי לעשות היום?','איזו משרה הכי מת�
 function toggleChat(force){
   chatOpen=force===true?true:!chatOpen;$('chatPop').classList.toggle('open',chatOpen);
   $('chatName').textContent=N('assistant');
-  if(chatOpen){if(!$('chatMsgs').children.length)addMsg('bot',`היי ${prof().first}, אני ${N('assistant')}. אני עוקב אחרי מה שכל הצוות עושה. במה לעזור?`);
-    $('chatSugs').innerHTML=SUGS.map(s=>`<button onclick="chatAsk('${s}')">${s}</button>`).join('');face($('chatFace'),5);setTimeout(()=>$('chatInput').focus(),260)}
+  if(chatOpen){if(CLOUDM)renderChatHistory();if(!$('chatMsgs').children.length)addMsg('bot',`היי ${prof().first}, אני ${N('assistant')}. אני רואה את המשרות, ההגשות וההכנות שלך, ויכול גם לעדכן דברים באפליקציה, באישור שלך. במה לעזור?`);
+    if(CLOUDM)chatSugs();else $('chatSugs').innerHTML=SUGS.map(s=>`<button onclick="chatAsk('${s}')">${s}</button>`).join('');face($('chatFace'),5);setTimeout(()=>$('chatInput').focus(),260)}
 }
 function addMsg(who,text){const d=document.createElement('div');d.className='msg '+who;d.textContent=text;$('chatMsgs').appendChild(d);$('chatMsgs').scrollTop=1e6}
 function chatAsk(t){$('chatInput').value=t;sendChat()}
@@ -2599,7 +2623,7 @@ async function cloudLoad(){
     SB.from('jobs').select('id,card,decision,letter,brief,prep,created_at').eq('user_id',uid).order('created_at',{ascending:false}).limit(200),
     SB.from('runs').select('agent,stats,created_at').eq('user_id',uid).order('created_at',{ascending:false}).limit(150)]);
   if(pr){const p=prof();p.first=pr.first||p.first;p.name=pr.name||p.name;p.cv=pr.cv_text||p.cv;p.ans=Object.assign({},pr.answers||{},p.ans||{});
-    if(pr.team&&Object.keys(pr.team).length)S.team=pr.team;const st=pr.state||{};['apps','todos','stories'].forEach(k=>{if(Array.isArray(st[k]))S[k]=st[k]});if(st.targets)S.targets=st.targets;p.li_text=pr.li_text||'';LI=Object.assign({},pr.li||{},{fixes:((pr.li_fixes||{}).fixes)||[]});if(pr.cv_text)S.onboarded=true}
+    if(pr.team&&Object.keys(pr.team).length)S.team=pr.team;const st=pr.state||{};['apps','todos','stories'].forEach(k=>{if(Array.isArray(st[k]))S[k]=st[k]});if(st.targets)S.targets=st.targets;if(Array.isArray(st.history))S.history=st.history;if(Array.isArray(st.chat))S.chat=st.chat;p.li_text=pr.li_text||'';LI=Object.assign({},pr.li||{},{fixes:((pr.li_fixes||{}).fixes)||[]});if(pr.cv_text)S.onboarded=true}
   prof().key='cloud';
   RUNS=runs||[];const hr=RUNS.filter(r=>(r.agent||'hunter')==='hunter');
   if(hr.length||(jobs&&jobs.length)){
@@ -2612,7 +2636,7 @@ async function cloudLoad(){
   _decSnap=Object.assign({},S.decisions);_profSnap=profRow();
   LS.set(SKEY,S);window.__runsReady=true;if(typeof applyTeam==='function')applyTeam();buildWorkflow();
 }
-function profRow(){const p=prof();return JSON.stringify({first:p.first||'',name:p.name||'',cv_text:p.cv||'',answers:p.ans||{},team:S.team||{},state:{apps:S.apps,todos:S.todos,stories:S.stories,targets:S.targets||{added:[],removed:[]}},li_text:p.li_text||''})}
+function profRow(){const p=prof();return JSON.stringify({first:p.first||'',name:p.name||'',cv_text:p.cv||'',answers:p.ans||{},team:S.team||{},state:{apps:S.apps,todos:S.todos,stories:S.stories,targets:S.targets||{added:[],removed:[]},history:S.history||[],chat:(S.chat||[]).slice(-40)},li_text:p.li_text||''})}
 function cloudSync(){clearTimeout(_syncT);_syncT=setTimeout(async()=>{
   if(!ME)return;
   const row=profRow();
@@ -2632,18 +2656,71 @@ async function cloudBoot(){
 }
 function cloudLogout(){SB.auth.signOut().then(()=>{LS.clear();location.reload()})}
 
-/* צ׳אט אמיתי עם שי: שרת קטן ב-Vercel, רק עם הנתונים שלך */
+/* צ׳אט עם שי: רואה את כל הנתונים שלך, זוכר את השיחה, ויכול להציע פעולה — שמתבצעת רק באישור שלך */
+let chatFocus='';
 async function cloudChat(v){
-  CHAT.push({role:'user',content:v});
-  const typing=document.createElement('div');typing.className='msg bot typing';typing.textContent='…';$('chatMsgs').appendChild(typing);$('chatMsgs').scrollTop=1e6;
-  let reply='';
+  S.chat=S.chat||[];S.chat.push({role:'user',content:v});
+  const typing=document.createElement('div');typing.className='msg bot typing';typing.innerHTML='<i></i><i></i><i></i>';$('chatMsgs').appendChild(typing);$('chatMsgs').scrollTop=1e6;
+  let d={};
   try{const {data:{session}}=await SB.auth.getSession();
-    const r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:CHAT.slice(-12),token:session&&session.access_token})});
-    const d=await r.json().catch(()=>({}));
-    reply=d.reply||(d.error==='no_key'?'הצ׳אט עוד לא מחובר לשרת. זה צעד אחד בהגדרות של Vercel.':r.status===401?'צריך להתחבר מחדש.':'יש עומס כרגע. נסה שוב בעוד דקה.');
-  }catch(e){reply='אין חיבור כרגע. נסה שוב.'}
-  typing.remove();CHAT.push({role:'assistant',content:reply});addMsg('bot',reply);
+    const r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:S.chat.slice(-14),token:session&&session.access_token,focus:chatFocus})});
+    d=await r.json().catch(()=>({}));
+    if(!d.reply)d.reply=d.error==='no_key'?'הצ׳אט עוד לא מחובר לשרת.':r.status===401?'צריך להתחבר מחדש.':'יש עומס כרגע. נסה שוב בעוד דקה.';
+  }catch(e){d={reply:'אין חיבור כרגע. נסה שוב.'}}
+  typing.remove();
+  S.chat.push({role:'assistant',content:d.reply,action:d.action||null});S.chat=S.chat.slice(-40);save();
+  addBotMsg(d.reply,d.action,S.chat.length-1);chatSugs();
 }
+function mdLite(t){return escB(t).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>').replace(/^- (.+)$/gm,'<span class="li">• $1</span>')}
+function addBotMsg(text,action,idx){
+  const d=document.createElement('div');d.className='msg bot';d.innerHTML=mdLite(text);$('chatMsgs').appendChild(d);
+  if(action){const c=actionCard(action,idx);if(c)$('chatMsgs').appendChild(c)}
+  $('chatMsgs').scrollTop=1e6;
+}
+const ST_HE={saved:'שמור',applied:'הוגש',screening:'סינון',interview:'ראיון',offer:'הצעה',rejected:'נדחה',ghosted:'אין מענה',withdrew:'ויתרתי'};
+function actionText(x){const j=x.job_id&&JOBS[x.job_id],n=j?`${j.title} ב-${j.co}`:'';
+  return{set_status:`לעדכן את ${n} ל"${ST_HE[x.status]||x.status}"${x.iv?` (${x.iv})`:''}`,add_note:`להוסיף הערה ל-${n}: "${x.text}"`,
+    set_letter:`להחליף את מכתב הפנייה ל-${n} בגרסה החדשה`,add_job:`להוסיף משרה מהקישור`,save_job:`לשמור את ${n} ולהעביר להגשות`,
+    skip_job:`לדלג על ${n}`,remove_app:`להסיר את ${n} מההגשות`,add_todo:`להוסיף משימה: "${x.text}"`,add_story:`להוסיף לבנק הסיפורים: "${x.title}"`}[x.type]}
+function actionCard(x,idx){
+  const txt=actionText(x);if(!txt)return null;const h=S.chat[idx]||{};
+  const el=document.createElement('div');el.className='act-card';
+  el.innerHTML=h.done?`<span>✓ ${escB(txt)}</span>`:h.declined?`<span class="muted">בוטל: ${escB(txt)}</span>`:
+    `<span>${escB(txt)}?</span><div class="duo"><button class="btn btn-sm btn-ghost">ביטול</button><button class="btn btn-sm btn-primary">אישור</button></div>`;
+  const [no,yes]=el.querySelectorAll('button');
+  if(yes)yes.onclick=async()=>{const ok=await runAction(x);if(ok!==false){h.done=true;save();el.innerHTML=`<span>✓ ${escB(txt)}</span>`}};
+  if(no)no.onclick=()=>{h.declined=true;save();el.innerHTML=`<span class="muted">בוטל: ${escB(txt)}</span>`};
+  return el;
+}
+async function runAction(x){
+  const app=x.job_id&&S.apps.find(a=>a.jobId===x.job_id);
+  const needApp=()=>{if(!app){toast('המשרה לא נמצאת בהגשות');return false}return true};
+  switch(x.type){
+    case 'set_status':if(!needApp()||!ST_HE[x.status])return false;app.status=x.status;if(x.iv)app.iv=x.iv;if(x.status==='applied')app.date=new Date().toISOString();break;
+    case 'add_note':if(!needApp())return false;app.note=((app.note||'')+'\n'+x.text).trim();break;
+    case 'set_letter':if(!needApp())return false;app.letter=x.text;break;
+    case 'save_job':if(!JOBS[x.job_id])return false;S.decisions[x.job_id]='save';if(!app)S.apps.unshift({id:'a-'+x.job_id,jobId:x.job_id,status:'saved',date:new Date().toISOString(),letter:''});break;
+    case 'skip_job':S.decisions[x.job_id]='skip';break;
+    case 'remove_app':if(!needApp())return false;removeApp(app.id);return true;
+    case 'add_todo':S.todos.unshift({id:'t'+Date.now(),text:x.text,done:false});break;
+    case 'add_story':S.stories.push({id:'s'+Date.now(),t:x.title,b:x.body||''});break;
+    case 'add_job':toggleChat();openAddJob();setTimeout(()=>{const i=$('ajUrl');if(i)i.value=x.url||''},250);return true;
+    default:return false;
+  }
+  save();refreshApps();toast('בוצע');return true;
+}
+function chatSugs(){
+  const iv=S.apps.find(a=>a.status==='interview'),sv=S.apps.find(a=>a.status==='saved'),q=queue();
+  const s=[iv&&`תתרגל איתי ראיון ל-${JOBS[iv.jobId].co}`,q.length&&'איזו משרה חדשה הכי מתאימה לי?',sv&&`איך לשפר את המכתב ל-${JOBS[sv.jobId].co}?`,'מה הכי חשוב לעשות היום?'].filter(Boolean).slice(0,3);
+  $('chatSugs').innerHTML=s.map(t=>`<button onclick="chatAsk(this.textContent)">${escB(t)}</button>`).join('');
+}
+function renderChatHistory(){
+  const box=$('chatMsgs');if(box.dataset.loaded)return;box.dataset.loaded='1';box.innerHTML='';
+  (S.chat||[]).slice(-20).forEach((m,i,arr)=>{const idx=(S.chat.length-arr.length)+i;if(m.role==='user')addMsg('me',m.content);else addBotMsg(m.content,m.action,idx)});
+}
+function newChat(){S.chat=[];chatFocus='';save();const b=$('chatMsgs');b.innerHTML='';addMsg('bot',`שיחה חדשה. במה לעזור, ${prof().first||''}?`);chatSugs()}
+function askAboutJob(jobId){chatFocus=jobId;closeSheet();toggleChat(true);const j=JOBS[jobId];$('chatInput').value=`לגבי ${j.title} ב-${j.co}: `;$('chatInput').focus()}
+
 /* הודעות המשרד: מה הסוכנים עשו בפועל */
 function realUpdates(){
   const seat=k=>{const i=CAREER.agents.findIndex(a=>a.key===k);return i<0?0:i};

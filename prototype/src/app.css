@@ -225,10 +225,9 @@ body.drawer-open .burger span:nth-child(3){top:6px;transform:rotate(-45deg)}
 .jobs-wrap{flex:1;display:flex;flex-direction:column;padding:4px 16px 0;direction:rtl;min-height:0}
 .jobs-meta{display:flex;justify-content:space-between;align-items:center;padding:2px 4px 10px;font-size:13px;color:var(--ink2)}
 .jobs-meta .filtered{font-size:12px;color:var(--ink3)}
-.deck-progress{display:flex;gap:4px;padding:0 4px 12px}
-.deck-progress i{flex:1;height:4px;border-radius:3px;background:rgba(18,40,32,.08)}
-.deck-progress i.done{background:var(--brand)}
-.deck-progress i.cur{background:rgba(15,138,100,.35)}
+.deck-progress{position:relative;height:6px;margin:0 4px 14px;border-radius:6px;background:rgba(18,40,32,.08);overflow:hidden}
+.deck-progress .dp-fill{position:absolute;inset-block:0;inset-inline-start:0;border-radius:6px;background:linear-gradient(90deg,var(--brand2,#12A07A),var(--brand,#0F6E54));transition:width .35s ease}
+#jobsCount{display:flex;align-items:baseline;gap:6px}#jobsCount b{font-size:15px;font-weight:700;color:var(--ink,#13241D)}#jobsCount span{font-size:12.5px;color:var(--ink3)}
 .deck{position:relative;flex:1;min-height:360px;max-height:540px}
 .jcard{position:absolute;inset:0;border-radius:var(--rad-xl);padding:20px;display:flex;flex-direction:column;
   background:var(--glass-strong);-webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur);border:1px solid var(--glass-brd);box-shadow:var(--g-shadow-lg);
@@ -693,3 +692,23 @@ a.person>svg{flex:0 0 18px;width:18px;height:18px;fill:none;stroke:var(--ink3);s
 .task p{font-size:14px;line-height:1.6;margin:0 0 6px}.task ul,.task ol{margin:4px 0 8px;padding-inline-start:20px;font-size:13.5px;line-height:1.6}
 .task details summary{cursor:pointer;min-height:40px;display:flex;align-items:center;font-weight:600;font-size:13.5px;color:var(--brand,#0F6E54)}
 .swipe.dragging .app,.swipe .app[style*="translateX"]{background:#F6FAF7}
+
+/* מסך ההכנה: בלי גלישה לרוחב */
+#prepScroll{overflow-x:hidden}
+#prepScroll .card,.task{min-width:0;overflow-wrap:anywhere}
+.task .duo>*{flex:1 1 0;min-width:0}
+.task .duo a.btn span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.task .duo a.btn svg{flex:0 0 auto}
+
+/* צ׳אט: פעולות באישור, רשימות, הקלדה */
+.chat-new{width:36px;height:36px;border-radius:11px;display:grid;place-items:center;margin-right:auto;color:var(--ink2)}
+.chat-new svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
+.chat-h .chat-new+.dr-x{margin-right:0}
+.msg .li{display:block;padding-inline-start:4px}
+.msg.typing{display:flex;gap:4px;padding:12px 14px}
+.msg.typing i{width:6px;height:6px;border-radius:50%;background:var(--ink3);animation:tdot 1s infinite}
+.msg.typing i:nth-child(2){animation-delay:.15s}.msg.typing i:nth-child(3){animation-delay:.3s}
+@keyframes tdot{0%,60%,100%{opacity:.3;transform:none}30%{opacity:1;transform:translateY(-3px)}}
+@media (prefers-reduced-motion:reduce){.msg.typing i{animation:none}}
+.act-card{align-self:flex-start;max-width:90%;background:var(--brand-lt,#E3F1EA);border:1px solid rgba(15,110,84,.18);border-radius:16px;padding:10px 12px;font-size:13.5px;line-height:1.5}
+.act-card .duo{margin-top:8px}.act-card .muted{color:var(--ink3)}

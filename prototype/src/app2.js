@@ -150,9 +150,11 @@ let lastAct=null, busy=false;
 function renderJobs(){
   $('addJobBtn').hidden=!CLOUDM;
   const q=queue(),done=DECK.length-q.length,saved=DECK.filter(id=>S.decisions[id]==='save').length;
-  $('jobsCount').textContent=q.length?`משרה ${done+1} מתוך ${DECK.length}${saved?` · ${saved} נשמרו`:''}`:`עברת על כל ${DECK.length} המשרות${saved?` · ${saved} נשמרו`:''}`;
-  $('jobsFiltered').textContent=`${FILTERED_OUT} סוננו כבכירות מדי`;
-  $('deckProg').innerHTML=DECK.map((id,i)=>`<i class="${S.decisions[id]?'done':i===done?'cur':''}"></i>`).join('');
+  const skipped=DECK.filter(id=>S.decisions[id]&&S.decisions[id]!=='save').length;
+  $('jobsCount').innerHTML=q.length?`<b>${q.length===1?'נשארה משרה אחת':`נשארו ${q.length} משרות`}</b><span>מתוך ${DECK.length}</span>`:`<b>עברת על כל ${DECK.length} המשרות</b>`;
+  $('jobsFiltered').textContent=[saved&&`${saved} נשמרו`,skipped&&`${skipped} דילגת`,FILTERED_OUT&&`${FILTERED_OUT} סוננו כבכירות`].filter(Boolean).join(' · ');
+  $('deckProg').innerHTML=`<span class="dp-fill" style="width:${DECK.length?Math.round(done/DECK.length*100):0}%"></span>`;
+  $('deckProg').setAttribute('aria-hidden','true');
   const deck=$('deck');
   if(!q.length){
     $('deckActions').style.display='none';
@@ -216,5 +218,6 @@ function openJobInfo(id){
     <div class="s-sec"><h4>על המשרה</h4><p dir="auto" style="font-size:14px;line-height:1.65;color:var(--ink2);text-align:start">${escB(j.desc)}</p></div>
     <div class="s-sec"><h4>פרטים</h4><div class="kv"><span>שכר</span><b>${escB(salaryTxt(j))}</b></div><div class="kv"><span>פורסם</span><b>${escB(j.src)}, ${agoTxt(j.posted)}</b></div></div>
     ${j.url?`<a class="btn btn-ghost" style="margin-top:14px;width:100%" href="${escB(j.url)}" target="_blank" rel="noopener">למודעה המלאה ב-${escB(j.src)} ↗</a>`:''}
+    ${CLOUDM?`<button class="btn btn-ghost" style="margin-top:8px;width:100%" onclick="askAboutJob('${id}')">לשאול את ${escB(N('assistant'))} על המשרה</button>`:''}
     ${inDeck?`<div class="duo" style="margin-top:20px"><button class="btn btn-ghost" onclick="closeSheet();decide('skip')">דלג</button><button class="btn btn-primary" style="flex:2" onclick="closeSheet();decide('save')">שמור</button></div>`:''}`);
 }

@@ -1,64 +1,125 @@
 // findjob — צ׳אט עם שי. פונקציית שרת ב-Vercel.
-// בודקת שהמשתמש מחובר (טוקן של Supabase), קוראת רק את הנתונים שלו (RLS), ושולחת ל-Groq.
-// השיחה לא נשמרת בשרת. שי לא מבצע פעולות בשום חשבון — רק עונה.
+// בודקת שהמשתמש מחובר, קוראת רק את הנתונים שלו (RLS), ושולחת ל-Groq עם כל ההקשר הרלוונטי.
+// שי יכול להציע פעולה אחת באפליקציה (עדכון סטטוס, הערה, מכתב, הוספת משרה…) — היא מתבצעת רק אחרי שהמשתמש מאשר.
+// שי לא פועל בשום חשבון חיצוני ולא שולח שום דבר בשם המשתמש.
 const SB = 'https://cavfthbkwosnwqdqkmap.supabase.co';
-const PK = 'sb_publishable_kTXa--U7akPkHozrbkw0Xg_w4_u5iOH';   // מפתח ציבורי, מוגן ב-RLS
+const PK = 'sb_publishable_kTXa--U7akPkHozrbkw0Xg_w4_u5iOH';
 const MODELS = ['openai/gpt-oss-120b', 'qwen/qwen3.8-27b', 'openai/gpt-oss-20b', 'llama-3.1-8b-instant'];
+const STATUS = { saved: 'שמור', applied: 'הוגש', screening: 'סינון', interview: 'ראיון', offer: 'הצעה', rejected: 'נדחה', ghosted: 'אין מענה', withdrew: 'ויתרתי' };
+const PRIO = { interview: 0, screening: 1, offer: 2, saved: 3, applied: 4 };
 
 const clean = v => String(v || '').trim().replace(/^GROQ_API_KEY=/, '').replace(/^["']|["']$/g, '').trim();
+const cut = (s, n) => { s = String(s || '').replace(/\s+/g, ' ').trim(); return s.length > n ? s.slice(0, n) + '…' : s; };
 
 async function sb(path, token) {
   const r = await fetch(SB + path, { headers: { apikey: PK, Authorization: 'Bearer ' + token } });
   return r.ok ? r.json() : null;
 }
 
-function context(p, jobs) {
-  const a = (p && p.answers) || {}, st = (p && p.state) || {};
-  const apps = (st.apps || []).map(x => {
-    const j = jobs.find(r => r.card.id === x.jobId);
-    return j ? `- ${j.card.title} @ ${j.card.co}: ${x.status}` : null;
-  }).filter(Boolean);
-  const fresh = jobs.filter(r => !r.decision).slice(0, 8).map(r => `- ${r.card.title} @ ${r.card.co} (${r.card.loc}) התאמה ${r.card.fit}: ${(r.card.reasons || []).join('; ')}`);
-  return `שם: ${(p && p.first) || ''}
-תשובות השאלון: ${JSON.stringify(a)}
+function detail(j, a) {
+  const c = j.card, out = [`### ${c.title} @ ${c.co} [job_id: ${c.id}]`,
+    `מיקום: ${c.loc || '-'} · התאמה ${c.fit}/5 · מקור: ${c.src || '-'}${c.salary ? ' · שכר: ' + c.salary : ''}${c.closed_at ? ' · המשרה נסגרה למועמדים' : ''}`];
+  if (a) out.push(`סטטוס: ${STATUS[a.status] || a.status}${a.iv ? ' · מועד: ' + a.iv : ''}${a.note ? ' · הערות שלו: ' + cut(a.note, 300) : ''}`);
+  if ((c.reasons || []).length) out.push('למה מתאים: ' + c.reasons.join('; '));
+  if ((c.gaps || []).length) out.push('מה חסר: ' + c.gaps.join('; '));
+  out.push('המודעה: ' + cut(c.ad || c.desc, 1400));
+  if (j.letter && j.letter.text) out.push('מכתב הפנייה שהוכן: ' + cut((a && a.letter) || j.letter.text, 900));
+  if (j.brief && j.brief.found) out.push('על החברה (ממקורות): ' + cut([j.brief.what, ...(j.brief.facts || []).map(f => f.text)].join(' · '), 500));
+  if (j.prep && (j.prep.questions || []).length) out.push('שאלות הכנה של מאיה: ' + j.prep.questions.map(q => q.q).join(' | '));
+  if (j.prep && (j.prep.tasks || []).length) out.push('מטלות בית לדוגמה: ' + j.prep.tasks.slice(0, 4).map(t => t.title).join(' | '));
+  return out.join('\n');
+}
+
+function context(p, jobs, lastUser, focus) {
+  const st = (p && p.state) || {}, apps = st.apps || [], byId = Object.fromEntries(jobs.map(j => [j.card.id, j]));
+  const text = String(lastUser || '').toLowerCase();
+  const mentioned = jobs.filter(j => text.includes(String(j.card.co).toLowerCase().split(' ')[0]) || text.includes(String(j.card.title).toLowerCase().slice(0, 18)));
+  const focusIds = [focus, ...mentioned.map(j => j.card.id)].filter(Boolean);
+  const ranked = apps.filter(a => byId[a.jobId]).sort((x, y) => (PRIO[x.status] ?? 9) - (PRIO[y.status] ?? 9)).map(a => a.jobId);
+  const deep = [...new Set([...focusIds, ...ranked])].slice(0, focusIds.length ? 2 : 2);
+  const fresh = jobs.filter(j => !j.decision).slice(0, 8);
+  const li = (p && p.li) || {}, fixes = ((p && p.li_fixes) || {}).fixes || [];
+  return `## המשתמש
+שם: ${(p && p.first) || ''}
+תשובות לשאלון: ${JSON.stringify((p && p.answers) || {})}
 קורות חיים:
-${((p && p.cv_text) || '').slice(0, 3500)}
+${cut(p && p.cv_text, 2800)}
 
-משרות חדשות שעוד לא החליט עליהן:
-${fresh.join('\n') || '(אין)'}
+## משרות בפירוט
+${deep.map(id => detail(byId[id], apps.find(a => a.jobId === id))).join('\n\n') || '(אין)'}
 
-ההגשות שלו:
-${apps.join('\n') || '(אין עדיין)'}`;
+## כל ההגשות (${apps.length})
+${apps.map(a => byId[a.jobId] ? `- ${byId[a.jobId].card.title} @ ${byId[a.jobId].card.co} [job_id: ${a.jobId}] · ${STATUS[a.status] || a.status}${a.iv ? ' · ' + a.iv : ''}` : null).filter(Boolean).join('\n') || '(אין)'}
+
+## משרות חדשות שעוד לא החליט עליהן (${fresh.length})
+${fresh.map(j => `- ${j.card.title} @ ${j.card.co} [job_id: ${j.card.id}] · התאמה ${j.card.fit} · ${(j.card.reasons || [])[0] || ''}`).join('\n') || '(אין)'}
+
+## היסטוריה
+${(st.history || []).slice(0, 8).map(h => `- ${h.title} @ ${h.co}: ${h.reason === 'closed' ? 'נסגרה' : 'הוסרה'}`).join('\n') || '(אין)'}
+
+## LinkedIn
+${(li.posts || []).length} פוסטים שהוכנו להם תגובות · ${fixes.length} שיפורי פרופיל: ${fixes.map(f => f.t).join('; ') || '-'}
+משימות שלו: ${(st.todos || []).filter(t => !t.done).map(t => t.text).join('; ') || '-'}
+סיפורי STAR: ${(st.stories || []).map(s => s.t).join('; ') || '-'}`;
 }
 
 const SYSTEM = `אתה שי, העוזר האישי באפליקציית findjob, שעוזרת לסטודנטים וג׳וניורים בישראל למצוא עבודה.
-עונים בעברית, קצר וענייני (עד 6 שורות אלא אם ביקשו יותר). שמות טכנולוגיות באנגלית.
-משתמשים רק בנתונים שלמטה ובידע כללי על חיפוש עבודה. אסור להמציא ניסיון, מספרים או פרטים על חברות.
-אם אין לך מידע, אומרים את זה. אתה לא שולח, לא מגיש ולא פועל בשום חשבון: אתה מציע, והמשתמש עושה.
-כשמתרגלים ראיון: שואלים שאלה אחת בכל פעם, ונותנים משוב קצר וכן על התשובה.`;
+עונים בעברית, ענייני וחם, קצר כברירת מחדל (עד 8 שורות), ויותר כשמבקשים (למשל מכתב או תרגול). שמות טכנולוגיות באנגלית.
+אפשר להשתמש ב-**הדגשה** וברשימות עם "- ".
+משתמשים רק בנתונים שלמטה ובידע כללי על חיפוש עבודה. אסור להמציא ניסיון, מספרים, אנשים או פרטים על חברות.
+כשכותבים מכתב או הודעה בשמו — רק עובדות מקורות החיים שלו.
+אתה לא שולח, לא מגיש ולא פועל בשום חשבון חיצוני. אתה מציע, והוא עושה.
+כשמתרגלים ראיון: שאלה אחת בכל פעם, ואחרי התשובה שלו משוב קצר וכן ואז השאלה הבאה.
+
+## פעולות באפליקציה
+אם המשתמש מבקש במפורש לשנות משהו באפליקציה, הצע פעולה אחת בסוף התשובה, בשורה נפרדת בדיוק בפורמט:
+<<ACTION {"type": "...", ...}>>
+הפעולה מתבצעת רק אחרי שהוא מאשר, אז בטקסט תגיד מה תעשה ("אעדכן…, אשר למטה"). סוגים:
+- {"type":"set_status","job_id":"...","status":"saved|applied|screening|interview|offer|rejected|ghosted|withdrew","iv":"מועד אם נמסר"}
+- {"type":"add_note","job_id":"...","text":"..."}
+- {"type":"set_letter","job_id":"...","text":"המכתב המלא החדש"}
+- {"type":"add_job","url":"https://..."}
+- {"type":"save_job","job_id":"..."}   (משרה חדשה → להגשות)
+- {"type":"skip_job","job_id":"..."}
+- {"type":"remove_app","job_id":"..."}
+- {"type":"add_todo","text":"..."}
+- {"type":"add_story","title":"...","body":"מצב: ...\\nמשימה: ...\\nפעולה: ...\\nתוצאה: ..."}
+השתמש רק ב-job_id שמופיע בנתונים. בלי בקשה מפורשת — בלי פעולה.`;
 
 module.exports = async (req, res) => {
   if (req.method !== 'POST') return res.status(405).json({ error: 'method' });
-  const { messages = [], token = '' } = req.body || {};
+  const { messages = [], token = '', focus = '' } = req.body || {};
   const key = clean(process.env.GROQ_API_KEY);
   if (!key) return res.status(500).json({ error: 'no_key' });
   const user = await sb('/auth/v1/user', token);
   if (!user || !user.id) return res.status(401).json({ error: 'auth' });
-  const [prof] = (await sb(`/rest/v1/profiles?select=first,cv_text,answers,state&user_id=eq.${user.id}`, token)) || [];
-  const jobs = (await sb(`/rest/v1/jobs?select=card,decision&user_id=eq.${user.id}&order=created_at.desc&limit=60`, token)) || [];
-  const msgs = [{ role: 'system', content: SYSTEM + '\n\nהנתונים של המשתמש:\n' + context(prof, jobs) },
-    ...messages.slice(-12).map(m => ({ role: m.role === 'user' ? 'user' : 'assistant', content: String(m.content || '').slice(0, 2000) }))];
+  const [prof] = (await sb(`/rest/v1/profiles?select=first,cv_text,answers,state,li,li_fixes&user_id=eq.${user.id}`, token)) || [];
+  const jobs = (await sb(`/rest/v1/jobs?select=card,decision,letter,brief,prep&user_id=eq.${user.id}&order=created_at.desc&limit=80`, token)) || [];
+  const lastUser = [...messages].reverse().find(m => m.role === 'user');
+  const msgs = [{ role: 'system', content: SYSTEM + '\n\n# הנתונים של המשתמש\n' + context(prof, jobs, lastUser && lastUser.content, focus) },
+    ...messages.slice(-14).map(m => ({ role: m.role === 'user' ? 'user' : 'assistant', content: String(m.content || '').slice(0, 2500) }))];
   for (const model of MODELS) {
     try {
+      const body = { model, messages: msgs, temperature: 0.4, max_tokens: 1400 };
+      if (model.includes('gpt-oss')) body.reasoning_effort = 'low';
       const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-        method: 'POST', headers: { Authorization: 'Bearer ' + key, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model, messages: msgs, temperature: 0.4, max_tokens: 700 }) });
+        method: 'POST', headers: { Authorization: 'Bearer ' + key, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
       if (!r.ok) continue;
       const d = await r.json();
-      let t = (d.choices && d.choices[0] && d.choices[0].message.content) || '';
-      if (t.includes('</think>')) t = t.split('</think>').pop();
-      if (t.trim()) return res.status(200).json({ reply: t.trim() });
-    } catch (e) { /* מנסים את המודל הבא */ }
+      let t = ((d.choices && d.choices[0] && d.choices[0].message.content) || '').split('</think>').pop().trim();
+      if (!t) continue;
+      let action = null;
+      const m = t.match(/<<ACTION\s*(\{[\s\S]*?\})\s*>>/);
+      if (m) {
+        t = t.replace(m[0], '').trim();
+        try {
+          action = JSON.parse(m[1]);
+          const ids = new Set(jobs.map(j => j.card.id));
+          if (action.job_id && !ids.has(action.job_id)) action = null;   // רק משרות שקיימות אצלו
+        } catch (e) { action = null; }
+      }
+      return res.status(200).json({ reply: t, action });
+    } catch (e) { /* המודל הבא */ }
   }
   return res.status(503).json({ error: 'busy' });
 };

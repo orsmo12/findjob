@@ -120,8 +120,8 @@ const SUGS=['מה כדאי לעשות היום?','איזו משרה הכי מת�
 function toggleChat(force){
   chatOpen=force===true?true:!chatOpen;$('chatPop').classList.toggle('open',chatOpen);
   $('chatName').textContent=N('assistant');
-  if(chatOpen){if(!$('chatMsgs').children.length)addMsg('bot',`היי ${prof().first}, אני ${N('assistant')}. אני עוקב אחרי מה שכל הצוות עושה. במה לעזור?`);
-    $('chatSugs').innerHTML=SUGS.map(s=>`<button onclick="chatAsk('${s}')">${s}</button>`).join('');face($('chatFace'),5);setTimeout(()=>$('chatInput').focus(),260)}
+  if(chatOpen){if(CLOUDM)renderChatHistory();if(!$('chatMsgs').children.length)addMsg('bot',`היי ${prof().first}, אני ${N('assistant')}. אני רואה את המשרות, ההגשות וההכנות שלך, ויכול גם לעדכן דברים באפליקציה, באישור שלך. במה לעזור?`);
+    if(CLOUDM)chatSugs();else $('chatSugs').innerHTML=SUGS.map(s=>`<button onclick="chatAsk('${s}')">${s}</button>`).join('');face($('chatFace'),5);setTimeout(()=>$('chatInput').focus(),260)}
 }
 function addMsg(who,text){const d=document.createElement('div');d.className='msg '+who;d.textContent=text;$('chatMsgs').appendChild(d);$('chatMsgs').scrollTop=1e6}
 function chatAsk(t){$('chatInput').value=t;sendChat()}

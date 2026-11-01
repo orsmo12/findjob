@@ -371,10 +371,9 @@ body.drawer-open .burger span:nth-child(3){top:6px;transform:rotate(-45deg)}
 .jobs-wrap{flex:1;display:flex;flex-direction:column;padding:4px 16px 0;direction:rtl;min-height:0}
 .jobs-meta{display:flex;justify-content:space-between;align-items:center;padding:2px 4px 10px;font-size:13px;color:var(--ink2)}
 .jobs-meta .filtered{font-size:12px;color:var(--ink3)}
-.deck-progress{display:flex;gap:4px;padding:0 4px 12px}
-.deck-progress i{flex:1;height:4px;border-radius:3px;background:rgba(18,40,32,.08)}
-.deck-progress i.done{background:var(--brand)}
-.deck-progress i.cur{background:rgba(15,138,100,.35)}
+.deck-progress{position:relative;height:6px;margin:0 4px 14px;border-radius:6px;background:rgba(18,40,32,.08);overflow:hidden}
+.deck-progress .dp-fill{position:absolute;inset-block:0;inset-inline-start:0;border-radius:6px;background:linear-gradient(90deg,var(--brand2,#12A07A),var(--brand,#0F6E54));transition:width .35s ease}
+#jobsCount{display:flex;align-items:baseline;gap:6px}#jobsCount b{font-size:15px;font-weight:700;color:var(--ink,#13241D)}#jobsCount span{font-size:12.5px;color:var(--ink3)}
 .deck{position:relative;flex:1;min-height:360px;max-height:540px}
 .jcard{position:absolute;inset:0;border-radius:var(--rad-xl);padding:20px;display:flex;flex-direction:column;
   background:var(--glass-strong);-webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur);border:1px solid var(--glass-brd);box-shadow:var(--g-shadow-lg);
@@ -840,6 +839,26 @@ a.person>svg{flex:0 0 18px;width:18px;height:18px;fill:none;stroke:var(--ink3);s
 .task details summary{cursor:pointer;min-height:40px;display:flex;align-items:center;font-weight:600;font-size:13.5px;color:var(--brand,#0F6E54)}
 .swipe.dragging .app,.swipe .app[style*="translateX"]{background:#F6FAF7}
 
+/* מסך ההכנה: בלי גלישה לרוחב */
+#prepScroll{overflow-x:hidden}
+#prepScroll .card,.task{min-width:0;overflow-wrap:anywhere}
+.task .duo>*{flex:1 1 0;min-width:0}
+.task .duo a.btn span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.task .duo a.btn svg{flex:0 0 auto}
+
+/* צ׳אט: פעולות באישור, רשימות, הקלדה */
+.chat-new{width:36px;height:36px;border-radius:11px;display:grid;place-items:center;margin-right:auto;color:var(--ink2)}
+.chat-new svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
+.chat-h .chat-new+.dr-x{margin-right:0}
+.msg .li{display:block;padding-inline-start:4px}
+.msg.typing{display:flex;gap:4px;padding:12px 14px}
+.msg.typing i{width:6px;height:6px;border-radius:50%;background:var(--ink3);animation:tdot 1s infinite}
+.msg.typing i:nth-child(2){animation-delay:.15s}.msg.typing i:nth-child(3){animation-delay:.3s}
+@keyframes tdot{0%,60%,100%{opacity:.3;transform:none}30%{opacity:1;transform:translateY(-3px)}}
+@media (prefers-reduced-motion:reduce){.msg.typing i{animation:none}}
+.act-card{align-self:flex-start;max-width:90%;background:var(--brand-lt,#E3F1EA);border:1px solid rgba(15,110,84,.18);border-radius:16px;padding:10px 12px;font-size:13.5px;line-height:1.5}
+.act-card .duo{margin-top:8px}.act-card .muted{color:var(--ink3)}
+
 </style>
 </head>
 <body>
@@ -1003,6 +1022,7 @@ a.person>svg{flex:0 0 18px;width:18px;height:18px;fill:none;stroke:var(--ink3);s
 <button id="chatBtn" aria-label="צ׳אט עם העוזר האישי" onclick="toggleChat()"><svg viewBox="0 0 24 24"><path d="M21 12a8 8 0 01-11.6 7.1L4 20l1-4.6A8 8 0 1121 12z"/></svg></button>
 <div id="chatPop" role="dialog" aria-label="צ׳אט עם העוזר האישי">
   <div class="chat-h"><div class="ag-face"><canvas id="chatFace" width="96" height="96"></canvas></div><div><b id="chatName"></b><span>העוזר האישי שלך</span></div>
+    <button class="chat-new" id="chatNew" aria-label="שיחה חדשה" title="שיחה חדשה" onclick="newChat()"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
     <button class="dr-x" aria-label="סגירת השיחה" onclick="toggleChat()"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
   <div class="chat-msgs" id="chatMsgs" aria-live="polite"></div>
   <div class="chat-sugs" id="chatSugs"></div>
@@ -1872,9 +1892,11 @@ let lastAct=null, busy=false;
 function renderJobs(){
   $('addJobBtn').hidden=!CLOUDM;
   const q=queue(),done=DECK.length-q.length,saved=DECK.filter(id=>S.decisions[id]==='save').length;
-  $('jobsCount').textContent=q.length?`משרה ${done+1} מתוך ${DECK.length}${saved?` · ${saved} נשמרו`:''}`:`עברת על כל ${DECK.length} המשרות${saved?` · ${saved} נשמרו`:''}`;
-  $('jobsFiltered').textContent=`${FILTERED_OUT} סוננו כבכירות מדי`;
-  $('deckProg').innerHTML=DECK.map((id,i)=>`<i class="${S.decisions[id]?'done':i===done?'cur':''}"></i>`).join('');
+  const skipped=DECK.filter(id=>S.decisions[id]&&S.decisions[id]!=='save').length;
+  $('jobsCount').innerHTML=q.length?`<b>${q.length===1?'נשארה משרה אחת':`נשארו ${q.length} משרות`}</b><span>מתוך ${DECK.length}</span>`:`<b>עברת על כל ${DECK.length} המשרות</b>`;
+  $('jobsFiltered').textContent=[saved&&`${saved} נשמרו`,skipped&&`${skipped} דילגת`,FILTERED_OUT&&`${FILTERED_OUT} סוננו כבכירות`].filter(Boolean).join(' · ');
+  $('deckProg').innerHTML=`<span class="dp-fill" style="width:${DECK.length?Math.round(done/DECK.length*100):0}%"></span>`;
+  $('deckProg').setAttribute('aria-hidden','true');
   const deck=$('deck');
   if(!q.length){
     $('deckActions').style.display='none';
@@ -1938,6 +1960,7 @@ function openJobInfo(id){
     <div class="s-sec"><h4>על המשרה</h4><p dir="auto" style="font-size:14px;line-height:1.65;color:var(--ink2);text-align:start">${escB(j.desc)}</p></div>
     <div class="s-sec"><h4>פרטים</h4><div class="kv"><span>שכר</span><b>${escB(salaryTxt(j))}</b></div><div class="kv"><span>פורסם</span><b>${escB(j.src)}, ${agoTxt(j.posted)}</b></div></div>
     ${j.url?`<a class="btn btn-ghost" style="margin-top:14px;width:100%" href="${escB(j.url)}" target="_blank" rel="noopener">למודעה המלאה ב-${escB(j.src)} ↗</a>`:''}
+    ${CLOUDM?`<button class="btn btn-ghost" style="margin-top:8px;width:100%" onclick="askAboutJob('${id}')">לשאול את ${escB(N('assistant'))} על המשרה</button>`:''}
     ${inDeck?`<div class="duo" style="margin-top:20px"><button class="btn btn-ghost" onclick="closeSheet();decide('skip')">דלג</button><button class="btn btn-primary" style="flex:2" onclick="closeSheet();decide('save')">שמור</button></div>`:''}`);
 }
 
@@ -2001,6 +2024,7 @@ function paintAppTab(id){
         <div class="field"><label for="edIv">מועד ראיון או שיחה</label><input id="edIv" value="${escB(a.iv||'')}" placeholder="למשל: רביעי, 14:00" onchange="appOf('${id}').iv=this.value.trim();save();refreshApps()"></div>
         <div class="field"><label for="edNote">הערות שלי</label><textarea id="edNote" class="textbox" rows="3" placeholder="עם מי דיברתי, מה ביקשו, מה הלאה…" onchange="appOf('${id}').note=this.value;save()">${esc(a.note||'')}</textarea></div></div>
       <div class="s-sec"><a class="btn btn-ghost btn-block ext" href="${j.url||LI_URL+'jobs/'}" target="_blank" rel="noopener">פתח את המשרה${ICO.open}</a>
+        ${CLOUDM?`<button class="btn btn-ghost btn-block" style="margin-top:8px" onclick="askAboutJob('${a.jobId}')">לשאול את ${escB(N('assistant'))} על המשרה</button>`:''}
         <button class="btn btn-ghost btn-block" style="margin-top:8px;color:var(--rose)" onclick="closeSheet();removeApp('${id}')">להסיר מההגשות</button></div>`;
   }else if(appTab==='letter'){
     el.innerHTML=`<div class="s-sec" style="margin-top:12px"><label for="letterBox" class="vh">מכתב פנייה</label><textarea class="textbox" id="letterBox" rows="13" oninput="appOf('${id}').letter=this.value;save()">${esc(a.letter||(j.letter&&j.letter.text)||(REAL?'':letterFor(j)))}</textarea>
@@ -2541,8 +2565,8 @@ const SUGS=['מה כדאי לעשות היום?','איזו משרה הכי מת�
 function toggleChat(force){
   chatOpen=force===true?true:!chatOpen;$('chatPop').classList.toggle('open',chatOpen);
   $('chatName').textContent=N('assistant');
-  if(chatOpen){if(!$('chatMsgs').children.length)addMsg('bot',`היי ${prof().first}, אני ${N('assistant')}. אני עוקב אחרי מה שכל הצוות עושה. במה לעזור?`);
-    $('chatSugs').innerHTML=SUGS.map(s=>`<button onclick="chatAsk('${s}')">${s}</button>`).join('');face($('chatFace'),5);setTimeout(()=>$('chatInput').focus(),260)}
+  if(chatOpen){if(CLOUDM)renderChatHistory();if(!$('chatMsgs').children.length)addMsg('bot',`היי ${prof().first}, אני ${N('assistant')}. אני רואה את המשרות, ההגשות וההכנות שלך, ויכול גם לעדכן דברים באפליקציה, באישור שלך. במה לעזור?`);
+    if(CLOUDM)chatSugs();else $('chatSugs').innerHTML=SUGS.map(s=>`<button onclick="chatAsk('${s}')">${s}</button>`).join('');face($('chatFace'),5);setTimeout(()=>$('chatInput').focus(),260)}
 }
 function addMsg(who,text){const d=document.createElement('div');d.className='msg '+who;d.textContent=text;$('chatMsgs').appendChild(d);$('chatMsgs').scrollTop=1e6}
 function chatAsk(t){$('chatInput').value=t;sendChat()}
