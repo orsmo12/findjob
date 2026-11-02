@@ -28,7 +28,7 @@ for u in db.profiles_ready():
         job, upd = row["card"], {}
         act.log("assistant", f"נשמרה משרה: {job['title']} ב-{job['co']}. גיל — מחקר על החברה, מאיה — שאלות הכנה.", to="researcher")
         try:
-            if not row.get("letter") or not row["letter"].get("v"):  # v2: מכתב קצר וממוקד יותר
+            if not row.get("letter") or (row["letter"].get("v") or 0) < 3:  # v3: מכתב קצר וממוקד, בדיקת מקור כוללת את שם המשרה
                 upd["letter"] = write_letter(cv, job, name)
             if not row.get("brief"):
                 upd["brief"] = brief(job["co"], job["title"], cv)

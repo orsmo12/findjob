@@ -93,13 +93,13 @@ def write_letter(cv: str, job: dict, name: str) -> dict:
         act.log("assistant", f"המכתב יצא {len(text.split())} מילים. מקצר ל-120.")
         text = chat("assistant", "cover_letter_shorten", [{"role": "user", "content": prompt + "\n\nYOUR DRAFT (too long — rewrite it to under 120 words, same facts):\n" + text}],
                     tier="write", max_tokens=1200)
-    bad = unsupported(text, cv, ad, job["co"], name)
+    bad = unsupported(text, cv, ad + " " + job["title"], job["co"], name)
     if bad:
         act.log("assistant", f"בבדיקת מקור מצאתי פרטים שלא כתובים אצלך ({', '.join(bad[:3])}). כותב מחדש.")
         fix = prompt + f"\n\nYour previous draft mentioned things NOT in the CV or ad: {', '.join(bad)}. Rewrite without them."
         text = chat("assistant", "cover_letter_retry", [{"role": "user", "content": fix}], tier="write", max_tokens=1500)
-        bad = unsupported(text, cv, ad, job["co"], name)
+        bad = unsupported(text, cv, ad + " " + job["title"], job["co"], name)
         if bad:
             act.log("assistant", "עדיין היו פרטים לא מבוססים. מחקתי את המשפטים האלה.")
             text = _drop_bad_sentences(text, bad)
-    return {"text": text.strip(), "lang": lang, "v": 2, "checked": not unsupported(text, cv, ad, job["co"], name)}
+    return {"text": text.strip(), "lang": lang, "v": 3, "checked": not unsupported(text, cv, ad + " " + job["title"], job["co"], name)}
