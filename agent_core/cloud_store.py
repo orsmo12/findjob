@@ -70,13 +70,13 @@ def saved_missing(user_id: str) -> list[dict]:
     """משרות ששמרת שחסר להן מכתב, סקירה או הכנה."""
     r = httpx.get(_url("jobs"), headers=_h(), timeout=30, params={
         "select": "id,card,letter,brief,prep", "user_id": f"eq.{user_id}", "decision": "eq.save", "card->>closed_at": "is.null",
-        "or": "(letter.is.null,brief.is.null,prep.is.null,prep->tasks.is.null,prep->>more_tasks.eq.true)"})
+        "or": "(letter.is.null,letter->>v.is.null,brief.is.null,prep.is.null,prep->tasks.is.null,prep->>more_tasks.eq.true)"})
     if r.status_code == 400:  # גיבוי אם הסינון לפי JSON לא נתמך: מביאים הכל ומסננים כאן
         r = httpx.get(_url("jobs"), headers=_h(), timeout=30, params={
             "select": "id,card,letter,brief,prep", "user_id": f"eq.{user_id}", "decision": "eq.save"})
         r.raise_for_status()
         return [x for x in r.json() if not (x.get("card") or {}).get("closed_at") and (
-            not x.get("letter") or not x.get("brief") or not x.get("prep")
+            not x.get("letter") or not (x.get("letter") or {}).get("v") or not x.get("brief") or not x.get("prep")
             or (x["prep"] or {}).get("tasks") is None or (x["prep"] or {}).get("more_tasks"))]
     r.raise_for_status()
     return r.json()

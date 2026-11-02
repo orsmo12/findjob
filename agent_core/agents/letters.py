@@ -14,14 +14,20 @@ import re
 from agent_core.llm_router import chat
 from agent_core import activity as act
 
-PROMPT = """Write a short cover letter (110-160 words) for this job, in {lang}.
+PROMPT = """Write a short, tailored cover letter for this specific job, in {lang}. 80-120 words. Exactly 3 short paragraphs.
+
+Paragraph 1 (1-2 sentences): what in THIS ad caught the candidate's interest — name the team/product/problem from the ad,
+  and say what they are (e.g. "a third-year CS student at HIT"). No generic opening.
+Paragraph 2 (2-3 sentences): the ONE or TWO strongest matches between a concrete CV project and a concrete requirement
+  in the ad. Say what was built and with what, briefly. Show, don't list skills.
+Paragraph 3 (1 sentence): a simple, confident closing (a short call to talk). Then the name: {name}.
 
 STRICT RULES:
-- Use ONLY facts written in the CV below. Do not invent experience, numbers, grades, employers, dates or technologies.
-- Mention 2-3 concrete things from the CV that match what the ad asks for.
-- No clichés ("I am writing to express", "passionate", "dynamic"). Sound like a real, direct person.
-- Do not mention salary, age or location.
-- Start with a greeting, end with the candidate's name: {name}.
+- Use ONLY facts written in the CV. Do not invent experience, numbers, grades, employers, dates or technologies.
+- Do not repeat the job title in full, do not restate the whole ad, do not list more than 3 technologies.
+- Banned: "I am writing to", "I am excited to apply", "aligns directly", "passionate", "dynamic", "solid foundation",
+  "I believe I would be a great fit", "Thank you for your time and consideration".
+- No salary, age or location. Greeting: "Hi {company} team," (English) or "שלום לצוות {company}," (Hebrew).
 - Output only the letter text.
 
 CV:
@@ -83,6 +89,10 @@ def write_letter(cv: str, job: dict, name: str) -> dict:
     prompt = PROMPT.format(lang=lang, name=name or "", cv=cv[:5000], title=job["title"], company=job["co"], ad=ad[:3500] or "(no description)")
     act.log("assistant", f"כותב מכתב פנייה ל-{job['co']} ({'אנגלית' if lang == 'English' else 'עברית'}, כשפת המודעה)")
     text = chat("assistant", "cover_letter", [{"role": "user", "content": prompt}], tier="write", max_tokens=1500)
+    if len(text.split()) > 150:  # ארוך מדי: מבקשים לקצר פעם אחת
+        act.log("assistant", f"המכתב יצא {len(text.split())} מילים. מקצר ל-120.")
+        text = chat("assistant", "cover_letter_shorten", [{"role": "user", "content": prompt + "\n\nYOUR DRAFT (too long — rewrite it to under 120 words, same facts):\n" + text}],
+                    tier="write", max_tokens=1200)
     bad = unsupported(text, cv, ad, job["co"], name)
     if bad:
         act.log("assistant", f"בבדיקת מקור מצאתי פרטים שלא כתובים אצלך ({', '.join(bad[:3])}). כותב מחדש.")
@@ -92,4 +102,4 @@ def write_letter(cv: str, job: dict, name: str) -> dict:
         if bad:
             act.log("assistant", "עדיין היו פרטים לא מבוססים. מחקתי את המשפטים האלה.")
             text = _drop_bad_sentences(text, bad)
-    return {"text": text.strip(), "lang": lang, "checked": not unsupported(text, cv, ad, job["co"], name)}
+    return {"text": text.strip(), "lang": lang, "v": 2, "checked": not unsupported(text, cv, ad, job["co"], name)}

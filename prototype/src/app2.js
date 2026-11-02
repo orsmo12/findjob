@@ -172,7 +172,7 @@ function renderJobs(){
 function fitLbl(f){return f>=4.3?'התאמה חזקה':f>=4?'התאמה טובה':'שווה בדיקה'}
 function pills(f){const full=Math.floor(f),part=f-full;return`<div class="pills" aria-hidden="true">${[0,1,2,3,4].map(i=>`<i>${i<full?'<b></b>':i===full&&part>0?`<b style="right:${((1-part)*100).toFixed(0)}%"></b>`:''}</i>`).join('')}</div>`}
 function cardInner(j){
-  return`<div class="jc-top">${logo(j)}<div style="flex:1;min-width:0"><div class="jc-title" lang="en" dir="ltr" style="text-align:right">${escB(j.title)}</div><div class="jc-co">${escB(j.co)} · ${escB(j.loc)}</div></div></div>
+  return`<div class="jc-top">${logo(j)}<div style="flex:1;min-width:0"><div class="jc-title" dir="${dirOf(j.title)||'auto'}" style="text-align:right">${escB(j.title)}</div><div class="jc-co">${escB(j.co)} · ${escB(j.loc)}</div></div></div>
     <div class="fit"><div class="fit-num num">${j.fit.toFixed(1)}<small>/5</small></div><div class="fit-right"><div class="fit-lbl">${fitLbl(j.fit)}</div>${pills(j.fit)}</div></div>
     <div class="jc-reasons">${j.reasons.slice(0,2).map(r=>`<div class="jc-r"><span class="ic ok" aria-hidden="true">✓</span><span>${escB(r)}</span></div>`).join('')}${j.gaps.slice(0,1).map(g=>`<div class="jc-r"><span class="ic gap" aria-hidden="true">!</span><span>חסר: ${escB(g)}</span></div>`).join('')}</div>
     <div class="jc-desc" dir="auto">${escB(j.desc)}</div>
@@ -210,7 +210,7 @@ function undoLast(){
 }
 function openJobInfo(id){
   id=id||queue()[0];if(!id)return;const j=JOBS[id];const inDeck=queue()[0]===id;
-  openSheet(`<div style="display:flex;gap:13px;align-items:center">${logo(j)}<div style="min-width:0"><h3 id="sheetTitle" lang="en" dir="ltr" style="text-align:right">${escB(j.title)}</h3><div class="sheet-sub">${escB(j.co)} · ${escB(j.loc)}</div></div></div>
+  openSheet(`<div style="display:flex;gap:13px;align-items:center">${logo(j)}<div style="min-width:0"><h3 id="sheetTitle" dir="${dirOf(j.title)||'auto'}" style="text-align:right">${escB(j.title)}</h3><div class="sheet-sub">${escB(j.co)} · ${escB(j.loc)}</div></div></div>
     <div class="fit" style="margin:16px 0 0"><div class="fit-num num">${j.fit.toFixed(1)}<small>/5</small></div><div class="fit-right"><div class="fit-lbl">${fitLbl(j.fit)}</div>${pills(j.fit)}</div></div>
     <div class="s-sec"><h4>למה זה מתאים לך</h4>${j.reasons.map(r=>`<div class="jc-r" style="margin-bottom:7px"><span class="ic ok" aria-hidden="true">✓</span><span>${escB(r)}</span></div>`).join('')}</div>
     ${j.partial?`<div class="s-sec"><p style="font-size:13px;color:var(--ink3)">לא היה תיאור מלא של המשרה, אז הדירוג לפי הכותרת בלבד ולא נכתב מה חסר.</p></div>`:''}
@@ -221,3 +221,18 @@ function openJobInfo(id){
     ${CLOUDM?`<button class="btn btn-ghost" style="margin-top:8px;width:100%" onclick="askAboutJob('${id}')">לשאול את ${escB(N('assistant'))} על המשרה</button>`:''}
     ${inDeck?`<div class="duo" style="margin-top:20px"><button class="btn btn-ghost" onclick="closeSheet();decide('skip')">דלג</button><button class="btn btn-primary" style="flex:2" onclick="closeSheet();decide('save')">שמור</button></div>`:''}`);
 }
+
+/* ═════════ כיוון טקסט בכל המסכים: עברית או טקסט משולב — מימין לשמאל; אנגלית — משמאל לימין ═════════ */
+const HEB_RE=/[\u0590-\u05FF]/,LAT_RE=/[A-Za-z]/;
+const BIDI_SEL='textarea,.msg,.copybox,.post-text,.jc-desc,.jc-r>span:last-child,.hint,.wf-out,.task p,.task li>span,.q .qtxt,.om-tx p,.s-sec p,.card-sub,.hist-row b,.act-card>span,.src-list span,.toast-row>span';
+const BIDI_HEAD='.sheet-sub,.app-sub,.jc-co,.wf-agent,.jc-title,.app-title,#sheetTitle,.prep-jobs b';  // כותרות: כיוון לפי התוכן, יישור נשאר לימין
+function dirOf(t){return HEB_RE.test(t)?'rtl':LAT_RE.test(t)?'ltr':''}
+function applyDir(el,head){const d=dirOf(el.tagName==='TEXTAREA'?el.value:el.textContent);if(!d)return;
+  el.dir=d;el.style.direction=d;if(!head)el.style.textAlign=d==='ltr'?'left':'right';else el.style.textAlign='right'}
+function fixDirs(root){if(!root||!root.querySelectorAll)return;
+  if(root.matches){if(root.matches(BIDI_SEL))applyDir(root);else if(root.matches(BIDI_HEAD))applyDir(root,true)}
+  root.querySelectorAll(BIDI_SEL).forEach(e=>applyDir(e));root.querySelectorAll(BIDI_HEAD).forEach(e=>applyDir(e,true))}
+let _bidiQ=new Set(),_bidiT=0;
+new MutationObserver(ms=>{ms.forEach(m=>m.addedNodes.forEach(n=>{if(n.nodeType===1)_bidiQ.add(n);else if(n.parentElement)_bidiQ.add(n.parentElement)}));
+  if(!_bidiT)_bidiT=requestAnimationFrame(()=>{_bidiT=0;_bidiQ.forEach(fixDirs);_bidiQ.clear()})}).observe(document.body,{childList:true,subtree:true});
+document.addEventListener('input',e=>{if(e.target.tagName==='TEXTAREA')applyDir(e.target)});

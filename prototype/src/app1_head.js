@@ -55,7 +55,9 @@ function buildWorkflow(){
 }
 /* תהליך העבודה: היומן החי של הסוכנים — מה כל אחד עושה, ומה הוא מעביר למי. החדש למעלה */
 function realWorkflow(n){
-  const ago=t=>{const m=Math.round((Date.now()-new Date(t))/6e4);return m<1?'עכשיו':m<60?`לפני ${m} דק׳`:m<1440?`לפני ${Math.round(m/60)===1?'שעה':Math.round(m/60)+' שעות'}`:new Date(t).toLocaleDateString('he-IL')};
+  const ago=t=>{const d=new Date(t),now=new Date(),hm=d.toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit',hour12:false});
+    const day=x=>new Date(x.getFullYear(),x.getMonth(),x.getDate()).getTime(),diff=Math.round((day(now)-day(d))/864e5);
+    return diff===0?hm:diff===1?`אתמול ${hm}`:`${d.getDate()}.${d.getMonth()+1} ${hm}`};
   const logs=RUNS.filter(r=>r.stats&&r.stats.log).slice(0,60);
   if(!logs.length)return[{cmd:`${n('strategist')}.ממתין`,out:'כאן תראה בזמן אמת מה כל סוכן עושה. הסריקה הבאה: 05:15 או 17:15.',tag:'מתוזמן',state:'idle'}];
   const live=Date.now()-new Date(logs[0].created_at)<4*6e4;
