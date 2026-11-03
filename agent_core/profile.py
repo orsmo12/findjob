@@ -180,7 +180,9 @@ def build_search_plan(profile: dict) -> SearchPlan:
         why.append("תפקידים: " + ", ".join(roles) + src("roles"))
 
     # עיר מרכזית אחת לכל אזור: החיפוש כבר כולל רדיוס סביבה, וערים סמוכות רק מחזירות את אותן משרות
-    locs = [REGIONS[r][0] for r in (a.get("locs") or []) if REGIONS.get(r)]
+    # עיר מרכזית אחת לכל אזור גיאוגרפי: החיפוש כולל רדיוס, ולכן תל אביב כבר מכסה את גוש דן והשרון
+    HUB = {"תל אביב": "Tel Aviv", "גוש דן והמרכז": "Tel Aviv", "השרון": "Tel Aviv"}
+    locs = list(dict.fromkeys(HUB.get(r) or REGIONS[r][0] for r in (a.get("locs") or []) if REGIONS.get(r)))
     area = list(dict.fromkeys(c for r in (a.get("locs") or []) for c in REGIONS.get(r, [])))
     locations = list(dict.fromkeys(locs)) or ["Israel"]
     remote_only = a.get("mode") == "מהבית"

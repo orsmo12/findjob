@@ -30,6 +30,7 @@ ISRAEL = re.compile(r"israel|\bIL\b|tel aviv|tel-aviv|herzliya|haifa|jerusalem|p
 COMEET_RE = re.compile(r"comeet\.(?:com|co)/jobs/([a-z0-9\-_.]+)/([0-9A-F]{2}\.[0-9A-F]{3})", re.I)
 WORKDAY_RE = re.compile(r"https?://([a-z0-9\-]+)\.(wd\d+)\.myworkdayjobs\.com/(?:[a-z]{2}-[A-Z]{2}/)?([A-Za-z0-9_\-]+)", re.I)
 REDISCOVER_DAYS = 7
+CACHE_V = 2  # גרסת שיטת הגילוי. העלאה = גילוי מחדש לכולן
 
 
 def _text(h: str) -> str:
@@ -180,6 +181,23 @@ def discover(cx: httpx.Client, name: str, slugs: list[str] | None = None) -> dic
     texts = []
     for q in (f'"{name}" comeet jobs', f'"{name}" careers myworkdayjobs', f'{name} careers jobs Israel'):
         texts += _search(q)
+    # דף הקריירה של החברה עצמה: הרבה חברות מטמיעות בו את הלוח (Comeet / Workday / Greenhouse)
+    own = [u for t in texts for u in re.findall(r"https?://[^\s\"'<>]+", t)
+           if re.search(r"career|jobs", u, re.I) and same_company(name, re.sub(r"^https?://(www\.)?", "", u).split("/")[0].split(".")[0])]
+    for u in list(dict.fromkeys(own))[:2]:
+        try:
+            page = cx.get(u).text
+        except httpx.HTTPError:
+            continue
+        texts.append(page)
+        for kind, rx in (("greenhouse", r"boards(?:-api)?\.greenhouse\.io/(?:v1/boards/|embed/job_board\?for=)?([a-z0-9]+)"),
+                         ("lever", r"jobs\.lever\.co/([a-z0-9\-]+)"), ("ashby", r"jobs\.ashbyhq\.com/([a-z0-9\-.]+)")):
+            for m in re.finditer(rx, page, re.I):
+                try:
+                    if cx.get(BOARDS[kind].format(slug=m.group(1))).status_code == 200:
+                        return {"board": kind, "slug": m.group(1)}
+                except httpx.HTTPError:
+                    pass
     for t in texts:
         for m in COMEET_RE.finditer(t):
             if same_company(name, m.group(1)):
@@ -221,14 +239,14 @@ def collect_targets(targets: list[dict], plan: dict, cache: dict | None = None, 
             name = c["name"]
             key = name.lower()
             ent = cache.get(key)
-            fresh = ent and datetime.fromisoformat(ent["at"]) > now - timedelta(days=REDISCOVER_DAYS)
+            fresh = ent and ent.get("v") == CACHE_V and datetime.fromisoformat(ent["at"]) > now - timedelta(days=REDISCOVER_DAYS)
             b = (ent or {}).get("b") if fresh else None
             if c.get("board"):
                 b = c["board"]
             elif not fresh and discovered < discover_max:
                 discovered += 1
                 b = discover(cx, name, c.get("slugs"))
-                cache[key] = {"b": b, "at": now.isoformat()}
+                cache[key] = {"b": b, "at": now.isoformat(), "v": CACHE_V, **({"as": ent["as"]} if ent and ent.get("as") else {})}
                 act.log("hunter", f"מחפש איפה {name} מפרסמת משרות: " + (f"נמצא לוח {board_label(b)} ✓" if b else "אין לוח ציבורי שאפשר לקרוא. אחפש אותה לפי השם ב-LinkedIn וב-Indeed"))
             elif not fresh:
                 status.append({"name": name, "status": "pending", "why": c.get("why", []), "auto": c.get("auto", False)})

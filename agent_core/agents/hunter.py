@@ -67,7 +67,7 @@ def collect(plan: dict, per_search: int = 20, budget: int = 12) -> list[dict]:
                 df = scrape_jobs(
                     site_name=["indeed", "linkedin"],  # Google Jobs לא מחזיר תוצאות משרתי ענן
                     search_term=q, location=loc, results_wanted=per_search, hours_old=24 * 7,
-                    country_indeed="Israel", is_remote=bool(plan.get("remote_only")),
+                    country_indeed="Israel", is_remote=bool(plan.get("remote_only")), distance=25,
                     google_search_term=f"{q} jobs in {loc}, Israel since last week",
                     description_format="markdown", linkedin_fetch_description=False,
                 )
