@@ -16,6 +16,9 @@ from agent_core.budget_guard import BudgetDeferred
 from agent_core import activity as act
 from agent_core.agents import linkedin_coach as K
 from agent_core.profile import build_search_plan
+from agent_core.agents import growth as G
+import hashlib, json as _json
+from datetime import datetime, timedelta, timezone
 
 if not db.configured():
     sys.exit("SUPABASE_URL / SUPABASE_SERVICE_KEY חסרים")
@@ -69,8 +72,52 @@ for u in db.profiles_ready():
             plan = build_search_plan({"cv_text": cv, "answers": u.get("answers") or {}}).to_dict()
             fixes = K.profile_fixes(cv, lt, plan)
             db.update_profile(u["user_id"], {"li_fixes": {"fixes": fixes, "for": K.li_hash(lt)}})
-            db.add_run(u["user_id"], "coach", f"עברתי על פרופיל ה-LinkedIn שלך: {len(fixes)} שיפורים, עם טקסט מוכן להעתקה." if fixes
+            db.add_run(u["user_id"], "linkedin", f"עברתי על פרופיל ה-LinkedIn שלך: {len(fixes)} שיפורים, עם טקסט מוכן להעתקה." if fixes
                        else "עברתי על פרופיל ה-LinkedIn שלך. לא מצאתי שיפור שאפשר להציע בלי להוסיף דברים שלא כתובים אצלך.")
         except BudgetDeferred:
             print("מכסה: הפרופיל בריצה הבאה")
     act.flush()
+
+    # ── מאיה: כרטיסי כישורים מהפערים שהישיבה השבועית מצאה ──────────────────
+    try:
+        gaps = (db.latest_plan(u["user_id"], "meeting").get("skill_gaps") or [])
+        key = hashlib.sha1(_json.dumps([g["skill"] for g in gaps[:3]]).encode()).hexdigest()[:10]
+        prev = next((r["stats"] for r in db.recent_runs(u["user_id"], "coach", days=30) if (r.get("stats") or {}).get("skills")), {})
+        if gaps and prev.get("for") != key:
+            ex: dict[str, list[str]] = {}
+            for j in db.all_jobs(u["user_id"], days=21):
+                c = j.get("card") or {}
+                for g in gaps:
+                    if any(g["skill"].lower() in x.lower() for x in c.get("gaps") or []):
+                        ex.setdefault(g["skill"], []).append(f"{c.get('title')} ב-{c.get('co')}")
+            res = G.skill_cards(gaps, cv, ex)
+            db.add_run(u["user_id"], "coach", "הכנתי כרטיסי כישורים לפערים שחוזרים במשרות שמתאימות לך: "
+                       + ", ".join(c["skill"] for c in res["cards"]) + ". יש בהם מקורות לימוד ואיך להכניס את זה לפרויקט שלך. נמצאים במסך ההכנה.",
+                       {"skills": res, "for": key})
+            act.flush()
+    except BudgetDeferred:
+        print("מכסה: כרטיסי כישורים בריצה הבאה")
+    except Exception as e:  # noqa: BLE001
+        print(f"כרטיסי כישורים נכשלו: {type(e).__name__}: {e}"); act.flush()
+
+    # ── קובי: מה עשית ב-GitHub ולא כתוב בקורות החיים (פעם בשבוע, או כשהשם משתנה) ──
+    try:
+        gh = ((u.get("answers") or {}).get("github") or "").strip().lstrip("@").split("/")[-1]
+        prev = next((r["stats"] for r in db.recent_runs(u["user_id"], "linkedin", days=30) if (r.get("stats") or {}).get("cv_for")), {})
+        stale = not prev.get("at") or prev.get("at") < (datetime.now(timezone.utc) - timedelta(days=7)).isoformat()
+        cvh = hashlib.sha1(cv.encode()).hexdigest()[:10]
+        if gh and (prev.get("cv_for") != f"{gh}:{cvh}" or stale):
+            ev = G.github_evidence(gh)
+            gaps = [g["skill"] for g in (db.latest_plan(u["user_id"], "meeting").get("skill_gaps") or [])]
+            sug = G.cv_suggestions(cv, ev, gaps)
+            db.add_run(u["user_id"], "linkedin",
+                       (f"עברתי על {len(ev)} הריפוזיטוריז הציבוריים שלך ב-GitHub ומצאתי {len(sug)} דברים שעשית ולא כתובים בקורות החיים. "
+                        "אפשר לאשר ולקבל קורות חיים מעודכנים בפרופיל." if sug else
+                        f"עברתי על {len(ev)} ריפוזיטוריז ב-GitHub. לא מצאתי משהו חשוב שחסר בקורות החיים." if ev else
+                        f"לא הצלחתי לקרוא ריפוזיטוריז ציבוריים של {gh} ב-GitHub. כדאי לבדוק את שם המשתמש בפרופיל."),
+                       {"cv_suggest": sug, "cv_for": f"{gh}:{cvh}", "at": datetime.now(timezone.utc).isoformat()})
+            act.flush()
+    except BudgetDeferred:
+        print("מכסה: GitHub בריצה הבאה")
+    except Exception as e:  # noqa: BLE001
+        print(f"קורות חיים מ-GitHub נכשל: {type(e).__name__}: {e}"); act.flush()

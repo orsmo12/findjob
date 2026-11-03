@@ -18,7 +18,10 @@ function renderProfile(){
 
     <section class="card glass" aria-labelledby="cvH"><h2 class="card-h" id="cvH">קורות חיים</h2>
       <div class="row"><span class="ri">${ROW_IC.doc}</span><span class="rl"><b>${escB(p.cvName||(p.cv?'הודבקו כטקסט':'עוד לא הועלו'))}</b><span>${p.cv||p.cvName?'כל הסוכנים עובדים לפיהם':'בלעדיהם הסוכנים לא יכולים להתאים לך משרות'}</span></span>${p.cv||p.cvName?'<span class="pill-ok">פעיל</span>':'<span class="pill-warn">חסר</span>'}</div>
-      <div class="duo"><label for="cvFile" class="btn btn-sm btn-ghost">${p.cvName?'להחליף קובץ':'להעלות קובץ'}</label><button class="btn btn-sm btn-ghost" onclick="editCvText()">לערוך כטקסט</button></div></section>
+      <div class="duo"><label for="cvFile" class="btn btn-sm btn-ghost">${p.cvName?'להחליף קובץ':'להעלות קובץ'}</label><button class="btn btn-sm btn-ghost" onclick="editCvText()">לערוך כטקסט</button></div>
+      ${CLOUDM?`<div class="field" style="margin-top:12px"><label for="ghIn">שם המשתמש שלך ב-GitHub</label><div style="display:flex;gap:8px"><input id="ghIn" class="ltr" placeholder="username" value="${escB((p.ans||{}).github||'')}" autocomplete="off"><button class="btn btn-sm btn-ghost" onclick="saveGithub()">שמירה</button></div>
+        <div class="help">${escB(N('linkedin'))} יעבור על הריפוזיטוריז הציבוריים שלך (קריאה בלבד) וימצא מה עשית ולא כתבת בקורות החיים.</div></div>`:''}
+      ${typeof cvSuggestHtml==='function'?cvSuggestHtml():''}</section>
 
     ${CLOUDM?`<section class="card glass" aria-labelledby="liH"><h2 class="card-h" id="liH">פרופיל LinkedIn</h2>
       <div class="card-sub">${p.li_text?`${escB(N('coach'))} עוברת על הפרופיל ומכינה שיפורים. הם יופיעו במסך LinkedIn.`:`כדי ש${escB(N('coach'))} תציע שיפורים אמיתיים לפרופיל, צריך עותק שלו: ב-LinkedIn נכנסים לפרופיל ← "עוד" (More) ← "שמירה כ-PDF", ומעלים כאן.`}</div>

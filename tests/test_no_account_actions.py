@@ -16,7 +16,8 @@ FORBIDDEN = {
     r"linkedin_cookies\.json":       "קובץ cookies של LinkedIn",
     r"smtplib|sendmail\(":           "שליחת מייל בשם המשתמש",
     r"w_member_social":              "פרסום/תגובה/לייק ב-LinkedIn בשם המשתמש",
-    r"api\.github\.com/(user|repos/[^\"']+/(issues|pulls|contents))": "פעולה בחשבון GitHub",
+    r"api\.github\.com/user[\"'/]": "פעולה בחשבון GitHub",  # החשבון המחובר עצמו
+    r"\.(post|put|patch|delete)\(\s*f?[\"']https://api\.github\.com": "כתיבה ל-GitHub",  # קריאה של ריפו ציבורי מותרת, כתיבה לא
     r"easy.?apply":                  "הגשה אוטומטית למשרה",
 }
 

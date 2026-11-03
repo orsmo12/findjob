@@ -223,7 +223,7 @@ function prepApps(){const order={interview:0,screening:1,applied:2,saved:3};
   return S.apps.filter(a=>JOBS[a.jobId]&&order[a.status]!=null).sort((x,y)=>order[x.status]-order[y.status])}
 function renderPrep(){
   const apps=prepApps();
-  if(!apps.length){$('prepScroll').innerHTML=`<div class="empty" style="padding:48px 12px"><h3>עוד אין משרה להתכונן אליה</h3><p>שמור משרה, ו${escB(N('coach'))} תכין שאלות לפי מה שכתוב במודעה. ${escB(N('researcher'))} יכין סקירה על החברה.</p><button class="btn btn-primary" onclick="goPage('jobs')">למשרות</button></div>`+storiesHtml();return}
+  if(!apps.length){$('prepScroll').innerHTML=`<div class="empty" style="padding:48px 12px"><h3>עוד אין משרה להתכונן אליה</h3><p>שמור משרה, ו${escB(N('coach'))} תכין שאלות לפי מה שכתוב במודעה. ${escB(N('researcher'))} יכין סקירה על החברה.</p><button class="btn btn-primary" onclick="goPage('jobs')">למשרות</button></div>`+storiesHtml()+(typeof skillsHtml==='function'?skillsHtml():'');return}
   if(!apps.some(a=>a.jobId===prepJob))prepJob=apps[0].jobId;
   const a=apps.find(x=>x.jobId===prepJob),j=JOBS[prepJob],qs=(j.prep&&j.prep.questions)||[],b=j.brief;
   a.answers=a.answers||{};
@@ -250,7 +250,8 @@ function renderPrep(){
 
     ${tasksHtml(a,j)}
 
-    ${storiesHtml()}`;
+    ${storiesHtml()}
+    ${typeof skillsHtml==='function'?skillsHtml():''}`;
 }
 /* מטלות בית לדוגמה: 2 מוצגות, "מטלה אחרת" מחליפה מהמאגר */
 function tasksHtml(a,j){

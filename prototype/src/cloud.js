@@ -28,7 +28,7 @@ async function cloudLoad(){
     SB.from('jobs').select('id,card,decision,letter,brief,prep,created_at').eq('user_id',uid).order('created_at',{ascending:false}).limit(200),
     SB.from('runs').select('agent,stats,created_at').eq('user_id',uid).order('created_at',{ascending:false}).limit(150)]);
   if(pr){const p=prof();p.first=pr.first||p.first;p.name=pr.name||p.name;p.cv=pr.cv_text||p.cv;p.ans=Object.assign({},pr.answers||{},p.ans||{});
-    if(pr.team&&Object.keys(pr.team).length)S.team=pr.team;const st=pr.state||{};['apps','todos','stories'].forEach(k=>{if(Array.isArray(st[k]))S[k]=st[k]});if(st.targets)S.targets=st.targets;if(Array.isArray(st.history))S.history=st.history;if(Array.isArray(st.chat))S.chat=st.chat;if(Array.isArray(st.accepted))S.accepted=st.accepted;if(Array.isArray(st.dismissed))S.dismissed=st.dismissed;p.li_text=pr.li_text||'';LI=Object.assign({},pr.li||{},{fixes:((pr.li_fixes||{}).fixes)||[]});if(pr.cv_text)S.onboarded=true}
+    if(pr.team&&Object.keys(pr.team).length)S.team=pr.team;const st=pr.state||{};['apps','todos','stories'].forEach(k=>{if(Array.isArray(st[k]))S[k]=st[k]});if(st.targets)S.targets=st.targets;if(Array.isArray(st.history))S.history=st.history;if(Array.isArray(st.chat))S.chat=st.chat;if(Array.isArray(st.accepted))S.accepted=st.accepted;if(Array.isArray(st.dismissed))S.dismissed=st.dismissed;if(Array.isArray(st.cvDone))S.cvDone=st.cvDone;p.li_text=pr.li_text||'';LI=Object.assign({},pr.li||{},{fixes:((pr.li_fixes||{}).fixes)||[]});if(pr.cv_text)S.onboarded=true}
   prof().key='cloud';
   RUNS=runs||[];const hr=RUNS.filter(r=>(r.agent||'hunter')==='hunter');
   if(hr.length||(jobs&&jobs.length)){
@@ -41,7 +41,7 @@ async function cloudLoad(){
   _decSnap=Object.assign({},S.decisions);_profSnap=profRow();
   LS.set(SKEY,S);window.__runsReady=true;if(typeof applyTeam==='function')applyTeam();buildWorkflow();
 }
-function profRow(){const p=prof();return JSON.stringify({first:p.first||'',name:p.name||'',cv_text:p.cv||'',answers:p.ans||{},team:S.team||{},state:{apps:S.apps,todos:S.todos,stories:S.stories,targets:S.targets||{added:[],removed:[]},history:S.history||[],chat:(S.chat||[]).slice(-40),accepted:S.accepted||[],dismissed:S.dismissed||[]},li_text:p.li_text||''})}
+function profRow(){const p=prof();return JSON.stringify({first:p.first||'',name:p.name||'',cv_text:p.cv||'',answers:p.ans||{},team:S.team||{},state:{apps:S.apps,todos:S.todos,stories:S.stories,targets:S.targets||{added:[],removed:[]},history:S.history||[],chat:(S.chat||[]).slice(-40),accepted:S.accepted||[],dismissed:S.dismissed||[],cvDone:S.cvDone||[]},li_text:p.li_text||''})}
 function cloudSync(){clearTimeout(_syncT);_syncT=setTimeout(async()=>{
   if(!ME)return;
   const row=profRow();
@@ -200,3 +200,43 @@ function openMeeting(){const m=lastMeeting();if(!m)return;const r=m.stats.report
     <div class="s-sec"><h4>מה שינינו לבד</h4>${li(r.actions)}</div>
     ${(r.skill_gaps||[]).length?`<div class="s-sec"><h4>כישורים שחסרים שוב ושוב</h4><p class="card-sub">במשרות שמתאימות לך. ${escB(N('coach'))} מכינה על זה חומר.</p><div class="learned">${r.skill_gaps.map(g=>`<span class="chip" lang="en">${escB(g.skill)} · ${g.jobs}</span>`).join('')}</div></div>`:''}
     <div class="s-sec">${suggestionsHtml()||'<h4>הצעות</h4><p class="card-sub">אין הצעות פתוחות.</p>'}</div>`)}
+
+/* קובי: מה עשית ב-GitHub ולא כתוב בקורות החיים. אתה בוחר, רואה את השינוי, ומאשר */
+function saveGithub(){const v=($('ghIn').value||'').trim().replace(/^@/,'').split('/').pop();const p=prof();p.ans=p.ans||{};p.ans.github=v;save();toast(v?`${N('linkedin')} יעבור על ה-GitHub שלך בשעתיים הקרובות`:'נמחק')}
+function lastCvSuggest(){return (RUNS||[]).find(r=>r.agent==='linkedin'&&r.stats&&Array.isArray(r.stats.cv_suggest))||null}
+function cvSuggestHtml(){const r=lastCvSuggest();if(!r||!r.stats.cv_suggest.length)return'';const done=new Set(S.cvDone||[]);
+  const L=r.stats.cv_suggest.filter(x=>!done.has(x.line));if(!L.length)return'';
+  return `<h3 class="sub-h">${escB(N('linkedin'))}: מה עשית ולא כתוב בקורות החיים</h3>`+L.map((x,i)=>`<label class="cvs-row"><input type="checkbox" class="cvs-ck" data-i="${r.stats.cv_suggest.indexOf(x)}" checked>
+    <span><b dir="ltr" lang="en">${escB(x.line)}</b><em>${escB(x.why)}</em><a href="${escB(x.url)}" target="_blank" rel="noopener" lang="en">${escB(x.repo)}${x.proof?' · '+escB(x.proof):''}</a></span></label>`).join('')
+    +`<button class="btn btn-sm btn-primary btn-block" style="margin-top:8px" onclick="previewCv()">לראות את קורות החיים המעודכנים</button>`}
+function cvWithAdditions(cv,adds){const lines=cv.split('\n');
+  adds.forEach(x=>{const w=(x.where||'').toLowerCase();let i=w?lines.findIndex(l=>l.toLowerCase().includes(w)):-1;
+    if(i<0)i=lines.findIndex(l=>/^\s*projects\b/i.test(l));
+    if(i<0){lines.push('','Additional','• '+x.line);return}
+    let k=i+1;while(k<lines.length&&lines[k].trim()&&!/^[A-Z][A-Za-z &]{2,30}$/.test(lines[k].trim()))k++;
+    lines.splice(k,0,'• '+x.line)});
+  return lines.join('\n')}
+function previewCv(){const r=lastCvSuggest(),sel=[...document.querySelectorAll('.cvs-ck')].filter(c=>c.checked).map(c=>r.stats.cv_suggest[+c.dataset.i]);
+  if(!sel.length){toast('לא סימנת אף שורה');return}const cv=prof().cv||'',nu=cvWithAdditions(cv,sel);window.__cvNew={text:nu,sel};
+  const set=new Set(sel.map(x=>'• '+x.line));
+  openSheet(`<h3 id="sheetTitle">קורות החיים המעודכנים</h3><div class="sheet-sub">השורות החדשות מסומנות בירוק. שום דבר לא משתנה עד שתאשר.</div>
+    <pre class="cv-pre" dir="ltr">${nu.split('\n').map(l=>set.has(l)?`<mark>${escB(l)}</mark>`:escB(l)).join('\n')}</pre>
+    <div class="duo"><button class="btn btn-ghost" onclick="closeSheet()">ביטול</button><button class="btn btn-primary" onclick="applyCv()">לאשר ולעדכן</button></div>`)}
+function applyCv(){const n=window.__cvNew;if(!n)return;prof().cv=n.text;S.cvDone=(S.cvDone||[]).concat(n.sel.map(x=>x.line));save();
+  openSheet(`<h3 id="sheetTitle">קורות החיים עודכנו</h3><div class="sheet-sub">כל הסוכנים עובדים מעכשיו לפי הגרסה החדשה.</div>
+    <p style="font-size:14px;margin:12px 0">אפשר לשמור כ-PDF: בחלון ההדפסה בוחרים "שמירה כ-PDF". זה PDF פשוט מהטקסט. אם יש לך קובץ מעוצב, אפשר להעתיק אליו את השורות החדשות.</p>
+    <button class="btn btn-primary btn-block" onclick="cvPdf()">ל-PDF</button>`);renderProfile()}
+function cvPdf(){const w=window.open('','_blank');if(!w){toast('הדפדפן חסם חלון חדש');return}
+  w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>CV</title><style>body{font:12.5px/1.5 Arial,sans-serif;margin:28px;white-space:pre-wrap;direction:ltr}</style></head><body>${escB(prof().cv||'')}</body></html>`);w.document.close();setTimeout(()=>w.print(),300)}
+
+/* מאיה: כרטיסי כישורים */
+function lastSkills(){return (RUNS||[]).find(r=>r.agent==='coach'&&r.stats&&r.stats.skills)||null}
+function skillsHtml(){const r=lastSkills();if(!r)return'';const {cards,project}=r.stats.skills;if(!(cards||[]).length)return'';
+  return `<section class="card glass" aria-labelledby="skH"><h2 class="card-h" id="skH">כישורים שכדאי לחזק</h2>
+    <div class="card-sub">${escB(N('coach'))}: אלה הדברים שחסרים שוב ושוב במשרות שמתאימות לך.</div>
+    ${cards.map(c=>`<div class="sk-card"><div class="sk-h"><b lang="en">${escB(c.skill)}</b><span>חסר ב-${c.jobs} משרות${c.time?' · '+escB(c.time):''}</span></div>
+      ${c.what?`<p>${escB(c.what)}</p>`:''}${c.how?`<p><b>איך מכניסים לפרויקט שלך:</b> ${escB(c.how)}</p>`:''}
+      ${(c.examples||[]).length?`<p class="sk-ex">ביקשו את זה ב: ${escB(c.examples.join(' · '))}</p>`:''}
+      ${(c.learn||[]).length?`<div class="sk-links">${c.learn.map(l=>`<a href="${escB(l.url)}" target="_blank" rel="noopener" dir="auto">${escB(l.title)} <span>${escB(l.site)}</span></a>`).join('')}</div>`:''}</div>`).join('')}
+    ${project?`<div class="sk-card sk-proj"><div class="sk-h"><b>רעיון לפרויקט: <span lang="en">${escB(project.title)}</span></b>${(project.covers||[]).length?`<span lang="en">סוגר: ${escB(project.covers.join(', '))}</span>`:''}</div><p>${escB(project.pitch)}</p>
+      <ol>${(project.steps||[]).map(x=>`<li>${escB(x)}</li>`).join('')}</ol></div>`:''}</section>`}
