@@ -347,6 +347,8 @@ def rate(job: dict, cv: str, prefs: str) -> dict | None:
               f"reasons={r['reasons']} gaps={r['gaps']} desc_len={len(desc)}")
         r["reasons"] = grounded(r["reasons"], cv)        # סיבה = עובדה מקורות החיים
         r["gaps"] = grounded(r["gaps"], desc)             # חסר = דרישה שכתובה במודעה
+        if r["required_years"] > 0:  # מתיחה: שנה מעל מה שיש לך. כותבים את זה בגלוי
+            r["gaps"] = [f"במודעה נדרשות {r['required_years']} שנות ניסיון. יותר ממה שיש לך, אבל שווה לנסות"] + r["gaps"][:1]
         r["partial"] = len(desc) < 300
         if r["partial"]:
             r["gaps"] = []  # בלי המודעה המלאה אין לנו דרישות אמיתיות להשוות אליהן
