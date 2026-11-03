@@ -276,8 +276,13 @@ How to judge:
    with the technologies they use.
 4. If the ad needs no prior job and asks for skills the CV shows (in projects too), the score should be high (4+).
 
+5. A tech stack the team "works with" or "our stack" is not a requirement unless the ad says the candidate must know it.
+
 Return JSON only:
-{{"fit": number 1.0-5.0 with one decimal,
+{{"core": [every CORE requirement, short English, each {{"req": "...", "met": true/false}} — met if the CV shows it, in a job OR a project OR a course],
+  "nice_missing": integer (how many NICE-TO-HAVE items the CV does not show),
+  "wrong_field": true/false (true only if the job is in a different profession than the CV, e.g. sales, cyber research, hardware),
+  "fit": number 1.0-5.0 with one decimal,
   "required_years": integer,
   "reasons": [up to 3 short reasons, each naming a concrete CV fact (project, course, tool) that matches a CORE requirement],
   "gaps": [up to 2 short items: CORE requirements written in the ad that the CV does not show; only nice-to-have if no core gaps],
@@ -297,19 +302,38 @@ def parse_rating(text: str) -> dict | None:
         fit = round(max(1.0, min(5.0, float(d.get("fit", 0)))), 1)
         clip = lambda xs, n: [str(x).strip()[:140] for x in (xs or []) if str(x).strip()][:n]
         return {"fit": fit, "reasons": clip(d.get("reasons"), 3), "gaps": clip(d.get("gaps"), 2),
-                "seniority_ok": bool(d.get("seniority_ok", True)), "required_years": d.get("required_years", 0)}
+                "seniority_ok": bool(d.get("seniority_ok", True)), "required_years": d.get("required_years", 0),
+                "core": [c for c in (d.get("core") or []) if isinstance(c, dict) and c.get("req")][:15],
+                "nice_missing": d.get("nice_missing", 0), "wrong_field": bool(d.get("wrong_field", False))}
     except (ValueError, TypeError):
         return None
+
+
+def computed_fit(r: dict) -> float:
+    """הציון מחושב בקוד מתוך רשימת הדרישות המרכזיות (עמד / לא עמד), כדי שיהיה עקבי בין ריצות ובין מודלים.
+    יתרונות חסרים מורידים עד 0.3. מקצוע אחר — לכל היותר 2.0."""
+    core = r.get("core") or []
+    if not core:
+        return r["fit"]
+    met = sum(1 for c in core if c.get("met") is True or str(c.get("met")).lower() == "true")
+    try:
+        nice = max(0, int(float(r.get("nice_missing") or 0)))
+    except (TypeError, ValueError):
+        nice = 0
+    fit = 1 + 4 * met / len(core) - min(0.3, 0.1 * nice)
+    if r.get("wrong_field"):
+        fit = min(fit, 2.0)
+    return round(max(1.0, min(5.0, fit)), 1)
 
 
 def rate(job: dict, cv: str, prefs: str) -> dict | None:
     desc = job.get("description", "")
     prompt = RANK_PROMPT.format(cv=cv[:5000], prefs=prefs, title=job["title"], company=job["company"],
                                 location=job["location"], desc=(desc[:3500] or "(no description available)"))
-    r = parse_rating(chat("hunter", "rate_job", [{"role": "user", "content": prompt}], tier="judge", max_tokens=1600, temperature=0))
+    r = parse_rating(chat("hunter", "rate_job", [{"role": "user", "content": prompt}], tier="judge", max_tokens=2200, temperature=0))
     if r is None:  # תשובה שנחתכה או לא בפורמט — ניסיון נוסף אחד
         r = parse_rating(chat("hunter", "rate_job_retry", [{"role": "user", "content": prompt + "\n\nReturn ONLY the JSON object, nothing else."}],
-                              tier="judge", max_tokens=1600, temperature=0))
+                              tier="judge", max_tokens=2200, temperature=0))
     if r is None:
         act.log("hunter", f"לא הצלחתי לדרג את {job['title']} ב-{job['company']}. אנסה בריצה הבאה.")  # בלי json_mode: חלק מהמודלים נכשלים בו; parse_rating מחלץ את ה-JSON
     if r:
@@ -317,7 +341,9 @@ def rate(job: dict, cv: str, prefs: str) -> dict | None:
             r["required_years"] = int(float(r.get("required_years") or 0))
         except (TypeError, ValueError):
             r["required_years"] = 0
-        print(f"[דורון/אבחון] {job['title']} @ {job['company']}: fit={r['fit']} years={r['required_years']} ok={r['seniority_ok']} "
+        r["fit_model"] = r["fit"]
+        r["fit"] = computed_fit(r)
+        print(f"[דורון/אבחון] {job['title']} @ {job['company']}: fit={r['fit']} (model {r['fit_model']}, core {sum(1 for c in r['core'] if c.get('met'))}/{len(r['core'])}) years={r['required_years']} ok={r['seniority_ok']} "
               f"reasons={r['reasons']} gaps={r['gaps']} desc_len={len(desc)}")
         r["reasons"] = grounded(r["reasons"], cv)        # סיבה = עובדה מקורות החיים
         r["gaps"] = grounded(r["gaps"], desc)             # חסר = דרישה שכתובה במודעה
@@ -379,7 +405,7 @@ def to_card(j: dict, r: dict, cv: str = "") -> dict:
             "posted_days": days, "salary": j.get("salary", ""), "desc": j.get("description", "")[:600], "ad": j.get("description", "")[:4000], "url": j["url"], "rv": RATING_V}
 
 
-RATING_V = 5  # גרסת שיטת הדירוג. משרות שדורגו בגרסה ישנה מדורגות מחדש
+RATING_V = 6  # גרסת שיטת הדירוג. משרות שדורגו בגרסה ישנה מדורגות מחדש
 
 
 def rerate(card: dict, profile: dict, plan: dict, min_fit: float = 3.5) -> tuple[str, dict | None, str]:

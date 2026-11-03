@@ -110,3 +110,12 @@ def test_years_not_company_age():
     assert H.years_required("at least 1.5 years left to complete your degree") == []
     assert H.years_required("Requirements: 4+ years of Full-Stack experience") == [4]
     assert H.years_required("Requires 4+ years of Python") == [4]
+
+
+def test_computed_fit():
+    from agent_core.agents import hunter as H
+    r = {"fit": 2.5, "core": [{"req": "Python", "met": True}, {"req": "LLM APIs", "met": True}, {"req": "React", "met": True},
+                              {"req": "AWS Bedrock", "met": False}], "nice_missing": 3}
+    assert H.computed_fit(r) == 3.7
+    assert H.computed_fit({**r, "wrong_field": True}) == 2.0
+    assert H.computed_fit({"fit": 3.3, "core": []}) == 3.3
