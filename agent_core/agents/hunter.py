@@ -107,6 +107,11 @@ def dedupe(jobs: list[dict]) -> list[dict]:
     return out
 
 
+def years_phrase(desc: str) -> str:
+    m = YEARS_RE.search(desc or "")
+    return " ".join(desc[max(0, m.start() - 25): m.end() + 35].split()) if m else ""
+
+
 def too_senior(job: dict, plan: dict) -> bool:
     levels = set(plan.get("levels", []))
     if levels & {"student", "intern", "junior", "entry"} and SENIOR_WORDS.search(job.get("title", "")):
@@ -276,7 +281,7 @@ def parse_rating(text: str) -> dict | None:
         fit = round(max(1.0, min(5.0, float(d.get("fit", 0)))), 1)
         clip = lambda xs, n: [str(x).strip()[:140] for x in (xs or []) if str(x).strip()][:n]
         return {"fit": fit, "reasons": clip(d.get("reasons"), 3), "gaps": clip(d.get("gaps"), 2),
-                "seniority_ok": bool(d.get("seniority_ok", True))}
+                "seniority_ok": bool(d.get("seniority_ok", True)), "required_years": d.get("required_years", 0)}
     except (ValueError, TypeError):
         return None
 
@@ -285,10 +290,10 @@ def rate(job: dict, cv: str, prefs: str) -> dict | None:
     desc = job.get("description", "")
     prompt = RANK_PROMPT.format(cv=cv[:5000], prefs=prefs, title=job["title"], company=job["company"],
                                 location=job["location"], desc=(desc[:3500] or "(no description available)"))
-    r = parse_rating(chat("hunter", "rate_job", [{"role": "user", "content": prompt}], tier="judge", max_tokens=1600))
+    r = parse_rating(chat("hunter", "rate_job", [{"role": "user", "content": prompt}], tier="judge", max_tokens=1600, temperature=0))
     if r is None:  # תשובה שנחתכה או לא בפורמט — ניסיון נוסף אחד
         r = parse_rating(chat("hunter", "rate_job_retry", [{"role": "user", "content": prompt + "\n\nReturn ONLY the JSON object, nothing else."}],
-                              tier="judge", max_tokens=1600))
+                              tier="judge", max_tokens=1600, temperature=0))
     if r is None:
         act.log("hunter", f"לא הצלחתי לדרג את {job['title']} ב-{job['company']}. אנסה בריצה הבאה.")  # בלי json_mode: חלק מהמודלים נכשלים בו; parse_rating מחלץ את ה-JSON
     if r:
@@ -296,6 +301,8 @@ def rate(job: dict, cv: str, prefs: str) -> dict | None:
             r["required_years"] = int(float(r.get("required_years") or 0))
         except (TypeError, ValueError):
             r["required_years"] = 0
+        print(f"[דורון/אבחון] {job['title']} @ {job['company']}: fit={r['fit']} years={r['required_years']} ok={r['seniority_ok']} "
+              f"reasons={r['reasons']} gaps={r['gaps']} desc_len={len(desc)}")
         r["reasons"] = grounded(r["reasons"], cv)        # סיבה = עובדה מקורות החיים
         r["gaps"] = grounded(r["gaps"], desc)             # חסר = דרישה שכתובה במודעה
         r["partial"] = len(desc) < 300
@@ -356,7 +363,7 @@ def to_card(j: dict, r: dict, cv: str = "") -> dict:
             "posted_days": days, "salary": j.get("salary", ""), "desc": j.get("description", "")[:600], "ad": j.get("description", "")[:4000], "url": j["url"], "rv": RATING_V}
 
 
-RATING_V = 3  # גרסת שיטת הדירוג. משרות שדורגו בגרסה ישנה מדורגות מחדש
+RATING_V = 4  # גרסת שיטת הדירוג. משרות שדורגו בגרסה ישנה מדורגות מחדש
 
 
 def rerate(card: dict, profile: dict, plan: dict, min_fit: float = 3.5) -> tuple[str, dict | None, str]:
@@ -372,7 +379,7 @@ def rerate(card: dict, profile: dict, plan: dict, min_fit: float = 3.5) -> tuple
     if not has_full_ad(j):
         return "later", None, "עדיין אין מודעה מלאה"
     if too_senior(j, plan):
-        return "filtered", None, "במודעה המלאה נדרשות יותר שנות ניסיון ממה שיש לך"
+        return "filtered", None, f"במודעה המלאה כתוב „{years_phrase(j['description'])}”"
     cv = profile.get("cv_text", "")
     r = rate(j, cv, prefs_text(plan))
     if not r:
@@ -409,7 +416,7 @@ def run(profile: dict, plan: dict, raw: list[dict] | None = None, rate_top: int 
             continue
         if too_senior(j, plan):  # עכשיו כשיש תיאור מלא, בודקים שוב את שנות הניסיון
             stats["too_senior"] += 1
-            act.log("hunter", f"{j['title']} ב-{j['company']}: במודעה כתוב שנדרשות יותר שנות ניסיון ממה שיש לך. מדלג.")
+            act.log("hunter", f"{j['title']} ב-{j['company']}: במודעה כתוב „{years_phrase(j.get('description', ''))}”. יותר ניסיון ממה שיש לך, מדלג.")
             continue
         try:
             r = rate(j, cv, prefs_text(plan))
@@ -426,7 +433,7 @@ def run(profile: dict, plan: dict, raw: list[dict] | None = None, rate_top: int 
             continue
         stats.setdefault("fits", []).append(r["fit"])
         ok = r["fit"] >= min_fit
-        act.log("hunter", f"{j['title']} ב-{j['company']}: {r['fit']:.1f}/5 {'✓ מתאימה' if ok else '· מתחת לסף'}")
+        act.log("hunter", f"{j['title']} ב-{j['company']}: {r['fit']:.1f}/5" + (f" (נדרשות {r['required_years']} שנים)" if r.get("required_years") else "") + f" {'✓ מתאימה' if ok else '· מתחת לסף'}")
         if ok:
             cards.append(to_card(j, r, cv))
     cards.sort(key=lambda c: -c["fit"])
