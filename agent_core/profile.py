@@ -61,18 +61,31 @@ class SearchPlan:
     exclude_reasons: dict = field(default_factory=dict)   # ממה שלמדנו מהדילוגים
     why: list[str] = field(default_factory=list)          # הסבר אנושי לכל החלטה
 
-    def queries(self, limit: int = 6) -> list[str]:
+    extra_titles: list[str] = field(default_factory=list)  # תפקידים שיואב הציע ואישרת
+    drop_queries: list[str] = field(default_factory=list)  # שאילתות שלא הביאו כלום (למידה)
+
+    heads: list[str] = field(default_factory=list)  # הכותרת הראשית של כל תפקיד שבחרת
+
+    def queries(self, limit: int = 12) -> list[str]:
+        """שילוב של כותרות ורמות: Junior / Student / Graduate / Entry level. אותו מבנה לכל תחום.
+        סדר עדיפות: הכותרת הראשית של כל תפקיד, אחר כך Graduate, אחר כך שאר הכותרות, ואז Entry level."""
+        heads = list(dict.fromkeys((self.heads or self.titles[:3]) + self.extra_titles))
+        rest = [t for t in self.titles if t not in heads]
+        jr = "junior" in self.levels or "entry" in self.levels
+        st = "student" in self.levels and self.student_positions
         out = []
-        for t in self.titles:
-            if "student" in self.levels and self.student_positions:
-                out.append(f"Student {t}")
-            if "junior" in self.levels or "entry" in self.levels:
-                out.append(f"Junior {t}")
-            if "mid" in self.levels:
-                out.append(t)
+        for group in (heads, None, rest, "entry"):
+            for t in (heads if group in (None, "entry") else group):
+                if group is None:
+                    out += [f"Graduate {t}"] if jr else []
+                elif group == "entry":
+                    out += [f"Entry Level {t}"] if jr else []
+                else:
+                    out += ([f"Student {t}"] if st else []) + ([f"Junior {t}"] if jr else []) + ([t] if "mid" in self.levels else [])
+        drop = {q.lower() for q in self.drop_queries}
         seen, uniq = set(), []
         for q in out:
-            if q.lower() not in seen:
+            if q.lower() not in seen and q.lower() not in drop:
                 seen.add(q.lower()); uniq.append(q)
         return uniq[:limit]
 
@@ -158,15 +171,19 @@ def build_search_plan(profile: dict) -> SearchPlan:
 
     roles = a.get("roles") or []
     titles = [t for r in roles for t in ROLE_TITLES.get(r, [])]
+    heads = [ROLE_TITLES[r][0] for r in roles if ROLE_TITLES.get(r)]
     if not titles:
         titles = ["Software Engineer", "Software Developer"]
         why.append("עוד לא בחרת תפקידים: חיפוש כללי של Software Engineer")
     else:
         why.append("תפקידים: " + ", ".join(roles) + src("roles"))
 
-    locs = [c for r in (a.get("locs") or []) for c in REGIONS.get(r, [])]
+    # עיר מרכזית אחת לכל אזור: החיפוש כבר כולל רדיוס סביבה, וערים סמוכות רק מחזירות את אותן משרות
+    locs = [REGIONS[r][0] for r in (a.get("locs") or []) if REGIONS.get(r)]
     locations = list(dict.fromkeys(locs)) or ["Israel"]
     remote_only = a.get("mode") == "מהבית"
+    if profile.get("extra_titles"):
+        why.append("תפקידים שאישרת מההצעות: " + ", ".join(profile["extra_titles"]))
     why.append("אזורים: " + (", ".join(a.get("locs")) if a.get("locs") else "כל הארץ") + src("locs") + (" · עבודה מהבית בלבד" if remote_only else ""))
 
     prio = a.get("prio") or []
@@ -186,7 +203,8 @@ def build_search_plan(profile: dict) -> SearchPlan:
     return SearchPlan(titles=titles, levels=levels, max_years=max_years, locations=locations,
                       remote_only=remote_only, student_positions=student_positions,
                       prefer_size=prefer_size, prefer_sectors=prefer_sectors,
-                      min_salary_month=sal, exclude_reasons=counts, why=why)
+                      min_salary_month=sal, exclude_reasons=counts, why=why,
+                      extra_titles=list(profile.get("extra_titles") or []), heads=heads, drop_queries=list(profile.get("drop_queries") or []))
 
 
 # ── חברות יעד ──────────────────────────────────────────────────────────────────

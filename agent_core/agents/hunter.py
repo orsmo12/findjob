@@ -55,12 +55,14 @@ def salary_text(row: dict) -> str:
     return f"{cur}{fmt(lo)}–{fmt(hi)}{per}" if lo and hi else f"{cur}{fmt(lo or hi)}{per}"
 
 
-def collect(plan: dict, per_search: int = 20) -> list[dict]:
-    """JobSpy לפי התוכנית: עד 6 שאילתות × 2 אזורים. LinkedIn כמודעות ציבוריות בלבד."""
+def collect(plan: dict, per_search: int = 20, budget: int = 12) -> list[dict]:
+    """JobSpy לפי התוכנית: עד 12 חיפושים (שאילתה × אזור). LinkedIn כמודעות ציבוריות בלבד."""
     from jobspy import scrape_jobs
     out = []
-    for q in plan.get("queries", [])[:6]:
-        for loc in plan.get("locations", ["Israel"])[:2]:
+    locs = plan.get("locations") or ["Israel"]
+    pairs = [(q, l) for q in plan.get("queries", []) for l in locs][:budget]
+    for q, loc in pairs:
+        if True:
             try:
                 df = scrape_jobs(
                     site_name=["indeed", "linkedin"],  # Google Jobs לא מחזיר תוצאות משרתי ענן

@@ -15,7 +15,7 @@ def test_student_plan_comes_from_answers():
     p = build_search_plan(STUDENT)
     assert p.levels == ["student", "intern", "junior"] and p.student_positions
     assert "Student Backend Developer" in p.queries() and "Junior Machine Learning Engineer" in p.queries(10)
-    assert "Tel Aviv" in p.locations and "Petah Tikva" in p.locations
+    assert p.locations == ["Tel Aviv"]
     assert p.max_years == 1 and "ai" in p.prefer_sectors
 
 
@@ -73,7 +73,7 @@ Skills: Python, React, HTML, CSS, Node, Express, OpenCV, TensorFlow, SQL
 def test_cv_fills_defaults_when_questionnaire_is_empty():
     p = build_search_plan({"cv_text": SAMPLE_CV, "answers": {}})
     assert p.levels == ["student", "intern", "junior"]
-    assert "Ramat Gan" in p.locations
+    assert p.locations == ["Tel Aviv"]  # עיר אחת לאזור (החיפוש כולל רדיוס)
     assert any("Full Stack" in t for t in p.titles) and any("Machine Learning" in t for t in p.titles)
     assert any("מקורות החיים" in w for w in p.why)
 
