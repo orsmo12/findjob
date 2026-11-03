@@ -107,9 +107,25 @@ def dedupe(jobs: list[dict]) -> list[dict]:
     return out
 
 
+def _year_hits(desc: str):
+    """דרישות שנים אמיתיות בלבד: מדלגים על "For over 50 years, organizations..." (גיל החברה) ועל מספרים גדולים."""
+    for m in YEARS_RE.finditer(desc or ""):
+        n = int(m.group(1) or m.group(2))
+        before = desc[max(0, m.start() - 22): m.start()]
+        if n >= 15 or (re.search(r"(?:for|over|since|across)\s+(?:more\s+than\s+|over\s+)?$", before, re.I)
+                       and not re.search(r"(?:minimum|least|require|need|have|with)\b", before, re.I)):
+            continue
+        yield n, m
+
+
+def years_required(desc: str) -> list[int]:
+    return [n for n, _ in _year_hits(desc)]
+
+
 def years_phrase(desc: str) -> str:
-    m = YEARS_RE.search(desc or "")
-    return " ".join(desc[max(0, m.start() - 25): m.end() + 35].split()) if m else ""
+    for _, m in _year_hits(desc):
+        return " ".join(desc[max(0, m.start() - 25): m.end() + 35].split())
+    return ""
 
 
 def too_senior(job: dict, plan: dict) -> bool:
@@ -118,7 +134,7 @@ def too_senior(job: dict, plan: dict) -> bool:
         return True
     mx = plan.get("max_years")
     if mx:
-        ys = [int(a or b) for a, b in YEARS_RE.findall(job.get("description", ""))]
+        ys = years_required(job.get("description", ""))
         if ys and min(ys) > mx + 1:  # שנה אחת "מתיחה" מותרת: מודעות לג׳וניור כותבות לא פעם 2+ שנים
             return True
     return False
@@ -363,7 +379,7 @@ def to_card(j: dict, r: dict, cv: str = "") -> dict:
             "posted_days": days, "salary": j.get("salary", ""), "desc": j.get("description", "")[:600], "ad": j.get("description", "")[:4000], "url": j["url"], "rv": RATING_V}
 
 
-RATING_V = 4  # גרסת שיטת הדירוג. משרות שדורגו בגרסה ישנה מדורגות מחדש
+RATING_V = 5  # גרסת שיטת הדירוג. משרות שדורגו בגרסה ישנה מדורגות מחדש
 
 
 def rerate(card: dict, profile: dict, plan: dict, min_fit: float = 3.5) -> tuple[str, dict | None, str]:

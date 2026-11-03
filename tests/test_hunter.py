@@ -101,3 +101,12 @@ def test_rank_fix_v2():
     H.enrich, H.rate, H.act.log = oe, orr, ol
     assert feed["jobs"] == [] and feed["stats"]["no_desc"] == 1 and not calls
     print("ok rank v2")
+
+
+def test_years_not_company_age():
+    from agent_core.agents import hunter as H
+    assert H.years_required("For over 50 years, organizations have trusted SAP") == []
+    assert H.years_required("With over 20 years of experience in data collection") == []
+    assert H.years_required("at least 1.5 years left to complete your degree") == []
+    assert H.years_required("Requirements: 4+ years of Full-Stack experience") == [4]
+    assert H.years_required("Requires 4+ years of Python") == [4]
