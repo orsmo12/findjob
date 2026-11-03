@@ -33,14 +33,52 @@ ROLE_TITLES = {
     "סייבר":         ["Security Engineer", "Security Researcher"],
     "Embedded":      ["Embedded Software Engineer"],
 }
+# ── ערכות תחום: לכל תחום התפקידים שלו (תווית בעברית ← כותרות חיפוש), חיפושים בעברית ותחומי חברות ──
+DOMAINS = {
+    "פיתוח תוכנה": {"key": "software", "roles": None, "he_queries": []},   # None = ROLE_TITLES למעלה
+    "הנדסת מכונות": {"key": "mechanical", "roles": {
+        "תכנון מכני":            ["Mechanical Engineer", "Mechanical Design Engineer"],
+        "ייצור ותהליכים":        ["Manufacturing Engineer", "Process Engineer"],
+        "R&D ופיתוח מוצר":       ["R&D Mechanical Engineer", "Product Engineer"],
+        "איכות":                 ["Quality Engineer"],
+        "ניהול פרויקטים הנדסיים": ["Project Engineer"],
+        "סימולציות ו-CAE":       ["Simulation Engineer", "CAE Engineer"],
+        "אחזקה ותפעול":          ["Maintenance Engineer", "Reliability Engineer"],
+        "מערכות ואינטגרציה":     ["Systems Engineer", "Integration Engineer"],
+    }, "he_queries": ["מהנדס מכונות", "מהנדס מכונות ג'וניור", "מהנדס ייצור"]},
+}
+MECH_WORDS = ("solidworks", "autocad", "ansys", "catia", "creo", "inventor", "gd&t", "cnc", "mechanical engineering",
+              "הנדסת מכונות", "תיכון מכני", "fea", "thermodynamics", "שרטוט")
+SOFT_WORDS = ("python", "javascript", "react", "java", "sql", "developer", "node", "typescript", "git", "backend", "frontend")
+
+
+def domain_of(profile: dict) -> str:
+    """התחום: מה שבחרת בשאלון, אחרת מקורות החיים. ברירת מחדל: פיתוח תוכנה."""
+    a = profile.get("answers") or {}
+    if a.get("domain"):
+        return a["domain"]
+    t = (profile.get("cv_text") or "").lower()
+    m, sw = sum(w in t for w in MECH_WORDS), sum(w in t for w in SOFT_WORDS)
+    return "הנדסת מכונות" if m >= 2 and m >= sw else "פיתוח תוכנה"
+
+
+def role_titles(domain: str, pack: dict | None = None) -> dict[str, list[str]]:
+    d = DOMAINS.get(domain)
+    if d and d["roles"]:
+        return d["roles"]
+    if not d and pack and pack.get("roles"):  # תחום אחר: הערכה שיואב בנה מקורות החיים
+        return {r["label"]: [t for t in r.get("titles") or [] if t][:3] for r in pack["roles"] if r.get("label")}
+    return ROLE_TITLES
+
+
 ROLE_SECTORS = {"AI / ML": ["ai"], "סייבר": ["cyber"], "Data / BI": ["data"], "DevOps / Cloud": ["devtools"],
                 "Embedded": ["hardware"], "QA ואוטומציה": [], "Backend": [], "Frontend": [], "Full-Stack": []}
 REGIONS = {
     "תל אביב":          ["Tel Aviv"],
-    "גוש דן והמרכז":    ["Tel Aviv", "Ramat Gan", "Petah Tikva", "Herzliya"],
+    "גוש דן והמרכז":    ["Tel Aviv", "Ramat Gan", "Petah Tikva", "Herzliya", "Rehovot", "Rosh HaAyin", "Lod", "Yavne", "Airport City"],
     "השרון":            ["Herzliya", "Ra'anana", "Netanya", "Kfar Saba"],
     "ירושלים":          ["Jerusalem"],
-    "חיפה והצפון":      ["Haifa", "Yokneam"],
+    "חיפה והצפון":      ["Haifa", "Yokneam", "Migdal HaEmek", "Tefen", "Karmiel"],
     "באר שבע והדרום":   ["Beer Sheva"],
 }
 EXP_MAX_YEARS = {"אין עדיין": 1, "פחות משנה": 1, "1–2 שנים": 2, "3–5 שנים": 5, "יותר מ-5 שנים": None}
@@ -66,6 +104,8 @@ class SearchPlan:
 
     heads: list[str] = field(default_factory=list)  # הכותרת הראשית של כל תפקיד שבחרת
     area_cities: list[str] = field(default_factory=list)  # כל הערים באזורים שבחרת (לחברות יעד)
+    domain: str = "פיתוח תוכנה"
+    he_queries: list[str] = field(default_factory=list)   # חיפושים בעברית (בתחומים שמפרסמים הרבה בעברית)
 
     def queries(self, limit: int = 12) -> list[str]:
         """שילוב של כותרות ורמות: Junior / Student / Graduate / Entry level. אותו מבנה לכל תחום.
@@ -83,6 +123,9 @@ class SearchPlan:
                     out += [f"Entry Level {t}"] if jr else []
                 else:
                     out += ([f"Student {t}"] if st else []) + ([f"Junior {t}"] if jr else []) + ([t] if "mid" in self.levels else [])
+        if self.he_queries:  # אחרי הכותרות הראשיות, לפני השאר
+            k = len(heads) * (1 + st)
+            out = out[:k] + list(self.he_queries) + out[k:]
         drop = {q.lower() for q in self.drop_queries}
         seen, uniq = set(), []
         for q in out:
@@ -135,7 +178,7 @@ def cv_signals(cv: str) -> dict:
             out["locs"] = [region]; break
     if re.search(r"\bstudent\b|סטודנט", t) and re.search(r"(20\d\d)\s*[–-]\s*(present|current|היום|כיום)", t):
         out["status"] = "סטודנט/ית"
-    roles = [role for words, role in SKILL_ROLES if sum(w in t for w in words) >= 2]
+    roles = [] if sum(w in t for w in MECH_WORDS) >= 2 else [role for words, role in SKILL_ROLES if sum(w in t for w in words) >= 2]
     if "Frontend" in roles and "Backend" in roles:
         roles = ["Full-Stack"] + [r for r in roles if r not in ("Frontend", "Backend")]
     if roles:
@@ -170,12 +213,19 @@ def build_search_plan(profile: dict) -> SearchPlan:
 
     max_years = EXP_MAX_YEARS.get(exp, 2 if "mid" not in levels else None)
 
-    roles = a.get("roles") or []
-    titles = [t for r in roles for t in ROLE_TITLES.get(r, [])]
-    heads = [ROLE_TITLES[r][0] for r in roles if ROLE_TITLES.get(r)]
+    domain = domain_of(profile)
+    RT = role_titles(domain, a.get("pack"))
+    roles = [r for r in (a.get("roles") or []) if r in RT] or (a.get("roles") or [] if RT is ROLE_TITLES else [])
+    titles = [t for r in roles for t in RT.get(r, [])]
+    heads = [RT[r][0] for r in roles if RT.get(r)]
+    he_q = list((DOMAINS.get(domain) or {}).get("he_queries") or (a.get("pack") or {}).get("he_queries") or [])
+    if domain != "פיתוח תוכנה":
+        why.append(f"תחום: {domain}")
     if not titles:
-        titles = ["Software Engineer", "Software Developer"]
-        why.append("עוד לא בחרת תפקידים: חיפוש כללי של Software Engineer")
+        first = next(iter(RT.values()), ["Software Engineer"])
+        titles = first[:2] if RT is not ROLE_TITLES else ["Software Engineer", "Software Developer"]
+        heads = titles[:1]
+        why.append(f"עוד לא בחרת תפקידים: חיפוש כללי של {titles[0]}")
     else:
         why.append("תפקידים: " + ", ".join(roles) + src("roles"))
 
@@ -208,7 +258,7 @@ def build_search_plan(profile: dict) -> SearchPlan:
                       remote_only=remote_only, student_positions=student_positions,
                       prefer_size=prefer_size, prefer_sectors=prefer_sectors,
                       min_salary_month=sal, exclude_reasons=counts, why=why,
-                      extra_titles=list(profile.get("extra_titles") or []), heads=heads, area_cities=area, drop_queries=list(profile.get("drop_queries") or []))
+                      extra_titles=list(profile.get("extra_titles") or []), heads=heads, area_cities=area, domain=domain, he_queries=he_q, drop_queries=list(profile.get("drop_queries") or []))
 
 
 # ── חברות יעד ──────────────────────────────────────────────────────────────────
@@ -226,8 +276,9 @@ def select_targets(plan: SearchPlan, profile: dict, catalog: list[dict] | None =
     removed = {c.lower() for c in tc.get("removed", [])}
     region_cities = {c.lower() for c in (plan.area_cities or plan.locations)}
     scored = []
+    dkey = (DOMAINS.get(plan.domain) or {}).get("key", "other")
     for c in catalog:
-        if c["name"].lower() in removed:
+        if c["name"].lower() in removed or dkey not in c.get("domains", ["software"]):
             continue
         s, why = 0, []
         if plan.prefer_sectors and set(c.get("sectors", [])) & set(plan.prefer_sectors):

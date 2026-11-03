@@ -44,13 +44,32 @@ function finishOnb(pg){commitOnb();S.onboarded=true;save();closeOnb();goPage(pg)
 
 /* ═════════ QUESTIONNAIRE — one question per screen ═════════ */
 const isStudent=a=>a.status==='סטודנט/ית';
+/* ערכות תחום: כל משתמש מקבל את התפקידים של התחום שלו (מראה של agent_core/profile.py) */
+const SOFT_ROLES=['Backend','Frontend','Full-Stack','Data / BI','AI / ML','QA ואוטומציה','DevOps / Cloud','סייבר','Embedded'];
+const PACKS={'פיתוח תוכנה':{field:['מדעי המחשב','הנדסת תוכנה','הנדסת חשמל או מחשבים','מערכות מידע','מדעי הנתונים או סטטיסטיקה','בוטקאמפ או לימוד עצמי','אחר'],roles:SOFT_ROLES,work:'בפיתוח'},
+  'הנדסת מכונות':{field:['הנדסת מכונות','הנדסאי מכונות','הנדסת תעשייה וניהול','הנדסה אווירונאוטית','הנדסת חומרים','אחר'],
+    roles:['תכנון מכני','ייצור ותהליכים','R&D ופיתוח מוצר','איכות','ניהול פרויקטים הנדסיים','סימולציות ו-CAE','אחזקה ותפעול','מערכות ואינטגרציה'],work:'בהנדסה'}};
+const MECH_W=['solidworks','autocad','ansys','catia','creo','inventor','gd&t','cnc','mechanical engineering','הנדסת מכונות','תיכון מכני','fea','thermodynamics','שרטוט'],
+  SOFT_W=['python','javascript','react','java','sql','developer','node','typescript','git','backend','frontend'];
+function cvDomain(cv){const t=(cv||'').toLowerCase(),m=MECH_W.filter(w=>t.includes(w)).length,sw=SOFT_W.filter(w=>t.includes(w)).length;return m>=2&&m>=sw?'הנדסת מכונות':sw>=2?'פיתוח תוכנה':''}
+function domainOf(a){return a.domain||cvDomain(prof().cv)||'פיתוח תוכנה'}
+function domKey(a){const d=domainOf(a);return d==='פיתוח תוכנה'?'software':d==='הנדסת מכונות'?'mechanical':'other'}
+function pack(a){const d=domainOf(a);return PACKS[d]||(a.pack&&a.pack.label===d?{field:a.pack.field&&a.pack.field.length?a.pack.field:['אחר'],roles:a.pack.roles.map(r=>r.label),work:'בתחום'}:PACKS['פיתוח תוכנה'])}
+async function buildPack(){const a=ans();if(!CLOUDM||!SB){toast('צריך חיבור לענן כדי לבנות ערכה לתחום שלך');return}
+  $('onbBody').querySelector('.q-card')?.insertAdjacentHTML('afterend',`<p class="help" id="packWait" style="margin-top:12px">${escB(N('strategist'))} קורא את קורות החיים ובונה את רשימת התפקידים בתחום שלך…</p>`);
+  try{const {data:{session}}=await SB.auth.getSession();
+    const r=await fetch('/api/domain',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({cv:prof().cv||'',token:session&&session.access_token})});
+    const d=await r.json();if(!r.ok||!d.roles)throw new Error(d.error||'x');
+    a.pack=d;a.domain=d.label;a.roles=[];save();toast(`${N('strategist')}: התחום שלך הוא ${d.label}. בחר תפקידים בשאלה הבאה`);renderQ()}
+  catch(e){const w=$('packWait');if(w)w.textContent='לא הצלחתי לבנות ערכה כרגע. אפשר לבחור תחום קרוב ולנסות שוב אחר כך.'}}
 const QS=[
   {id:'status',t:'מה המצב שלך היום?',sub:'כך נדע אילו משרות להציג לך.',o:['סטודנט/ית','בוגר/ת טרי/ה, מחפש/ת עבודה ראשונה','ג׳וניור עם ניסיון של עד שנתיים','עובד/ת ומחפש/ת לעבור','משתחרר/ת משירות','לא עובד/ת כרגע']},
   {id:'year',when:isStudent,t:'באיזו שנה אתה בתואר?',o:['שנה א׳','שנה ב׳','שנה ג׳','שנה ד׳','תואר שני']},
   {id:'track',when:isStudent,t:'מה אתה מחפש עכשיו?',o:['משרת סטודנט חלקית','משרה מלאה אחרי התואר','את שתיהן']},
-  {id:'field',t:'מה הרקע המקצועי שלך?',o:['מדעי המחשב','הנדסת תוכנה','הנדסת חשמל או מחשבים','מערכות מידע','מדעי הנתונים או סטטיסטיקה','בוטקאמפ או לימוד עצמי','אחר']},
-  {id:'roles',multi:true,t:'אילו תפקידים מעניינים אותך?',sub:'אפשר לבחור כמה.',o:['Backend','Frontend','Full-Stack','Data / BI','AI / ML','QA ואוטומציה','DevOps / Cloud','סייבר','Embedded']},
-  {id:'exp',t:'כמה ניסיון מעשי יש לך בפיתוח?',sub:'כולל עבודה, התמחות או פרויקטים בתשלום.',o:['אין עדיין','פחות משנה','1–2 שנים','3–5 שנים','יותר מ-5 שנים']},
+  {id:'domain',t:'באיזה תחום אתה מחפש עבודה?',sub:'זיהינו מקורות החיים. אפשר לשנות.',o:a=>[...new Set(['פיתוח תוכנה','הנדסת מכונות',...(a.pack?[a.pack.label]:[]),'תחום אחר'])]},
+  {id:'field',t:'מה הרקע המקצועי שלך?',o:a=>pack(a).field},
+  {id:'roles',multi:true,t:'אילו תפקידים מעניינים אותך?',sub:'אפשר לבחור כמה.',o:a=>pack(a).roles},
+  {id:'exp',t:a=>`כמה ניסיון מעשי יש לך ${pack(a).work}?`,sub:'כולל עבודה, התמחות או פרויקטים בתשלום.',o:['אין עדיין','פחות משנה','1–2 שנים','3–5 שנים','יותר מ-5 שנים']},
   {id:'age',t:'מה הגיל שלך?',sub:'עוזר להתאים לך משרות. לא מופיע במכתבים ולא נשלח למעסיקים.',o:['18–21','22–25','26–29','30–34','35 ומעלה','מעדיף/ה לא לציין']},
   {id:'army',t:'מה עשית בשירות?',sub:'בישראל זה חלק חשוב מקורות החיים, במיוחד בתחילת הדרך.',o:['שירות טכנולוגי (8200, ממר״ם וכד׳)','קרבי','קצונה או תפקיד פיקודי','שירות אחר','שירות לאומי','לא שירתתי']},
   {id:'locs',multi:true,t:'איפה נוח לך לעבוד?',sub:'אפשר לבחור כמה.',o:['תל אביב','גוש דן והמרכז','השרון','ירושלים','חיפה והצפון','באר שבע והדרום']},
@@ -63,7 +82,7 @@ const QS=[
 ];
 let qi=0;
 const ans=()=>(prof().ans=prof().ans||{});
-const visibleQs=()=>QS.filter(q=>!q.when||q.when(ans()));
+const visibleQs=()=>{const a=ans();if(!a.domain){const d=cvDomain(prof().cv);if(d)a.domain=d}return QS.filter(q=>!q.when||q.when(a)).map(q=>({...q,o:typeof q.o==='function'?q.o(a):q.o,t:typeof q.t==='function'?q.t(a):q.t}))};
 const qTotal=()=>visibleQs().length+(ans().status?0:2);
 const answered=q=>{const v=ans()[q.id];return q.multi?Array.isArray(v)&&v.length>0:!!v};
 function qProgress(){const v=visibleQs();return{done:v.filter(answered).length,total:v.length}}
@@ -96,6 +115,8 @@ function qPick(i){
   if(q.multi){let arr=Array.isArray(a[q.id])?a[q.id]:[];
     if(arr.includes(o))arr=arr.filter(x=>x!==o);else{if(q.max&&arr.length>=q.max)arr=arr.slice(1);arr=[...arr,o]}
     a[q.id]=arr;save();renderQ();return}
+  if(q.id==='domain'&&o==='תחום אחר'){a.domain='';save();buildPack();return}
+  if(q.id==='domain'&&a.domain!==o){a.roles=[];a.field=''}
   a[q.id]=o;save();
   document.querySelectorAll('.q-opt').forEach((b,j)=>{b.classList.toggle('sel',j===i);b.setAttribute('aria-checked',j===i)});
   qLock=true;setTimeout(()=>{qLock=false;qNext()},300);

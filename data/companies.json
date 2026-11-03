@@ -1,43 +1,813 @@
 {
-  "_about": "קטלוג תשתית: חברות טכנולוגיה בישראל. לא העדפה של אף משתמש — יואב בוחר מכאן לפי הפרופיל. ats_slugs הם ניחוש עד שהסקריפט scripts/verify_companies.py מאמת אותם מול הלוחות הציבוריים; רק ats מאומת משמש לחיפוש ישיר.",
-  "companies": [
-    {"name": "Check Point", "sectors": ["cyber"], "size": "enterprise", "city": "Tel Aviv", "hires_juniors": true, "slugs": ["checkpoint", "checkpointsoftware"]},
-    {"name": "CyberArk", "sectors": ["cyber"], "size": "enterprise", "city": "Petah Tikva", "hires_juniors": true, "slugs": ["cyberark"]},
-    {"name": "Wiz", "sectors": ["cyber", "devtools"], "size": "scaleup", "city": "Tel Aviv", "hires_juniors": false, "slugs": ["wiz", "wizinc"]},
-    {"name": "Snyk", "sectors": ["cyber", "devtools"], "size": "scaleup", "city": "Tel Aviv", "hires_juniors": false, "slugs": ["snyk"]},
-    {"name": "Armis", "sectors": ["cyber"], "size": "scaleup", "city": "Tel Aviv", "hires_juniors": false, "slugs": ["armis", "armissecurity"]},
-    {"name": "Cato Networks", "sectors": ["cyber"], "size": "scaleup", "city": "Tel Aviv", "hires_juniors": true, "slugs": ["catonetworks"]},
-    {"name": "Orca Security", "sectors": ["cyber"], "size": "scaleup", "city": "Tel Aviv", "hires_juniors": false, "slugs": ["orcasecurity", "orca"]},
-    {"name": "Guardz", "sectors": ["cyber"], "size": "startup", "city": "Tel Aviv", "hires_juniors": true, "slugs": ["guardz"]},
-    {"name": "Island", "sectors": ["cyber"], "size": "scaleup", "city": "Tel Aviv", "hires_juniors": false, "slugs": ["island"]},
-    {"name": "monday.com", "sectors": ["saas"], "size": "enterprise", "city": "Tel Aviv", "hires_juniors": true, "slugs": ["mondaycom", "monday"]},
-    {"name": "Wix", "sectors": ["saas", "web"], "size": "enterprise", "city": "Tel Aviv", "hires_juniors": true, "slugs": ["wix"]},
-    {"name": "Elementor", "sectors": ["saas", "web"], "size": "scaleup", "city": "Ramat Gan", "hires_juniors": true, "slugs": ["elementor"]},
-    {"name": "Fiverr", "sectors": ["marketplace"], "size": "enterprise", "city": "Tel Aviv", "hires_juniors": true, "slugs": ["fiverr"]},
-    {"name": "Riskified", "sectors": ["fintech", "data"], "size": "scaleup", "city": "Tel Aviv", "hires_juniors": true, "slugs": ["riskified"]},
-    {"name": "Payoneer", "sectors": ["fintech"], "size": "enterprise", "city": "Petah Tikva", "hires_juniors": true, "slugs": ["payoneer"]},
-    {"name": "Lemonade", "sectors": ["fintech", "ai"], "size": "scaleup", "city": "Tel Aviv", "hires_juniors": false, "slugs": ["lemonade"]},
-    {"name": "Melio", "sectors": ["fintech"], "size": "scaleup", "city": "Tel Aviv", "hires_juniors": false, "slugs": ["melio", "meliopayments"]},
-    {"name": "Tipalti", "sectors": ["fintech"], "size": "scaleup", "city": "Herzliya", "hires_juniors": true, "slugs": ["tipalti"]},
-    {"name": "Rapyd", "sectors": ["fintech"], "size": "scaleup", "city": "Tel Aviv", "hires_juniors": false, "slugs": ["rapyd"]},
-    {"name": "Pagaya", "sectors": ["fintech", "ai", "data"], "size": "scaleup", "city": "Tel Aviv", "hires_juniors": true, "slugs": ["pagaya"]},
-    {"name": "Nayax", "sectors": ["fintech", "hardware"], "size": "enterprise", "city": "Herzliya", "hires_juniors": true, "slugs": ["nayax"]},
-    {"name": "HiBob", "sectors": ["saas"], "size": "scaleup", "city": "Tel Aviv", "hires_juniors": true, "slugs": ["hibob"]},
-    {"name": "AppsFlyer", "sectors": ["data", "adtech"], "size": "enterprise", "city": "Herzliya", "hires_juniors": true, "slugs": ["appsflyer"]},
-    {"name": "Taboola", "sectors": ["adtech", "ai"], "size": "enterprise", "city": "Tel Aviv", "hires_juniors": true, "slugs": ["taboola"]},
-    {"name": "Outbrain", "sectors": ["adtech"], "size": "enterprise", "city": "Netanya", "hires_juniors": true, "slugs": ["outbrain"]},
-    {"name": "Similarweb", "sectors": ["data"], "size": "enterprise", "city": "Tel Aviv", "hires_juniors": true, "slugs": ["similarweb"]},
-    {"name": "Gong", "sectors": ["ai", "saas"], "size": "scaleup", "city": "Ramat Gan", "hires_juniors": false, "slugs": ["gong", "gongio"]},
-    {"name": "JFrog", "sectors": ["devtools"], "size": "enterprise", "city": "Netanya", "hires_juniors": true, "slugs": ["jfrog"]},
-    {"name": "Tabnine", "sectors": ["ai", "devtools"], "size": "startup", "city": "Tel Aviv", "hires_juniors": false, "slugs": ["tabnine"]},
-    {"name": "AI21 Labs", "sectors": ["ai"], "size": "scaleup", "city": "Tel Aviv", "hires_juniors": false, "slugs": ["ai21", "ai21labs"]},
-    {"name": "Lightricks", "sectors": ["ai", "consumer"], "size": "scaleup", "city": "Jerusalem", "hires_juniors": true, "slugs": ["lightricks"]},
-    {"name": "Mobileye", "sectors": ["ai", "automotive", "hardware"], "size": "enterprise", "city": "Jerusalem", "hires_juniors": true, "slugs": ["mobileye"]},
-    {"name": "Hailo", "sectors": ["ai", "hardware"], "size": "scaleup", "city": "Tel Aviv", "hires_juniors": true, "slugs": ["hailo", "hailotech"]},
-    {"name": "Via", "sectors": ["mobility", "data"], "size": "scaleup", "city": "Tel Aviv", "hires_juniors": false, "slugs": ["via", "ridewithvia"]},
-    {"name": "vHive", "sectors": ["ai", "hardware"], "size": "startup", "city": "Tel Aviv", "hires_juniors": true, "slugs": ["vhive"]},
-    {"name": "Earnix", "sectors": ["fintech", "data"], "size": "scaleup", "city": "Ramat Gan", "hires_juniors": true, "slugs": ["earnix"]},
-    {"name": "NVIDIA Israel", "sectors": ["ai", "hardware"], "size": "enterprise", "city": "Yokneam", "hires_juniors": true, "slugs": []},
-    {"name": "Intel Israel", "sectors": ["hardware"], "size": "enterprise", "city": "Haifa", "hires_juniors": true, "slugs": []}
-  ]
+ "_about": "קטלוג תשתית: חברות טכנולוגיה בישראל. לא העדפה של אף משתמש — יואב בוחר מכאן לפי הפרופיל. ats_slugs הם ניחוש עד שהסקריפט scripts/verify_companies.py מאמת אותם מול הלוחות הציבוריים; רק ats מאומת משמש לחיפוש ישיר.",
+ "companies": [
+  {
+   "name": "Check Point",
+   "sectors": [
+    "cyber"
+   ],
+   "size": "enterprise",
+   "city": "Tel Aviv",
+   "hires_juniors": true,
+   "slugs": [
+    "checkpoint",
+    "checkpointsoftware"
+   ],
+   "domains": [
+    "software"
+   ]
+  },
+  {
+   "name": "CyberArk",
+   "sectors": [
+    "cyber"
+   ],
+   "size": "enterprise",
+   "city": "Petah Tikva",
+   "hires_juniors": true,
+   "slugs": [
+    "cyberark"
+   ],
+   "domains": [
+    "software"
+   ]
+  },
+  {
+   "name": "Wiz",
+   "sectors": [
+    "cyber",
+    "devtools"
+   ],
+   "size": "scaleup",
+   "city": "Tel Aviv",
+   "hires_juniors": false,
+   "slugs": [
+    "wiz",
+    "wizinc"
+   ],
+   "domains": [
+    "software"
+   ]
+  },
+  {
+   "name": "Snyk",
+   "sectors": [
+    "cyber",
+    "devtools"
+   ],
+   "size": "scaleup",
+   "city": "Tel Aviv",
+   "hires_juniors": false,
+   "slugs": [
+    "snyk"
+   ],
+   "domains": [
+    "software"
+   ]
+  },
+  {
+   "name": "Armis",
+   "sectors": [
+    "cyber"
+   ],
+   "size": "scaleup",
+   "city": "Tel Aviv",
+   "hires_juniors": false,
+   "slugs": [
+    "armis",
+    "armissecurity"
+   ],
+   "domains": [
+    "software"
+   ]
+  },
+  {
+   "name": "Cato Networks",
+   "sectors": [
+    "cyber"
+   ],
+   "size": "scaleup",
+   "city": "Tel Aviv",
+   "hires_juniors": true,
+   "slugs": [
+    "catonetworks"
+   ],
+   "domains": [
+    "software"
+   ]
+  },
+  {
+   "name": "Orca Security",
+   "sectors": [
+    "cyber"
+   ],
+   "size": "scaleup",
+   "city": "Tel Aviv",
+   "hires_juniors": false,
+   "slugs": [
+    "orcasecurity",
+    "orca"
+   ],
+   "domains": [
+    "software"
+   ]
+  },
+  {
+   "name": "Guardz",
+   "sectors": [
+    "cyber"
+   ],
+   "size": "startup",
+   "city": "Tel Aviv",
+   "hires_juniors": true,
+   "slugs": [
+    "guardz"
+   ],
+   "domains": [
+    "software"
+   ]
+  },
+  {
+   "name": "Island",
+   "sectors": [
+    "cyber"
+   ],
+   "size": "scaleup",
+   "city": "Tel Aviv",
+   "hires_juniors": false,
+   "slugs": [
+    "island"
+   ],
+   "domains": [
+    "software"
+   ]
+  },
+  {
+   "name": "monday.com",
+   "sectors": [
+    "saas"
+   ],
+   "size": "enterprise",
+   "city": "Tel Aviv",
+   "hires_juniors": true,
+   "slugs": [
+    "mondaycom",
+    "monday"
+   ],
+   "domains": [
+    "software"
+   ]
+  },
+  {
+   "name": "Wix",
+   "sectors": [
+    "saas",
+    "web"
+   ],
+   "size": "enterprise",
+   "city": "Tel Aviv",
+   "hires_juniors": true,
+   "slugs": [
+    "wix"
+   ],
+   "domains": [
+    "software"
+   ]
+  },
+  {
+   "name": "Elementor",
+   "sectors": [
+    "saas",
+    "web"
+   ],
+   "size": "scaleup",
+   "city": "Ramat Gan",
+   "hires_juniors": true,
+   "slugs": [
+    "elementor"
+   ],
+   "domains": [
+    "software"
+   ]
+  },
+  {
+   "name": "Fiverr",
+   "sectors": [
+    "marketplace"
+   ],
+   "size": "enterprise",
+   "city": "Tel Aviv",
+   "hires_juniors": true,
+   "slugs": [
+    "fiverr"
+   ],
+   "domains": [
+    "software"
+   ]
+  },
+  {
+   "name": "Riskified",
+   "sectors": [
+    "fintech",
+    "data"
+   ],
+   "size": "scaleup",
+   "city": "Tel Aviv",
+   "hires_juniors": true,
+   "slugs": [
+    "riskified"
+   ],
+   "domains": [
+    "software"
+   ]
+  },
+  {
+   "name": "Payoneer",
+   "sectors": [
+    "fintech"
+   ],
+   "size": "enterprise",
+   "city": "Petah Tikva",
+   "hires_juniors": true,
+   "slugs": [
+    "payoneer"
+   ],
+   "domains": [
+    "software"
+   ]
+  },
+  {
+   "name": "Lemonade",
+   "sectors": [
+    "fintech",
+    "ai"
+   ],
+   "size": "scaleup",
+   "city": "Tel Aviv",
+   "hires_juniors": false,
+   "slugs": [
+    "lemonade"
+   ],
+   "domains": [
+    "software"
+   ]
+  },
+  {
+   "name": "Melio",
+   "sectors": [
+    "fintech"
+   ],
+   "size": "scaleup",
+   "city": "Tel Aviv",
+   "hires_juniors": false,
+   "slugs": [
+    "melio",
+    "meliopayments"
+   ],
+   "domains": [
+    "software"
+   ]
+  },
+  {
+   "name": "Tipalti",
+   "sectors": [
+    "fintech"
+   ],
+   "size": "scaleup",
+   "city": "Herzliya",
+   "hires_juniors": true,
+   "slugs": [
+    "tipalti"
+   ],
+   "domains": [
+    "software"
+   ]
+  },
+  {
+   "name": "Rapyd",
+   "sectors": [
+    "fintech"
+   ],
+   "size": "scaleup",
+   "city": "Tel Aviv",
+   "hires_juniors": false,
+   "slugs": [
+    "rapyd"
+   ],
+   "domains": [
+    "software"
+   ]
+  },
+  {
+   "name": "Pagaya",
+   "sectors": [
+    "fintech",
+    "ai",
+    "data"
+   ],
+   "size": "scaleup",
+   "city": "Tel Aviv",
+   "hires_juniors": true,
+   "slugs": [
+    "pagaya"
+   ],
+   "domains": [
+    "software"
+   ]
+  },
+  {
+   "name": "Nayax",
+   "sectors": [
+    "fintech",
+    "hardware"
+   ],
+   "size": "enterprise",
+   "city": "Herzliya",
+   "hires_juniors": true,
+   "slugs": [
+    "nayax"
+   ],
+   "domains": [
+    "software",
+    "mechanical"
+   ]
+  },
+  {
+   "name": "HiBob",
+   "sectors": [
+    "saas"
+   ],
+   "size": "scaleup",
+   "city": "Tel Aviv",
+   "hires_juniors": true,
+   "slugs": [
+    "hibob"
+   ],
+   "domains": [
+    "software"
+   ]
+  },
+  {
+   "name": "AppsFlyer",
+   "sectors": [
+    "data",
+    "adtech"
+   ],
+   "size": "enterprise",
+   "city": "Herzliya",
+   "hires_juniors": true,
+   "slugs": [
+    "appsflyer"
+   ],
+   "domains": [
+    "software"
+   ]
+  },
+  {
+   "name": "Taboola",
+   "sectors": [
+    "adtech",
+    "ai"
+   ],
+   "size": "enterprise",
+   "city": "Tel Aviv",
+   "hires_juniors": true,
+   "slugs": [
+    "taboola"
+   ],
+   "domains": [
+    "software"
+   ]
+  },
+  {
+   "name": "Outbrain",
+   "sectors": [
+    "adtech"
+   ],
+   "size": "enterprise",
+   "city": "Netanya",
+   "hires_juniors": true,
+   "slugs": [
+    "outbrain"
+   ],
+   "domains": [
+    "software"
+   ]
+  },
+  {
+   "name": "Similarweb",
+   "sectors": [
+    "data"
+   ],
+   "size": "enterprise",
+   "city": "Tel Aviv",
+   "hires_juniors": true,
+   "slugs": [
+    "similarweb"
+   ],
+   "domains": [
+    "software"
+   ]
+  },
+  {
+   "name": "Gong",
+   "sectors": [
+    "ai",
+    "saas"
+   ],
+   "size": "scaleup",
+   "city": "Ramat Gan",
+   "hires_juniors": false,
+   "slugs": [
+    "gong",
+    "gongio"
+   ],
+   "domains": [
+    "software"
+   ]
+  },
+  {
+   "name": "JFrog",
+   "sectors": [
+    "devtools"
+   ],
+   "size": "enterprise",
+   "city": "Netanya",
+   "hires_juniors": true,
+   "slugs": [
+    "jfrog"
+   ],
+   "domains": [
+    "software"
+   ]
+  },
+  {
+   "name": "Tabnine",
+   "sectors": [
+    "ai",
+    "devtools"
+   ],
+   "size": "startup",
+   "city": "Tel Aviv",
+   "hires_juniors": false,
+   "slugs": [
+    "tabnine"
+   ],
+   "domains": [
+    "software"
+   ]
+  },
+  {
+   "name": "AI21 Labs",
+   "sectors": [
+    "ai"
+   ],
+   "size": "scaleup",
+   "city": "Tel Aviv",
+   "hires_juniors": false,
+   "slugs": [
+    "ai21",
+    "ai21labs"
+   ],
+   "domains": [
+    "software"
+   ]
+  },
+  {
+   "name": "Lightricks",
+   "sectors": [
+    "ai",
+    "consumer"
+   ],
+   "size": "scaleup",
+   "city": "Jerusalem",
+   "hires_juniors": true,
+   "slugs": [
+    "lightricks"
+   ],
+   "domains": [
+    "software"
+   ]
+  },
+  {
+   "name": "Mobileye",
+   "sectors": [
+    "ai",
+    "automotive",
+    "hardware"
+   ],
+   "size": "enterprise",
+   "city": "Jerusalem",
+   "hires_juniors": true,
+   "slugs": [
+    "mobileye"
+   ],
+   "domains": [
+    "software",
+    "mechanical"
+   ]
+  },
+  {
+   "name": "Hailo",
+   "sectors": [
+    "ai",
+    "hardware"
+   ],
+   "size": "scaleup",
+   "city": "Tel Aviv",
+   "hires_juniors": true,
+   "slugs": [
+    "hailo",
+    "hailotech"
+   ],
+   "domains": [
+    "software",
+    "mechanical"
+   ]
+  },
+  {
+   "name": "Via",
+   "sectors": [
+    "mobility",
+    "data"
+   ],
+   "size": "scaleup",
+   "city": "Tel Aviv",
+   "hires_juniors": false,
+   "slugs": [
+    "via",
+    "ridewithvia"
+   ],
+   "domains": [
+    "software"
+   ]
+  },
+  {
+   "name": "vHive",
+   "sectors": [
+    "ai",
+    "hardware"
+   ],
+   "size": "startup",
+   "city": "Tel Aviv",
+   "hires_juniors": true,
+   "slugs": [
+    "vhive"
+   ],
+   "domains": [
+    "software"
+   ]
+  },
+  {
+   "name": "Earnix",
+   "sectors": [
+    "fintech",
+    "data"
+   ],
+   "size": "scaleup",
+   "city": "Ramat Gan",
+   "hires_juniors": true,
+   "slugs": [
+    "earnix"
+   ],
+   "domains": [
+    "software"
+   ]
+  },
+  {
+   "name": "NVIDIA Israel",
+   "sectors": [
+    "ai",
+    "hardware"
+   ],
+   "size": "enterprise",
+   "city": "Yokneam",
+   "hires_juniors": true,
+   "slugs": [],
+   "domains": [
+    "software",
+    "mechanical"
+   ]
+  },
+  {
+   "name": "Intel Israel",
+   "sectors": [
+    "hardware"
+   ],
+   "size": "enterprise",
+   "city": "Haifa",
+   "hires_juniors": true,
+   "slugs": [],
+   "domains": [
+    "software",
+    "mechanical"
+   ]
+  },
+  {
+   "name": "Israel Aerospace Industries",
+   "sectors": [
+    "defense",
+    "aerospace"
+   ],
+   "size": "enterprise",
+   "city": "Lod",
+   "hires_juniors": true,
+   "slugs": [
+    "iai"
+   ],
+   "domains": [
+    "mechanical",
+    "software"
+   ]
+  },
+  {
+   "name": "Rafael",
+   "sectors": [
+    "defense"
+   ],
+   "size": "enterprise",
+   "city": "Haifa",
+   "hires_juniors": true,
+   "slugs": [
+    "rafael"
+   ],
+   "domains": [
+    "mechanical",
+    "software"
+   ]
+  },
+  {
+   "name": "Elbit Systems",
+   "sectors": [
+    "defense",
+    "aerospace"
+   ],
+   "size": "enterprise",
+   "city": "Haifa",
+   "hires_juniors": true,
+   "slugs": [
+    "elbitsystems",
+    "elbit"
+   ],
+   "domains": [
+    "mechanical",
+    "software"
+   ]
+  },
+  {
+   "name": "Applied Materials",
+   "sectors": [
+    "semiconductors"
+   ],
+   "size": "enterprise",
+   "city": "Rehovot",
+   "hires_juniors": true,
+   "slugs": [
+    "appliedmaterials"
+   ],
+   "domains": [
+    "mechanical",
+    "software"
+   ]
+  },
+  {
+   "name": "KLA",
+   "sectors": [
+    "semiconductors"
+   ],
+   "size": "enterprise",
+   "city": "Migdal HaEmek",
+   "hires_juniors": true,
+   "slugs": [
+    "kla"
+   ],
+   "domains": [
+    "mechanical",
+    "software"
+   ]
+  },
+  {
+   "name": "Tower Semiconductor",
+   "sectors": [
+    "semiconductors"
+   ],
+   "size": "enterprise",
+   "city": "Migdal HaEmek",
+   "hires_juniors": true,
+   "slugs": [
+    "towersemi"
+   ],
+   "domains": [
+    "mechanical"
+   ]
+  },
+  {
+   "name": "Iscar",
+   "sectors": [
+    "manufacturing"
+   ],
+   "size": "enterprise",
+   "city": "Tefen",
+   "hires_juniors": true,
+   "slugs": [
+    "iscar"
+   ],
+   "domains": [
+    "mechanical"
+   ]
+  },
+  {
+   "name": "Stratasys",
+   "sectors": [
+    "manufacturing",
+    "3d-printing"
+   ],
+   "size": "enterprise",
+   "city": "Rehovot",
+   "hires_juniors": true,
+   "slugs": [
+    "stratasys"
+   ],
+   "domains": [
+    "mechanical"
+   ]
+  },
+  {
+   "name": "Ormat",
+   "sectors": [
+    "energy"
+   ],
+   "size": "enterprise",
+   "city": "Yavne",
+   "hires_juniors": true,
+   "slugs": [
+    "ormat"
+   ],
+   "domains": [
+    "mechanical"
+   ]
+  },
+  {
+   "name": "Netafim",
+   "sectors": [
+    "agritech",
+    "manufacturing"
+   ],
+   "size": "enterprise",
+   "city": "Beer Sheva",
+   "hires_juniors": true,
+   "slugs": [
+    "netafim"
+   ],
+   "domains": [
+    "mechanical"
+   ]
+  },
+  {
+   "name": "Israel Electric Corporation",
+   "sectors": [
+    "energy"
+   ],
+   "size": "enterprise",
+   "city": "Haifa",
+   "hires_juniors": true,
+   "slugs": [
+    "iec"
+   ],
+   "domains": [
+    "mechanical"
+   ]
+  },
+  {
+   "name": "Kornit Digital",
+   "sectors": [
+    "manufacturing"
+   ],
+   "size": "enterprise",
+   "city": "Rosh HaAyin",
+   "hires_juniors": true,
+   "slugs": [
+    "kornit"
+   ],
+   "domains": [
+    "mechanical"
+   ]
+  },
+  {
+   "name": "Plasan",
+   "sectors": [
+    "defense",
+    "manufacturing"
+   ],
+   "size": "enterprise",
+   "city": "Karmiel",
+   "hires_juniors": true,
+   "slugs": [
+    "plasan"
+   ],
+   "domains": [
+    "mechanical"
+   ]
+  }
+ ]
 }

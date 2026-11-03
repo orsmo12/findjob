@@ -39,6 +39,7 @@ def _names(text: str) -> list[str]:
 KNOWN = {w.lower() for w in """Python Java JavaScript TypeScript Go Golang Rust Ruby PHP Kotlin Swift Scala C# C++ SQL NoSQL
 React Angular Vue Svelte Next.js Node.js Node Express Django Flask FastAPI Spring .NET GraphQL REST gRPC Kafka RabbitMQ Redis
 MongoDB PostgreSQL MySQL Elasticsearch Docker Kubernetes Terraform Ansible Jenkins AWS Azure GCP Linux Git GitHub GitLab
+SolidWorks AutoCAD ANSYS CATIA Creo Inventor MATLAB Simulink CNC FEA PLM
 TensorFlow PyTorch Keras OpenCV LangChain LangGraph Pandas NumPy Spark Hadoop Airflow Tableau Figma Selenium Playwright Cypress
 Google Microsoft Amazon Meta Apple Intel Nvidia IBM Oracle Salesforce Wix Monday Mobileye Waze Fiverr Check Point CyberArk
 Technion Bar-Ilan Ben-Gurion Reichman HIT Afeka Ariel Harvard Stanford MIT 8200 Talpiot Mamram""".split()}

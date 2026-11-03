@@ -15,7 +15,7 @@ from agent_core.agents.tasks import build_tasks
 from agent_core.budget_guard import BudgetDeferred
 from agent_core import activity as act
 from agent_core.agents import linkedin_coach as K
-from agent_core.profile import build_search_plan
+from agent_core.profile import build_search_plan, domain_of
 from agent_core.agents import growth as G
 import hashlib, json as _json
 from datetime import datetime, timedelta, timezone
@@ -40,7 +40,8 @@ for u in db.profiles_ready():
                 prep = prepare(cv, job); upd["prep"] = prep
             if prep.get("tasks") is None or prep.get("more_tasks"):
                 used = {t["url"] for t in prep.get("tasks") or []} | set(prep.get("used_tasks") or [])
-                fresh = build_tasks(job, need=4, exclude=used)
+                # מטלות בית מ-GitHub מתאימות לתחומי תוכנה. בתחום אחר — לא ממציאים, נשאר ריק
+                fresh = build_tasks(job, need=4, exclude=used) if domain_of(u) == "פיתוח תוכנה" else []
                 prep = {**prep, "tasks": (prep.get("tasks") or []) + fresh, "more_tasks": False}
                 if not fresh and row.get("prep") and row["prep"].get("more_tasks"):
                     prep["no_more_tasks"] = True

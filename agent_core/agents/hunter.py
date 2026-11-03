@@ -390,7 +390,8 @@ def prefs_text(plan: dict) -> str:
 
 # ── ריצה ───────────────────────────────────────────────────────────────────────
 TECH = ["Python", "Java", "C++", "C#", "JavaScript", "TypeScript", "React", "Node.js", "SQL", "Docker", "Kubernetes",
-        "AWS", "GCP", "Azure", "Linux", "Git", "TensorFlow", "PyTorch", "Keras", "OpenCV", "Go", "Kotlin", "REST", "GraphQL"]
+        "AWS", "GCP", "Azure", "Linux", "Git", "TensorFlow", "PyTorch", "Keras", "OpenCV", "Go", "Kotlin", "REST", "GraphQL",
+        "SolidWorks", "AutoCAD", "ANSYS", "CATIA", "Creo", "Inventor", "MATLAB", "Simulink", "GD&T", "CNC", "FEA", "PLM", "Siemens NX"]
 
 
 def tags_for(desc: str, cv: str) -> list[str]:
