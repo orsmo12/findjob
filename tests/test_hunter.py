@@ -79,3 +79,25 @@ def test_tags_only_when_in_ad_and_cv():
 def test_reasons_must_come_from_cv():
     cv = "Third-year CS student at HIT. Python, React."
     assert h.grounded(["סטודנט ב-Bar-Ilan", "ניסיון ב-Python ו-React", "סטודנט שנה ג׳"], cv) == ["ניסיון ב-Python ו-React", "סטודנט שנה ג׳"]
+
+
+def test_rank_fix_v2():
+    from agent_core.agents import hunter as H
+    # השוואה סלחנית: רבים, .js, רישיות
+    assert H.grounded(["פרויקט עם LLMs ו-React.js"], "Built an llm agent in react") == ["פרויקט עם LLMs ו-React.js"]
+    assert H.grounded(["ניסיון ב-Kubernetes"], "python react") == []
+    # שנות ניסיון שה-AI קרא נאכפות בקוד
+    assert H.years_too_many(3, {"max_years": 1}) and not H.years_too_many(2, {"max_years": 1})
+    assert not H.years_too_many(5, {"max_years": None})
+    # משרה בלי מודעה מלאה לא מדורגת לפי כותרת
+    calls = []
+    oe, orr, ol = H.enrich, H.rate, H.act.log
+    H.enrich = lambda j, *a, **k: j
+    H.rate = lambda *a, **k: calls.append(1)
+    H.act.log = lambda *a, **k: None
+    jobs = [{"id": "x", "title": "Junior Backend Developer", "company": "Minute", "location": "TA", "url": "https://www.linkedin.com/jobs/view/1",
+             "description": "", "source": "linkedin", "posted": "", "salary": ""}]
+    feed = H.run({"cv_text": "python"}, {"titles": [], "levels": ["junior"], "max_years": 1}, raw=jobs, seen=set(), persist=False)
+    H.enrich, H.rate, H.act.log = oe, orr, ol
+    assert feed["jobs"] == [] and feed["stats"]["no_desc"] == 1 and not calls
+    print("ok rank v2")

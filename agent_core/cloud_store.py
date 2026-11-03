@@ -112,3 +112,12 @@ def saved_open(user_id: str) -> list[dict]:
         "select": "id,card", "user_id": f"eq.{user_id}", "decision": "eq.save", "card->>closed_at": "is.null"})
     r.raise_for_status()
     return r.json()
+
+
+def to_rerate(user_id: str, rating_v: int) -> list[dict]:
+    """משרות בפיד שעוד לא החלטת עליהן, ושדורגו בלי מודעה מלאה או בשיטה ישנה."""
+    r = httpx.get(_url("jobs"), headers=_h(), timeout=30, params={
+        "select": "id,card", "user_id": f"eq.{user_id}", "decision": "is.null"})
+    r.raise_for_status()
+    return [x for x in r.json() if not (x.get("card") or {}).get("closed_at")
+            and ((x["card"] or {}).get("partial") or (x["card"] or {}).get("rv") != rating_v)]

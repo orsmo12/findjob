@@ -116,6 +116,12 @@ def too_senior(job: dict, plan: dict) -> bool:
     return False
 
 
+def years_too_many(req: int, plan: dict) -> bool:
+    """שנות הניסיון שה-AI קרא מהמודעה, נאכפות בקוד: מעל המקסימום שלך + שנה אחת = לא מוצג."""
+    mx = plan.get("max_years")
+    return bool(mx) and req > mx + 1
+
+
 def prefilter(jobs: list[dict], plan: dict, seen_ids: set[str]) -> tuple[list[dict], dict]:
     stats = {"collected": len(jobs), "too_senior": 0, "already_seen": 0}
     keep = []
@@ -147,24 +153,68 @@ def _html_text(html: str) -> str:
     return re.sub(r"\n\s*\n+", "\n", txt).strip()
 
 
-def enrich(job: dict) -> dict:
-    """מודעות LinkedIn מגיעות בלי תיאור. מביאים אותו מהעמוד הציבורי של המשרה (בלי התחברות)."""
+_LAST_LI = [0.0]
+
+
+def _li_get(url: str):
+    """בקשה ל-LinkedIn בקצב מתון. הוא חוסם (429) כשמגיעות הרבה בקשות מהר משרתי ענן."""
+    import httpx, time
+    wait = 1.6 - (time.time() - _LAST_LI[0])
+    if wait > 0:
+        time.sleep(wait)
+    _LAST_LI[0] = time.time()
+    return httpx.get(url, timeout=15, follow_redirects=True,
+                     headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124 Safari/537.36",
+                              "Accept-Language": "en-US,en;q=0.9"})
+
+
+def _li_desc(html: str) -> str:
+    mm = re.search(r'show-more-less-html__markup[^>]*>(.*?)</div>', html, re.S)
+    if mm:
+        return _html_text(mm.group(1))
+    mm = re.search(r'"description"\s*:\s*"((?:[^"\\]|\\.)*)"', html)  # JSON-LD בעמוד הציבורי
+    if mm:
+        try:
+            return _html_text(json.loads('"' + mm.group(1) + '"'))
+        except ValueError:
+            pass
+    return ""
+
+
+def enrich(job: dict, tries: tuple[float, ...] = (0, 5, 12)) -> dict:
+    """מודעות LinkedIn מגיעות בלי תיאור. מביאים אותו מהעמוד הציבורי של המשרה (בלי התחברות).
+    אם LinkedIn חוסם — מחכים ומנסים שוב, ואז דרך עמוד המשרה עצמו."""
     if len(job.get("description", "")) >= 300 or "linkedin.com/jobs/view/" not in job.get("url", ""):
         return job
     m = re.search(r"/jobs/view/(?:[^/?]*-)?(\d+)", job["url"])
     if not m:
         return job
-    try:
-        import httpx
-        r = httpx.get(f"https://www.linkedin.com/jobs-guest/jobs/api/jobPosting/{m.group(1)}", timeout=15,
-                      headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)", "Accept-Language": "en-US,en;q=0.9"})
-        if r.status_code == 200:
-            mm = re.search(r'show-more-less-html__markup[^>]*>(.*?)</div>', r.text, re.S)
-            if mm:
-                job["description"] = _html_text(mm.group(1))[:6000]
-    except Exception as e:  # noqa: BLE001
-        print(f"[דורון] לא הצלחתי להביא תיאור: {job['title']} ({type(e).__name__})")
+    import time
+    urls = [f"https://www.linkedin.com/jobs-guest/jobs/api/jobPosting/{m.group(1)}",
+            f"https://www.linkedin.com/jobs/view/{m.group(1)}"]
+    last = ""
+    for i, delay in enumerate(tries):
+        if delay:
+            time.sleep(delay)
+        for u in urls:
+            try:
+                r = _li_get(u)
+                last = str(r.status_code)
+                if r.status_code == 200:
+                    d = _li_desc(r.text)
+                    if len(d) >= 300:
+                        job["description"] = d[:6000]
+                        return job
+                elif r.status_code in (404, 410):
+                    return job
+            except Exception as e:  # noqa: BLE001
+                last = type(e).__name__
+    print(f"[דורון] לא הצלחתי להביא תיאור: {job['title']} ({last})")
     return job
+
+
+def has_full_ad(job: dict) -> bool:
+    return len(job.get("description", "")) >= 300
 
 
 # ── דירוג ב-AI ─────────────────────────────────────────────────────────────────
@@ -180,14 +230,27 @@ CANDIDATE PREFERENCES:
 JOB: {title} at {company} ({location})
 {desc}
 
+How to judge:
+1. Split the ad into CORE requirements (under "Requirements", "Must", "What you bring", "You have") and NICE-TO-HAVE
+   (anything marked "advantage", "a plus", "bonus", "nice to have", "also valuable", "preferred").
+   Missing nice-to-have items lower the score by at most 0.3 in total. Missing CORE items matter most.
+2. "required_years": the minimum years of professional work experience the ad demands as a CORE requirement
+   (e.g. "3+ years of experience" -> 3, "2-4 years" -> 2). 0 if the ad asks for none or is for students/juniors.
+   Years of a degree or "years of hands-on with X in projects" do not count as work years.
+3. For juniors and students, personal, academic and side projects written in the CV DO count as hands-on experience
+   with the technologies they use.
+4. If the ad needs no prior job and asks for skills the CV shows (in projects too), the score should be high (4+).
+
 Return JSON only:
 {{"fit": number 1.0-5.0 with one decimal,
-  "reasons": [up to 3 short reasons, each pointing to a concrete CV fact that matches a requirement in the ad],
-  "gaps": [up to 2 short items: requirements written in the ad that the CV does not show],
-  "seniority_ok": true/false (false if the ad clearly needs more experience than the candidate has)}}
+  "required_years": integer,
+  "reasons": [up to 3 short reasons, each naming a concrete CV fact (project, course, tool) that matches a CORE requirement],
+  "gaps": [up to 2 short items: CORE requirements written in the ad that the CV does not show; only nice-to-have if no core gaps],
+  "seniority_ok": true/false (false if the ad clearly needs more work experience than the candidate has)}}
 Write reasons and gaps in natural, fluent Hebrew (as a native Israeli recruiter would), max 12 words each.
-Keep technology and company names in English. Do not use location as a reason.
-Scale: 5 = almost every requirement is shown in the CV and the level fits; 3 = partial match; 1 = wrong field or level."""
+Keep technology, project and company names in English, spelled exactly as they appear in the CV or ad.
+Do not use location as a reason.
+Scale: 5 = almost every core requirement is shown in the CV and the level fits; 3 = partial match; 1 = wrong field or level."""
 
 
 def parse_rating(text: str) -> dict | None:
@@ -215,6 +278,10 @@ def rate(job: dict, cv: str, prefs: str) -> dict | None:
     if r is None:
         act.log("hunter", f"לא הצלחתי לדרג את {job['title']} ב-{job['company']}. אנסה בריצה הבאה.")  # בלי json_mode: חלק מהמודלים נכשלים בו; parse_rating מחלץ את ה-JSON
     if r:
+        try:
+            r["required_years"] = int(float(r.get("required_years") or 0))
+        except (TypeError, ValueError):
+            r["required_years"] = 0
         r["reasons"] = grounded(r["reasons"], cv)        # סיבה = עובדה מקורות החיים
         r["gaps"] = grounded(r["gaps"], desc)             # חסר = דרישה שכתובה במודעה
         r["partial"] = len(desc) < 300
@@ -226,10 +293,23 @@ def rate(job: dict, cv: str, prefs: str) -> dict | None:
 LATIN = re.compile(r"[A-Za-z][A-Za-z0-9+#.\-]{2,}")
 
 
+def _norm_term(w: str) -> str:
+    w = w.lower().strip(".-,;:()")
+    for suf in (".js", ".py", "'s", "s"):
+        if w.endswith(suf) and len(w) - len(suf) >= 2:
+            w = w[: -len(suf)]
+    return w.replace("-", "").replace(".", "")
+
+
 def grounded(items: list[str], source: str) -> list[str]:
-    """בדיקת מקור: כל שם באנגלית (טכנולוגיה, מוסד, חברה) חייב להופיע בטקסט המקור. אחרת המשפט נזרק."""
-    src = source.lower()
-    return [t for t in items if all(w.lower().strip(".-") in src for w in LATIN.findall(t))]
+    """בדיקת מקור: כל שם באנגלית (טכנולוגיה, מוסד, חברה) חייב להופיע בטקסט המקור. אחרת המשפט נזרק.
+    ההשוואה סלחנית לרישיות, רבים (LLMs/LLM), סיומות .js ומקפים — אבל לא ממציאה."""
+    src_raw = source.lower()
+    src_norm = re.sub(r"[\s\-.]", "", src_raw)
+    def ok(w: str) -> bool:
+        lw = w.lower().strip(".-,;:()")
+        return lw in src_raw or _norm_term(w) in src_norm
+    return [t for t in items if all(ok(w) for w in LATIN.findall(t))]
 
 
 def prefs_text(plan: dict) -> str:
@@ -259,7 +339,37 @@ def to_card(j: dict, r: dict, cv: str = "") -> dict:
             "tags": tags_for(j.get("description", ""), cv),
             "src": {"indeed": "Indeed", "linkedin": "LinkedIn", "google": "Google Jobs", "greenhouse": "אתר החברה",
                     "lever": "אתר החברה", "ashby": "אתר החברה"}.get(j["source"], j["source"]),
-            "posted_days": days, "salary": j.get("salary", ""), "desc": j.get("description", "")[:600], "ad": j.get("description", "")[:4000], "url": j["url"]}
+            "posted_days": days, "salary": j.get("salary", ""), "desc": j.get("description", "")[:600], "ad": j.get("description", "")[:4000], "url": j["url"], "rv": RATING_V}
+
+
+RATING_V = 2  # גרסת שיטת הדירוג. משרות שדורגו בגרסה ישנה מדורגות מחדש
+
+
+def rerate(card: dict, profile: dict, plan: dict, min_fit: float = 3.5) -> tuple[str, dict | None, str]:
+    """דירוג מחדש של משרה שכבר בפיד ועוד לא החלטת עליה.
+    מחזיר ("ok", כרטיס חדש, ""), ("filtered", None, סיבה) או ("later", None, סיבה)."""
+    src = {v: k for k, v in {"indeed": "Indeed", "linkedin": "LinkedIn", "google": "Google Jobs"}.items()}
+    j = {"id": card["id"], "title": card.get("title", ""), "company": card.get("co", ""), "location": card.get("loc", ""),
+         "url": card.get("url", ""), "description": card.get("ad") or "", "posted": "", "salary": card.get("salary", ""),
+         "source": src.get(card.get("src"), "greenhouse" if card.get("src") == "אתר החברה" else card.get("src", ""))}
+    if len(j["description"]) < 300:
+        j["description"] = ""
+    enrich(j)
+    if not has_full_ad(j):
+        return "later", None, "עדיין אין מודעה מלאה"
+    if too_senior(j, plan):
+        return "filtered", None, "במודעה המלאה נדרשות יותר שנות ניסיון ממה שיש לך"
+    cv = profile.get("cv_text", "")
+    r = rate(j, cv, prefs_text(plan))
+    if not r:
+        return "later", None, "הדירוג לא הצליח"
+    if not r["seniority_ok"] or years_too_many(r.get("required_years", 0), plan):
+        return "filtered", None, f"נדרשות {r.get('required_years') or 'יותר'} שנות ניסיון"
+    if r["fit"] < min_fit:
+        return "filtered", None, f"אחרי קריאת המודעה המלאה: {r['fit']:.1f}/5, מתחת לסף"
+    new = to_card(j, r, cv)
+    new["posted_days"] = card.get("posted_days")
+    return "ok", new, f"{r['fit']:.1f}/5"
 
 
 def run(profile: dict, plan: dict, raw: list[dict] | None = None, rate_top: int = 25, min_fit: float = 3.5, remember: bool = True,
@@ -279,8 +389,14 @@ def run(profile: dict, plan: dict, raw: list[dict] | None = None, rate_top: int 
     cards, deferred = [], 0
     for j in jobs[:rate_top]:
         enrich(j)
+        if not has_full_ad(j):  # בלי מודעה מלאה אי אפשר לדרג באמת. לא מציגים — ננסה שוב בסריקה הבאה
+            stats["no_desc"] = stats.get("no_desc", 0) + 1
+            act.log("hunter", f"{j['title']} ב-{j['company']}: לא הצלחתי לקרוא את המודעה המלאה. לא מדרג לפי כותרת בלבד, אנסה שוב בסריקה הבאה.")
+            continue
         if too_senior(j, plan):  # עכשיו כשיש תיאור מלא, בודקים שוב את שנות הניסיון
-            stats["too_senior"] += 1; continue
+            stats["too_senior"] += 1
+            act.log("hunter", f"{j['title']} ב-{j['company']}: במודעה כתוב שנדרשות יותר שנות ניסיון ממה שיש לך. מדלג.")
+            continue
         try:
             r = rate(j, cv, prefs_text(plan))
         except BudgetDeferred as e:
@@ -290,7 +406,7 @@ def run(profile: dict, plan: dict, raw: list[dict] | None = None, rate_top: int 
             deferred += 1; continue
         if not r:
             continue
-        if not r["seniority_ok"]:
+        if not r["seniority_ok"] or years_too_many(r.get("required_years", 0), plan):
             stats["too_senior"] += 1; stats["ai_senior"] = stats.get("ai_senior", 0) + 1
             act.log("hunter", f"{j['title']} ב-{j['company']}: דורשת יותר ניסיון ממה שיש לך. מדלג.")
             continue

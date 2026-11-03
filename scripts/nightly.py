@@ -11,7 +11,7 @@ sys.path.insert(0, str(ROOT))
 
 from agent_core import cloud_store as db
 from agent_core.profile import build_search_plan
-from agent_core.agents.hunter import run, collect
+from agent_core.agents.hunter import run, collect, rerate, RATING_V, BudgetDeferred
 from agent_core import activity as act
 from agent_core.agents.live import check as still_open
 import httpx as _httpx
@@ -34,6 +34,32 @@ print(f"{len(users)} משתמשים עם קורות חיים")
 for u in users:
     prof = {"first": u.get("first", ""), "name": u.get("name", ""), "cv_text": u["cv_text"], "answers": u.get("answers") or {}}
     plan = build_search_plan(prof).to_dict()
+    act.start(u["user_id"])
+    try:  # דורון: דירוג מחדש של משרות בפיד שדורגו בלי מודעה מלאה או בשיטה ישנה
+        todo = db.to_rerate(u["user_id"], RATING_V)[:12]
+        if todo:
+            act.log("hunter", f"בודק שוב {len(todo)} משרות שמחכות לך: קורא את המודעה המלאה ומדרג מחדש")
+        gone = []
+        for row in todo:
+            c = row["card"]
+            try:
+                st, new, why_ = rerate(c, prof, plan)
+            except BudgetDeferred:
+                act.log("hunter", "הגעתי למכסת ה-AI. את השאר אבדוק בסריקה הבאה."); break
+            act.log("hunter", f"{c['title']} ב-{c['co']}: " + {"ok": f"דירוג מעודכן {why_}", "filtered": f"הורדתי מהרשימה ({why_})",
+                                                              "later": f"{why_}, אנסה שוב בסריקה הבאה"}[st])
+            if st == "ok":
+                db.update_job(u["user_id"], row["id"], {"card": new, "fit": new["fit"]})
+            elif st == "filtered":
+                db.update_job(u["user_id"], row["id"], {"decision": "filtered", "card": {**c, "filtered_why": why_}})
+                gone.append(f"{c['title']} ב-{c['co']}")
+        if gone:
+            db.add_run(u["user_id"], "hunter", "קראתי שוב את המודעות המלאות והורדתי מהרשימה משרות שלא מתאימות לך: "
+                       + "; ".join(gone) + ".")
+        act.flush()
+    except Exception as e:  # noqa: BLE001
+        print(f"{u['user_id'][:8]}: דירוג מחדש נכשל: {type(e).__name__}: {e}")
+        act.flush()
     act.start(u["user_id"])
     try:
         why = plan.get("why") or []

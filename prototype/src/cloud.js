@@ -32,9 +32,9 @@ async function cloudLoad(){
   prof().key='cloud';
   RUNS=runs||[];const hr=RUNS.filter(r=>(r.agent||'hunter')==='hunter');
   if(hr.length||(jobs&&jobs.length)){
-    const live=(jobs||[]).filter(r=>r.decision!=='skip'||S.decisions[r.id]);
+    const live=(jobs||[]).filter(r=>r.decision!=='filtered'&&(r.decision!=='skip'||S.decisions[r.id]));
     setFeed({generated_at:hr.length?hr[0].created_at:null,stats:hr.length?(hr[0].stats||{}):{},jobs:live.map(r=>Object.assign({},r.card,{letter:r.letter||null,brief:r.brief||null,prep:r.prep||null,closed_at:(r.card&&r.card.closed_at)||null})).sort((a,b)=>b.fit-a.fit)});
-    (jobs||[]).forEach(r=>{if(r.decision)S.decisions[r.id]=r.decision});
+    (jobs||[]).forEach(r=>{if(r.decision&&r.decision!=='filtered')S.decisions[r.id]=r.decision});
   }
   S.apps=(S.apps||[]).filter(a=>JOBS[a.jobId]);
   closedToHistory();
