@@ -121,3 +121,38 @@ def to_rerate(user_id: str, rating_v: int) -> list[dict]:
     r.raise_for_status()
     return [x for x in r.json() if not (x.get("card") or {}).get("closed_at")
             and ((x["card"] or {}).get("partial") or (x["card"] or {}).get("rv") != rating_v)]
+
+
+def latest_plan(user_id: str, agent: str) -> dict:
+    """ה-plan של הריצה האחרונה של סוכן (משמש כזיכרון: מטמון לוחות, מה יואב למד)."""
+    r = httpx.get(_url("runs"), headers=_h(), timeout=30, params={
+        "select": "plan,created_at", "user_id": f"eq.{user_id}", "agent": f"eq.{agent}", "plan": "not.is.null",
+        "order": "created_at.desc", "limit": "1"})
+    r.raise_for_status()
+    rows = r.json()
+    return (rows[0].get("plan") or {}) if rows else {}
+
+
+def recent_runs(user_id: str, agent: str, days: int = 14) -> list[dict]:
+    from datetime import datetime, timedelta, timezone
+    since = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
+    r = httpx.get(_url("runs"), headers=_h(), timeout=30, params={
+        "select": "stats,plan,created_at", "user_id": f"eq.{user_id}", "agent": f"eq.{agent}",
+        "created_at": f"gte.{since}", "order": "created_at.desc", "limit": "60"})
+    r.raise_for_status()
+    return r.json()
+
+
+def save_memory(user_id: str, agent: str, plan: dict) -> None:
+    """שורה שקטה ב-runs (בלי הודעה למשתמש) ששומרת זיכרון של סוכן."""
+    r = httpx.post(_url("runs"), headers=_h(), json={"user_id": user_id, "agent": agent, "stats": {"memory": True}, "plan": plan}, timeout=30)
+    r.raise_for_status()
+
+
+def all_jobs(user_id: str, days: int = 14) -> list[dict]:
+    from datetime import datetime, timedelta, timezone
+    since = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
+    r = httpx.get(_url("jobs"), headers=_h(), timeout=30, params={
+        "select": "id,card,decision,created_at", "user_id": f"eq.{user_id}", "created_at": f"gte.{since}", "limit": "500"})
+    r.raise_for_status()
+    return r.json()

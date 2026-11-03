@@ -450,12 +450,17 @@ def run(profile: dict, plan: dict, raw: list[dict] | None = None, rate_top: int 
     """persist=False: לא כותבים קבצים מקומיים (בענן התוצאות נשמרות ב-Supabase)."""
     cv = profile.get("cv_text", "")
     raw = raw if raw is not None else collect(plan)
+    qy: dict[str, dict] = {}  # תשואה לכל שאילתה: כמה הביאה, כמה חדשות, כמה מתאימות
+    for j in raw:
+        qy.setdefault(j.get("query") or j.get("source", "?"), {"got": 0, "new": 0, "fit": 0})["got"] += 1
     jobs = dedupe(raw)
     act.log("hunter", f"איחדתי כפילויות: {len(raw)} → {len(jobs)} משרות שונות")
     if seen is None:
         seen = set(json.loads(SEEN.read_text())) if SEEN.exists() else set()
     jobs, stats = prefilter(jobs, plan, seen)
     act.log("hunter", f"סיננתי {stats['too_senior']} בכירות מדי ו-{stats['already_seen']} שכבר ראית. נשארו {len(jobs)}.")
+    for j in jobs:
+        qy.setdefault(j.get("query") or j.get("source", "?"), {"got": 0, "new": 0, "fit": 0})["new"] += 1
     jobs.sort(key=lambda j: -cheap_rank(j, plan, cv))
     if jobs:
         act.log("hunter", f"מדרג את {min(len(jobs), rate_top)} המבטיחות מול קורות החיים שלך")
@@ -489,8 +494,9 @@ def run(profile: dict, plan: dict, raw: list[dict] | None = None, rate_top: int 
         act.log("hunter", f"{j['title']} ב-{j['company']}: {r['fit']:.1f}/5" + (f" (נדרשות {r['required_years']} שנים)" if r.get("required_years") else "") + f" {'✓ מתאימה' if ok else '· מתחת לסף'}")
         if ok:
             cards.append(to_card(j, r, cv))
+            qy.setdefault(j.get("query") or j.get("source", "?"), {"got": 0, "new": 0, "fit": 0})["fit"] += 1
     cards.sort(key=lambda c: -c["fit"])
-    stats.update(rated=min(len(jobs), rate_top) - deferred, deferred=deferred, shown=len(cards))
+    stats.update(rated=min(len(jobs), rate_top) - deferred, deferred=deferred, shown=len(cards), queries=qy)
     feed = {"generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"), "stats": stats,
             "plan": {k: plan.get(k) for k in ("queries", "locations", "levels", "why")}, "jobs": cards}
     if not persist:

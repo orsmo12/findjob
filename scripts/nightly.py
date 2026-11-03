@@ -15,10 +15,11 @@ from agent_core.agents.hunter import run, collect, rerate, RATING_V, BudgetDefer
 from agent_core import activity as act
 from agent_core.agents.live import check as still_open
 import httpx as _httpx
-from agent_core.agents.ats import collect_targets
+from agent_core.agents.ats import collect_targets, name_matches, same_company
 from agent_core.profile import select_targets, load_catalog
 from agent_core.profile import SearchPlan
 from agent_core.agents import linkedin_coach as K
+from agent_core.agents import meeting as M
 from datetime import datetime, timezone, timedelta
 
 if not db.configured():
@@ -32,7 +33,11 @@ print(f"מפתח Groq: {'תקין' if k.startswith('gsk_') and len(k) > 40 else 
 users = db.profiles_ready()
 print(f"{len(users)} משתמשים עם קורות חיים")
 for u in users:
-    prof = {"first": u.get("first", ""), "name": u.get("name", ""), "cv_text": u["cv_text"], "answers": u.get("answers") or {}}
+    st = u.get("state") or {}
+    learned = db.latest_plan(u["user_id"], "meeting")          # מה יואב והצוות למדו בישיבה האחרונה
+    prof = {"first": u.get("first", ""), "name": u.get("name", ""), "cv_text": u["cv_text"], "answers": u.get("answers") or {},
+            "extra_titles": [x["value"] for x in st.get("accepted") or [] if x.get("type") == "role"],  # תפקידים שאישרת
+            "drop_queries": learned.get("drop_queries") or []}
     plan = build_search_plan(prof).to_dict()
     act.start(u["user_id"])
     try:  # דורון: דירוג מחדש של משרות בפיד שדורגו בלי מודעה מלאה או בשיטה ישנה
@@ -72,12 +77,45 @@ for u in users:
         act.log("strategist", f"תחפש: {', '.join(plan['queries'][:6])}. אזורים: {', '.join(plan['locations'][:2])}."
                 + (f" עד {plan['max_years']} שנות ניסיון." if plan.get("max_years") else ""), to="hunter")
         plan_obj = build_search_plan(prof)
-        targets = select_targets(plan_obj, {"target_companies": (u.get("state") or {}).get("targets") or {}}, load_catalog())
+        tc = st.get("targets") or {}
+        targets = select_targets(plan_obj, {"target_companies": tc}, load_catalog())
+        removed = {x.lower() for x in tc.get("removed") or []}
+        have = {t["name"].lower() for t in targets}
+        for a in learned.get("auto_targets") or []:  # חברות שהצוות הוסיף לבד (אפשר להסיר בפרופיל)
+            if a["name"].lower() not in removed and a["name"].lower() not in have:
+                targets.append({"name": a["name"], "why": [a.get("why", "הצוות הוסיף")], "auto": True})
         act.log("strategist", f"גם לבדוק ישירות את דפי הקריירה של {len(targets)} חברות יעד: {', '.join(t['name'] for t in targets[:6])}…", to="hunter")
-        direct, boards = collect_targets(targets, plan)
-        print(f"{u['user_id'][:8]}: לוחות חברה: {len(boards)} מתוך {len(targets)} ({', '.join(boards[:8])}), {len(direct)} משרות רלוונטיות")
-        feed = run(prof, plan, raw=collect(plan) + direct, seen=db.seen_ids(u["user_id"]), persist=False)
-        feed["stats"]["direct_boards"] = len(boards)
+        cache = db.latest_plan(u["user_id"], "boards").get("cache") or {}
+        direct, boards, cache = collect_targets(targets, plan, cache)
+        # חברות בלי לוח ציבורי: חיפוש לפי השם (קודם אלה שהוספת בעצמך), כולל תיקון שם
+        by_name = sorted([b for b in boards if b["status"] == "by_name"], key=lambda b: 0 if "הוספת בעצמך" in b["why"] else 1)
+        named = []
+        for b in by_name[:3]:
+            alias = (cache.get(b["name"].lower()) or {}).get("as") or b["name"]
+            got = collect({"queries": [alias], "locations": ["Israel"], "remote_only": plan.get("remote_only")}, per_search=25, budget=1)
+            real = name_matches(got, alias)
+            if real:
+                mine = [j for j in got if same_company(alias, j["company"])]
+                named += mine
+                b.update(status="by_name_ok", found_as=real if real.lower() != b["name"].lower() else None, n=len(mine))
+                cache.setdefault(b["name"].lower(), {"b": None, "at": datetime.now(timezone.utc).isoformat()})["as"] = real
+                act.log("hunter", f"{b['name']}: אין לה לוח ציבורי, אז חיפשתי לפי השם" + (f". במודעות היא מופיעה בשם {real}" if b.get("found_as") else "")
+                        + f": {len(mine)} משרות בישראל")
+            else:
+                b.update(status="not_found")
+                act.log("hunter", f"{b['name']}: לא מצאתי משרות בשם הזה. אולי השם לא מדויק?")
+        if any(b.get("found_as") or b["status"] == "not_found" for b in by_name[:3] if "הוספת בעצמך" in b["why"]):
+            fixed = [b for b in by_name[:3] if "הוספת בעצמך" in b["why"]]
+            db.add_run(u["user_id"], "hunter", " ".join(
+                (f"חיפשתי את {b['name']}: היא מפרסמת משרות בשם {b['found_as']}, ואני מחפש לפי השם הזה." if b.get("found_as")
+                 else f"לא מצאתי משרות של {b['name']}. כדאי לבדוק את השם בפרופיל ›› חברות יעד." if b["status"] == "not_found" else "")
+                for b in fixed).strip())
+        db.save_memory(u["user_id"], "boards", {"cache": cache})
+        ok = [b for b in boards if b["status"] == "board"]
+        print(f"{u['user_id'][:8]}: לוחות חברה: {len(ok)} מתוך {len(targets)} ({', '.join(b['name'] + ' ' + b['board'] for b in ok[:12])}), {len(direct)} משרות רלוונטיות")
+        feed = run(prof, plan, raw=collect(plan) + direct + named, seen=db.seen_ids(u["user_id"]), persist=False)
+        feed["stats"]["direct_boards"] = len(ok)
+        feed["stats"]["boards"] = boards
         if feed["jobs"]:
             act.log("hunter", f"{len(feed['jobs'])} משרות חדשות מחכות ל{u.get('first') or 'משתמש'}. כשתישמר משרה — שי, גיל ומאיה, היא שלכם.", to="assistant")
         act.flush()
@@ -125,4 +163,31 @@ for u in users:
         act.flush()
     except Exception as e:  # noqa: BLE001
         print(f"{u['user_id'][:8]}: LinkedIn נכשל: {type(e).__name__}: {e}")
+        act.flush()
+
+
+# ── הישיבה השבועית: יואב והצוות בודקים מה עבד, מה לא, ומה לשנות ─────────────
+for u in users:
+    try:
+        last = db.latest_plan(u["user_id"], "meeting")
+        if not (M.due(last) or os.environ.get("FORCE_MEETING")):
+            continue
+        st = u.get("state") or {}
+        prof = {"cv_text": u["cv_text"], "answers": u.get("answers") or {},
+                "extra_titles": [x["value"] for x in st.get("accepted") or [] if x.get("type") == "role"],
+                "drop_queries": last.get("drop_queries") or []}
+        plan = build_search_plan(prof).to_dict()
+        tc = st.get("targets") or {}
+        names = [t["name"] for t in select_targets(build_search_plan(prof), {"target_companies": tc}, load_catalog())]
+        act.start(u["user_id"])
+        out = M.hold(plan, db.recent_runs(u["user_id"], "hunter"), db.all_jobs(u["user_id"]), last,
+                     st.get("accepted") or [], st.get("dismissed") or [], names)
+        act.flush()
+        db.save_memory(u["user_id"], "meeting", out["plan"])
+        if out["msg"]:
+            db.add_run(u["user_id"], "strategist", out["msg"], {"report": out["report"]})
+        r = out["report"]
+        print(f"{u['user_id'][:8]}: ישיבה: {len(r['issues'])} בעיות, {len(r['actions'])} שינויים, {len(r['suggestions'])} הצעות — {out['msg'][:300]}")
+    except Exception as e:  # noqa: BLE001
+        print(f"{u['user_id'][:8]}: ישיבה נכשלה: {type(e).__name__}: {e}")
         act.flush()

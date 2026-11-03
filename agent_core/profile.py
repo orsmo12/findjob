@@ -65,6 +65,7 @@ class SearchPlan:
     drop_queries: list[str] = field(default_factory=list)  # שאילתות שלא הביאו כלום (למידה)
 
     heads: list[str] = field(default_factory=list)  # הכותרת הראשית של כל תפקיד שבחרת
+    area_cities: list[str] = field(default_factory=list)  # כל הערים באזורים שבחרת (לחברות יעד)
 
     def queries(self, limit: int = 12) -> list[str]:
         """שילוב של כותרות ורמות: Junior / Student / Graduate / Entry level. אותו מבנה לכל תחום.
@@ -180,6 +181,7 @@ def build_search_plan(profile: dict) -> SearchPlan:
 
     # עיר מרכזית אחת לכל אזור: החיפוש כבר כולל רדיוס סביבה, וערים סמוכות רק מחזירות את אותן משרות
     locs = [REGIONS[r][0] for r in (a.get("locs") or []) if REGIONS.get(r)]
+    area = list(dict.fromkeys(c for r in (a.get("locs") or []) for c in REGIONS.get(r, [])))
     locations = list(dict.fromkeys(locs)) or ["Israel"]
     remote_only = a.get("mode") == "מהבית"
     if profile.get("extra_titles"):
@@ -204,7 +206,7 @@ def build_search_plan(profile: dict) -> SearchPlan:
                       remote_only=remote_only, student_positions=student_positions,
                       prefer_size=prefer_size, prefer_sectors=prefer_sectors,
                       min_salary_month=sal, exclude_reasons=counts, why=why,
-                      extra_titles=list(profile.get("extra_titles") or []), heads=heads, drop_queries=list(profile.get("drop_queries") or []))
+                      extra_titles=list(profile.get("extra_titles") or []), heads=heads, area_cities=area, drop_queries=list(profile.get("drop_queries") or []))
 
 
 # ── חברות יעד ──────────────────────────────────────────────────────────────────
@@ -220,7 +222,7 @@ def select_targets(plan: SearchPlan, profile: dict, catalog: list[dict] | None =
     catalog = catalog if catalog is not None else load_catalog()
     tc = profile.get("target_companies", {}) or {}
     removed = {c.lower() for c in tc.get("removed", [])}
-    region_cities = {c.lower() for c in plan.locations}
+    region_cities = {c.lower() for c in (plan.area_cities or plan.locations)}
     scored = []
     for c in catalog:
         if c["name"].lower() in removed:

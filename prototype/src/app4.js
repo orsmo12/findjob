@@ -35,9 +35,12 @@ function renderProfile(){
     <section class="card glass" id="planCard" aria-labelledby="plH"><h2 class="card-h" id="plH">מה מחפשים בשבילך</h2>
       <div class="card-sub">${escB(N('strategist'))} בנה את זה מקורות החיים ומהתשובות שלך, ומעדכן בכל שינוי.</div>
       <ul class="plan-list">${planWhy().map(w=>`<li>${escB(w)}</li>`).join('')}</ul>
+      ${typeof suggestionsHtml==='function'?suggestionsHtml():''}
+      ${typeof lastMeeting==='function'&&lastMeeting()?`<button class="link" style="font-size:13px;color:var(--brand);margin:6px 0" onclick="openMeeting()">לדוח של הישיבה השבועית</button>`:''}
       <h3 class="sub-h">חברות יעד</h3>
-      <div class="card-sub">${escB(N('hunter'))} בודק ישירות את אלה שיש להן לוח משרות ציבורי, בנוסף לחיפוש הפתוח בכל החברות.</div>
-      <div class="learned">${targetCompanies().map(c=>`<span class="chip" title="${escB(c.why.join(' · '))}">${escB(c.name)}<button aria-label="להסיר את ${escB(c.name)}" onclick="removeTarget('${escB(c.name).replace(/'/g,"\\'")}')">×</button></span>`).join('')}</div>
+      <div class="card-sub">${escB(N('hunter'))} בודק ישירות את אלה שיש להן לוח משרות ציבורי, ואת השאר מחפש לפי השם. כך זה נראה בסריקה האחרונה:</div>
+      ${(()=>{const rt=realTargets();return rt?`<div class="tg-list">${rt.map(b=>`<div class="tg-row tg-${b.status}"><span class="tg-dot" aria-hidden="true"></span><span class="tg-t"><b lang="en">${escB(b.name)}</b>${b.auto?'<em> · הצוות הוסיף</em>':''}<span>${escB(targetStatus(b))}</span></span><button class="tg-x" aria-label="להסיר את ${escB(b.name)}" onclick="removeTarget('${escB(b.name).replace(/'/g,"\\'")}')">×</button></div>`).join('')}</div>`
+        :`<div class="learned">${targetCompanies().map(c=>`<span class="chip" title="${escB(c.why.join(' · '))}">${escB(c.name)}<button aria-label="להסיר את ${escB(c.name)}" onclick="removeTarget('${escB(c.name).replace(/'/g,"\\'")}')">×</button></span>`).join('')}</div>`})()}
       <div class="todo-foot" style="padding:12px 0 0;border:0"><label for="tgIn" class="vh">חברה להוספה</label><input id="tgIn" placeholder="להוסיף חברה" onkeydown="if(event.key==='Enter')addTarget()"><button class="btn btn-sm btn-ghost" onclick="addTarget()">הוסף</button></div>
       ${(S.targets&&(S.targets.added.length||S.targets.removed.length))?`<button class="link" style="font-size:13px;color:var(--brand);margin-top:8px" onclick="S.targets={added:[],removed:[]};save();renderProfile()">להחזיר לבחירה של ${escB(N('strategist'))}</button>`:''}</section>
 

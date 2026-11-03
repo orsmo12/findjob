@@ -859,6 +859,19 @@ a.person>svg{flex:0 0 18px;width:18px;height:18px;fill:none;stroke:var(--ink3);s
 .act-card{align-self:flex-start;max-width:90%;background:var(--brand-lt,#E3F1EA);border:1px solid rgba(15,110,84,.18);border-radius:16px;padding:10px 12px;font-size:13.5px;line-height:1.5}
 .act-card .duo{margin-top:8px}.act-card .muted{color:var(--ink3)}
 
+.tg-list{display:flex;flex-direction:column;gap:6px;margin-top:6px}
+.tg-row{display:flex;align-items:flex-start;gap:9px;padding:9px 10px;border-radius:12px;background:rgba(255,255,255,.45);border:1px solid rgba(255,255,255,.6)}
+.tg-dot{width:9px;height:9px;border-radius:50%;margin-top:6px;flex:none;background:#9aa5a0}
+.tg-board .tg-dot{background:#2f9e6b}.tg-by_name_ok .tg-dot{background:#7cb342}.tg-by_name .tg-dot,.tg-pending .tg-dot,.tg-new .tg-dot{background:#c9a227}.tg-not_found .tg-dot{background:#d9534f}
+.tg-t{flex:1;min-width:0;display:flex;flex-direction:column;font-size:13px}.tg-t b{font-size:14px}.tg-t em{font-style:normal;color:var(--ink3);font-size:12px}.tg-t span{color:var(--ink3);margin-top:2px}
+.tg-x{background:none;border:0;font-size:18px;color:var(--ink3);cursor:pointer;padding:0 4px}
+
+.sg-card{padding:12px;border-radius:14px;background:rgba(255,255,255,.5);border:1px solid rgba(47,158,107,.25);margin:8px 0}
+.sg-card b{font-size:15px}.sg-card p{font-size:13px;margin:4px 0;color:var(--ink2)}.sg-ex{margin:4px 0;padding-inline-start:18px;font-size:12.5px;color:var(--ink3)}
+.sg-need{font-size:12.5px!important;color:var(--ink3)!important}.sg-btns{display:flex;gap:8px;margin-top:8px}
+.mt-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0}.mt-grid div{background:rgba(255,255,255,.5);border-radius:12px;padding:9px 6px;text-align:center;display:flex;flex-direction:column}
+.mt-grid b{font-size:18px}.mt-grid span{font-size:11.5px;color:var(--ink3)}
+
 </style>
 </head>
 <body>
@@ -2144,7 +2157,7 @@ function renderOfficeMsgs(){
   const U=CLOUDM?realUpdates():UPDATES;
   if(CLOUDM&&!U.length){el.innerHTML=`<p class="card-sub" style="padding:10px 4px">כאן יופיע מה שהסוכנים עשו בפועל: חיפושים, מכתבים, סקירות. הסריקה הבאה: 05:15 או 17:15.</p>`;return}
   const list=omAll?U:U.slice(0,5);
-  el.innerHTML=list.map((u,i)=>{const a=CAREER.agents[u.a];return`<button class="om-item" onclick="openAgSheet(${u.a})"><span class="om-face"><canvas id="om-${i}" width="96" height="96"></canvas></span><span class="om-tx"><b>${a.name}</b><i>${u.time}</i><p>${escB(u.body)}</p></span></button>`}).join('')
+  el.innerHTML=list.map((u,i)=>{const a=CAREER.agents[u.a];return`<button class="om-item" onclick="${u.report?'openMeeting()':`openAgSheet(${u.a})`}"><span class="om-face"><canvas id="om-${i}" width="96" height="96"></canvas></span><span class="om-tx"><b>${a.name}</b><i>${u.time}</i><p>${escB(u.body)}</p></span></button>`}).join('')
     +(U.length>5?`<button class="om-more" onclick="omAll=!omAll;renderOfficeMsgs()">${omAll?'הצג פחות':`הצג עוד ${U.length-5}`}</button>`:'');
   list.forEach((u,i)=>face($('om-'+i),u.a));
 }
@@ -2440,6 +2453,7 @@ function planWhy(){
     :a.status?{'בוגר/ת טרי/ה, מחפש/ת עבודה ראשונה':'משרה ראשונה: ג׳וניור','משתחרר/ת משירות':'משרה ראשונה: ג׳וניור','ג׳וניור עם ניסיון של עד שנתיים':'משרות ג׳וניור'}[a.status]||'משרות לפי הניסיון שלך'
     :'משרות ג׳וניור, עד שתספר לנו מה המצב שלך');
   w.push(a.roles&&a.roles.length?'בתפקידים: '+a.roles.join(', '):'בכל תפקידי הפיתוח, עד שתבחר תפקידים');
+  if((S.accepted||[]).length) w.push('תפקידים שאישרת מההצעות: '+S.accepted.map(x=>x.value).join(', '));
   w.push(a.locs&&a.locs.length?'באזורים: '+a.locs.join(', ')+(a.mode==='מהבית'?', מהבית בלבד':''):'בכל הארץ');
   if(a.exp) w.push(`בלי משרות שדורשות יותר ניסיון ממה שיש לך (${a.exp})`);
   if(learnedChips().some(([r,n])=>r==='בכירה מדי'&&n>=2)) w.push('דילגת על משרות בכירות, אז מסננים חזק יותר');
@@ -2458,8 +2472,25 @@ function targetCompanies(){
     return{...c,s,why}}).filter(c=>c.s>0).sort((x,y)=>y.s-x.s).slice(0,12);
   return [...tc.added.map(n=>({name:n,why:['הוספת בעצמך']})),...out];
 }
-function removeTarget(n){S.targets=S.targets||{added:[],removed:[]};S.targets.added=S.targets.added.filter(x=>x!==n);if(!S.targets.removed.includes(n)&&CATALOG.some(c=>c.name===n))S.targets.removed.push(n);save();renderProfile();toast(`${n} הוסרה מחברות היעד`)}
+function removeTarget(n){S.targets=S.targets||{added:[],removed:[]};S.targets.added=S.targets.added.filter(x=>x!==n);if(!S.targets.removed.includes(n))S.targets.removed.push(n);save();renderProfile();toast(`${n} הוסרה מחברות היעד`)}
 function addTarget(){const el=$('tgIn'),v=el.value.trim();if(!v){el.focus();return}S.targets=S.targets||{added:[],removed:[]};S.targets.removed=S.targets.removed.filter(x=>x!==v);if(!S.targets.added.includes(v))S.targets.added.unshift(v);save();renderProfile();toast(`${v} נוספה. ${N('hunter')} יבדוק אותה בחיפוש הבא`)}
+
+/* החברות כפי שדורון באמת בדק אותן בסריקה האחרונה: סטטוס אמיתי לכל אחת */
+function realTargets(){
+  if(typeof RUNS==='undefined'||!RUNS)return null;
+  const h=RUNS.find(r=>(r.agent||'hunter')==='hunter'&&r.stats&&Array.isArray(r.stats.boards));if(!h)return null;
+  const tc=S.targets||{added:[],removed:[]},rem=new Set(tc.removed.map(x=>x.toLowerCase())),seen=new Set();
+  const out=h.stats.boards.filter(b=>!rem.has(b.name.toLowerCase())).map(b=>{seen.add(b.name.toLowerCase());return b});
+  tc.added.filter(n=>!seen.has(n.toLowerCase())).forEach(n=>out.unshift({name:n,status:'new',why:['הוספת בעצמך']}));
+  return out;
+}
+function targetStatus(b){
+  return b.status==='board'?`נסרקת דרך ${b.board}: ${b.il} משרות בישראל, ${b.rel} בתחום שלך`
+    :b.status==='by_name_ok'?(b.found_as?`מופיעה במודעות בשם ${b.found_as}. `:'')+`אין לה לוח ציבורי, מחפש אותה לפי השם (${b.n} משרות)`
+    :b.status==='by_name'?'אין לה לוח ציבורי שאפשר לקרוא. נחפש אותה לפי השם'
+    :b.status==='not_found'?'לא נמצאו משרות בשם הזה. כדאי לבדוק את השם'
+    :b.status==='pending'?'עוד לא נבדקה. תיבדק בסריקה הקרובה':'תיבדק בסריקה הבאה';
+}
 
 /* ═════════ הפרופיל שלי ═════════ */
 const ROW_IC={doc:'<svg viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8z"/><path d="M14 3v5h5"/></svg>',
@@ -2498,9 +2529,12 @@ function renderProfile(){
     <section class="card glass" id="planCard" aria-labelledby="plH"><h2 class="card-h" id="plH">מה מחפשים בשבילך</h2>
       <div class="card-sub">${escB(N('strategist'))} בנה את זה מקורות החיים ומהתשובות שלך, ומעדכן בכל שינוי.</div>
       <ul class="plan-list">${planWhy().map(w=>`<li>${escB(w)}</li>`).join('')}</ul>
+      ${typeof suggestionsHtml==='function'?suggestionsHtml():''}
+      ${typeof lastMeeting==='function'&&lastMeeting()?`<button class="link" style="font-size:13px;color:var(--brand);margin:6px 0" onclick="openMeeting()">לדוח של הישיבה השבועית</button>`:''}
       <h3 class="sub-h">חברות יעד</h3>
-      <div class="card-sub">${escB(N('hunter'))} בודק ישירות את אלה שיש להן לוח משרות ציבורי, בנוסף לחיפוש הפתוח בכל החברות.</div>
-      <div class="learned">${targetCompanies().map(c=>`<span class="chip" title="${escB(c.why.join(' · '))}">${escB(c.name)}<button aria-label="להסיר את ${escB(c.name)}" onclick="removeTarget('${escB(c.name).replace(/'/g,"\\'")}')">×</button></span>`).join('')}</div>
+      <div class="card-sub">${escB(N('hunter'))} בודק ישירות את אלה שיש להן לוח משרות ציבורי, ואת השאר מחפש לפי השם. כך זה נראה בסריקה האחרונה:</div>
+      ${(()=>{const rt=realTargets();return rt?`<div class="tg-list">${rt.map(b=>`<div class="tg-row tg-${b.status}"><span class="tg-dot" aria-hidden="true"></span><span class="tg-t"><b lang="en">${escB(b.name)}</b>${b.auto?'<em> · הצוות הוסיף</em>':''}<span>${escB(targetStatus(b))}</span></span><button class="tg-x" aria-label="להסיר את ${escB(b.name)}" onclick="removeTarget('${escB(b.name).replace(/'/g,"\\'")}')">×</button></div>`).join('')}</div>`
+        :`<div class="learned">${targetCompanies().map(c=>`<span class="chip" title="${escB(c.why.join(' · '))}">${escB(c.name)}<button aria-label="להסיר את ${escB(c.name)}" onclick="removeTarget('${escB(c.name).replace(/'/g,"\\'")}')">×</button></span>`).join('')}</div>`})()}
       <div class="todo-foot" style="padding:12px 0 0;border:0"><label for="tgIn" class="vh">חברה להוספה</label><input id="tgIn" placeholder="להוסיף חברה" onkeydown="if(event.key==='Enter')addTarget()"><button class="btn btn-sm btn-ghost" onclick="addTarget()">הוסף</button></div>
       ${(S.targets&&(S.targets.added.length||S.targets.removed.length))?`<button class="link" style="font-size:13px;color:var(--brand);margin-top:8px" onclick="S.targets={added:[],removed:[]};save();renderProfile()">להחזיר לבחירה של ${escB(N('strategist'))}</button>`:''}</section>
 

@@ -9,6 +9,7 @@ function planWhy(){
     :a.status?{'בוגר/ת טרי/ה, מחפש/ת עבודה ראשונה':'משרה ראשונה: ג׳וניור','משתחרר/ת משירות':'משרה ראשונה: ג׳וניור','ג׳וניור עם ניסיון של עד שנתיים':'משרות ג׳וניור'}[a.status]||'משרות לפי הניסיון שלך'
     :'משרות ג׳וניור, עד שתספר לנו מה המצב שלך');
   w.push(a.roles&&a.roles.length?'בתפקידים: '+a.roles.join(', '):'בכל תפקידי הפיתוח, עד שתבחר תפקידים');
+  if((S.accepted||[]).length) w.push('תפקידים שאישרת מההצעות: '+S.accepted.map(x=>x.value).join(', '));
   w.push(a.locs&&a.locs.length?'באזורים: '+a.locs.join(', ')+(a.mode==='מהבית'?', מהבית בלבד':''):'בכל הארץ');
   if(a.exp) w.push(`בלי משרות שדורשות יותר ניסיון ממה שיש לך (${a.exp})`);
   if(learnedChips().some(([r,n])=>r==='בכירה מדי'&&n>=2)) w.push('דילגת על משרות בכירות, אז מסננים חזק יותר');
@@ -27,5 +28,22 @@ function targetCompanies(){
     return{...c,s,why}}).filter(c=>c.s>0).sort((x,y)=>y.s-x.s).slice(0,12);
   return [...tc.added.map(n=>({name:n,why:['הוספת בעצמך']})),...out];
 }
-function removeTarget(n){S.targets=S.targets||{added:[],removed:[]};S.targets.added=S.targets.added.filter(x=>x!==n);if(!S.targets.removed.includes(n)&&CATALOG.some(c=>c.name===n))S.targets.removed.push(n);save();renderProfile();toast(`${n} הוסרה מחברות היעד`)}
+function removeTarget(n){S.targets=S.targets||{added:[],removed:[]};S.targets.added=S.targets.added.filter(x=>x!==n);if(!S.targets.removed.includes(n))S.targets.removed.push(n);save();renderProfile();toast(`${n} הוסרה מחברות היעד`)}
 function addTarget(){const el=$('tgIn'),v=el.value.trim();if(!v){el.focus();return}S.targets=S.targets||{added:[],removed:[]};S.targets.removed=S.targets.removed.filter(x=>x!==v);if(!S.targets.added.includes(v))S.targets.added.unshift(v);save();renderProfile();toast(`${v} נוספה. ${N('hunter')} יבדוק אותה בחיפוש הבא`)}
+
+/* החברות כפי שדורון באמת בדק אותן בסריקה האחרונה: סטטוס אמיתי לכל אחת */
+function realTargets(){
+  if(typeof RUNS==='undefined'||!RUNS)return null;
+  const h=RUNS.find(r=>(r.agent||'hunter')==='hunter'&&r.stats&&Array.isArray(r.stats.boards));if(!h)return null;
+  const tc=S.targets||{added:[],removed:[]},rem=new Set(tc.removed.map(x=>x.toLowerCase())),seen=new Set();
+  const out=h.stats.boards.filter(b=>!rem.has(b.name.toLowerCase())).map(b=>{seen.add(b.name.toLowerCase());return b});
+  tc.added.filter(n=>!seen.has(n.toLowerCase())).forEach(n=>out.unshift({name:n,status:'new',why:['הוספת בעצמך']}));
+  return out;
+}
+function targetStatus(b){
+  return b.status==='board'?`נסרקת דרך ${b.board}: ${b.il} משרות בישראל, ${b.rel} בתחום שלך`
+    :b.status==='by_name_ok'?(b.found_as?`מופיעה במודעות בשם ${b.found_as}. `:'')+`אין לה לוח ציבורי, מחפש אותה לפי השם (${b.n} משרות)`
+    :b.status==='by_name'?'אין לה לוח ציבורי שאפשר לקרוא. נחפש אותה לפי השם'
+    :b.status==='not_found'?'לא נמצאו משרות בשם הזה. כדאי לבדוק את השם'
+    :b.status==='pending'?'עוד לא נבדקה. תיבדק בסריקה הקרובה':'תיבדק בסריקה הבאה';
+}

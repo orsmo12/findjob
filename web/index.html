@@ -859,6 +859,19 @@ a.person>svg{flex:0 0 18px;width:18px;height:18px;fill:none;stroke:var(--ink3);s
 .act-card{align-self:flex-start;max-width:90%;background:var(--brand-lt,#E3F1EA);border:1px solid rgba(15,110,84,.18);border-radius:16px;padding:10px 12px;font-size:13.5px;line-height:1.5}
 .act-card .duo{margin-top:8px}.act-card .muted{color:var(--ink3)}
 
+.tg-list{display:flex;flex-direction:column;gap:6px;margin-top:6px}
+.tg-row{display:flex;align-items:flex-start;gap:9px;padding:9px 10px;border-radius:12px;background:rgba(255,255,255,.45);border:1px solid rgba(255,255,255,.6)}
+.tg-dot{width:9px;height:9px;border-radius:50%;margin-top:6px;flex:none;background:#9aa5a0}
+.tg-board .tg-dot{background:#2f9e6b}.tg-by_name_ok .tg-dot{background:#7cb342}.tg-by_name .tg-dot,.tg-pending .tg-dot,.tg-new .tg-dot{background:#c9a227}.tg-not_found .tg-dot{background:#d9534f}
+.tg-t{flex:1;min-width:0;display:flex;flex-direction:column;font-size:13px}.tg-t b{font-size:14px}.tg-t em{font-style:normal;color:var(--ink3);font-size:12px}.tg-t span{color:var(--ink3);margin-top:2px}
+.tg-x{background:none;border:0;font-size:18px;color:var(--ink3);cursor:pointer;padding:0 4px}
+
+.sg-card{padding:12px;border-radius:14px;background:rgba(255,255,255,.5);border:1px solid rgba(47,158,107,.25);margin:8px 0}
+.sg-card b{font-size:15px}.sg-card p{font-size:13px;margin:4px 0;color:var(--ink2)}.sg-ex{margin:4px 0;padding-inline-start:18px;font-size:12.5px;color:var(--ink3)}
+.sg-need{font-size:12.5px!important;color:var(--ink3)!important}.sg-btns{display:flex;gap:8px;margin-top:8px}
+.mt-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0}.mt-grid div{background:rgba(255,255,255,.5);border-radius:12px;padding:9px 6px;text-align:center;display:flex;flex-direction:column}
+.mt-grid b{font-size:18px}.mt-grid span{font-size:11.5px;color:var(--ink3)}
+
 </style>
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" href="/icon.svg">
@@ -2149,7 +2162,7 @@ function renderOfficeMsgs(){
   const U=CLOUDM?realUpdates():UPDATES;
   if(CLOUDM&&!U.length){el.innerHTML=`<p class="card-sub" style="padding:10px 4px">כאן יופיע מה שהסוכנים עשו בפועל: חיפושים, מכתבים, סקירות. הסריקה הבאה: 05:15 או 17:15.</p>`;return}
   const list=omAll?U:U.slice(0,5);
-  el.innerHTML=list.map((u,i)=>{const a=CAREER.agents[u.a];return`<button class="om-item" onclick="openAgSheet(${u.a})"><span class="om-face"><canvas id="om-${i}" width="96" height="96"></canvas></span><span class="om-tx"><b>${a.name}</b><i>${u.time}</i><p>${escB(u.body)}</p></span></button>`}).join('')
+  el.innerHTML=list.map((u,i)=>{const a=CAREER.agents[u.a];return`<button class="om-item" onclick="${u.report?'openMeeting()':`openAgSheet(${u.a})`}"><span class="om-face"><canvas id="om-${i}" width="96" height="96"></canvas></span><span class="om-tx"><b>${a.name}</b><i>${u.time}</i><p>${escB(u.body)}</p></span></button>`}).join('')
     +(U.length>5?`<button class="om-more" onclick="omAll=!omAll;renderOfficeMsgs()">${omAll?'הצג פחות':`הצג עוד ${U.length-5}`}</button>`:'');
   list.forEach((u,i)=>face($('om-'+i),u.a));
 }
@@ -2445,6 +2458,7 @@ function planWhy(){
     :a.status?{'בוגר/ת טרי/ה, מחפש/ת עבודה ראשונה':'משרה ראשונה: ג׳וניור','משתחרר/ת משירות':'משרה ראשונה: ג׳וניור','ג׳וניור עם ניסיון של עד שנתיים':'משרות ג׳וניור'}[a.status]||'משרות לפי הניסיון שלך'
     :'משרות ג׳וניור, עד שתספר לנו מה המצב שלך');
   w.push(a.roles&&a.roles.length?'בתפקידים: '+a.roles.join(', '):'בכל תפקידי הפיתוח, עד שתבחר תפקידים');
+  if((S.accepted||[]).length) w.push('תפקידים שאישרת מההצעות: '+S.accepted.map(x=>x.value).join(', '));
   w.push(a.locs&&a.locs.length?'באזורים: '+a.locs.join(', ')+(a.mode==='מהבית'?', מהבית בלבד':''):'בכל הארץ');
   if(a.exp) w.push(`בלי משרות שדורשות יותר ניסיון ממה שיש לך (${a.exp})`);
   if(learnedChips().some(([r,n])=>r==='בכירה מדי'&&n>=2)) w.push('דילגת על משרות בכירות, אז מסננים חזק יותר');
@@ -2463,8 +2477,25 @@ function targetCompanies(){
     return{...c,s,why}}).filter(c=>c.s>0).sort((x,y)=>y.s-x.s).slice(0,12);
   return [...tc.added.map(n=>({name:n,why:['הוספת בעצמך']})),...out];
 }
-function removeTarget(n){S.targets=S.targets||{added:[],removed:[]};S.targets.added=S.targets.added.filter(x=>x!==n);if(!S.targets.removed.includes(n)&&CATALOG.some(c=>c.name===n))S.targets.removed.push(n);save();renderProfile();toast(`${n} הוסרה מחברות היעד`)}
+function removeTarget(n){S.targets=S.targets||{added:[],removed:[]};S.targets.added=S.targets.added.filter(x=>x!==n);if(!S.targets.removed.includes(n))S.targets.removed.push(n);save();renderProfile();toast(`${n} הוסרה מחברות היעד`)}
 function addTarget(){const el=$('tgIn'),v=el.value.trim();if(!v){el.focus();return}S.targets=S.targets||{added:[],removed:[]};S.targets.removed=S.targets.removed.filter(x=>x!==v);if(!S.targets.added.includes(v))S.targets.added.unshift(v);save();renderProfile();toast(`${v} נוספה. ${N('hunter')} יבדוק אותה בחיפוש הבא`)}
+
+/* החברות כפי שדורון באמת בדק אותן בסריקה האחרונה: סטטוס אמיתי לכל אחת */
+function realTargets(){
+  if(typeof RUNS==='undefined'||!RUNS)return null;
+  const h=RUNS.find(r=>(r.agent||'hunter')==='hunter'&&r.stats&&Array.isArray(r.stats.boards));if(!h)return null;
+  const tc=S.targets||{added:[],removed:[]},rem=new Set(tc.removed.map(x=>x.toLowerCase())),seen=new Set();
+  const out=h.stats.boards.filter(b=>!rem.has(b.name.toLowerCase())).map(b=>{seen.add(b.name.toLowerCase());return b});
+  tc.added.filter(n=>!seen.has(n.toLowerCase())).forEach(n=>out.unshift({name:n,status:'new',why:['הוספת בעצמך']}));
+  return out;
+}
+function targetStatus(b){
+  return b.status==='board'?`נסרקת דרך ${b.board}: ${b.il} משרות בישראל, ${b.rel} בתחום שלך`
+    :b.status==='by_name_ok'?(b.found_as?`מופיעה במודעות בשם ${b.found_as}. `:'')+`אין לה לוח ציבורי, מחפש אותה לפי השם (${b.n} משרות)`
+    :b.status==='by_name'?'אין לה לוח ציבורי שאפשר לקרוא. נחפש אותה לפי השם'
+    :b.status==='not_found'?'לא נמצאו משרות בשם הזה. כדאי לבדוק את השם'
+    :b.status==='pending'?'עוד לא נבדקה. תיבדק בסריקה הקרובה':'תיבדק בסריקה הבאה';
+}
 
 /* ═════════ הפרופיל שלי ═════════ */
 const ROW_IC={doc:'<svg viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8z"/><path d="M14 3v5h5"/></svg>',
@@ -2503,9 +2534,12 @@ function renderProfile(){
     <section class="card glass" id="planCard" aria-labelledby="plH"><h2 class="card-h" id="plH">מה מחפשים בשבילך</h2>
       <div class="card-sub">${escB(N('strategist'))} בנה את זה מקורות החיים ומהתשובות שלך, ומעדכן בכל שינוי.</div>
       <ul class="plan-list">${planWhy().map(w=>`<li>${escB(w)}</li>`).join('')}</ul>
+      ${typeof suggestionsHtml==='function'?suggestionsHtml():''}
+      ${typeof lastMeeting==='function'&&lastMeeting()?`<button class="link" style="font-size:13px;color:var(--brand);margin:6px 0" onclick="openMeeting()">לדוח של הישיבה השבועית</button>`:''}
       <h3 class="sub-h">חברות יעד</h3>
-      <div class="card-sub">${escB(N('hunter'))} בודק ישירות את אלה שיש להן לוח משרות ציבורי, בנוסף לחיפוש הפתוח בכל החברות.</div>
-      <div class="learned">${targetCompanies().map(c=>`<span class="chip" title="${escB(c.why.join(' · '))}">${escB(c.name)}<button aria-label="להסיר את ${escB(c.name)}" onclick="removeTarget('${escB(c.name).replace(/'/g,"\\'")}')">×</button></span>`).join('')}</div>
+      <div class="card-sub">${escB(N('hunter'))} בודק ישירות את אלה שיש להן לוח משרות ציבורי, ואת השאר מחפש לפי השם. כך זה נראה בסריקה האחרונה:</div>
+      ${(()=>{const rt=realTargets();return rt?`<div class="tg-list">${rt.map(b=>`<div class="tg-row tg-${b.status}"><span class="tg-dot" aria-hidden="true"></span><span class="tg-t"><b lang="en">${escB(b.name)}</b>${b.auto?'<em> · הצוות הוסיף</em>':''}<span>${escB(targetStatus(b))}</span></span><button class="tg-x" aria-label="להסיר את ${escB(b.name)}" onclick="removeTarget('${escB(b.name).replace(/'/g,"\\'")}')">×</button></div>`).join('')}</div>`
+        :`<div class="learned">${targetCompanies().map(c=>`<span class="chip" title="${escB(c.why.join(' · '))}">${escB(c.name)}<button aria-label="להסיר את ${escB(c.name)}" onclick="removeTarget('${escB(c.name).replace(/'/g,"\\'")}')">×</button></span>`).join('')}</div>`})()}
       <div class="todo-foot" style="padding:12px 0 0;border:0"><label for="tgIn" class="vh">חברה להוספה</label><input id="tgIn" placeholder="להוסיף חברה" onkeydown="if(event.key==='Enter')addTarget()"><button class="btn btn-sm btn-ghost" onclick="addTarget()">הוסף</button></div>
       ${(S.targets&&(S.targets.added.length||S.targets.removed.length))?`<button class="link" style="font-size:13px;color:var(--brand);margin-top:8px" onclick="S.targets={added:[],removed:[]};save();renderProfile()">להחזיר לבחירה של ${escB(N('strategist'))}</button>`:''}</section>
 
@@ -2641,7 +2675,7 @@ async function cloudLoad(){
     SB.from('jobs').select('id,card,decision,letter,brief,prep,created_at').eq('user_id',uid).order('created_at',{ascending:false}).limit(200),
     SB.from('runs').select('agent,stats,created_at').eq('user_id',uid).order('created_at',{ascending:false}).limit(150)]);
   if(pr){const p=prof();p.first=pr.first||p.first;p.name=pr.name||p.name;p.cv=pr.cv_text||p.cv;p.ans=Object.assign({},pr.answers||{},p.ans||{});
-    if(pr.team&&Object.keys(pr.team).length)S.team=pr.team;const st=pr.state||{};['apps','todos','stories'].forEach(k=>{if(Array.isArray(st[k]))S[k]=st[k]});if(st.targets)S.targets=st.targets;if(Array.isArray(st.history))S.history=st.history;if(Array.isArray(st.chat))S.chat=st.chat;p.li_text=pr.li_text||'';LI=Object.assign({},pr.li||{},{fixes:((pr.li_fixes||{}).fixes)||[]});if(pr.cv_text)S.onboarded=true}
+    if(pr.team&&Object.keys(pr.team).length)S.team=pr.team;const st=pr.state||{};['apps','todos','stories'].forEach(k=>{if(Array.isArray(st[k]))S[k]=st[k]});if(st.targets)S.targets=st.targets;if(Array.isArray(st.history))S.history=st.history;if(Array.isArray(st.chat))S.chat=st.chat;if(Array.isArray(st.accepted))S.accepted=st.accepted;if(Array.isArray(st.dismissed))S.dismissed=st.dismissed;p.li_text=pr.li_text||'';LI=Object.assign({},pr.li||{},{fixes:((pr.li_fixes||{}).fixes)||[]});if(pr.cv_text)S.onboarded=true}
   prof().key='cloud';
   RUNS=runs||[];const hr=RUNS.filter(r=>(r.agent||'hunter')==='hunter');
   if(hr.length||(jobs&&jobs.length)){
@@ -2654,7 +2688,7 @@ async function cloudLoad(){
   _decSnap=Object.assign({},S.decisions);_profSnap=profRow();
   LS.set(SKEY,S);window.__runsReady=true;if(typeof applyTeam==='function')applyTeam();buildWorkflow();
 }
-function profRow(){const p=prof();return JSON.stringify({first:p.first||'',name:p.name||'',cv_text:p.cv||'',answers:p.ans||{},team:S.team||{},state:{apps:S.apps,todos:S.todos,stories:S.stories,targets:S.targets||{added:[],removed:[]},history:S.history||[],chat:(S.chat||[]).slice(-40)},li_text:p.li_text||''})}
+function profRow(){const p=prof();return JSON.stringify({first:p.first||'',name:p.name||'',cv_text:p.cv||'',answers:p.ans||{},team:S.team||{},state:{apps:S.apps,todos:S.todos,stories:S.stories,targets:S.targets||{added:[],removed:[]},history:S.history||[],chat:(S.chat||[]).slice(-40),accepted:S.accepted||[],dismissed:S.dismissed||[]},li_text:p.li_text||''})}
 function cloudSync(){clearTimeout(_syncT);_syncT=setTimeout(async()=>{
   if(!ME)return;
   const row=profRow();
@@ -2743,7 +2777,7 @@ function askAboutJob(jobId){chatFocus=jobId;closeSheet();toggleChat(true);const 
 function realUpdates(){
   const seat=k=>{const i=CAREER.agents.findIndex(a=>a.key===k);return i<0?0:i};
   const ago=t=>{const m=Math.round((Date.now()-new Date(t))/6e4);return m<60?`לפני ${Math.max(1,m)} דק׳`:m<1440?`לפני ${Math.round(m/60)===1?'שעה':Math.round(m/60)+' שעות'}`:m<2880?'אתמול':new Date(t).toLocaleDateString('he-IL')};
-  return RUNS.filter(r=>r.stats&&r.stats.msg).map(r=>({a:seat(r.agent||'hunter'),time:ago(r.created_at),body:r.stats.msg}));
+  return RUNS.filter(r=>r.stats&&r.stats.msg).map(r=>({a:seat(r.agent||'hunter'),time:ago(r.created_at),body:r.stats.msg,report:!!r.stats.report}));
 }
 
 /* הוספת משרה מקישור: נכנסת לתהליך כמו משרה ששמרת */
@@ -2791,6 +2825,28 @@ async function requestMoreTasks(jobId){
   const {error}=await SB.from('jobs').update({prep:j.prep}).eq('user_id',ME.id).eq('id',jobId);
   toast(error?'לא הצלחתי לבקש. נסה שוב':`${N('coach')} תביא מטלות נוספות תוך שעתיים בערך`);renderPrep();
 }
+
+/* הישיבה השבועית של הצוות: דוח מצב, מה שונה, והצעות לאישור */
+function lastMeeting(){return (typeof RUNS!=='undefined'&&RUNS||[]).find(r=>r.agent==='strategist'&&r.stats&&r.stats.report)||null}
+function pendingSuggestions(){const m=lastMeeting();if(!m)return[];const acc=new Set((S.accepted||[]).map(x=>x.value.toLowerCase())),dis=new Set((S.dismissed||[]).map(x=>x.toLowerCase()));
+  return (m.stats.report.suggestions||[]).filter(s=>!acc.has(s.value.toLowerCase())&&!dis.has(s.value.toLowerCase()))}
+function acceptSuggestion(v){S.accepted=S.accepted||[];if(!S.accepted.some(x=>x.value===v))S.accepted.push({type:'role',value:v,at:new Date().toISOString()});save();toast(`${v} נוסף לחיפוש. ${N('hunter')} יחפש אותו מהסריקה הבאה`);renderProfile&&renderProfile();if($('sheet').classList.contains('open'))openMeeting()}
+function dismissSuggestion(v){S.dismissed=S.dismissed||[];if(!S.dismissed.includes(v))S.dismissed.push(v);save();renderProfile&&renderProfile();if($('sheet').classList.contains('open'))openMeeting()}
+function suggestionsHtml(){const L=pendingSuggestions();if(!L.length)return'';
+  return `<h3 class="sub-h">הצעות מהישיבה של הצוות</h3>`+L.map(s=>`<div class="sg-card"><b lang="en">${escB(s.value)}</b><p>${escB(s.why)}</p>
+    ${(s.examples||[]).length?`<ul class="sg-ex">${s.examples.map(e=>`<li><span lang="en">${escB(e.title)}</span> · ${escB(e.co)} · ${Number(e.fit).toFixed(1)}</li>`).join('')}</ul>`:''}
+    ${(s.needs||[]).length?`<p class="sg-need">מה מבקשים שם ולא מופיע אצלך: <span lang="en">${escB(s.needs.join(', '))}</span></p>`:''}
+    <div class="sg-btns"><button class="btn btn-sm btn-primary" onclick="acceptSuggestion('${escB(s.value).replace(/'/g,"\\'")}')">להוסיף לחיפוש</button><button class="btn btn-sm btn-ghost" onclick="dismissSuggestion('${escB(s.value).replace(/'/g,"\\'")}')">לא מעניין</button></div></div>`).join('')}
+function openMeeting(){const m=lastMeeting();if(!m)return;const r=m.stats.report,d=new Date(m.created_at);
+  const li=a=>a&&a.length?`<ul class="plan-list">${a.map(x=>`<li>${escB(x)}</li>`).join('')}</ul>`:'<p class="card-sub">אין.</p>';
+  const pct=r.collected?Math.round(100*r.too_senior/r.collected):0;
+  openSheet(`<h3 id="sheetTitle">הישיבה השבועית</h3><div class="sheet-sub">${escB(N('strategist'))} והצוות · ${d.toLocaleDateString('he-IL')}</div>
+    <div class="mt-grid"><div><b>${r.scans}</b><span>סריקות</span></div><div><b>${r.collected}</b><span>משרות נאספו</span></div><div><b>${pct}%</b><span>בכירות מדי</span></div><div><b>${r.shown}</b><span>הוצגו לך</span></div>
+      <div><b>${r.avg_fit==null?'—':r.avg_fit}</b><span>ציון ממוצע</span></div><div><b>${r.boards_ok}/${r.boards_total}</b><span>דפי קריירה נסרקים</span></div></div>
+    <div class="s-sec"><h4>מה שמנו לב</h4>${li(r.issues)}</div>
+    <div class="s-sec"><h4>מה שינינו לבד</h4>${li(r.actions)}</div>
+    ${(r.skill_gaps||[]).length?`<div class="s-sec"><h4>כישורים שחסרים שוב ושוב</h4><p class="card-sub">במשרות שמתאימות לך. ${escB(N('coach'))} מכינה על זה חומר.</p><div class="learned">${r.skill_gaps.map(g=>`<span class="chip" lang="en">${escB(g.skill)} · ${g.jobs}</span>`).join('')}</div></div>`:''}
+    <div class="s-sec">${suggestionsHtml()||'<h4>הצעות</h4><p class="card-sub">אין הצעות פתוחות.</p>'}</div>`)}
 
 cloudBoot();
 </script>
