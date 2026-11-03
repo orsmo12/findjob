@@ -88,6 +88,11 @@ for u in users:
         cache = db.latest_plan(u["user_id"], "boards").get("cache") or {}
         direct, boards, cache = collect_targets(targets, plan, cache)
         # חברות בלי לוח ציבורי: חיפוש לפי השם (קודם אלה שהוספת בעצמך), כולל תיקון שם
+        week_ago = (datetime.now(timezone.utc) - timedelta(days=7)).isoformat()
+        for b in boards:  # שם שלא נמצא — לא מחפשים שוב כל סריקה, רק פעם בשבוע
+            nf = (cache.get(b["name"].lower()) or {}).get("nf")
+            if b["status"] == "by_name" and nf and nf > week_ago:
+                b["status"] = "not_found"
         by_name = sorted([b for b in boards if b["status"] == "by_name"], key=lambda b: 0 if "הוספת בעצמך" in b["why"] else 1)
         named = []
         for b in by_name[:3]:
@@ -103,6 +108,7 @@ for u in users:
                         + f": {len(mine)} משרות בישראל")
             else:
                 b.update(status="not_found")
+                cache.setdefault(b["name"].lower(), {"b": None, "at": datetime.now(timezone.utc).isoformat()})["nf"] = datetime.now(timezone.utc).isoformat()
                 act.log("hunter", f"{b['name']}: לא מצאתי משרות בשם הזה. אולי השם לא מדויק?")
         if any(b.get("found_as") or b["status"] == "not_found" for b in by_name[:3] if "הוספת בעצמך" in b["why"]):
             fixed = [b for b in by_name[:3] if "הוספת בעצמך" in b["why"]]
