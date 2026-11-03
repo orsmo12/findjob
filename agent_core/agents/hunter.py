@@ -151,6 +151,13 @@ def ai_too_senior(r: dict, plan: dict, title: str = "") -> bool:
     return not r.get("seniority_ok", True)
 
 
+def note_stretch(r: dict, plan: dict) -> None:
+    """מתיחה: שנה מעל מה שיש לך. כותבים את זה בגלוי בחוסרים."""
+    req, mx = r.get("required_years") or 0, plan.get("max_years")
+    if mx and req > mx:
+        r["gaps"] = [f"במודעה נדרשות {req} שנות ניסיון. קצת יותר ממה שיש לך, אבל שווה לנסות"] + r["gaps"][:1]
+
+
 def years_too_many(req: int, plan: dict) -> bool:
     """שנות הניסיון שה-AI קרא מהמודעה, נאכפות בקוד: מעל המקסימום שלך + שנה אחת = לא מוצג."""
     mx = plan.get("max_years")
@@ -347,8 +354,6 @@ def rate(job: dict, cv: str, prefs: str) -> dict | None:
               f"reasons={r['reasons']} gaps={r['gaps']} desc_len={len(desc)}")
         r["reasons"] = grounded(r["reasons"], cv)        # סיבה = עובדה מקורות החיים
         r["gaps"] = grounded(r["gaps"], desc)             # חסר = דרישה שכתובה במודעה
-        if r["required_years"] > 0:  # מתיחה: שנה מעל מה שיש לך. כותבים את זה בגלוי
-            r["gaps"] = [f"במודעה נדרשות {r['required_years']} שנות ניסיון. יותר ממה שיש לך, אבל שווה לנסות"] + r["gaps"][:1]
         r["partial"] = len(desc) < 300
         if r["partial"]:
             r["gaps"] = []  # בלי המודעה המלאה אין לנו דרישות אמיתיות להשוות אליהן
@@ -430,6 +435,7 @@ def rerate(card: dict, profile: dict, plan: dict, min_fit: float = 3.5) -> tuple
         return "later", None, "הדירוג לא הצליח"
     if ai_too_senior(r, plan, j["title"]):
         return "filtered", None, f"נדרשות {r.get('required_years') or 'יותר'} שנות ניסיון"
+    note_stretch(r, plan)
     if r["fit"] < min_fit:
         return "filtered", None, f"אחרי קריאת המודעה המלאה: {r['fit']:.1f}/5, מתחת לסף"
     new = to_card(j, r, cv)
@@ -475,6 +481,7 @@ def run(profile: dict, plan: dict, raw: list[dict] | None = None, rate_top: int 
             stats["too_senior"] += 1; stats["ai_senior"] = stats.get("ai_senior", 0) + 1
             act.log("hunter", f"{j['title']} ב-{j['company']}: " + (f"דורשת {r['required_years']} שנות ניסיון. מדלג." if r.get("required_years") else "תפקיד בכיר יותר ממה שמתאים לך. מדלג."))
             continue
+        note_stretch(r, plan)
         stats.setdefault("fits", []).append(r["fit"])
         ok = r["fit"] >= min_fit
         act.log("hunter", f"{j['title']} ב-{j['company']}: {r['fit']:.1f}/5" + (f" (נדרשות {r['required_years']} שנים)" if r.get("required_years") else "") + f" {'✓ מתאימה' if ok else '· מתחת לסף'}")
