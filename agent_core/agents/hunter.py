@@ -412,7 +412,7 @@ def to_card(j: dict, r: dict, cv: str = "") -> dict:
             "posted_days": days, "salary": j.get("salary", ""), "desc": j.get("description", "")[:600], "ad": j.get("description", "")[:4000], "url": j["url"], "rv": RATING_V}
 
 
-RATING_V = 6  # גרסת שיטת הדירוג. משרות שדורגו בגרסה ישנה מדורגות מחדש
+RATING_V = 7  # גרסת שיטת הדירוג. משרות שדורגו בגרסה ישנה מדורגות מחדש
 
 
 def rerate(card: dict, profile: dict, plan: dict, min_fit: float = 3.5) -> tuple[str, dict | None, str]:
