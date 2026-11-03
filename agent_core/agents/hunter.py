@@ -28,7 +28,10 @@ FEED = ROOT / "memory" / "feed" / "jobs.json"
 SEEN = ROOT / "memory" / "seen_jobs.json"
 
 SENIOR_WORDS = re.compile(r"\b(senior|sr\.?|staff|principal|lead|head|manager|architect|director|vp)\b", re.I)
-YEARS_RE = re.compile(r"(\d{1,2})\s*\+?\s*(?:-\s*\d+\s*)?(?:years|yrs|שנות|שנים)", re.I)
+# רק "N שנות ניסיון" — לא "2 שנות לימוד שנותרו" או "שנה ג׳ לתואר"
+YEARS_RE = re.compile(r"(\d{1,2})\s*\+?\s*(?:(?:-|–|to)\s*\d{1,2}\s*\+?\s*)?(?:years?|yrs)\b(?![^\n.]{0,40}?(?:left|remain|degree|stud|academ|graduat|old|of age))"
+                      r"|(\d{1,2})\s*\+?\s*שנות\s+ניסיון", re.I)
+JUNIOR_TITLE = re.compile(r"\b(junior|jr\.?|student|intern|internship|graduate|entry|new grad)\b|סטודנט|ג'וניור|ג׳וניור", re.I)
 
 
 # ── איסוף ──────────────────────────────────────────────────────────────────────
@@ -110,18 +113,20 @@ def too_senior(job: dict, plan: dict) -> bool:
         return True
     mx = plan.get("max_years")
     if mx:
-        ys = [int(y) for y in YEARS_RE.findall(job.get("description", ""))]
+        ys = [int(a or b) for a, b in YEARS_RE.findall(job.get("description", ""))]
         if ys and min(ys) > mx + 1:  # שנה אחת "מתיחה" מותרת: מודעות לג׳וניור כותבות לא פעם 2+ שנים
             return True
     return False
 
 
-def ai_too_senior(r: dict, plan: dict) -> bool:
+def ai_too_senior(r: dict, plan: dict, title: str = "") -> bool:
     """שנות הניסיון שה-AI קרא מהמודעה הן הקובעות (עם שנה מתיחה).
     seniority_ok=false נאכף רק כשאין מספר שנים — למשל ראש צוות או מנהל."""
     req = r.get("required_years", 0) or 0
     if req:
         return years_too_many(req, plan)
+    if JUNIOR_TITLE.search(title):  # משרה שמוגדרת לג׳וניור/סטודנט ואין דרישת שנים — לא בכירה
+        return False
     return not r.get("seniority_ok", True)
 
 
@@ -351,7 +356,7 @@ def to_card(j: dict, r: dict, cv: str = "") -> dict:
             "posted_days": days, "salary": j.get("salary", ""), "desc": j.get("description", "")[:600], "ad": j.get("description", "")[:4000], "url": j["url"], "rv": RATING_V}
 
 
-RATING_V = 2  # גרסת שיטת הדירוג. משרות שדורגו בגרסה ישנה מדורגות מחדש
+RATING_V = 3  # גרסת שיטת הדירוג. משרות שדורגו בגרסה ישנה מדורגות מחדש
 
 
 def rerate(card: dict, profile: dict, plan: dict, min_fit: float = 3.5) -> tuple[str, dict | None, str]:
@@ -372,7 +377,7 @@ def rerate(card: dict, profile: dict, plan: dict, min_fit: float = 3.5) -> tuple
     r = rate(j, cv, prefs_text(plan))
     if not r:
         return "later", None, "הדירוג לא הצליח"
-    if ai_too_senior(r, plan):
+    if ai_too_senior(r, plan, j["title"]):
         return "filtered", None, f"נדרשות {r.get('required_years') or 'יותר'} שנות ניסיון"
     if r["fit"] < min_fit:
         return "filtered", None, f"אחרי קריאת המודעה המלאה: {r['fit']:.1f}/5, מתחת לסף"
@@ -415,7 +420,7 @@ def run(profile: dict, plan: dict, raw: list[dict] | None = None, rate_top: int 
             deferred += 1; continue
         if not r:
             continue
-        if ai_too_senior(r, plan):
+        if ai_too_senior(r, plan, j["title"]):
             stats["too_senior"] += 1; stats["ai_senior"] = stats.get("ai_senior", 0) + 1
             act.log("hunter", f"{j['title']} ב-{j['company']}: " + (f"דורשת {r['required_years']} שנות ניסיון. מדלג." if r.get("required_years") else "תפקיד בכיר יותר ממה שמתאים לך. מדלג."))
             continue
