@@ -124,6 +124,7 @@ for u in users:
         print(f"{u['user_id'][:8]}: נאספו {s['collected']}, בכירות מדי {s['too_senior']}, כבר נראו {s['already_seen']}, "
               f"דורגו {s['rated']} (מתוכם {s.get('ai_senior', 0)} בכירות לפי הדירוג), ציונים {sorted(s.get('fits', []), reverse=True)}, מוצגות {s['shown']}")
     except Exception as e:  # משתמש אחד שנכשל לא עוצר את האחרים
+        import traceback; traceback.print_exc()
         print(f"{u['user_id'][:8]}: חיפוש נכשל: {type(e).__name__}: {e}")
         act.log("hunter", "החיפוש נעצר בגלל תקלה. אנסה שוב בריצה הבאה.")
         act.flush()

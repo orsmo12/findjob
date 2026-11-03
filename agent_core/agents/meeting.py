@@ -14,7 +14,8 @@ from datetime import datetime, timedelta, timezone
 from agent_core import activity as act
 from agent_core.agents.ats import same_company
 
-LEVEL_WORDS = re.compile(r"\b(junior|jr\.?|senior|sr\.?|student|intern(ship)?|graduate|grad|entry[- ]level|new grad|"
+LEVEL_WORDS = re.compile(r"\b(junior|jr\.?|senior|sr\.?|student|intern(ship)?|graduate|grad|entry[- ]level|new grad|outstanding|talented|"
+                         r"excellent|experienced|position|program|team|group|"
                          r"i{1,3}|[0-9]|lead|staff|principal|mid|level)\b", re.I)
 TECH = re.compile(r"[A-Za-z][A-Za-z0-9+#.\-/]{1,}")
 STOP = {"the", "and", "with", "in", "of", "for", "to", "experience", "years", "year", "knowledge", "hands", "on",
@@ -108,7 +109,8 @@ def hold(plan: dict, hunter_runs: list[dict], jobs: list[dict], last: dict, acce
     for role, cards in sorted(by_role.items(), key=lambda x: (-len(x[1]), -max(c["fit"] for c in x[1]))):
         if role.lower() in {d.lower() for d in dismissed} or len(report["suggestions"]) >= 3:
             continue
-        if len(cards) >= 2 or max(c["fit"] for c in cards) >= 4.0:
+        # הצעה רק כשיש דפוס אמיתי: לפחות 2 משרות מ-2 חברות שונות
+        if len(cards) >= 2 and len({c["co"] for c in cards}) >= 2:
             ex = sorted(cards, key=lambda c: -c["fit"])[:3]
             needs = Counter(t for c in ex for g in c.get("gaps") or [] for t in TECH.findall(g) if t.lower() not in STOP)
             report["suggestions"].append({
