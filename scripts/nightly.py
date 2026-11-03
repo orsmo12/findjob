@@ -42,14 +42,17 @@ for u in users:
         gone = []
         for row in todo:
             c = row["card"]
+            saved = row.get("decision") == "save"
             try:
-                st, new, why_ = rerate(c, prof, plan)
+                st, new, why_ = rerate(c, prof, plan, min_fit=0 if saved else 3.5)
             except BudgetDeferred:
                 act.log("hunter", "הגעתי למכסת ה-AI. את השאר אבדוק בסריקה הבאה."); break
             act.log("hunter", f"{c['title']} ב-{c['co']}: " + {"ok": f"דירוג מעודכן {why_}", "filtered": f"הורדתי מהרשימה ({why_})",
                                                               "later": f"{why_}, אנסה שוב בסריקה הבאה"}[st])
             if st == "ok":
-                db.update_job(u["user_id"], row["id"], {"card": new, "fit": new["fit"]})
+                db.update_job(u["user_id"], row["id"], {"card": {**new, **{k: c[k] for k in ("closed_at",) if c.get(k)}}, "fit": new["fit"]})
+            elif st == "filtered" and saved:  # משרה ששמרת לא נמחקת. רק מסמנים שלא נדרג אותה שוב
+                db.update_job(u["user_id"], row["id"], {"card": {**c, "rv": RATING_V, "warn": why_}})
             elif st == "filtered":
                 db.update_job(u["user_id"], row["id"], {"decision": "filtered", "card": {**c, "filtered_why": why_}})
                 gone.append(f"{c['title']} ב-{c['co']}")

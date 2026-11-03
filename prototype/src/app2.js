@@ -213,6 +213,7 @@ function openJobInfo(id){
   openSheet(`<div style="display:flex;gap:13px;align-items:center">${logo(j)}<div style="min-width:0"><h3 id="sheetTitle" dir="${dirOf(j.title)||'auto'}" style="text-align:right">${escB(j.title)}</h3><div class="sheet-sub">${escB(j.co)} · ${escB(j.loc)}</div></div></div>
     <div class="fit" style="margin:16px 0 0"><div class="fit-num num">${j.fit.toFixed(1)}<small>/5</small></div><div class="fit-right"><div class="fit-lbl">${fitLbl(j.fit)}</div>${pills(j.fit)}</div></div>
     ${j.reasons.length?`<div class="s-sec"><h4>למה זה מתאים לך</h4>${j.reasons.map(r=>`<div class="jc-r" style="margin-bottom:7px"><span class="ic ok" aria-hidden="true">✓</span><span>${escB(r)}</span></div>`).join('')}</div>`:''}
+    ${j.warn?`<div class="s-sec"><p style="font-size:13px;color:var(--warn,#b7791f)">⚠ דורון קרא שוב את המודעה המלאה: ${escB(j.warn)}. שמרת אותה, אז היא נשארת אצלך.</p></div>`:''}
     ${j.partial?`<div class="s-sec"><p style="font-size:13px;color:var(--ink3)">לא היה תיאור מלא של המשרה, אז הדירוג לפי הכותרת בלבד ולא נכתב מה חסר.</p></div>`:''}
     ${j.gaps.length?`<div class="s-sec"><h4>מה חסר</h4>`:'<div hidden>'}${j.gaps.map(g=>`<div class="jc-r" style="margin-bottom:7px"><span class="ic gap" aria-hidden="true">!</span><span>${escB(g)}</span></div>`).join('')}</div>
     <div class="s-sec"><h4>על המשרה</h4><p dir="auto" style="font-size:14px;line-height:1.65;color:var(--ink2);text-align:start">${escB(j.desc)}</p></div>

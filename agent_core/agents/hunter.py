@@ -116,6 +116,15 @@ def too_senior(job: dict, plan: dict) -> bool:
     return False
 
 
+def ai_too_senior(r: dict, plan: dict) -> bool:
+    """שנות הניסיון שה-AI קרא מהמודעה הן הקובעות (עם שנה מתיחה).
+    seniority_ok=false נאכף רק כשאין מספר שנים — למשל ראש צוות או מנהל."""
+    req = r.get("required_years", 0) or 0
+    if req:
+        return years_too_many(req, plan)
+    return not r.get("seniority_ok", True)
+
+
 def years_too_many(req: int, plan: dict) -> bool:
     """שנות הניסיון שה-AI קרא מהמודעה, נאכפות בקוד: מעל המקסימום שלך + שנה אחת = לא מוצג."""
     mx = plan.get("max_years")
@@ -363,7 +372,7 @@ def rerate(card: dict, profile: dict, plan: dict, min_fit: float = 3.5) -> tuple
     r = rate(j, cv, prefs_text(plan))
     if not r:
         return "later", None, "הדירוג לא הצליח"
-    if not r["seniority_ok"] or years_too_many(r.get("required_years", 0), plan):
+    if ai_too_senior(r, plan):
         return "filtered", None, f"נדרשות {r.get('required_years') or 'יותר'} שנות ניסיון"
     if r["fit"] < min_fit:
         return "filtered", None, f"אחרי קריאת המודעה המלאה: {r['fit']:.1f}/5, מתחת לסף"
@@ -406,9 +415,9 @@ def run(profile: dict, plan: dict, raw: list[dict] | None = None, rate_top: int 
             deferred += 1; continue
         if not r:
             continue
-        if not r["seniority_ok"] or years_too_many(r.get("required_years", 0), plan):
+        if ai_too_senior(r, plan):
             stats["too_senior"] += 1; stats["ai_senior"] = stats.get("ai_senior", 0) + 1
-            act.log("hunter", f"{j['title']} ב-{j['company']}: דורשת יותר ניסיון ממה שיש לך. מדלג.")
+            act.log("hunter", f"{j['title']} ב-{j['company']}: " + (f"דורשת {r['required_years']} שנות ניסיון. מדלג." if r.get("required_years") else "תפקיד בכיר יותר ממה שמתאים לך. מדלג."))
             continue
         stats.setdefault("fits", []).append(r["fit"])
         ok = r["fit"] >= min_fit
