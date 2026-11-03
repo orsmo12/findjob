@@ -33,10 +33,10 @@ print(f"מפתח Groq: {'תקין' if k.startswith('gsk_') and len(k) > 40 else 
 users = db.profiles_ready()
 print(f"{len(users)} משתמשים עם קורות חיים")
 for u in users:
-    st = u.get("state") or {}
+    ustate = u.get("state") or {}
     learned = db.latest_plan(u["user_id"], "meeting")          # מה יואב והצוות למדו בישיבה האחרונה
     prof = {"first": u.get("first", ""), "name": u.get("name", ""), "cv_text": u["cv_text"], "answers": u.get("answers") or {},
-            "extra_titles": [x["value"] for x in st.get("accepted") or [] if x.get("type") == "role"],  # תפקידים שאישרת
+            "extra_titles": [x["value"] for x in ustate.get("accepted") or [] if x.get("type") == "role"],  # תפקידים שאישרת
             "drop_queries": learned.get("drop_queries") or []}
     plan = build_search_plan(prof).to_dict()
     act.start(u["user_id"])
@@ -77,7 +77,7 @@ for u in users:
         act.log("strategist", f"תחפש: {', '.join(plan['queries'][:6])}. אזורים: {', '.join(plan['locations'][:2])}."
                 + (f" עד {plan['max_years']} שנות ניסיון." if plan.get("max_years") else ""), to="hunter")
         plan_obj = build_search_plan(prof)
-        tc = st.get("targets") or {}
+        tc = ustate.get("targets") or {}
         targets = select_targets(plan_obj, {"target_companies": tc}, load_catalog())
         removed = {x.lower() for x in tc.get("removed") or []}
         have = {t["name"].lower() for t in targets}
