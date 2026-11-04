@@ -1,0 +1,8 @@
+# Built files: the app is generated from prototype/src by build.py
+prototype/findjob.html linguist-generated=true
+web/index.html linguist-generated=true
+prototype/screen-map.html linguist-generated=true
+# Legacy Lifeboard Next.js prototype (not part of the current findjob system)
+src/** linguist-detectable=false
+next.config.js linguist-detectable=false
+tailwind.config.ts linguist-detectable=false
