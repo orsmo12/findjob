@@ -5,6 +5,7 @@ nightly.py — מה שרץ בענן כל לילה (GitHub Actions).
 דורון מחפש ומדרג, והמשרות נשמרות ב-Supabase. האפליקציה בטלפון קוראת אותן משם.
 """
 import sys
+import re
 from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
@@ -100,16 +101,21 @@ for u in users:
             got = collect({"queries": [alias], "locations": ["Israel"], "remote_only": plan.get("remote_only")}, per_search=25, budget=1)
             real = name_matches(got, alias)
             if real:
-                mine = [j for j in got if same_company(alias, j["company"])]
+                words = {w.lower() for t in plan.get("titles", []) + plan.get("extra_titles", []) for w in re.findall(r"[A-Za-z]+", t)} - {"developer", "engineer"}
+                words |= {"software", "developer", "engineer", "student", "junior", "intern", "graduate"}
+                mine = [j for j in got if same_company(alias, j["company"]) and any(w in j["title"].lower() for w in words)]
                 named += mine
                 b.update(status="by_name_ok", found_as=real if real.lower() != b["name"].lower() else None, n=len(mine))
                 cache.setdefault(b["name"].lower(), {"b": None, "at": datetime.now(timezone.utc).isoformat()})["as"] = real
                 act.log("hunter", f"{b['name']}: אין לה לוח ציבורי, אז חיפשתי לפי השם" + (f". במודעות היא מופיעה בשם {real}" if b.get("found_as") else "")
                         + f": {len(mine)} משרות בישראל")
             else:
-                b.update(status="not_found")
-                cache.setdefault(b["name"].lower(), {"b": None, "at": datetime.now(timezone.utc).isoformat()})["nf"] = datetime.now(timezone.utc).isoformat()
-                act.log("hunter", f"{b['name']}: לא מצאתי משרות בשם הזה. אולי השם לא מדויק?")
+                # חברה מהקטלוג קיימת בוודאות: החיפוש פשוט לא החזיר אותה הפעם. רק שם שהוספת בעצמך אולי לא מדויק
+                b.update(status="not_found" if "הוספת בעצמך" in b["why"] else "by_name_miss")
+                if b["status"] == "not_found":
+                    cache.setdefault(b["name"].lower(), {"b": None, "at": datetime.now(timezone.utc).isoformat()})["nf"] = datetime.now(timezone.utc).isoformat()
+                act.log("hunter", f"{b['name']}: " + ("לא מצאתי משרות בשם הזה. אולי השם לא מדויק?" if b["status"] == "not_found"
+                                                      else "החיפוש לפי השם לא החזיר הפעם משרות שלה. אנסה שוב בסריקה הבאה."))
         if any(b.get("found_as") or b["status"] == "not_found" for b in by_name[:3] if "הוספת בעצמך" in b["why"]):
             fixed = [b for b in by_name[:3] if "הוספת בעצמך" in b["why"]]
             db.add_run(u["user_id"], "hunter", " ".join(

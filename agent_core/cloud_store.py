@@ -46,6 +46,10 @@ def save_feed(user_id: str, feed: dict) -> None:
     if rows:
         r = httpx.post(_url("jobs"), headers=_h({"Prefer": "resolution=ignore-duplicates"}), json=rows, timeout=30)
         r.raise_for_status()
+    rej = [{"user_id": user_id, "id": c["id"], "card": c, "fit": c["fit"], "decision": "filtered"} for c in feed.get("rejected") or []]
+    if rej:  # נבדקו ולא מתאימות: נזכרות כ"כבר נראו" ולא מדורגות שוב
+        r = httpx.post(_url("jobs"), headers=_h({"Prefer": "resolution=ignore-duplicates"}), json=rej, timeout=30)
+        r.raise_for_status()
     s = feed["stats"]
     names = [f"{c['title']} ב-{c['co']}" for c in feed["jobs"][:3]]
     msg = (f"מצאתי {s['shown']} משרות חדשות שמתאימות לך: {'; '.join(names)}" + (" ועוד." if s['shown'] > 3 else ".")

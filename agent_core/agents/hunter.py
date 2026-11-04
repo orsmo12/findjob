@@ -27,7 +27,7 @@ ROOT = Path(__file__).resolve().parents[2]
 FEED = ROOT / "memory" / "feed" / "jobs.json"
 SEEN = ROOT / "memory" / "seen_jobs.json"
 
-SENIOR_WORDS = re.compile(r"\b(senior|sr\.?|staff|principal|lead|head|manager|architect|director|vp)\b", re.I)
+SENIOR_WORDS = re.compile(r"\b(senior|sr\.?|staff|principal|lead|leader|head|manager|architect|director|vp)\b", re.I)
 # רק "N שנות ניסיון" — לא "2 שנות לימוד שנותרו" או "שנה ג׳ לתואר"
 YEARS_RE = re.compile(r"(\d{1,2})\s*\+?\s*(?:(?:-|–|to)\s*\d{1,2}\s*\+?\s*)?(?:years?|yrs)\b(?![^\n.]{0,40}?(?:left|remain|degree|stud|academ|graduat|old|of age))"
                       r"|(\d{1,2})\s*\+?\s*שנות\s+ניסיון", re.I)
@@ -465,7 +465,10 @@ def run(profile: dict, plan: dict, raw: list[dict] | None = None, rate_top: int 
     jobs.sort(key=lambda j: -cheap_rank(j, plan, cv))
     if jobs:
         act.log("hunter", f"מדרג את {min(len(jobs), rate_top)} המבטיחות מול קורות החיים שלך")
-    cards, deferred = [], 0
+    cards, deferred, rejected = [], 0, []
+    # משרה שנבדקה ונפסלה נשמרת (decision=filtered), כדי שלא נבזבז עליה את מכסת ה-AI בכל סריקה מחדש
+    drop = lambda j, why, fit=None: rejected.append({"id": j["id"], "co": j["company"], "title": j["title"], "url": j["url"],
+                                                    "fit": fit or 0, "filtered_why": why, "rv": RATING_V})
     for j in jobs[:rate_top]:
         enrich(j)
         if not has_full_ad(j):  # בלי מודעה מלאה אי אפשר לדרג באמת. לא מציגים — ננסה שוב בסריקה הבאה
@@ -475,6 +478,7 @@ def run(profile: dict, plan: dict, raw: list[dict] | None = None, rate_top: int 
         if too_senior(j, plan):  # עכשיו כשיש תיאור מלא, בודקים שוב את שנות הניסיון
             stats["too_senior"] += 1
             act.log("hunter", f"{j['title']} ב-{j['company']}: במודעה כתוב „{years_phrase(j.get('description', ''))}”. יותר ניסיון ממה שיש לך, מדלג.")
+            drop(j, "שנות ניסיון: " + years_phrase(j.get("description", "")))
             continue
         try:
             r = rate(j, cv, prefs_text(plan))
@@ -488,18 +492,21 @@ def run(profile: dict, plan: dict, raw: list[dict] | None = None, rate_top: int 
         if ai_too_senior(r, plan, j["title"]):
             stats["too_senior"] += 1; stats["ai_senior"] = stats.get("ai_senior", 0) + 1
             act.log("hunter", f"{j['title']} ב-{j['company']}: " + (f"דורשת {r['required_years']} שנות ניסיון. מדלג." if r.get("required_years") else "תפקיד בכיר יותר ממה שמתאים לך. מדלג."))
+            drop(j, "בכירה מדי", r["fit"])
             continue
         note_stretch(r, plan)
         stats.setdefault("fits", []).append(r["fit"])
         ok = r["fit"] >= min_fit
         act.log("hunter", f"{j['title']} ב-{j['company']}: {r['fit']:.1f}/5" + (f" (נדרשות {r['required_years']} שנים)" if r.get("required_years") else "") + f" {'✓ מתאימה' if ok else '· מתחת לסף'}")
+        if not ok:
+            drop(j, f"ציון {r['fit']:.1f}", r["fit"])
         if ok:
             cards.append(to_card(j, r, cv))
             qy.setdefault(j.get("query") or j.get("source", "?"), {"got": 0, "new": 0, "fit": 0})["fit"] += 1
     cards.sort(key=lambda c: -c["fit"])
     stats.update(rated=min(len(jobs), rate_top) - deferred, deferred=deferred, shown=len(cards), queries=qy)
     feed = {"generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"), "stats": stats,
-            "plan": {k: plan.get(k) for k in ("queries", "locations", "levels", "why")}, "jobs": cards}
+            "plan": {k: plan.get(k) for k in ("queries", "locations", "levels", "why")}, "jobs": cards, "rejected": rejected}
     if not persist:
         return feed
     FEED.parent.mkdir(parents=True, exist_ok=True)

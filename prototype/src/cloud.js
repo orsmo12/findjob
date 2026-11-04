@@ -25,7 +25,7 @@ async function cloudLoad(){
   const uid=ME.id;
   const [{data:pr},{data:jobs},{data:runs}]=await Promise.all([
     SB.from('profiles').select('*').eq('user_id',uid).maybeSingle(),
-    SB.from('jobs').select('id,card,decision,letter,brief,prep,created_at').eq('user_id',uid).order('created_at',{ascending:false}).limit(200),
+    SB.from('jobs').select('id,card,decision,letter,brief,prep,created_at').eq('user_id',uid).or('decision.is.null,decision.neq.filtered').order('created_at',{ascending:false}).limit(200),
     SB.from('runs').select('agent,stats,created_at').eq('user_id',uid).order('created_at',{ascending:false}).limit(150)]);
   if(pr){const p=prof();p.first=pr.first||p.first;p.name=pr.name||p.name;p.cv=pr.cv_text||p.cv;p.ans=Object.assign({},pr.answers||{},p.ans||{});
     if(pr.team&&Object.keys(pr.team).length)S.team=pr.team;const st=pr.state||{};['apps','todos','stories'].forEach(k=>{if(Array.isArray(st[k]))S[k]=st[k]});if(st.targets)S.targets=st.targets;if(Array.isArray(st.history))S.history=st.history;if(Array.isArray(st.chat))S.chat=st.chat;if(Array.isArray(st.accepted))S.accepted=st.accepted;if(Array.isArray(st.dismissed))S.dismissed=st.dismissed;if(Array.isArray(st.cvDone))S.cvDone=st.cvDone;p.li_text=pr.li_text||'';LI=Object.assign({},pr.li||{},{fixes:((pr.li_fixes||{}).fixes)||[]});if(pr.cv_text)S.onboarded=true}
