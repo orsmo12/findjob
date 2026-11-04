@@ -200,7 +200,7 @@ for u in users:
         if out["msg"]:
             db.add_run(u["user_id"], "strategist", out["msg"], {"report": out["report"]})
         r = out["report"]
-        print(f"{u['user_id'][:8]}: ישיבה: {len(r['issues'])} בעיות, {len(r['actions'])} שינויים, {len(r['suggestions'])} הצעות — {out['msg'][:300]}")
+        print(f"{u['user_id'][:8]}: ישיבה: {len(r['issues'])} בעיות, {len(r['actions'])} שינויים, {len(r['suggestions'])} הצעות")
     except Exception as e:  # noqa: BLE001
         print(f"{u['user_id'][:8]}: ישיבה נכשלה: {type(e).__name__}: {e}")
         act.flush()

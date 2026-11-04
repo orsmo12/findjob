@@ -8,7 +8,11 @@ from dotenv import load_dotenv
 load_dotenv()
 from agent_core.graph import career_graph
 
-MY_RESUME = ""
+MY_RESUME = """
+Sample Candidate — Tel Aviv, Israel
+Third-year Computer Science student. Seeking a junior developer role.
+Skills: Python, JavaScript, React, SQL, Git. Projects: a full-stack web app (React, Socket.IO) and an image-processing project (OpenCV).
+"""
 
 initial_state = {
     "search_query": "Junior Python Developer",

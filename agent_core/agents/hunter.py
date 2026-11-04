@@ -352,7 +352,7 @@ def rate(job: dict, cv: str, prefs: str) -> dict | None:
             r["required_years"] = 0
         r["fit_model"] = r["fit"]
         r["fit"] = computed_fit(r)
-        print(f"[דורון/אבחון] {job['title']} @ {job['company']}: fit={r['fit']} (model {r['fit_model']}, core {sum(1 for c in r['core'] if c.get('met'))}/{len(r['core'])}) years={r['required_years']} ok={r['seniority_ok']} "
+        act.debug(f"[דורון/אבחון] {job['title']} @ {job['company']}: fit={r['fit']} (model {r['fit_model']}, core {sum(1 for c in r['core'] if c.get('met'))}/{len(r['core'])}) years={r['required_years']} ok={r['seniority_ok']} "
               f"reasons={r['reasons']} gaps={r['gaps']} desc_len={len(desc)}")
         r["reasons"] = grounded(r["reasons"], cv)        # סיבה = עובדה מקורות החיים
         r["gaps"] = grounded(r["gaps"], desc)             # חסר = דרישה שכתובה במודעה

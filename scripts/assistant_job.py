@@ -55,7 +55,7 @@ for u in db.profiles_ready():
             for k in upd:
                 if k != "brief" or upd[k].get("found"):
                     done[k].append(job["co"])
-            print(f"{u['user_id'][:8]} · {job['co']}: {', '.join(upd)}"
+            act.debug(f"{u['user_id'][:8]} · {job['co']}: {', '.join(upd)}"
                   + (" (לא נמצא מידע על החברה)" if "brief" in upd and not upd["brief"].get("found") else ""))
     act.flush()
     names = lambda xs: ", ".join(xs[:3]) + (f" ועוד {len(xs) - 3}" if len(xs) > 3 else "")

@@ -6,6 +6,7 @@ activity.py — יומן העבודה של הסוכנים (מה שמוצג ב"ת
 בלי משתמש פעיל (בדיקות, הרצה מקומית) — רק מדפיס.
 """
 from __future__ import annotations
+import os
 from datetime import datetime, timezone
 
 _user: str | None = None
@@ -17,8 +18,16 @@ def start(user_id: str) -> None:
     _user, _buf = user_id, []
 
 
+VERBOSE = os.environ.get("FINDJOB_VERBOSE") == "1"  # יומני Actions ציבוריים: פרטי משתמש מודפסים רק במצב מפורט
+
+
+def debug(text: str) -> None:
+    if VERBOSE:
+        print(text)
+
+
 def log(agent: str, text: str, to: str | None = None) -> None:
-    print(f"  [{agent}{' → ' + to if to else ''}] {text}")
+    debug(f"  [{agent}{' → ' + to if to else ''}] {text}")
     if _user:
         _buf.append({"user_id": _user, "agent": agent,
                      "stats": {"log": text[:300], **({"to": to} if to else {})},

@@ -74,7 +74,7 @@ const PREP={
 /* ═════════ state ═════════ */
 function defaultState(){return{
   v:2,onboarded:false,
-  profile:{name:'Or Smolarchik',first:'אור',cv:'',cvName:'',key:'',ans:{}},qi:0,team:{},
+  profile:{name:'',first:'',cv:'',cvName:'',key:'',ans:{}},qi:0,team:{},
   decisions:{},skipReasons:{},
   apps:REAL?[]:[
     {id:'a-monday',jobId:'j-monday',status:'interview',date:daysAgoISO(6),iv:'רביעי, 14:00'},
