@@ -8,6 +8,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   letters:
+    if: github.repository == 'orsmo12/findjob'   # בעותק ציבורי (אם יהיה) הסוכנים לא רצים
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
