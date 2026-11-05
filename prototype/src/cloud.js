@@ -87,7 +87,7 @@ const ST_HE={saved:'שמור',applied:'הוגש',screening:'סינון',intervie
 function actionText(x){const j=x.job_id&&JOBS[x.job_id],n=j?`${j.title} ב-${j.co}`:'';
   return{set_status:`לעדכן את ${n} ל"${ST_HE[x.status]||x.status}"${x.iv?` (${x.iv})`:''}`,add_note:`להוסיף הערה ל-${n}: "${x.text}"`,
     set_letter:`להחליף את מכתב הפנייה ל-${n} בגרסה החדשה`,add_job:`להוסיף משרה מהקישור`,save_job:`לשמור את ${n} ולהעביר להגשות`,
-    skip_job:`לדלג על ${n}`,remove_app:`להסיר את ${n} מההגשות`,add_todo:`להוסיף משימה: "${x.text}"`,add_story:`להוסיף לבנק הסיפורים: "${x.title}"`}[x.type]}
+    skip_job:`לדלג על ${n}`,remove_app:`להסיר את ${n} מההגשות`,add_todo:`להוסיף משימה: "${x.text}"`,add_story:`להוסיף לבנק הסיפורים: "${x.title}"`,feedback:`לשלוח למפתח את הבקשה: "${x.text}"`}[x.type]}
 function actionCard(x,idx){
   const txt=actionText(x);if(!txt)return null;const h=S.chat[idx]||{};
   const el=document.createElement('div');el.className='act-card';
@@ -110,6 +110,7 @@ async function runAction(x){
     case 'remove_app':if(!needApp())return false;removeApp(app.id);return true;
     case 'add_todo':S.todos.unshift({id:'t'+Date.now(),text:x.text,done:false});break;
     case 'add_story':S.stories.push({id:'s'+Date.now(),t:x.title,b:x.body||''});break;
+    case 'feedback':S.feedback=S.feedback||[];S.feedback.push({t:String(x.text||'').slice(0,1000),at:new Date().toISOString(),page:'chat'});track('feedback');break;
     case 'add_job':toggleChat();openAddJob();setTimeout(()=>{const i=$('ajUrl');if(i)i.value=x.url||''},250);return true;
     default:return false;
   }
