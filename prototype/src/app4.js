@@ -103,6 +103,7 @@ function afterCv(){if($('onb').classList.contains('open'))renderOnb();else{rende
 function renderSettings(){
   const p=prof();
   $('setScroll').innerHTML=`
+    ${CLOUDM&&typeof aiKeyCard==='function'?aiKeyCard():''}
     ${CLOUDM&&ME?`<section class="card glass" aria-labelledby="accH"><h2 class="card-h" id="accH">החשבון</h2><div class="card-sub" dir="ltr" style="text-align:right">${escB(ME.email||'')}</div><button class="btn btn-sm btn-ghost btn-block" style="margin-top:12px" onclick="cloudLogout()">יציאה</button></section>`:''}
     <section class="card glass" aria-labelledby="aiH"><h2 class="card-h" id="aiH">הסוכנים</h2>
       ${CLOUDM?`<div class="ok-line">הסוכנים מחוברים ורצים בענן</div><div class="card-sub" style="margin:6px 0 0">${N('hunter')} מחפש כל 12 שעות ובודק שהמשרות ששמרת עדיין פתוחות. ${N('assistant')}, ${N('researcher')} ו${N('coach')} מכינים מכתב, סקירה והכנה כל שעתיים.</div>`:p.key?`<div class="ok-line">הסוכנים מחוברים ועובדים</div>`:`<div class="warn-line">הסוכנים עוד לא מחוברים</div><div class="card-sub" style="margin:6px 0 0">עד שתחבר, מוצגות דוגמאות.</div>`}

@@ -2,9 +2,8 @@
 let onbStep=0, onbDraft=null, onbSingle=false;
 function openOnb(step=0){onbSingle=step>0&&S.onboarded;onbStep=step;onbDraft=JSON.parse(JSON.stringify(prof()));closeSheet();closeDrawer();$('onb').classList.add('open');renderOnb()}
 function closeOnb(){$('onb').classList.remove('open','qmode')}
-function onbGo(d){onbStep=Math.max(0,Math.min(4,onbStep+d));if(onbStep===3&&CLOUDM)onbStep+=d>0?1:-1;if(onbStep===2)qi=Math.min(S.qi||0,Math.max(0,visibleQs().length-1));renderOnb()}
+function onbGo(d){onbStep=Math.max(0,Math.min(4,onbStep+d));if(onbStep===2)qi=Math.min(S.qi||0,Math.max(0,visibleQs().length-1));renderOnb()}
 function renderOnb(){
-  if(CLOUDM&&onbStep===3){if(onbSingle){closeOnb();return}onbStep=4}  // בענן המפתחות שמורים בשרת, אין מה לחבר
   if(onbStep===2){renderQ();return}
   $('onb').classList.remove('qmode');
   const p=onbDraft;p.cv=prof().cv;p.cvName=prof().cvName;
@@ -21,6 +20,9 @@ function renderOnb(){
       <label for="cvFile" class="drop${p.cvName?' has':''}" role="button" tabindex="0"><span style="font-size:30px">${p.cvName?'✓':'📄'}</span><b>${p.cvName?escB(p.cvName):'בחר קובץ'}</b><span>${p.cvName?'לחץ להחלפה':'PDF, Word או טקסט'}</span></label>
       <div class="field" style="margin-top:18px"><label for="onbCv">או הדבק את הטקסט</label><textarea id="onbCv" rows="6" placeholder="סטודנט שנה ג׳ למדעי המחשב…" oninput="onbCvTyped(this)" onchange="onbCvTyped(this)" onkeyup="onbCvTyped(this)" onpaste="setTimeout(()=>onbCvTyped(this),0)">${escB(p.cv)}</textarea><div class="help" id="onbCvHelp"></div></div>`;
     foot=`<button class="btn btn-primary btn-block" id="onbNext" onclick="onbCvNext()">המשך</button><button class="link-btn" onclick="onbGo(1)">אוסיף אחר כך</button>`;
+  }else if(onbStep===3&&CLOUDM){
+    body=aiKeyStep();
+    foot=`<button class="btn btn-primary btn-block" id="akBtn" ${S.ai_key?'':'disabled'} onclick="saveAiKey(true)">${S.ai_key?'להמשיך':'לשמור ולהמשיך'}</button><button class="link-btn" onclick="${onbSingle?'closeOnb()':'onbGo(1)'}">${onbSingle?'ביטול':'אחר כך'}</button>`;
   }else if(onbStep===3){
     body=`<h1>צעד אחרון: לחבר את הסוכנים</h1><p class="lead">הסוכנים צריכים מפתח אישי כדי לעבוד בשבילך. זה חינם ולוקח שתי דקות.</p>
       <div class="key-steps"><div><span>להיכנס ל-<a href="https://console.groq.com/keys" target="_blank" rel="noopener" lang="en">console.groq.com/keys</a> עם חשבון Google</span></div><div><span>ללחוץ <span lang="en">Create API Key</span> ולהעתיק את המפתח</span></div><div><span>להדביק אותו כאן</span></div></div>

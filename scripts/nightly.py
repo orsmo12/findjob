@@ -28,13 +28,29 @@ if not db.configured():
     sys.exit("SUPABASE_URL / SUPABASE_SERVICE_KEY חסרים")
 
 import os
-from agent_core.llm_router import clean_key
+from agent_core.llm_router import clean_key, use_key
 k = clean_key(os.environ.get("GROQ_API_KEY"), "GROQ_API_KEY")
 raw = os.environ.get("GROQ_API_KEY") or ""
 print(f"מפתח Groq: {'תקין' if k.startswith('gsk_') and len(k) > 40 else 'לא תקין'} (אורך {len(k)}, נוקה: {'כן' if raw != k else 'לא'})")
+def user_key(u: dict) -> str | None:
+    k = ((u.get("state") or {}).get("ai_key") or "").strip()
+    return k if k.startswith("gsk_") and len(k) > 30 else None
+
+
+def fair_rate_top(u: dict) -> int:
+    """מפתח אישי = 25 דירוגים לסריקה. במפתח המשותף: לפי כמה המשתמש פעיל לאחרונה, כדי שהמכסה תספיק לכולם."""
+    if user_key(u):
+        return 25
+    last = ((u.get("state") or {}).get("usage") or {}).get("last") or ""
+    if last >= (datetime.now(timezone.utc) - timedelta(days=3)).isoformat():
+        return 15
+    return 6
+
+
 users = db.profiles_ready()
 print(f"{len(users)} משתמשים עם קורות חיים")
 for u in users:
+    use_key(user_key(u))
     ustate = u.get("state") or {}
     learned = db.latest_plan(u["user_id"], "meeting")          # מה יואב והצוות למדו בישיבה האחרונה
     prof = {"first": u.get("first", ""), "name": u.get("name", ""), "cv_text": u["cv_text"], "answers": u.get("answers") or {},
@@ -134,7 +150,7 @@ for u in users:
         db.save_memory(u["user_id"], "boards", {"cache": cache})
         ok = [b for b in boards if b["status"] == "board"]
         print(f"{u['user_id'][:8]}: לוחות חברה: {len(ok)} מתוך {len(targets)} ({', '.join(b['name'] + ' ' + b['board'] for b in ok[:12])}), {len(direct)} משרות רלוונטיות")
-        feed = run(prof, plan, raw=collect(plan) + direct + named, seen=db.seen_ids(u["user_id"]), persist=False)
+        feed = run(prof, plan, raw=collect(plan) + direct + named, seen=db.seen_ids(u["user_id"]), persist=False, rate_top=fair_rate_top(u))
         feed["stats"]["direct_boards"] = len(ok)
         feed["stats"]["boards"] = boards
         if feed["jobs"]:
@@ -190,6 +206,7 @@ for u in users:
 
 # ── הישיבה השבועית: יואב והצוות בודקים מה עבד, מה לא, ומה לשנות ─────────────
 for u in users:
+    use_key(user_key(u))
     try:
         last = db.latest_plan(u["user_id"], "meeting")
         if not (M.due(last) or os.environ.get("FORCE_MEETING")):

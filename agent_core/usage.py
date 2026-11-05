@@ -28,7 +28,7 @@ def report(users: list[dict], profiles: list[dict], jobs_by_user: dict[str, list
         rows.append({"name": p.get("first") or (u.get("email") or "").split("@")[0][:3] + "…",
                      "joined": (u.get("created_at") or "")[:10], "last": (us.get("last") or "")[:10],
                      "days": len(days), "days_week": sum(1 for d in days if d >= week),
-                     "cv": bool(p.get("cv_text")), "domain": (p.get("answers") or {}).get("domain") or "",
+                     "cv": bool(p.get("cv_text")), "own_key": str(st.get("ai_key") or "").startswith("gsk_"), "domain": (p.get("answers") or {}).get("domain") or "",
                      "saved": dec("save"), "skipped": dec("skip"), "waiting": dec(None),
                      "applied": sum(1 for a in st.get("apps") or [] if a.get("status") not in (None, "saved")),
                      "chat": c.get("chat", 0), "add_job": c.get("add_job", 0), "pages": pages})

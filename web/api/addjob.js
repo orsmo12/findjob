@@ -91,9 +91,11 @@ module.exports = async (req, res) => {
   else { try { page = await readJob(url); } catch (e) { page = { text: '' }; } }
   if (!page.text || page.text.length < 200) return res.status(200).json({ need_text: true });
 
-  const prof = ((await sb(`/rest/v1/profiles?select=cv_text,answers&user_id=eq.${uid}`, token)).data || [])[0] || {};
+  const prof = ((await sb(`/rest/v1/profiles?select=cv_text,answers,state&user_id=eq.${uid}`, token)).data || [])[0] || {};
+  const own = String((prof.state || {}).ai_key || '').trim();
+  const k2 = /^gsk_\w{20,}/.test(own) ? own : key;
   const cv = prof.cv_text || '';
-  const d = await groq(key, PROMPT(cv, JSON.stringify(prof.answers || {}), page));
+  const d = await groq(k2, PROMPT(cv, JSON.stringify(prof.answers || {}), page));
   if (!d) return res.status(503).json({ error: 'busy' });
   if (d.is_job === false) return res.status(200).json({ not_job: true });
 

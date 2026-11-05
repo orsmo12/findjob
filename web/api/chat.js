@@ -89,11 +89,13 @@ const SYSTEM = `אתה שי, העוזר האישי באפליקציית findjob,
 module.exports = async (req, res) => {
   if (req.method !== 'POST') return res.status(405).json({ error: 'method' });
   const { messages = [], token = '', focus = '' } = req.body || {};
-  const key = clean(process.env.GROQ_API_KEY);
-  if (!key) return res.status(500).json({ error: 'no_key' });
+  let key = clean(process.env.GROQ_API_KEY);
   const user = await sb('/auth/v1/user', token);
   if (!user || !user.id) return res.status(401).json({ error: 'auth' });
   const [prof] = (await sb(`/rest/v1/profiles?select=first,cv_text,answers,state,li,li_fixes&user_id=eq.${user.id}`, token)) || [];
+  const own = String(((prof && prof.state) || {}).ai_key || '').trim();
+  if (/^gsk_\w{20,}/.test(own)) key = own;   // מפתח אישי של המשתמש, אם הכניס
+  if (!key) return res.status(500).json({ error: 'no_key' });
   const jobs = (await sb(`/rest/v1/jobs?select=card,decision,letter,brief,prep&user_id=eq.${user.id}&order=created_at.desc&limit=80`, token)) || [];
   const lastUser = [...messages].reverse().find(m => m.role === 'user');
   const msgs = [{ role: 'system', content: SYSTEM + '\n\n# הנתונים של המשתמש\n' + context(prof, jobs, lastUser && lastUser.content, focus) },

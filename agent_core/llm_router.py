@@ -43,11 +43,29 @@ def clean_key(v: str | None, name: str = "") -> str:
     return v
 
 
+_key: str | None = None
+
+
+def use_key(key: str | None) -> None:
+    """מפתח Groq אישי של משתמש (או None = המפתח המשותף). לכל מפתח מכסה משלו, אז גם מעקב המכסה נפרד."""
+    global _groq, _live, _key
+    import hashlib
+    k = clean_key(key or "") or None
+    if k == _key and _groq is not None:
+        return
+    _key, _groq, _live = k, None, None
+    bg.set_scope(hashlib.sha1(k.encode()).hexdigest()[:10] if k else "shared")
+
+
+def using_own_key() -> bool:
+    return bool(_key)
+
+
 def _groq_client():
     global _groq
     if _groq is None:
         from groq import Groq
-        key = clean_key(os.environ.get("GROQ_API_KEY"), "GROQ_API_KEY")
+        key = _key or clean_key(os.environ.get("GROQ_API_KEY"), "GROQ_API_KEY")
         if not key:
             raise RuntimeError("GROQ_API_KEY חסר ב-.env — הסוכנים לא מחוברים")
         _groq = Groq(api_key=key)

@@ -28,7 +28,7 @@ async function cloudLoad(){
     SB.from('jobs').select('id,card,decision,letter,brief,prep,created_at').eq('user_id',uid).or('decision.is.null,decision.neq.filtered').order('created_at',{ascending:false}).limit(200),
     SB.from('runs').select('agent,stats,created_at').eq('user_id',uid).order('created_at',{ascending:false}).limit(150)]);
   if(pr){const p=prof();p.first=pr.first||p.first;p.name=pr.name||p.name;p.cv=pr.cv_text||p.cv;p.ans=Object.assign({},pr.answers||{},p.ans||{});
-    if(pr.team&&Object.keys(pr.team).length)S.team=pr.team;const st=pr.state||{};['apps','todos','stories'].forEach(k=>{if(Array.isArray(st[k]))S[k]=st[k]});if(st.targets)S.targets=st.targets;if(Array.isArray(st.history))S.history=st.history;if(Array.isArray(st.chat))S.chat=st.chat;if(Array.isArray(st.accepted))S.accepted=st.accepted;if(Array.isArray(st.dismissed))S.dismissed=st.dismissed;if(Array.isArray(st.cvDone))S.cvDone=st.cvDone;if(st.usage)S.usage=st.usage;if(Array.isArray(st.feedback))S.feedback=st.feedback;p.li_text=pr.li_text||'';LI=Object.assign({},pr.li||{},{fixes:((pr.li_fixes||{}).fixes)||[]});if(pr.cv_text)S.onboarded=true}
+    if(pr.team&&Object.keys(pr.team).length)S.team=pr.team;const st=pr.state||{};['apps','todos','stories'].forEach(k=>{if(Array.isArray(st[k]))S[k]=st[k]});if(st.targets)S.targets=st.targets;if(Array.isArray(st.history))S.history=st.history;if(Array.isArray(st.chat))S.chat=st.chat;if(Array.isArray(st.accepted))S.accepted=st.accepted;if(Array.isArray(st.dismissed))S.dismissed=st.dismissed;if(Array.isArray(st.cvDone))S.cvDone=st.cvDone;if(st.usage)S.usage=st.usage;if(st.ai_key)S.ai_key=st.ai_key;if(Array.isArray(st.feedback))S.feedback=st.feedback;p.li_text=pr.li_text||'';LI=Object.assign({},pr.li||{},{fixes:((pr.li_fixes||{}).fixes)||[]});if(pr.cv_text)S.onboarded=true}
   prof().key='cloud';
   RUNS=runs||[];const hr=RUNS.filter(r=>(r.agent||'hunter')==='hunter');
   if(hr.length||(jobs&&jobs.length)){
@@ -41,7 +41,7 @@ async function cloudLoad(){
   _decSnap=Object.assign({},S.decisions);_profSnap=profRow();
   LS.set(SKEY,S);window.__runsReady=true;if(typeof applyTeam==='function')applyTeam();buildWorkflow();
 }
-function profRow(){const p=prof();return JSON.stringify({first:p.first||'',name:p.name||'',cv_text:p.cv||'',answers:p.ans||{},team:S.team||{},state:{apps:S.apps,todos:S.todos,stories:S.stories,targets:S.targets||{added:[],removed:[]},history:S.history||[],chat:(S.chat||[]).slice(-40),accepted:S.accepted||[],dismissed:S.dismissed||[],cvDone:S.cvDone||[],usage:S.usage||{},feedback:(S.feedback||[]).slice(-30)},li_text:p.li_text||''})}
+function profRow(){const p=prof();return JSON.stringify({first:p.first||'',name:p.name||'',cv_text:p.cv||'',answers:p.ans||{},team:S.team||{},state:{apps:S.apps,todos:S.todos,stories:S.stories,targets:S.targets||{added:[],removed:[]},history:S.history||[],chat:(S.chat||[]).slice(-40),accepted:S.accepted||[],dismissed:S.dismissed||[],cvDone:S.cvDone||[],usage:S.usage||{},ai_key:S.ai_key||'',feedback:(S.feedback||[]).slice(-30)},li_text:p.li_text||''})}
 function cloudSync(){clearTimeout(_syncT);_syncT=setTimeout(async()=>{
   if(!ME)return;
   const row=profRow();
@@ -252,3 +252,28 @@ function openUsage(){const r=(RUNS||[]).find(x=>x.stats&&x.stats.usage_report);i
    <span>${x.cv?'קורות חיים ✓':'בלי קורות חיים'}${x.domain?' · '+escB(x.domain):''} · ${x.saved} שמורות · ${x.skipped} דילוגים · ${x.applied} הגשות · ${x.chat} שאלות בצ׳אט${x.add_job?' · '+x.add_job+' משרות מקישור':''}</span>
    ${(x.pages||[]).length?`<span>מסכים: ${x.pages.map(p=>escB(p[0])+' ('+p[1]+')').join(', ')}</span>`:''}</div>`).join('')}</div>
   ${(u.feedback||[]).length?`<div class="s-sec"><h4>משוב</h4>${u.feedback.map(f=>`<p class="us-fb"><b>${escB(f.name)}</b> · ${escB(f.at)}<br>${escB(f.t)}</p>`).join('')}</div>`:''}`)}
+
+/* מפתח AI אישי (Groq, חינם): כל משתמש מקבל מכסה משלו, והסוכנים שלו לא מחכים בתור */
+const maskKey=k=>k?k.slice(0,4)+'…'+k.slice(-4):'';
+function aiKeyStep(){return `<h1>מפתח AI אישי, חינם</h1><p class="lead">ככה הסוכנים שלך עובדים במכסה משלך ולא מחכים בתור. לוקח דקה.</p>
+  <a class="btn btn-primary btn-block" href="https://console.groq.com/keys" target="_blank" rel="noopener" onclick="track('groq_open')">לפתוח את Groq וליצור מפתח</a>
+  <ol class="ak-steps"><li>נכנסים עם חשבון Google</li><li>לוחצים <bdi dir="ltr">Create API Key</bdi>, נותנים שם (למשל findjob), ומעתיקים</li><li>חוזרים לכאן ומדביקים</li></ol>
+  <div class="field"><label for="akIn">המפתח שלך</label><div style="display:flex;gap:8px"><input id="akIn" class="ltr" placeholder="gsk_..." value="${escB(S.ai_key||'')}" autocomplete="off" spellcheck="false" oninput="akTyped()"><button class="btn btn-sm btn-ghost" onclick="akPaste()">להדביק</button></div>
+  <div class="help" id="akHelp">${S.ai_key?'המפתח שמור ✓ '+escB(maskKey(S.ai_key)):'אפשר גם לדלג. הסוכנים יעבדו במכסה המשותפת, שמוגבלת.'}</div></div>`}
+function akTyped(){const v=($('akIn').value||'').trim();const b=$('akBtn');if(b)b.disabled=!/^gsk_\w{20,}$/.test(v)}
+async function akPaste(){try{const t=(await navigator.clipboard.readText()||'').trim();$('akIn').value=t;akTyped()}catch(e){toast('לא הצלחתי לקרוא מהלוח. אפשר להדביק ידנית')}}
+async function saveAiKey(next){const v=(($('akIn')||{}).value||'').trim();if(!v&&S.ai_key){if(next)onbGo(1);return}
+  const h=$('akHelp');if(!/^gsk_\w{20,}$/.test(v)){h.textContent='זה לא נראה כמו מפתח של Groq. הוא מתחיל ב-gsk_';return}
+  h.textContent='בודק את המפתח…';
+  try{const {data:{session}}=await SB.auth.getSession();
+    const r=await fetch('/api/checkkey',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:v,token:session&&session.access_token})});const d=await r.json();
+    if(!d.ok){h.textContent=d.why==='invalid'?'Groq לא מכיר את המפתח הזה. כדאי להעתיק אותו שוב':'לא הצלחתי לבדוק כרגע. נסה שוב בעוד רגע';return}}
+  catch(e){h.textContent='אין חיבור כרגע. נסה שוב';return}
+  S.ai_key=v;track('ai_key');save();toast('המפתח נשמר. מעכשיו הסוכנים שלך עובדים במכסה משלך');
+  if(next&&$('onb').classList.contains('open')){onbSingle?closeOnb():onbGo(1)}if(typeof renderSettings==='function')renderSettings()}
+function removeAiKey(){S.ai_key='';save();renderSettings();toast('המפתח הוסר. הסוכנים יעבדו במכסה המשותפת')}
+function aiKeyCard(){return `<section class="card glass" aria-labelledby="akH"><h2 class="card-h" id="akH">מפתח AI אישי</h2>
+  ${S.ai_key?`<div class="row"><span class="rl"><b dir="ltr" style="text-align:right">${escB(maskKey(S.ai_key))}</b><span>הסוכנים שלך עובדים במכסה משלך ב-Groq</span></span><span class="pill-ok">פעיל</span></div>
+    <div class="duo"><button class="btn btn-sm btn-ghost" onclick="openOnb(3)">להחליף</button><button class="btn btn-sm btn-ghost" onclick="removeAiKey()">להסיר</button></div>`
+  :`<div class="card-sub">בלי מפתח אישי, הסוכנים עובדים במכסה משותפת ומוגבלת. מפתח חינמי לוקח דקה.</div>
+    <button class="btn btn-sm btn-primary btn-block" onclick="openOnb(3)">ליצור מפתח חינמי</button>`}</section>`}

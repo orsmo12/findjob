@@ -17,6 +17,13 @@ from datetime import date
 from pathlib import Path
 
 STATE_FILE = Path(__file__).parent.parent / "memory" / "llm_budget.json"
+_BASE = STATE_FILE
+
+
+def set_scope(name: str) -> None:
+    """מעקב מכסה נפרד לכל מפתח (shared = המפתח המשותף)."""
+    global STATE_FILE
+    STATE_FILE = _BASE if name == "shared" else _BASE.with_name(f"llm_budget_{name}.json")
 # משאירים מרווח קטן כדי לא להיתקע באמצע משימה
 MIN_REQUESTS_LEFT = 3
 MIN_TOKENS_LEFT = 1500

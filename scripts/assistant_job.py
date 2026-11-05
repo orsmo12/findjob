@@ -23,7 +23,10 @@ from datetime import datetime, timedelta, timezone
 if not db.configured():
     sys.exit("SUPABASE_URL / SUPABASE_SERVICE_KEY חסרים")
 
+from agent_core.llm_router import use_key
 for u in db.profiles_ready():
+    _k = ((u.get("state") or {}).get("ai_key") or "").strip()
+    use_key(_k if _k.startswith("gsk_") and len(_k) > 30 else None)   # מפתח אישי אם יש, אחרת המשותף
     cv, name = u["cv_text"], u.get("name") or u.get("first") or ""
     done = {"letter": [], "brief": [], "prep": []}
     act.start(u["user_id"])
