@@ -16,6 +16,7 @@ from agent_core.agents.hunter import run, collect, rerate, RATING_V, BudgetDefer
 from agent_core import activity as act
 from agent_core.agents.live import check as still_open
 import httpx as _httpx
+import httpx
 from agent_core.agents.ats import collect_targets, name_matches, same_company
 from agent_core.profile import select_targets, load_catalog
 from agent_core.profile import SearchPlan
@@ -112,6 +113,14 @@ for u in users:
             else:
                 # חברה מהקטלוג קיימת בוודאות: החיפוש פשוט לא החזיר אותה הפעם. רק שם שהוספת בעצמך אולי לא מדויק
                 b.update(status="not_found" if "הוספת בעצמך" in b["why"] else "by_name_miss")
+                if b["status"] == "not_found":  # אולי שגיאת כתיב: השם הכי קרוב מבין החברות שהחיפוש החזיר ומהקטלוג
+                    import difflib
+                    pool = {j["company"]: j["company"] for j in got if j.get("company")}
+                    pool.update({c["name"]: c["name"] for c in load_catalog()})
+                    keyed = {re.sub(r"[^a-z0-9]", "", k.lower()): v for k, v in pool.items()}
+                    m = difflib.get_close_matches(re.sub(r"[^a-z0-9]", "", alias.lower()), list(keyed), n=1, cutoff=0.7)
+                    if m:
+                        b["suggest"] = keyed[m[0]]
                 if b["status"] == "not_found":
                     cache.setdefault(b["name"].lower(), {"b": None, "at": datetime.now(timezone.utc).isoformat()})["nf"] = datetime.now(timezone.utc).isoformat()
                 act.log("hunter", f"{b['name']}: " + ("לא מצאתי משרות בשם הזה. אולי השם לא מדויק?" if b["status"] == "not_found"
@@ -120,7 +129,7 @@ for u in users:
             fixed = [b for b in by_name[:3] if "הוספת בעצמך" in b["why"]]
             db.add_run(u["user_id"], "hunter", " ".join(
                 (f"חיפשתי את {b['name']}: היא מפרסמת משרות בשם {b['found_as']}, ואני מחפש לפי השם הזה." if b.get("found_as")
-                 else f"לא מצאתי משרות של {b['name']}. כדאי לבדוק את השם בפרופיל ›› חברות יעד." if b["status"] == "not_found" else "")
+                 else (f"לא מצאתי חברה בשם {b['name']}." + (f" התכוונת ל-{b['suggest']}? אפשר לתקן בפרופיל ‹ חברות יעד." if b.get("suggest") else " כדאי לבדוק את השם בפרופיל ‹ חברות יעד.")) if b["status"] == "not_found" else "")
                 for b in fixed).strip())
         db.save_memory(u["user_id"], "boards", {"cache": cache})
         ok = [b for b in boards if b["status"] == "board"]
@@ -204,3 +213,18 @@ for u in users:
     except Exception as e:  # noqa: BLE001
         print(f"{u['user_id'][:8]}: ישיבה נכשלה: {type(e).__name__}: {e}")
         act.flush()
+
+
+# ── דוח שימוש לבעל המערכת: פעם ביום, בסריקת הבוקר ─────────────────────────
+try:
+    from agent_core import usage as U
+    if datetime.now(timezone.utc).hour < 9 or os.environ.get("FORCE_MEETING"):
+        allp = httpx.get(db._url("profiles"), headers=db._h(), params={"select": "user_id,first,cv_text,answers,state"}, timeout=30).json()
+        users_auth = db.auth_users()
+        jb = {u["id"]: db.all_jobs(u["id"], days=30) for u in users_auth}
+        admin, rep = U.report(users_auth, allp, jb)
+        if admin and rep:
+            db.add_run(admin, "strategist", rep["msg"], {"usage_report": rep})
+            print(f"דוח שימוש: {len(rep['rows'])} משתמשים")
+except Exception as e:  # noqa: BLE001
+    print(f"דוח שימוש נכשל: {type(e).__name__}: {e}")

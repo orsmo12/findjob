@@ -19,13 +19,13 @@ function renderProfile(){
     <section class="card glass" aria-labelledby="cvH"><h2 class="card-h" id="cvH">קורות חיים</h2>
       <div class="row"><span class="ri">${ROW_IC.doc}</span><span class="rl"><b>${escB(p.cvName||(p.cv?'הודבקו כטקסט':'עוד לא הועלו'))}</b><span>${p.cv||p.cvName?'כל הסוכנים עובדים לפיהם':'בלעדיהם הסוכנים לא יכולים להתאים לך משרות'}</span></span>${p.cv||p.cvName?'<span class="pill-ok">פעיל</span>':'<span class="pill-warn">חסר</span>'}</div>
       <div class="duo"><label for="cvFile" class="btn btn-sm btn-ghost">${p.cvName?'להחליף קובץ':'להעלות קובץ'}</label><button class="btn btn-sm btn-ghost" onclick="editCvText()">לערוך כטקסט</button></div>
-      ${CLOUDM?`<div class="field" style="margin-top:12px"><label for="ghIn">שם המשתמש שלך ב-GitHub</label><div style="display:flex;gap:8px"><input id="ghIn" class="ltr" placeholder="username" value="${escB((p.ans||{}).github||'')}" autocomplete="off"><button class="btn btn-sm btn-ghost" onclick="saveGithub()">שמירה</button></div>
-        <div class="help">${escB(N('linkedin'))} יעבור על הריפוזיטוריז הציבוריים שלך (קריאה בלבד) וימצא מה עשית ולא כתבת בקורות החיים.</div></div>`:''}
+      ${CLOUDM?`<div class="field" style="margin-top:12px"><label for="ghIn">שם המשתמש שלך ב-GitHub</label><div style="display:flex;gap:8px"><input id="ghIn" class="ltr" placeholder="username" value="${escB((p.ans||{}).github||'')}" autocomplete="off"><button class="btn btn-sm btn-ghost" onclick="saveGithub()">שמירה</button></div></div>`:''}
       ${typeof cvSuggestHtml==='function'?cvSuggestHtml():''}</section>
 
     ${CLOUDM?`<section class="card glass" aria-labelledby="liH"><h2 class="card-h" id="liH">פרופיל LinkedIn</h2>
-      <div class="card-sub">${p.li_text?`${escB(N('coach'))} עוברת על הפרופיל ומכינה שיפורים. הם יופיעו במסך LinkedIn.`:`כדי ש${escB(N('coach'))} תציע שיפורים אמיתיים לפרופיל, צריך עותק שלו: ב-LinkedIn נכנסים לפרופיל ← "עוד" (More) ← "שמירה כ-PDF", ומעלים כאן.`}</div>
-      <label for="liFile" class="btn btn-sm ${p.li_text?'btn-ghost':'btn-primary'} btn-block">${p.li_text?'להעלות גרסה חדשה':'להעלות PDF של הפרופיל'}</label>
+      <div class="field"><label for="liUrl">הקישור לפרופיל שלך</label><div style="display:flex;gap:8px"><input id="liUrl" class="ltr" type="url" placeholder="https://www.linkedin.com/in/…" value="${escB((p.ans||{}).linkedin||'')}" autocomplete="off"><button class="btn btn-sm btn-ghost" onclick="saveLinkedin()">שמירה</button></div></div>
+      <div class="card-sub" style="margin-top:10px">${p.li_text?`${escB(N('linkedin'))} עובר על הפרופיל לפי ה-PDF שהעלית, והשיפורים מופיעים במסך LinkedIn. שינית משהו בפרופיל? מעלים PDF חדש, והקישור נשאר אותו קישור.`:`כדי ש${escB(N('linkedin'))} יציע שיפורים לפרופיל, צריך עותק שלו: ב-LinkedIn נכנסים לפרופיל ← "עוד" (More) ← "שמירה כ-PDF", ומעלים כאן.`}</div>
+      <label for="liFile" class="btn btn-sm ${p.li_text?'btn-ghost':'btn-primary'} btn-block">${p.li_text?'להעלות PDF חדש של הפרופיל':'להעלות PDF של הפרופיל'}</label>
       <input type="file" id="liFile" class="vh" accept=".pdf,application/pdf" onchange="onLiFile(this)"></section>`:''}
     <section class="card glass" aria-labelledby="qH"><h2 class="card-h" id="qH">עליי</h2>
       <div class="card-sub">${done<total?`ענית על ${done} מתוך ${total} שאלות. כל תשובה עוזרת לסוכנים לדייק.`:'ענית על כל השאלות. אפשר לעדכן בכל רגע.'}</div>
@@ -41,9 +41,8 @@ function renderProfile(){
       ${typeof suggestionsHtml==='function'?suggestionsHtml():''}
       ${typeof lastMeeting==='function'&&lastMeeting()?`<button class="link" style="font-size:13px;color:var(--brand);margin:6px 0" onclick="openMeeting()">לדוח של הישיבה השבועית</button>`:''}
       <h3 class="sub-h">חברות יעד</h3>
-      <div class="card-sub">${escB(N('hunter'))} בודק ישירות את אלה שיש להן לוח משרות ציבורי, ואת השאר מחפש לפי השם. כך זה נראה בסריקה האחרונה:</div>
-      ${(()=>{const rt=realTargets();return rt?`<div class="tg-list">${rt.map(b=>`<div class="tg-row tg-${b.status}"><span class="tg-dot" aria-hidden="true"></span><span class="tg-t"><b lang="en">${escB(b.name)}</b>${b.auto?'<em> · הצוות הוסיף</em>':''}<span>${escB(targetStatus(b))}</span></span><button class="tg-x" aria-label="להסיר את ${escB(b.name)}" onclick="removeTarget('${escB(b.name).replace(/'/g,"\\'")}')">×</button></div>`).join('')}</div>`
-        :`<div class="learned">${targetCompanies().map(c=>`<span class="chip" title="${escB(c.why.join(' · '))}">${escB(c.name)}<button aria-label="להסיר את ${escB(c.name)}" onclick="removeTarget('${escB(c.name).replace(/'/g,"\\'")}')">×</button></span>`).join('')}</div>`})()}
+      <div class="card-sub">כך ${escB(N('hunter'))} בדק אותן בסריקה האחרונה:</div>
+      ${(()=>{const rt=realTargets();return rt?targetsHtml(rt):`<div class="learned">${targetCompanies().map(c=>`<span class="chip" title="${escB(c.why.join(' · '))}">${escB(c.name)}<button aria-label="להסיר את ${escB(c.name)}" onclick="removeTarget('${escB(c.name).replace(/'/g,"\\'")}')">×</button></span>`).join('')}</div>`})()}
       <div class="todo-foot" style="padding:12px 0 0;border:0"><label for="tgIn" class="vh">חברה להוספה</label><input id="tgIn" placeholder="להוסיף חברה" onkeydown="if(event.key==='Enter')addTarget()"><button class="btn btn-sm btn-ghost" onclick="addTarget()">הוסף</button></div>
       ${(S.targets&&(S.targets.added.length||S.targets.removed.length))?`<button class="link" style="font-size:13px;color:var(--brand);margin-top:8px" onclick="S.targets={added:[],removed:[]};save();renderProfile()">להחזיר לבחירה של ${escB(N('strategist'))}</button>`:''}</section>
 
@@ -97,7 +96,7 @@ async function readCv(f){try{
   if(/\.docx$/i.test(f.name)){await loadScript('https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js');
     return (await mammoth.extractRawText({arrayBuffer:await f.arrayBuffer()})).value}
 }catch(e){console.warn(e)}return''}
-function onLiFile(inp){const f=inp.files[0];if(!f)return;readCv(f).then(t=>{if(t&&t.trim().length>80){prof().li_text=t.slice(0,15000);save();renderProfile();toast(`${N('coach')} תעבור על הפרופיל בשעתיים הקרובות`)}else toast('לא הצלחתי לקרוא את הקובץ. ודא שזה ה-PDF ש-LinkedIn מייצר',{ms:4200})});inp.value=''}
+function onLiFile(inp){const f=inp.files[0];if(!f)return;readCv(f).then(t=>{if(t&&t.trim().length>80){prof().li_text=t.slice(0,15000);save();renderProfile();toast(`${N('linkedin')} יעבור על הפרופיל בשעתיים הקרובות`)}else toast('לא הצלחתי לקרוא את הקובץ. ודא שזה ה-PDF ש-LinkedIn מייצר',{ms:4200})});inp.value=''}
 function afterCv(){if($('onb').classList.contains('open'))renderOnb();else{renderProfile();toast('קורות החיים עודכנו')}}
 
 /* ═════════ הגדרות ═════════ */
@@ -148,3 +147,7 @@ function init(){
   goPage('main');
   setTimeout(()=>{$('splash').classList.add('hide');if(!S.onboarded)openOnb(0)},1100);
 }
+
+function saveLinkedin(){const v=($('liUrl').value||'').trim();const p=prof();p.ans=p.ans||{};
+  if(v&&!/^https?:\/\/([a-z]+\.)?linkedin\.com\/in\//i.test(v)){toast('זה לא נראה כמו קישור לפרופיל LinkedIn');return}
+  p.ans.linkedin=v;save();toast(v?'הקישור נשמר':'הקישור נמחק')}

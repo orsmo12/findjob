@@ -163,18 +163,18 @@ def profile_fixes(cv: str, li_text: str, plan: dict) -> list[dict]:
     if len(li_text.strip()) < 80:
         return []
     prompt = FIX_PROMPT.format(roles=", ".join(plan.get("titles", [])[:3]), cv=cv[:4000], li=li_text[:5000])
-    d = _json(chat("coach", "linkedin_profile", [{"role": "user", "content": prompt}], tier="judge", max_tokens=2500))
+    d = _json(chat("linkedin", "linkedin_profile", [{"role": "user", "content": prompt}], tier="judge", max_tokens=2500))
     if not d.get("fixes"):
-        d = _json(chat("coach", "linkedin_profile_retry", [{"role": "user", "content": prompt + "\n\nReturn ONLY the JSON object."}],
+        d = _json(chat("linkedin", "linkedin_profile_retry", [{"role": "user", "content": prompt + "\n\nReturn ONLY the JSON object."}],
                        tier="judge", max_tokens=2500))
-    act.log("coach", "עוברת על פרופיל ה-LinkedIn שהעלית מול קורות החיים והתפקידים שאתה מחפש")
+    act.log("linkedin", "עובר על פרופיל ה-LinkedIn שהעלית מול קורות החיים והתפקידים שאתה מחפש")
     if not d.get("fixes"):
-        act.log("coach", "לא קיבלתי תשובה תקינה מהמודל. אנסה בריצה הבאה.")
+        act.log("linkedin", "לא קיבלתי תשובה תקינה מהמודל. אנסה בריצה הבאה.")
     out = []
     for i, f in enumerate((d.get("fixes") or [])[:5]):
         copy = str(f.get("copy", ""))[:1200]
         if copy and not grounded(copy, cv + " " + li_text + " " + " ".join(plan.get("titles", []))):
-            act.log("coach", f"זרקתי הצעה \"{f.get('t')}\": היא מזכירה משהו שלא כתוב אצלך")
+            act.log("linkedin", f"זרקתי הצעה \"{f.get('t')}\": היא מזכירה משהו שלא כתוב אצלך")
             continue
         out.append({"id": f"f{i + 1}", "t": str(f.get("t", ""))[:80], "why": str(f.get("why", ""))[:160], "copy": copy})
     return out

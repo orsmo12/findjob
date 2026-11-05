@@ -41,10 +41,25 @@ function realTargets(){
   tc.added.filter(n=>!seen.has(n.toLowerCase())).forEach(n=>out.unshift({name:n,status:'new',why:['הוספת בעצמך']}));
   return out;
 }
-function targetStatus(b){
-  return b.status==='board'?`נסרקת דרך ${b.board}: ${b.il} משרות בישראל, ${b.rel} בתחום שלך`
-    :b.status==='by_name_ok'?(b.found_as?`מופיעה במודעות בשם ${b.found_as}. `:'')+`אין לה לוח ציבורי, מחפש אותה לפי השם (${b.n} משרות)`
-    :b.status==='by_name'?'אין לה לוח ציבורי שאפשר לקרוא. נחפש אותה לפי השם'
-    :b.status==='not_found'?'לא נמצאו משרות בשם הזה. כדאי לבדוק את השם':b.status==='by_name_miss'?'אין לה לוח ציבורי. בחיפוש לפי השם לא עלו הפעם משרות שלה בתחום שלך'
-    :b.status==='pending'?'עוד לא נבדקה. תיבדק בסריקה הקרובה':'תיבדק בסריקה הבאה';
+
+/* חברות יעד: מקובצות לפי איך שדורון באמת בודק אותן */
+const bd=t=>`<bdi dir="ltr">${escB(t)}</bdi>`;
+function targetsHtml(rt){
+  const G={fix:[],board:[],name:[],pending:[]};
+  rt.forEach(b=>{(b.status==='not_found'?G.fix:b.status==='board'?G.board:(b.status==='pending'||b.status==='new')?G.pending:G.name).push(b)});
+  const x=b=>`<button class="tg-x" aria-label="להסיר את ${escB(b.name)}" onclick="removeTarget('${escB(b.name).replace(/'/g,"\\'")}')">×</button>`;
+  const q=n=>escB(n).replace(/'/g,"\\'");
+  const sec=(t,sub,body)=>body?`<div class="tg-sec"><div class="tg-sec-h"><b>${t}</b>${sub?`<span>${sub}</span>`:''}</div>${body}</div>`:'';
+  return `<div class="tg-sum"><span><b class="num">${G.board.length}</b> נסרקות ישירות</span><span><b class="num">${G.name.length}</b> לפי שם</span>${G.fix.length?`<span class="bad"><b class="num">${G.fix.length}</b> צריך לבדוק</span>`:''}</div>`
+   +sec('צריך לבדוק','',G.fix.map(b=>`<div class="tg-fix"><div><b>${bd(b.name)}</b><span>לא נמצאה חברה בשם הזה${b.suggest?`. התכוונת ל-${bd(b.suggest)}?`:'.'}</span></div>
+      <div class="tg-fix-btns">${b.suggest?`<button class="btn btn-sm btn-primary" onclick="renameTarget('${q(b.name)}','${q(b.suggest)}')">לתקן ל-${bd(b.suggest)}</button>`:''}<button class="btn btn-sm btn-ghost" onclick="editTarget('${q(b.name)}')">לערוך</button>${x(b)}</div></div>`).join(''))
+   +sec('נסרקות ישירות מדף הקריירה','כל המשרות בישראל, בלי חסימות',`<div class="tg-grid">${G.board.map(b=>`<div class="tg-chip ok"><b>${bd(b.name)}</b><span>${b.rel} בתחום שלך, מתוך ${b.il} בישראל</span><span class="tg-src">דרך ${bd(b.board)}</span>${x(b)}</div>`).join('')}</div>`)
+   +sec('מחפשים לפי השם','ב-LinkedIn וב-Indeed, כי אין להן דף קריירה ציבורי',`<div class="tg-grid">${G.name.map(b=>`<div class="tg-chip"><b>${bd(b.name)}</b><span>${b.status==='by_name_ok'?`${b.n} משרות בתחום שלך`+(b.found_as?`</span><span class="tg-src">במודעות: ${bd(b.found_as)}`:''):b.status==='by_name_miss'?'הפעם לא עלו משרות בתחום שלך':'ייבדק בסריקה הקרובה'}</span>${x(b)}</div>`).join('')}</div>`)
+   +sec('ייבדקו בסריקה הקרובה','',`<div class="tg-grid">${G.pending.map(b=>`<div class="tg-chip"><b>${bd(b.name)}</b><span>${b.status==='new'?'הוספת עכשיו':'בתור'}</span>${x(b)}</div>`).join('')}</div>`);
 }
+function renameTarget(from,to){to=(to||'').trim();if(!to||to===from)return;S.targets=S.targets||{added:[],removed:[]};
+  const i=S.targets.added.indexOf(from);if(i>=0)S.targets.added[i]=to;else{S.targets.added.unshift(to);if(!S.targets.removed.includes(from))S.targets.removed.push(from)}
+  S.targets.removed=S.targets.removed.filter(x=>x!==to);save();renderProfile();toast(`עודכן ל-${to}. ${N('hunter')} יבדוק אותה בסריקה הבאה`)}
+function editTarget(n){openSheet(`<h3 id="sheetTitle">תיקון שם חברה</h3><div class="sheet-sub">כמו שהיא מופיעה ב-LinkedIn או באתר שלה</div>
+  <div class="field" style="margin-top:12px"><label for="tgEd" class="vh">שם החברה</label><input id="tgEd" class="ltr" value="${escB(n)}"></div>
+  <button class="btn btn-primary btn-block" onclick="renameTarget('${escB(n).replace(/'/g,"\\'")}',$('tgEd').value);closeSheet()">שמירה</button>`)}

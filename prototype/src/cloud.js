@@ -28,7 +28,7 @@ async function cloudLoad(){
     SB.from('jobs').select('id,card,decision,letter,brief,prep,created_at').eq('user_id',uid).or('decision.is.null,decision.neq.filtered').order('created_at',{ascending:false}).limit(200),
     SB.from('runs').select('agent,stats,created_at').eq('user_id',uid).order('created_at',{ascending:false}).limit(150)]);
   if(pr){const p=prof();p.first=pr.first||p.first;p.name=pr.name||p.name;p.cv=pr.cv_text||p.cv;p.ans=Object.assign({},pr.answers||{},p.ans||{});
-    if(pr.team&&Object.keys(pr.team).length)S.team=pr.team;const st=pr.state||{};['apps','todos','stories'].forEach(k=>{if(Array.isArray(st[k]))S[k]=st[k]});if(st.targets)S.targets=st.targets;if(Array.isArray(st.history))S.history=st.history;if(Array.isArray(st.chat))S.chat=st.chat;if(Array.isArray(st.accepted))S.accepted=st.accepted;if(Array.isArray(st.dismissed))S.dismissed=st.dismissed;if(Array.isArray(st.cvDone))S.cvDone=st.cvDone;p.li_text=pr.li_text||'';LI=Object.assign({},pr.li||{},{fixes:((pr.li_fixes||{}).fixes)||[]});if(pr.cv_text)S.onboarded=true}
+    if(pr.team&&Object.keys(pr.team).length)S.team=pr.team;const st=pr.state||{};['apps','todos','stories'].forEach(k=>{if(Array.isArray(st[k]))S[k]=st[k]});if(st.targets)S.targets=st.targets;if(Array.isArray(st.history))S.history=st.history;if(Array.isArray(st.chat))S.chat=st.chat;if(Array.isArray(st.accepted))S.accepted=st.accepted;if(Array.isArray(st.dismissed))S.dismissed=st.dismissed;if(Array.isArray(st.cvDone))S.cvDone=st.cvDone;if(st.usage)S.usage=st.usage;if(Array.isArray(st.feedback))S.feedback=st.feedback;p.li_text=pr.li_text||'';LI=Object.assign({},pr.li||{},{fixes:((pr.li_fixes||{}).fixes)||[]});if(pr.cv_text)S.onboarded=true}
   prof().key='cloud';
   RUNS=runs||[];const hr=RUNS.filter(r=>(r.agent||'hunter')==='hunter');
   if(hr.length||(jobs&&jobs.length)){
@@ -41,7 +41,7 @@ async function cloudLoad(){
   _decSnap=Object.assign({},S.decisions);_profSnap=profRow();
   LS.set(SKEY,S);window.__runsReady=true;if(typeof applyTeam==='function')applyTeam();buildWorkflow();
 }
-function profRow(){const p=prof();return JSON.stringify({first:p.first||'',name:p.name||'',cv_text:p.cv||'',answers:p.ans||{},team:S.team||{},state:{apps:S.apps,todos:S.todos,stories:S.stories,targets:S.targets||{added:[],removed:[]},history:S.history||[],chat:(S.chat||[]).slice(-40),accepted:S.accepted||[],dismissed:S.dismissed||[],cvDone:S.cvDone||[]},li_text:p.li_text||''})}
+function profRow(){const p=prof();return JSON.stringify({first:p.first||'',name:p.name||'',cv_text:p.cv||'',answers:p.ans||{},team:S.team||{},state:{apps:S.apps,todos:S.todos,stories:S.stories,targets:S.targets||{added:[],removed:[]},history:S.history||[],chat:(S.chat||[]).slice(-40),accepted:S.accepted||[],dismissed:S.dismissed||[],cvDone:S.cvDone||[],usage:S.usage||{},feedback:(S.feedback||[]).slice(-30)},li_text:p.li_text||''})}
 function cloudSync(){clearTimeout(_syncT);_syncT=setTimeout(async()=>{
   if(!ME)return;
   const row=profRow();
@@ -64,6 +64,7 @@ function cloudLogout(){SB.auth.signOut().then(()=>{LS.clear();location.reload()}
 /* צ׳אט עם שי: רואה את כל הנתונים שלך, זוכר את השיחה, ויכול להציע פעולה — שמתבצעת רק באישור שלך */
 let chatFocus='';
 async function cloudChat(v){
+  track('chat');
   S.chat=S.chat||[];S.chat.push({role:'user',content:v});
   const typing=document.createElement('div');typing.className='msg bot typing';typing.innerHTML='<i></i><i></i><i></i>';$('chatMsgs').appendChild(typing);$('chatMsgs').scrollTop=1e6;
   let d={};
@@ -130,7 +131,7 @@ function askAboutJob(jobId){chatFocus=jobId;closeSheet();toggleChat(true);const 
 function realUpdates(){
   const seat=k=>{const i=CAREER.agents.findIndex(a=>a.key===k);return i<0?0:i};
   const ago=t=>{const m=Math.round((Date.now()-new Date(t))/6e4);return m<60?`לפני ${Math.max(1,m)} דק׳`:m<1440?`לפני ${Math.round(m/60)===1?'שעה':Math.round(m/60)+' שעות'}`:m<2880?'אתמול':new Date(t).toLocaleDateString('he-IL')};
-  return RUNS.filter(r=>r.stats&&r.stats.msg).map(r=>({a:seat(r.agent||'hunter'),time:ago(r.created_at),body:r.stats.msg,report:!!r.stats.report}));
+  return RUNS.filter(r=>r.stats&&r.stats.msg).map(r=>({a:seat(r.agent||'hunter'),time:ago(r.created_at),body:r.stats.msg,report:!!r.stats.report,usage:!!r.stats.usage_report}));
 }
 
 /* הוספת משרה מקישור: נכנסת לתהליך כמו משרה ששמרת */
@@ -143,7 +144,7 @@ function openAddJob(){
     <button class="btn btn-primary btn-block" id="ajBtn" style="margin-top:12px" onclick="submitAddJob()">הוספה</button>`);
   setTimeout(()=>{const i=$('ajUrl');i&&i.focus();navigator.clipboard&&navigator.clipboard.readText&&navigator.clipboard.readText().then(t=>{if(/^https?:\/\//.test(t||'')&&i&&!i.value)i.value=t.trim()}).catch(()=>{})},200);
 }
-async function submitAddJob(){
+async function submitAddJob(){track('add_job');
   const url=($('ajUrl').value||'').trim(),text=($('ajText').value||'').trim(),h=$('ajHelp'),btn=$('ajBtn');
   if(!/^https?:\/\//.test(url)&&text.length<200){h.textContent='צריך קישור שמתחיל ב-https://';h.style.color='var(--rose)';return}
   btn.disabled=true;btn.textContent=`${N('hunter')} קורא את המשרה…`;h.textContent='';
@@ -240,3 +241,14 @@ function skillsHtml(){const r=lastSkills();if(!r)return'';const {cards,project}=
       ${(c.learn||[]).length?`<div class="sk-links">${c.learn.map(l=>`<a href="${escB(l.url)}" target="_blank" rel="noopener" dir="auto">${escB(l.title)} <span>${escB(l.site)}</span></a>`).join('')}</div>`:''}</div>`).join('')}
     ${project?`<div class="sk-card sk-proj"><div class="sk-h"><b>רעיון לפרויקט: <span lang="en">${escB(project.title)}</span></b>${(project.covers||[]).length?`<span lang="en">סוגר: ${escB(project.covers.join(', '))}</span>`:''}</div><p>${escB(project.pitch)}</p>
       <ol>${(project.steps||[]).map(x=>`<li>${escB(x)}</li>`).join('')}</ol></div>`:''}</section>`}
+
+/* נתוני שימוש בסיסיים (ספירות בלבד, בלי תוכן) כדי שנדע מה עובד ומה לשפר */
+
+
+/* דוח שימוש (רק לבעל המערכת) */
+function openUsage(){const r=(RUNS||[]).find(x=>x.stats&&x.stats.usage_report);if(!r)return;const u=r.stats.usage_report;
+  openSheet(`<h3 id="sheetTitle">דוח שימוש</h3><div class="sheet-sub">${new Date(r.created_at).toLocaleDateString('he-IL')} · ספירות בלבד, בלי תוכן</div>
+  <div class="us-list">${u.rows.map(x=>`<div class="us-row"><b>${escB(x.name)}</b><span>${x.days_week} ימים השבוע · ${x.days} בסך הכל · אחרון ${escB(x.last||'—')}</span>
+   <span>${x.cv?'קורות חיים ✓':'בלי קורות חיים'}${x.domain?' · '+escB(x.domain):''} · ${x.saved} שמורות · ${x.skipped} דילוגים · ${x.applied} הגשות · ${x.chat} שאלות בצ׳אט${x.add_job?' · '+x.add_job+' משרות מקישור':''}</span>
+   ${(x.pages||[]).length?`<span>מסכים: ${x.pages.map(p=>escB(p[0])+' ('+p[1]+')').join(', ')}</span>`:''}</div>`).join('')}</div>
+  ${(u.feedback||[]).length?`<div class="s-sec"><h4>משוב</h4>${u.feedback.map(f=>`<p class="us-fb"><b>${escB(f.name)}</b> · ${escB(f.at)}<br>${escB(f.t)}</p>`).join('')}</div>`:''}`)}

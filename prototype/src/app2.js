@@ -2,6 +2,7 @@
 const TITLES={main:'לוח בקרה',jobs:'משרות חדשות',apps:'הגשות',prep:'הכנה לראיון',linkedin:'LinkedIn',office:'המשרד',profile:'הפרופיל שלי',settings:'הגדרות'};
 let curPg='main';
 function goPage(id,anchor){
+  track('page_'+id);
   if(typeof offAnimId!=='undefined') cancelAnimationFrame(offAnimId);
   closeDrawer();closeSheet();if(chatOpen)toggleChat();
   curPg=id;
@@ -98,13 +99,21 @@ function renderHome(){
   const hi=h<5?'לילה טוב':h<12?'בוקר טוב':h<17?'צהריים טובים':h<21?'ערב טוב':'לילה טוב';
   const date=new Date().toLocaleDateString('he-IL',{weekday:'long',day:'numeric',month:'long'});
   const steps=nextSteps(), q=queue(), iv=S.apps.find(a=>a.status==='interview'), fu=S.apps.filter(followDue);
-  const brief=[q.length?`${N('hunter')} מצא ${q.length===1?'משרה אחת שמתאימה':q.length+' משרות שמתאימות'} לך.`:'סקרת את כל המשרות החדשות.',
-    iv?`יש לך ראיון ב-${JOBS[iv.jobId].co}${iv.iv?' ב'+iv.iv:''}.`:'',
-    fu.length?`${fu.map(a=>JOBS[a.jobId].co).join(' ו-')} עוד לא ענו.`:''].filter(Boolean).join(' ');
+  const saved=S.apps.filter(a=>a.status==='saved'&&JOBS[a.jobId]&&!JOBS[a.jobId].closed_at),ready=saved.filter(a=>JOBS[a.jobId].letter);
+  const sug=(typeof pendingSuggestions==='function')?pendingSuggestions():[],sk=(typeof lastSkills==='function')?lastSkills():null;
+  const posts=(typeof LI!=='undefined'&&LI.posts)||[],closed=(S.history||[]).filter(h=>h.reason==='closed'&&h.date&&Date.now()-new Date(h.date)<3*864e5);
+  const brief=[q.length?`${N('hunter')} מצא ${q.length===1?'משרה חדשה אחת':q.length+' משרות חדשות'} שמתאימות לך.`:'עברת על כל המשרות החדשות.',
+    ready.length?`${ready.length===1?`המכתב ל-${JOBS[ready[0].jobId].co} מוכן`:`${ready.length} מכתבים מוכנים`}, ${ready.length===1?'המשרה מחכה':'המשרות מחכות'} להגשה.`:saved.length?`${saved.length} משרות ששמרת מחכות להגשה.`:'',
+    iv?`יש לך ראיון ב-${JOBS[iv.jobId].co}${iv.iv?' ב'+iv.iv:''}. ההכנה במסך ההכנה.`:'',
+    fu.length?`${fu.map(a=>JOBS[a.jobId].co).join(' ו-')} עוד לא ענו. כדאי לשלוח הודעת המשך.`:'',
+    closed.length?`${closed.length===1?'משרה אחת ששמרת נסגרה':closed.length+' משרות ששמרת נסגרו'} ועברו להיסטוריה.`:'',
+    sug.length?`${N('strategist')} מציע תפקיד חדש לחיפוש: ${sug.map(x=>x.value).join(', ')}.`:'',
+    sk&&sk.stats.skills.cards&&sk.stats.skills.cards.length&&Date.now()-new Date(sk.created_at)<7*864e5?`${N('coach')} הכינה כרטיסי כישורים: ${sk.stats.skills.cards.map(c=>c.skill).join(', ')}.`:'',
+    posts.length?`${N('linkedin')} מצא ${posts.length} פוסטים ששווה להגיב עליהם.`:''].filter(Boolean).join(' ');
   const shown=steps.slice(0,5);
   $('homeScroll').innerHTML=`
     <div class="greet"><h2 class="greet-h">${hi}, ${escB(prof().first)}</h2><p>${escB(date)}</p></div>
-    ${REAL?`<div class="notice">${FEEDD&&FEEDD.generated_at?`המשרות אמיתיות, מהחיפוש של ${N('hunter')} ${escB(feedWhen())}.`:prof().cv?`${N('hunter')} יחפש לך משרות בסריקה הקרובה (05:15 או 17:15).`:`כדי ש${N('hunter')} יתחיל לחפש, צריך קורות חיים. <button class="link" style="color:var(--brand);font-weight:600" onclick="goPage('profile')">להעלאה</button>`} ${CLOUDM?'':'מסכי LinkedIn וההכנה לראיונות עוד מציגים דוגמאות.'}</div>`:prof().key?'':`<div class="notice">מוצגות דוגמאות עד שתחבר את הסוכנים. <button class="link" style="color:var(--brand);font-weight:600" onclick="goPage('settings')">לחיבור</button></div>`}
+    ${REAL?(FEEDD&&FEEDD.generated_at&&CLOUDM?'':`<div class="notice">${FEEDD&&FEEDD.generated_at?`המשרות אמיתיות, מהחיפוש של ${N('hunter')} ${escB(feedWhen())}.`:prof().cv?`${N('hunter')} יחפש לך משרות בסריקה הקרובה (05:15 או 17:15).`:`כדי ש${N('hunter')} יתחיל לחפש, צריך קורות חיים. <button class="link" style="color:var(--brand);font-weight:600" onclick="goPage('profile')">להעלאה</button>`} ${CLOUDM?'':'מסכי LinkedIn וההכנה לראיונות עוד מציגים דוגמאות.'}</div>`):prof().key?'':`<div class="notice">מוצגות דוגמאות עד שתחבר את הסוכנים. <button class="link" style="color:var(--brand);font-weight:600" onclick="goPage('settings')">לחיבור</button></div>`}
     <div class="brief"><div class="brief-top"><span>הבריף של ${escB(N('assistant'))}</span><span class="new num">${new Date().toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'})}</span></div><p>${escB(brief)}</p></div>
     <section class="next glass" aria-labelledby="nxH"><div class="next-h"><h2 id="nxH">הצעדים הבאים</h2>${steps.length>5?`<span>5 מתוך ${steps.length}</span>`:''}</div>
       ${shown.length?shown.map(x=>`<button class="nx" onclick="${x.go}"><span class="ic ${x.c}" aria-hidden="true">${x.ic}</span><span class="tx"><b>${escB(x.b)}</b><span>${escB(x.s)}</span></span>${x.w?`<span class="when ${x.w[1]}">${x.w[0]}</span>`:''}<span class="chev" aria-hidden="true"></span></button>`).join('')
@@ -193,6 +202,7 @@ function bindSwipe(card){
 }
 function decide(kind){
   const q=queue();if(!q.length||busy)return;
+  track('job_'+kind);
   const id=q[0],j=JOBS[id],card=$('deck').querySelector(`.jcard[data-id="${id}"]`);
   busy=true;
   if(card){card.classList.add('fly');card.style.transform=`translateX(${kind==='save'?130:-130}%) rotate(${kind==='save'?14:-14}deg)`;card.style.opacity='0';}

@@ -160,3 +160,11 @@ def all_jobs(user_id: str, days: int = 14) -> list[dict]:
         "select": "id,card,decision,created_at", "user_id": f"eq.{user_id}", "created_at": f"gte.{since}", "limit": "500"})
     r.raise_for_status()
     return r.json()
+
+
+def auth_users() -> list[dict]:
+    """רשימת המשתמשים (שירות בלבד): id, מייל ותאריך הרשמה. לדוח השימוש של מנהל המערכת."""
+    r = httpx.get(_url("").replace("/rest/v1/", "/auth/v1/admin/users"), headers=_h(), params={"per_page": 200}, timeout=30)
+    r.raise_for_status()
+    d = r.json()
+    return d.get("users", d) if isinstance(d, dict) else d

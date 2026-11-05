@@ -882,6 +882,23 @@ a.person>svg{flex:0 0 18px;width:18px;height:18px;fill:none;stroke:var(--ink3);s
 .sk-links{display:flex;flex-direction:column;gap:4px}.sk-links a{font-size:13px;color:var(--brand);text-decoration:none}.sk-links a span{color:var(--ink3);font-size:11.5px}
 .sk-proj{border:1px solid rgba(47,158,107,.3)}.sk-proj ol{margin:4px 0;padding-inline-start:20px;font-size:13px}
 
+.agd-what{font-weight:600;margin:0 0 6px}.agd-list{margin:0 0 8px;padding-inline-start:18px;display:flex;flex-direction:column;gap:4px}
+.agd-row{display:flex;flex-direction:column;gap:2px;margin-top:6px;font-size:13px}.agd-row b{font-size:12px;color:var(--ink3)}
+
+.tg-sum{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 4px}.tg-sum span{flex:1;min-width:90px;text-align:center;padding:8px 6px;border-radius:12px;background:rgba(255,255,255,.55);font-size:12.5px;color:var(--ink2)}
+.tg-sum b{display:block;font-size:20px;color:var(--brand)}.tg-sum .bad b{color:#c0392b}
+.tg-sec{margin-top:12px}.tg-sec-h{display:flex;flex-direction:column;margin-bottom:6px}.tg-sec-h b{font-size:14px}.tg-sec-h span{font-size:12px;color:var(--ink3)}
+.tg-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+.tg-chip{position:relative;padding:8px 26px 8px 10px;border-radius:12px;background:rgba(255,255,255,.55);border:1px solid rgba(255,255,255,.7);display:flex;flex-direction:column;min-width:0}
+.tg-chip.ok{border-color:rgba(47,158,107,.35)}.tg-chip b{font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.tg-chip span{font-size:11.5px;color:var(--ink3);line-height:1.35}
+.tg-chip .tg-x{position:absolute;top:4px;left:4px}
+.tg-fix{padding:10px;border-radius:12px;background:rgba(217,83,79,.08);border:1px solid rgba(217,83,79,.3);display:flex;flex-direction:column;gap:8px}
+.tg-fix>div:first-child{display:flex;flex-direction:column}.tg-fix span{font-size:12.5px;color:var(--ink2)}.tg-fix-btns{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+
+.us-list{display:flex;flex-direction:column;gap:8px;margin-top:10px}.us-row{padding:10px;border-radius:12px;background:rgba(255,255,255,.55);display:flex;flex-direction:column;gap:2px;font-size:12.5px;color:var(--ink2)}
+.us-row b{font-size:14px;color:var(--ink)}.us-fb{font-size:13px;background:rgba(255,255,255,.5);padding:8px;border-radius:10px}
+.tg-chip .tg-src{font-size:11px;color:var(--ink3);opacity:.85}
+
 </style>
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" href="/icon.svg">
@@ -935,6 +952,7 @@ a.person>svg{flex:0 0 18px;width:18px;height:18px;fill:none;stroke:var(--ink3);s
       <div class="dr-group" id="g3">החשבון שלי</div>
       <div role="list" aria-labelledby="g3">
         <button role="listitem" class="dr-item" data-pg="profile" onclick="goPage('profile')"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg><span class="lbl">הפרופיל שלי</span></button>
+        <button role="listitem" class="dr-item" onclick="closeDrawer();openFeedback()"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg><span class="lbl">משוב</span></button>
         <button role="listitem" class="dr-item" data-pg="settings" onclick="goPage('settings')"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1.1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.5-1.1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.8.3H9a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8V9a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z"/></svg><span class="lbl">הגדרות</span></button>
       </div>
     </div>
@@ -1084,19 +1102,47 @@ const IC={
 
 /* ═════════ data — agents (single registry shared with the Office) ═════════ */
 // index → Office character. key → backend node in agent_core.
+const AGD=(what,does,gives,to)=>`<p class="agd-what">${what}</p><ul class="agd-list">${does.map(x=>`<li>${x}</li>`).join('')}</ul>`
+  +`<div class="agd-row"><b>מה אתה מקבל</b><span>${gives}</span></div>`+(to?`<div class="agd-row"><b>עובד עם</b><span>${to}</span></div>`:'');
 const TEAM_DEFAULT=[
-  {key:'strategist',name:'יואב',role:'יועץ אסטרטגי',state:'working',sched:'כל 12 שעות, לפני כל סריקה',
-   desc:'קובע מה מחפשים, רק מקורות החיים והשאלון שלך: כותרות תפקיד, אזורים, רמת בכירות וחברות יעד. מתעדכן בכל שינוי בפרופיל.'},
-  {key:'hunter',name:'דורון',role:'צייד משרות',state:'working',sched:'כל 12 שעות: 05:15 ו-17:15',
-   desc:'אוסף משרות מ-LinkedIn (מודעות ציבוריות), Indeed ולוחות המשרות של חברות היעד. מסנן בכירות ומשרות שכבר ראית, ומדרג כל משרה מ-1 עד 5 מול הפרופיל שלך, עם סיבות ומה חסר. בכל סריקה בודק שהמשרות ששמרת עדיין פתוחות להגשה.'},
+  {key:'strategist',name:'יואב',role:'מנהל הצוות',state:'working',sched:'לפני כל סריקה (כל 12 שעות) · ישיבת צוות פעם בשבוע',
+   desc:AGD('בונה את תוכנית החיפוש ומוביל את הצוות.',[
+     'מתרגם את קורות החיים והשאלון לתפקידים, אזורים, רמה וחברות יעד, בהתאם לתחום שלך',
+     'מנהל ישיבה שבועית: בודק מה הביא משרות ומה לא, ומתקן',
+     'מוריד חיפושים שלא מביאים כלום ומוסיף חברות שמביאות משרות מתאימות',
+     'מציע תפקידים חדשים שמתאימים לך, לאישורך'],
+     'תוכנית חיפוש שקופה בפרופיל, דוח ישיבה במשרד והצעות לאישור','דורון (מה לחפש), מאיה (אילו כישורים חסרים)')},
+  {key:'hunter',name:'דורון',role:'צייד משרות',state:'working',sched:'כל 12 שעות: בבוקר ואחר הצהריים',
+   desc:AGD('מוצא משרות ומדרג אותן מול קורות החיים שלך.',[
+     'אוסף מ-LinkedIn ו-Indeed ומדפי הקריירה של חברות היעד',
+     'קורא כל מודעה במלואה ומסנן משרות שדורשות יותר ניסיון ממה שיש לך',
+     'מדרג 1–5 לפי דרישות החובה שעמדת בהן, עם סיבות ומה חסר',
+     'בודק שמשרות ששמרת עדיין פתוחות, ומעביר משרה שנסגרה להיסטוריה'],
+     'משרות חדשות עם ציון, סיבות ומה חסר','יואב (תוכנית), שי, גיל ומאיה (משרות ששמרת)')},
   {key:'researcher',name:'גיל',role:'חוקר חברות',state:'idle',sched:'כל שעתיים, למשרות ששמרת',
-   desc:'מכין סקירה קצרה על כל חברה ששמרת, רק ממקורות ציבוריים ועם קישור לכל עובדה. מכין חיפושים מוכנים ב-LinkedIn לאנשים שיכולים להמליץ עליך.'},
-  {key:'coach',name:'מאיה',role:'מאמנת ראיונות',state:'idle',sched:'כל שעתיים, למשרות ששמרת',
-   desc:'מכינה שאלות הכנה לפי הדרישות שבמודעה, עם רמז איך לענות מתוך הניסיון שלך, ומטלות בית לדוגמה ממקורות ציבוריים עם פתרון מוצע. עוברת על פרופיל ה-LinkedIn שהעלית ומציעה שיפורים.'},
-  {key:'linkedin',name:'קובי',role:'מנהל LinkedIn',state:'sleeping',sched:'כל 12 שעות',
-   desc:'מוצא פוסטים ציבוריים מהשבוע על גיוס וקריירה, מכין שתי הצעות תגובה לכל אחד ומנסח טיוטת פוסט שבועית. אתה תמיד זה שמגיב ומפרסם.'},
+   desc:AGD('מכין סקירה על כל חברה ששמרת.',[
+     'מחפש מידע ציבורי: מה החברה עושה, שלב, טכנולוגיות וחדשות',
+     'כל עובדה עם קישור למקור. מה שאין לו מקור לא נכתב',
+     'מכין חיפושים מוכנים ב-LinkedIn לאנשים שיכולים להמליץ עליך'],
+     'סקירת חברה עם מקורות בכל הגשה','שי (המכתב), מאיה (ההכנה)')},
+  {key:'coach',name:'מאיה',role:'מאמנת ראיונות וכישורים',state:'idle',sched:'כל שעתיים, למשרות ששמרת',
+   desc:AGD('מכינה אותך לראיון ומחזקת כישורים שחסרים.',[
+     'שאלות צפויות לפי דרישות המודעה, עם רמז איך לענות מהניסיון שלך',
+     'מטלות בית לדוגמה ממקורות ציבוריים, עם פתרון. אפשר לבקש אחרת',
+     'כרטיס לכל כישור שחסר שוב ושוב: מה זה, איך מכניסים לפרויקט שלך, ושני מקורות לימוד'],
+     'מסך הכנה לכל ראיון וכרטיסי כישורים','יואב (הפערים מהישיבה), קובי (פרויקטים לקורות החיים)')},
+  {key:'linkedin',name:'קובי',role:'קורות חיים ו-LinkedIn',state:'sleeping',sched:'כל 12 שעות · קורות חיים פעם בשבוע',
+   desc:AGD('אחראי על איך שאתה נראה למגייסים.',[
+     'עובר על הריפוזיטוריז הציבוריים שלך ב-GitHub ומציע שורות לקורות החיים, רק מעובדות שבקוד',
+     'מציע שיפורים לפרופיל ה-LinkedIn מתוך ה-PDF שהעלית',
+     'מוצא פוסטים מהשבוע, מכין שתי הצעות תגובה וטיוטת פוסט שבועית'],
+     'הצעות לקורות חיים (אתה מאשר, ומקבל PDF), שיפורי פרופיל ותגובות מוכנות. אתה זה שמפרסם','מאיה (כישורים), שי (המכתבים)')},
   {key:'assistant',name:'שי',role:'עוזר אישי',state:'working',sched:'כל שעתיים, ובצ׳אט בכל רגע',
-   desc:'כותב מכתב פנייה לכל משרה ששמרת, רק מתוך קורות החיים, מזכיר מתי לשלוח הודעת המשך, וזמין לשאלות ולתרגול ראיונות בצ׳אט.'},
+   desc:AGD('כותב בשבילך ומחזיק את התמונה המלאה.',[
+     'מכתב פנייה קצר לכל משרה ששמרת, רק מתוך קורות החיים והמודעה',
+     'בריף בלוח הבקרה: מה חדש ומה הצעד הבא',
+     'בצ׳אט: עונה על שאלות ומציע פעולות שמתבצעות רק אחרי שאתה מאשר'],
+     'מכתבים מוכנים, בריף וצ׳אט','כל הצוות')},
 ];
 // index → Office character (palette/desk). key → backend agent in agent_core.
 const CAREER={id:'career',icon:'💼',lbl:'קריירה',color:'#0F8A64',lt:'#E6F4EE',desc:'חיפוש עבודה',prog:72,workflow:[],
@@ -1320,6 +1366,15 @@ async function copyText(t,msg){
   toast(ok?(msg||'הועתק'):'לא הצלחתי להעתיק. סמן את הטקסט והעתק ידנית');
   return ok;
 }
+
+function track(ev){try{const u=S.usage=S.usage||{c:{},days:[]};u.c[ev]=(u.c[ev]||0)+1;const d=new Date().toISOString().slice(0,10);
+  if(!u.days.includes(d)){u.days.push(d);u.days=u.days.slice(-60)}u.last=new Date().toISOString();if(!u.first)u.first=u.last}catch(e){}}
+
+function openFeedback(){openSheet(`<h3 id="sheetTitle">משוב</h3><div class="sheet-sub">מה עבד, מה לא, מה חסר לך. כל מילה עוזרת לשפר.</div>
+  <div class="field" style="margin-top:12px"><label for="fbTx" class="vh">המשוב שלך</label><textarea id="fbTx" class="textbox" rows="6" placeholder="למשל: המשרות לא בתחום שלי, או: המכתב היה ארוך מדי"></textarea></div>
+  <button class="btn btn-primary btn-block" onclick="sendFeedback()">שליחה</button>`)}
+function sendFeedback(){const t=($('fbTx').value||'').trim();if(!t){toast('המשוב ריק');return}S.feedback=S.feedback||[];
+  S.feedback.push({t:t.slice(0,1000),at:new Date().toISOString(),page:(document.querySelector('.page.active')||{}).id||''});track('feedback');save();closeSheet();toast('תודה! המשוב נשמר')}
 
 /* ═════════ OFFICE — copied verbatim from Life Building (unchanged) ═════════ */
 // ── OFFICE CHARACTERS (The Office cast) — 6 palettes ──
@@ -1774,6 +1829,7 @@ function drawOff(){
 const TITLES={main:'לוח בקרה',jobs:'משרות חדשות',apps:'הגשות',prep:'הכנה לראיון',linkedin:'LinkedIn',office:'המשרד',profile:'הפרופיל שלי',settings:'הגדרות'};
 let curPg='main';
 function goPage(id,anchor){
+  track('page_'+id);
   if(typeof offAnimId!=='undefined') cancelAnimationFrame(offAnimId);
   closeDrawer();closeSheet();if(chatOpen)toggleChat();
   curPg=id;
@@ -1870,13 +1926,21 @@ function renderHome(){
   const hi=h<5?'לילה טוב':h<12?'בוקר טוב':h<17?'צהריים טובים':h<21?'ערב טוב':'לילה טוב';
   const date=new Date().toLocaleDateString('he-IL',{weekday:'long',day:'numeric',month:'long'});
   const steps=nextSteps(), q=queue(), iv=S.apps.find(a=>a.status==='interview'), fu=S.apps.filter(followDue);
-  const brief=[q.length?`${N('hunter')} מצא ${q.length===1?'משרה אחת שמתאימה':q.length+' משרות שמתאימות'} לך.`:'סקרת את כל המשרות החדשות.',
-    iv?`יש לך ראיון ב-${JOBS[iv.jobId].co}${iv.iv?' ב'+iv.iv:''}.`:'',
-    fu.length?`${fu.map(a=>JOBS[a.jobId].co).join(' ו-')} עוד לא ענו.`:''].filter(Boolean).join(' ');
+  const saved=S.apps.filter(a=>a.status==='saved'&&JOBS[a.jobId]&&!JOBS[a.jobId].closed_at),ready=saved.filter(a=>JOBS[a.jobId].letter);
+  const sug=(typeof pendingSuggestions==='function')?pendingSuggestions():[],sk=(typeof lastSkills==='function')?lastSkills():null;
+  const posts=(typeof LI!=='undefined'&&LI.posts)||[],closed=(S.history||[]).filter(h=>h.reason==='closed'&&h.date&&Date.now()-new Date(h.date)<3*864e5);
+  const brief=[q.length?`${N('hunter')} מצא ${q.length===1?'משרה חדשה אחת':q.length+' משרות חדשות'} שמתאימות לך.`:'עברת על כל המשרות החדשות.',
+    ready.length?`${ready.length===1?`המכתב ל-${JOBS[ready[0].jobId].co} מוכן`:`${ready.length} מכתבים מוכנים`}, ${ready.length===1?'המשרה מחכה':'המשרות מחכות'} להגשה.`:saved.length?`${saved.length} משרות ששמרת מחכות להגשה.`:'',
+    iv?`יש לך ראיון ב-${JOBS[iv.jobId].co}${iv.iv?' ב'+iv.iv:''}. ההכנה במסך ההכנה.`:'',
+    fu.length?`${fu.map(a=>JOBS[a.jobId].co).join(' ו-')} עוד לא ענו. כדאי לשלוח הודעת המשך.`:'',
+    closed.length?`${closed.length===1?'משרה אחת ששמרת נסגרה':closed.length+' משרות ששמרת נסגרו'} ועברו להיסטוריה.`:'',
+    sug.length?`${N('strategist')} מציע תפקיד חדש לחיפוש: ${sug.map(x=>x.value).join(', ')}.`:'',
+    sk&&sk.stats.skills.cards&&sk.stats.skills.cards.length&&Date.now()-new Date(sk.created_at)<7*864e5?`${N('coach')} הכינה כרטיסי כישורים: ${sk.stats.skills.cards.map(c=>c.skill).join(', ')}.`:'',
+    posts.length?`${N('linkedin')} מצא ${posts.length} פוסטים ששווה להגיב עליהם.`:''].filter(Boolean).join(' ');
   const shown=steps.slice(0,5);
   $('homeScroll').innerHTML=`
     <div class="greet"><h2 class="greet-h">${hi}, ${escB(prof().first)}</h2><p>${escB(date)}</p></div>
-    ${REAL?`<div class="notice">${FEEDD&&FEEDD.generated_at?`המשרות אמיתיות, מהחיפוש של ${N('hunter')} ${escB(feedWhen())}.`:prof().cv?`${N('hunter')} יחפש לך משרות בסריקה הקרובה (05:15 או 17:15).`:`כדי ש${N('hunter')} יתחיל לחפש, צריך קורות חיים. <button class="link" style="color:var(--brand);font-weight:600" onclick="goPage('profile')">להעלאה</button>`} ${CLOUDM?'':'מסכי LinkedIn וההכנה לראיונות עוד מציגים דוגמאות.'}</div>`:prof().key?'':`<div class="notice">מוצגות דוגמאות עד שתחבר את הסוכנים. <button class="link" style="color:var(--brand);font-weight:600" onclick="goPage('settings')">לחיבור</button></div>`}
+    ${REAL?(FEEDD&&FEEDD.generated_at&&CLOUDM?'':`<div class="notice">${FEEDD&&FEEDD.generated_at?`המשרות אמיתיות, מהחיפוש של ${N('hunter')} ${escB(feedWhen())}.`:prof().cv?`${N('hunter')} יחפש לך משרות בסריקה הקרובה (05:15 או 17:15).`:`כדי ש${N('hunter')} יתחיל לחפש, צריך קורות חיים. <button class="link" style="color:var(--brand);font-weight:600" onclick="goPage('profile')">להעלאה</button>`} ${CLOUDM?'':'מסכי LinkedIn וההכנה לראיונות עוד מציגים דוגמאות.'}</div>`):prof().key?'':`<div class="notice">מוצגות דוגמאות עד שתחבר את הסוכנים. <button class="link" style="color:var(--brand);font-weight:600" onclick="goPage('settings')">לחיבור</button></div>`}
     <div class="brief"><div class="brief-top"><span>הבריף של ${escB(N('assistant'))}</span><span class="new num">${new Date().toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'})}</span></div><p>${escB(brief)}</p></div>
     <section class="next glass" aria-labelledby="nxH"><div class="next-h"><h2 id="nxH">הצעדים הבאים</h2>${steps.length>5?`<span>5 מתוך ${steps.length}</span>`:''}</div>
       ${shown.length?shown.map(x=>`<button class="nx" onclick="${x.go}"><span class="ic ${x.c}" aria-hidden="true">${x.ic}</span><span class="tx"><b>${escB(x.b)}</b><span>${escB(x.s)}</span></span>${x.w?`<span class="when ${x.w[1]}">${x.w[0]}</span>`:''}<span class="chev" aria-hidden="true"></span></button>`).join('')
@@ -1965,6 +2029,7 @@ function bindSwipe(card){
 }
 function decide(kind){
   const q=queue();if(!q.length||busy)return;
+  track('job_'+kind);
   const id=q[0],j=JOBS[id],card=$('deck').querySelector(`.jcard[data-id="${id}"]`);
   busy=true;
   if(card){card.classList.add('fly');card.style.transform=`translateX(${kind==='save'?130:-130}%) rotate(${kind==='save'?14:-14}deg)`;card.style.opacity='0';}
@@ -2172,7 +2237,7 @@ function renderOfficeMsgs(){
   const U=CLOUDM?realUpdates():UPDATES;
   if(CLOUDM&&!U.length){el.innerHTML=`<p class="card-sub" style="padding:10px 4px">כאן יופיע מה שהסוכנים עשו בפועל: חיפושים, מכתבים, סקירות. הסריקה הבאה: 05:15 או 17:15.</p>`;return}
   const list=omAll?U:U.slice(0,5);
-  el.innerHTML=list.map((u,i)=>{const a=CAREER.agents[u.a];return`<button class="om-item" onclick="${u.report?'openMeeting()':`openAgSheet(${u.a})`}"><span class="om-face"><canvas id="om-${i}" width="96" height="96"></canvas></span><span class="om-tx"><b>${a.name}</b><i>${u.time}</i><p>${escB(u.body)}</p></span></button>`}).join('')
+  el.innerHTML=list.map((u,i)=>{const a=CAREER.agents[u.a];return`<button class="om-item" onclick="${u.usage?'openUsage()':u.report?'openMeeting()':`openAgSheet(${u.a})`}"><span class="om-face"><canvas id="om-${i}" width="96" height="96"></canvas></span><span class="om-tx"><b>${a.name}</b><i>${u.time}</i><p>${escB(u.body)}</p></span></button>`}).join('')
     +(U.length>5?`<button class="om-more" onclick="omAll=!omAll;renderOfficeMsgs()">${omAll?'הצג פחות':`הצג עוד ${U.length-5}`}</button>`:'');
   list.forEach((u,i)=>face($('om-'+i),u.a));
 }
@@ -2218,7 +2283,7 @@ function renderLinkedInReal(){
     ${posts.length?posts.map(p=>postCard(Object.assign({role:'',mins:null},p))).join(''):`<section class="card-solid"><p class="card-sub" style="padding:6px 2px">${escB(N('linkedin'))} מחפש פעמיים ביום פוסטים ציבוריים מהשבוע על גיוס ג׳וניורים וקריירה בהייטק. ${LI.updated?'בסריקה האחרונה לא נמצאו פוסטים שמתאימים לך.':'הם יופיעו כאן אחרי הסריקה הבאה.'}</p></section>`}
     <div class="sec-h" id="liFixes"><h2>הפרופיל שלך</h2><span>${fixes.length?`${fixed} מתוך ${fixes.length} בוצעו`:''}</span></div>
     ${fixes.length?`<section class="card-solid" aria-label="שיפורים לפרופיל">${fixes.map(fixRow).join('')}</section>`
-      :`<section class="card-solid"><p class="card-sub" style="padding:6px 2px">${prof().li_text?`${escB(N('coach'))} עוברת על הפרופיל שהעלית. השיפורים יופיעו כאן תוך שעתיים בערך.`:`כדי לקבל שיפורים אמיתיים, העלה PDF של פרופיל ה-LinkedIn שלך בעמוד הפרופיל.`}</p>
+      :`<section class="card-solid"><p class="card-sub" style="padding:6px 2px">${prof().li_text?`${escB(N('linkedin'))} עובר על הפרופיל שהעלית. השיפורים יופיעו כאן תוך שעתיים בערך.`:`כדי לקבל שיפורים אמיתיים, העלה PDF של פרופיל ה-LinkedIn שלך בעמוד הפרופיל.`}</p>
         ${prof().li_text?'':`<button class="btn btn-sm btn-primary btn-block" onclick="goPage('profile')">לעמוד הפרופיל</button>`}</section>`}
     <div class="sec-h"><h2>הפוסט של השבוע</h2><span>${L.posts?'פורסם ✓':'טיוטה'}</span></div>
     <section class="card-solid">${draft||L.postText?`<label for="postDraft" class="vh">טיוטת פוסט</label><textarea class="textbox" id="postDraft" rows="10" oninput="S.li.postText=this.value;save()">${esc(L.postText||draft)}</textarea>
@@ -2356,7 +2421,7 @@ function renderOnb(){
   let body='',foot='';
   if(onbStep===0){
     body=`<div class="logo-mark" style="margin-bottom:22px"><svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21"/><path d="M8 10.8l1.8 1.8L13.3 9"/></svg></div>
-      <h1>משרד מלא שמחפש לך עבודה, ואתה רק מחליט.</h1><p class="lead">findjob סורק משרות ביום ובלילה, מדרג כל אחת מול קורות החיים והפרופיל האישי שלך ומכין מכתב פנייה.</p>`;
+      <h1>משרד מלא שמחפש לך עבודה, ואתה רק מחליט.</h1><p class="lead">findjob סורק משרות ביום ובלילה, מדרג כל אחת מול קורות החיים והפרופיל האישי שלך ומכין מכתב פנייה.</p>${CLOUDM?`<p class="help" style="margin-top:14px">זו גרסת ניסיון. כדי לשפר אותה נשמרים נתוני שימוש בסיסיים, כמו כמה משרות שמרת ואילו מסכים פתחת. התוכן שלך, כמו קורות החיים והמכתבים, לא נכלל בהם. בתפריט יש כפתור משוב.</p>`:''}`;
     foot=`<button class="btn btn-primary btn-block" onclick="onbGo(1)">בוא נתחיל</button>`;
   }else if(onbStep===1){
     body=`<h1>נעים להכיר</h1><p class="lead">מקורות החיים הסוכנים לומדים מה אתה יודע לעשות. הקובץ נשאר שלך ואפשר למחוק אותו בכל רגע.</p>
@@ -2522,13 +2587,28 @@ function realTargets(){
   tc.added.filter(n=>!seen.has(n.toLowerCase())).forEach(n=>out.unshift({name:n,status:'new',why:['הוספת בעצמך']}));
   return out;
 }
-function targetStatus(b){
-  return b.status==='board'?`נסרקת דרך ${b.board}: ${b.il} משרות בישראל, ${b.rel} בתחום שלך`
-    :b.status==='by_name_ok'?(b.found_as?`מופיעה במודעות בשם ${b.found_as}. `:'')+`אין לה לוח ציבורי, מחפש אותה לפי השם (${b.n} משרות)`
-    :b.status==='by_name'?'אין לה לוח ציבורי שאפשר לקרוא. נחפש אותה לפי השם'
-    :b.status==='not_found'?'לא נמצאו משרות בשם הזה. כדאי לבדוק את השם':b.status==='by_name_miss'?'אין לה לוח ציבורי. בחיפוש לפי השם לא עלו הפעם משרות שלה בתחום שלך'
-    :b.status==='pending'?'עוד לא נבדקה. תיבדק בסריקה הקרובה':'תיבדק בסריקה הבאה';
+
+/* חברות יעד: מקובצות לפי איך שדורון באמת בודק אותן */
+const bd=t=>`<bdi dir="ltr">${escB(t)}</bdi>`;
+function targetsHtml(rt){
+  const G={fix:[],board:[],name:[],pending:[]};
+  rt.forEach(b=>{(b.status==='not_found'?G.fix:b.status==='board'?G.board:(b.status==='pending'||b.status==='new')?G.pending:G.name).push(b)});
+  const x=b=>`<button class="tg-x" aria-label="להסיר את ${escB(b.name)}" onclick="removeTarget('${escB(b.name).replace(/'/g,"\\'")}')">×</button>`;
+  const q=n=>escB(n).replace(/'/g,"\\'");
+  const sec=(t,sub,body)=>body?`<div class="tg-sec"><div class="tg-sec-h"><b>${t}</b>${sub?`<span>${sub}</span>`:''}</div>${body}</div>`:'';
+  return `<div class="tg-sum"><span><b class="num">${G.board.length}</b> נסרקות ישירות</span><span><b class="num">${G.name.length}</b> לפי שם</span>${G.fix.length?`<span class="bad"><b class="num">${G.fix.length}</b> צריך לבדוק</span>`:''}</div>`
+   +sec('צריך לבדוק','',G.fix.map(b=>`<div class="tg-fix"><div><b>${bd(b.name)}</b><span>לא נמצאה חברה בשם הזה${b.suggest?`. התכוונת ל-${bd(b.suggest)}?`:'.'}</span></div>
+      <div class="tg-fix-btns">${b.suggest?`<button class="btn btn-sm btn-primary" onclick="renameTarget('${q(b.name)}','${q(b.suggest)}')">לתקן ל-${bd(b.suggest)}</button>`:''}<button class="btn btn-sm btn-ghost" onclick="editTarget('${q(b.name)}')">לערוך</button>${x(b)}</div></div>`).join(''))
+   +sec('נסרקות ישירות מדף הקריירה','כל המשרות בישראל, בלי חסימות',`<div class="tg-grid">${G.board.map(b=>`<div class="tg-chip ok"><b>${bd(b.name)}</b><span>${b.rel} בתחום שלך, מתוך ${b.il} בישראל</span><span class="tg-src">דרך ${bd(b.board)}</span>${x(b)}</div>`).join('')}</div>`)
+   +sec('מחפשים לפי השם','ב-LinkedIn וב-Indeed, כי אין להן דף קריירה ציבורי',`<div class="tg-grid">${G.name.map(b=>`<div class="tg-chip"><b>${bd(b.name)}</b><span>${b.status==='by_name_ok'?`${b.n} משרות בתחום שלך`+(b.found_as?`</span><span class="tg-src">במודעות: ${bd(b.found_as)}`:''):b.status==='by_name_miss'?'הפעם לא עלו משרות בתחום שלך':'ייבדק בסריקה הקרובה'}</span>${x(b)}</div>`).join('')}</div>`)
+   +sec('ייבדקו בסריקה הקרובה','',`<div class="tg-grid">${G.pending.map(b=>`<div class="tg-chip"><b>${bd(b.name)}</b><span>${b.status==='new'?'הוספת עכשיו':'בתור'}</span>${x(b)}</div>`).join('')}</div>`);
 }
+function renameTarget(from,to){to=(to||'').trim();if(!to||to===from)return;S.targets=S.targets||{added:[],removed:[]};
+  const i=S.targets.added.indexOf(from);if(i>=0)S.targets.added[i]=to;else{S.targets.added.unshift(to);if(!S.targets.removed.includes(from))S.targets.removed.push(from)}
+  S.targets.removed=S.targets.removed.filter(x=>x!==to);save();renderProfile();toast(`עודכן ל-${to}. ${N('hunter')} יבדוק אותה בסריקה הבאה`)}
+function editTarget(n){openSheet(`<h3 id="sheetTitle">תיקון שם חברה</h3><div class="sheet-sub">כמו שהיא מופיעה ב-LinkedIn או באתר שלה</div>
+  <div class="field" style="margin-top:12px"><label for="tgEd" class="vh">שם החברה</label><input id="tgEd" class="ltr" value="${escB(n)}"></div>
+  <button class="btn btn-primary btn-block" onclick="renameTarget('${escB(n).replace(/'/g,"\\'")}',$('tgEd').value);closeSheet()">שמירה</button>`)}
 
 /* ═════════ הפרופיל שלי ═════════ */
 const ROW_IC={doc:'<svg viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8z"/><path d="M14 3v5h5"/></svg>',
@@ -2551,13 +2631,13 @@ function renderProfile(){
     <section class="card glass" aria-labelledby="cvH"><h2 class="card-h" id="cvH">קורות חיים</h2>
       <div class="row"><span class="ri">${ROW_IC.doc}</span><span class="rl"><b>${escB(p.cvName||(p.cv?'הודבקו כטקסט':'עוד לא הועלו'))}</b><span>${p.cv||p.cvName?'כל הסוכנים עובדים לפיהם':'בלעדיהם הסוכנים לא יכולים להתאים לך משרות'}</span></span>${p.cv||p.cvName?'<span class="pill-ok">פעיל</span>':'<span class="pill-warn">חסר</span>'}</div>
       <div class="duo"><label for="cvFile" class="btn btn-sm btn-ghost">${p.cvName?'להחליף קובץ':'להעלות קובץ'}</label><button class="btn btn-sm btn-ghost" onclick="editCvText()">לערוך כטקסט</button></div>
-      ${CLOUDM?`<div class="field" style="margin-top:12px"><label for="ghIn">שם המשתמש שלך ב-GitHub</label><div style="display:flex;gap:8px"><input id="ghIn" class="ltr" placeholder="username" value="${escB((p.ans||{}).github||'')}" autocomplete="off"><button class="btn btn-sm btn-ghost" onclick="saveGithub()">שמירה</button></div>
-        <div class="help">${escB(N('linkedin'))} יעבור על הריפוזיטוריז הציבוריים שלך (קריאה בלבד) וימצא מה עשית ולא כתבת בקורות החיים.</div></div>`:''}
+      ${CLOUDM?`<div class="field" style="margin-top:12px"><label for="ghIn">שם המשתמש שלך ב-GitHub</label><div style="display:flex;gap:8px"><input id="ghIn" class="ltr" placeholder="username" value="${escB((p.ans||{}).github||'')}" autocomplete="off"><button class="btn btn-sm btn-ghost" onclick="saveGithub()">שמירה</button></div></div>`:''}
       ${typeof cvSuggestHtml==='function'?cvSuggestHtml():''}</section>
 
     ${CLOUDM?`<section class="card glass" aria-labelledby="liH"><h2 class="card-h" id="liH">פרופיל LinkedIn</h2>
-      <div class="card-sub">${p.li_text?`${escB(N('coach'))} עוברת על הפרופיל ומכינה שיפורים. הם יופיעו במסך LinkedIn.`:`כדי ש${escB(N('coach'))} תציע שיפורים אמיתיים לפרופיל, צריך עותק שלו: ב-LinkedIn נכנסים לפרופיל ← "עוד" (More) ← "שמירה כ-PDF", ומעלים כאן.`}</div>
-      <label for="liFile" class="btn btn-sm ${p.li_text?'btn-ghost':'btn-primary'} btn-block">${p.li_text?'להעלות גרסה חדשה':'להעלות PDF של הפרופיל'}</label>
+      <div class="field"><label for="liUrl">הקישור לפרופיל שלך</label><div style="display:flex;gap:8px"><input id="liUrl" class="ltr" type="url" placeholder="https://www.linkedin.com/in/…" value="${escB((p.ans||{}).linkedin||'')}" autocomplete="off"><button class="btn btn-sm btn-ghost" onclick="saveLinkedin()">שמירה</button></div></div>
+      <div class="card-sub" style="margin-top:10px">${p.li_text?`${escB(N('linkedin'))} עובר על הפרופיל לפי ה-PDF שהעלית, והשיפורים מופיעים במסך LinkedIn. שינית משהו בפרופיל? מעלים PDF חדש, והקישור נשאר אותו קישור.`:`כדי ש${escB(N('linkedin'))} יציע שיפורים לפרופיל, צריך עותק שלו: ב-LinkedIn נכנסים לפרופיל ← "עוד" (More) ← "שמירה כ-PDF", ומעלים כאן.`}</div>
+      <label for="liFile" class="btn btn-sm ${p.li_text?'btn-ghost':'btn-primary'} btn-block">${p.li_text?'להעלות PDF חדש של הפרופיל':'להעלות PDF של הפרופיל'}</label>
       <input type="file" id="liFile" class="vh" accept=".pdf,application/pdf" onchange="onLiFile(this)"></section>`:''}
     <section class="card glass" aria-labelledby="qH"><h2 class="card-h" id="qH">עליי</h2>
       <div class="card-sub">${done<total?`ענית על ${done} מתוך ${total} שאלות. כל תשובה עוזרת לסוכנים לדייק.`:'ענית על כל השאלות. אפשר לעדכן בכל רגע.'}</div>
@@ -2573,9 +2653,8 @@ function renderProfile(){
       ${typeof suggestionsHtml==='function'?suggestionsHtml():''}
       ${typeof lastMeeting==='function'&&lastMeeting()?`<button class="link" style="font-size:13px;color:var(--brand);margin:6px 0" onclick="openMeeting()">לדוח של הישיבה השבועית</button>`:''}
       <h3 class="sub-h">חברות יעד</h3>
-      <div class="card-sub">${escB(N('hunter'))} בודק ישירות את אלה שיש להן לוח משרות ציבורי, ואת השאר מחפש לפי השם. כך זה נראה בסריקה האחרונה:</div>
-      ${(()=>{const rt=realTargets();return rt?`<div class="tg-list">${rt.map(b=>`<div class="tg-row tg-${b.status}"><span class="tg-dot" aria-hidden="true"></span><span class="tg-t"><b lang="en">${escB(b.name)}</b>${b.auto?'<em> · הצוות הוסיף</em>':''}<span>${escB(targetStatus(b))}</span></span><button class="tg-x" aria-label="להסיר את ${escB(b.name)}" onclick="removeTarget('${escB(b.name).replace(/'/g,"\\'")}')">×</button></div>`).join('')}</div>`
-        :`<div class="learned">${targetCompanies().map(c=>`<span class="chip" title="${escB(c.why.join(' · '))}">${escB(c.name)}<button aria-label="להסיר את ${escB(c.name)}" onclick="removeTarget('${escB(c.name).replace(/'/g,"\\'")}')">×</button></span>`).join('')}</div>`})()}
+      <div class="card-sub">כך ${escB(N('hunter'))} בדק אותן בסריקה האחרונה:</div>
+      ${(()=>{const rt=realTargets();return rt?targetsHtml(rt):`<div class="learned">${targetCompanies().map(c=>`<span class="chip" title="${escB(c.why.join(' · '))}">${escB(c.name)}<button aria-label="להסיר את ${escB(c.name)}" onclick="removeTarget('${escB(c.name).replace(/'/g,"\\'")}')">×</button></span>`).join('')}</div>`})()}
       <div class="todo-foot" style="padding:12px 0 0;border:0"><label for="tgIn" class="vh">חברה להוספה</label><input id="tgIn" placeholder="להוסיף חברה" onkeydown="if(event.key==='Enter')addTarget()"><button class="btn btn-sm btn-ghost" onclick="addTarget()">הוסף</button></div>
       ${(S.targets&&(S.targets.added.length||S.targets.removed.length))?`<button class="link" style="font-size:13px;color:var(--brand);margin-top:8px" onclick="S.targets={added:[],removed:[]};save();renderProfile()">להחזיר לבחירה של ${escB(N('strategist'))}</button>`:''}</section>
 
@@ -2629,7 +2708,7 @@ async function readCv(f){try{
   if(/\.docx$/i.test(f.name)){await loadScript('https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js');
     return (await mammoth.extractRawText({arrayBuffer:await f.arrayBuffer()})).value}
 }catch(e){console.warn(e)}return''}
-function onLiFile(inp){const f=inp.files[0];if(!f)return;readCv(f).then(t=>{if(t&&t.trim().length>80){prof().li_text=t.slice(0,15000);save();renderProfile();toast(`${N('coach')} תעבור על הפרופיל בשעתיים הקרובות`)}else toast('לא הצלחתי לקרוא את הקובץ. ודא שזה ה-PDF ש-LinkedIn מייצר',{ms:4200})});inp.value=''}
+function onLiFile(inp){const f=inp.files[0];if(!f)return;readCv(f).then(t=>{if(t&&t.trim().length>80){prof().li_text=t.slice(0,15000);save();renderProfile();toast(`${N('linkedin')} יעבור על הפרופיל בשעתיים הקרובות`)}else toast('לא הצלחתי לקרוא את הקובץ. ודא שזה ה-PDF ש-LinkedIn מייצר',{ms:4200})});inp.value=''}
 function afterCv(){if($('onb').classList.contains('open'))renderOnb();else{renderProfile();toast('קורות החיים עודכנו')}}
 
 /* ═════════ הגדרות ═════════ */
@@ -2681,6 +2760,10 @@ function init(){
   setTimeout(()=>{$('splash').classList.add('hide');if(!S.onboarded)openOnb(0)},1100);
 }
 
+function saveLinkedin(){const v=($('liUrl').value||'').trim();const p=prof();p.ans=p.ans||{};
+  if(v&&!/^https?:\/\/([a-z]+\.)?linkedin\.com\/in\//i.test(v)){toast('זה לא נראה כמו קישור לפרופיל LinkedIn');return}
+  p.ans.linkedin=v;save();toast(v?'הקישור נשמר':'הקישור נמחק')}
+
 /* ═════════ CLOUD — חיבור ל-Supabase (רק בגרסה המאוחסנת) ═════════
    התחברות בקישור למייל. הפרופיל, קורות החיים והשאלון נשמרים בענן, והסוכנים קוראים אותם משם בלילה.
    המשרות שדורון מצא נטענות מהענן. כל משתמש רואה רק את הנתונים שלו (RLS). */
@@ -2711,7 +2794,7 @@ async function cloudLoad(){
     SB.from('jobs').select('id,card,decision,letter,brief,prep,created_at').eq('user_id',uid).or('decision.is.null,decision.neq.filtered').order('created_at',{ascending:false}).limit(200),
     SB.from('runs').select('agent,stats,created_at').eq('user_id',uid).order('created_at',{ascending:false}).limit(150)]);
   if(pr){const p=prof();p.first=pr.first||p.first;p.name=pr.name||p.name;p.cv=pr.cv_text||p.cv;p.ans=Object.assign({},pr.answers||{},p.ans||{});
-    if(pr.team&&Object.keys(pr.team).length)S.team=pr.team;const st=pr.state||{};['apps','todos','stories'].forEach(k=>{if(Array.isArray(st[k]))S[k]=st[k]});if(st.targets)S.targets=st.targets;if(Array.isArray(st.history))S.history=st.history;if(Array.isArray(st.chat))S.chat=st.chat;if(Array.isArray(st.accepted))S.accepted=st.accepted;if(Array.isArray(st.dismissed))S.dismissed=st.dismissed;if(Array.isArray(st.cvDone))S.cvDone=st.cvDone;p.li_text=pr.li_text||'';LI=Object.assign({},pr.li||{},{fixes:((pr.li_fixes||{}).fixes)||[]});if(pr.cv_text)S.onboarded=true}
+    if(pr.team&&Object.keys(pr.team).length)S.team=pr.team;const st=pr.state||{};['apps','todos','stories'].forEach(k=>{if(Array.isArray(st[k]))S[k]=st[k]});if(st.targets)S.targets=st.targets;if(Array.isArray(st.history))S.history=st.history;if(Array.isArray(st.chat))S.chat=st.chat;if(Array.isArray(st.accepted))S.accepted=st.accepted;if(Array.isArray(st.dismissed))S.dismissed=st.dismissed;if(Array.isArray(st.cvDone))S.cvDone=st.cvDone;if(st.usage)S.usage=st.usage;if(Array.isArray(st.feedback))S.feedback=st.feedback;p.li_text=pr.li_text||'';LI=Object.assign({},pr.li||{},{fixes:((pr.li_fixes||{}).fixes)||[]});if(pr.cv_text)S.onboarded=true}
   prof().key='cloud';
   RUNS=runs||[];const hr=RUNS.filter(r=>(r.agent||'hunter')==='hunter');
   if(hr.length||(jobs&&jobs.length)){
@@ -2724,7 +2807,7 @@ async function cloudLoad(){
   _decSnap=Object.assign({},S.decisions);_profSnap=profRow();
   LS.set(SKEY,S);window.__runsReady=true;if(typeof applyTeam==='function')applyTeam();buildWorkflow();
 }
-function profRow(){const p=prof();return JSON.stringify({first:p.first||'',name:p.name||'',cv_text:p.cv||'',answers:p.ans||{},team:S.team||{},state:{apps:S.apps,todos:S.todos,stories:S.stories,targets:S.targets||{added:[],removed:[]},history:S.history||[],chat:(S.chat||[]).slice(-40),accepted:S.accepted||[],dismissed:S.dismissed||[],cvDone:S.cvDone||[]},li_text:p.li_text||''})}
+function profRow(){const p=prof();return JSON.stringify({first:p.first||'',name:p.name||'',cv_text:p.cv||'',answers:p.ans||{},team:S.team||{},state:{apps:S.apps,todos:S.todos,stories:S.stories,targets:S.targets||{added:[],removed:[]},history:S.history||[],chat:(S.chat||[]).slice(-40),accepted:S.accepted||[],dismissed:S.dismissed||[],cvDone:S.cvDone||[],usage:S.usage||{},feedback:(S.feedback||[]).slice(-30)},li_text:p.li_text||''})}
 function cloudSync(){clearTimeout(_syncT);_syncT=setTimeout(async()=>{
   if(!ME)return;
   const row=profRow();
@@ -2747,6 +2830,7 @@ function cloudLogout(){SB.auth.signOut().then(()=>{LS.clear();location.reload()}
 /* צ׳אט עם שי: רואה את כל הנתונים שלך, זוכר את השיחה, ויכול להציע פעולה — שמתבצעת רק באישור שלך */
 let chatFocus='';
 async function cloudChat(v){
+  track('chat');
   S.chat=S.chat||[];S.chat.push({role:'user',content:v});
   const typing=document.createElement('div');typing.className='msg bot typing';typing.innerHTML='<i></i><i></i><i></i>';$('chatMsgs').appendChild(typing);$('chatMsgs').scrollTop=1e6;
   let d={};
@@ -2813,7 +2897,7 @@ function askAboutJob(jobId){chatFocus=jobId;closeSheet();toggleChat(true);const 
 function realUpdates(){
   const seat=k=>{const i=CAREER.agents.findIndex(a=>a.key===k);return i<0?0:i};
   const ago=t=>{const m=Math.round((Date.now()-new Date(t))/6e4);return m<60?`לפני ${Math.max(1,m)} דק׳`:m<1440?`לפני ${Math.round(m/60)===1?'שעה':Math.round(m/60)+' שעות'}`:m<2880?'אתמול':new Date(t).toLocaleDateString('he-IL')};
-  return RUNS.filter(r=>r.stats&&r.stats.msg).map(r=>({a:seat(r.agent||'hunter'),time:ago(r.created_at),body:r.stats.msg,report:!!r.stats.report}));
+  return RUNS.filter(r=>r.stats&&r.stats.msg).map(r=>({a:seat(r.agent||'hunter'),time:ago(r.created_at),body:r.stats.msg,report:!!r.stats.report,usage:!!r.stats.usage_report}));
 }
 
 /* הוספת משרה מקישור: נכנסת לתהליך כמו משרה ששמרת */
@@ -2826,7 +2910,7 @@ function openAddJob(){
     <button class="btn btn-primary btn-block" id="ajBtn" style="margin-top:12px" onclick="submitAddJob()">הוספה</button>`);
   setTimeout(()=>{const i=$('ajUrl');i&&i.focus();navigator.clipboard&&navigator.clipboard.readText&&navigator.clipboard.readText().then(t=>{if(/^https?:\/\//.test(t||'')&&i&&!i.value)i.value=t.trim()}).catch(()=>{})},200);
 }
-async function submitAddJob(){
+async function submitAddJob(){track('add_job');
   const url=($('ajUrl').value||'').trim(),text=($('ajText').value||'').trim(),h=$('ajHelp'),btn=$('ajBtn');
   if(!/^https?:\/\//.test(url)&&text.length<200){h.textContent='צריך קישור שמתחיל ב-https://';h.style.color='var(--rose)';return}
   btn.disabled=true;btn.textContent=`${N('hunter')} קורא את המשרה…`;h.textContent='';
@@ -2923,6 +3007,17 @@ function skillsHtml(){const r=lastSkills();if(!r)return'';const {cards,project}=
       ${(c.learn||[]).length?`<div class="sk-links">${c.learn.map(l=>`<a href="${escB(l.url)}" target="_blank" rel="noopener" dir="auto">${escB(l.title)} <span>${escB(l.site)}</span></a>`).join('')}</div>`:''}</div>`).join('')}
     ${project?`<div class="sk-card sk-proj"><div class="sk-h"><b>רעיון לפרויקט: <span lang="en">${escB(project.title)}</span></b>${(project.covers||[]).length?`<span lang="en">סוגר: ${escB(project.covers.join(', '))}</span>`:''}</div><p>${escB(project.pitch)}</p>
       <ol>${(project.steps||[]).map(x=>`<li>${escB(x)}</li>`).join('')}</ol></div>`:''}</section>`}
+
+/* נתוני שימוש בסיסיים (ספירות בלבד, בלי תוכן) כדי שנדע מה עובד ומה לשפר */
+
+
+/* דוח שימוש (רק לבעל המערכת) */
+function openUsage(){const r=(RUNS||[]).find(x=>x.stats&&x.stats.usage_report);if(!r)return;const u=r.stats.usage_report;
+  openSheet(`<h3 id="sheetTitle">דוח שימוש</h3><div class="sheet-sub">${new Date(r.created_at).toLocaleDateString('he-IL')} · ספירות בלבד, בלי תוכן</div>
+  <div class="us-list">${u.rows.map(x=>`<div class="us-row"><b>${escB(x.name)}</b><span>${x.days_week} ימים השבוע · ${x.days} בסך הכל · אחרון ${escB(x.last||'—')}</span>
+   <span>${x.cv?'קורות חיים ✓':'בלי קורות חיים'}${x.domain?' · '+escB(x.domain):''} · ${x.saved} שמורות · ${x.skipped} דילוגים · ${x.applied} הגשות · ${x.chat} שאלות בצ׳אט${x.add_job?' · '+x.add_job+' משרות מקישור':''}</span>
+   ${(x.pages||[]).length?`<span>מסכים: ${x.pages.map(p=>escB(p[0])+' ('+p[1]+')').join(', ')}</span>`:''}</div>`).join('')}</div>
+  ${(u.feedback||[]).length?`<div class="s-sec"><h4>משוב</h4>${u.feedback.map(f=>`<p class="us-fb"><b>${escB(f.name)}</b> · ${escB(f.at)}<br>${escB(f.t)}</p>`).join('')}</div>`:''}`)}
 
 cloudBoot();
 </script>

@@ -141,3 +141,12 @@ async function copyText(t,msg){
   toast(ok?(msg||'הועתק'):'לא הצלחתי להעתיק. סמן את הטקסט והעתק ידנית');
   return ok;
 }
+
+function track(ev){try{const u=S.usage=S.usage||{c:{},days:[]};u.c[ev]=(u.c[ev]||0)+1;const d=new Date().toISOString().slice(0,10);
+  if(!u.days.includes(d)){u.days.push(d);u.days=u.days.slice(-60)}u.last=new Date().toISOString();if(!u.first)u.first=u.last}catch(e){}}
+
+function openFeedback(){openSheet(`<h3 id="sheetTitle">משוב</h3><div class="sheet-sub">מה עבד, מה לא, מה חסר לך. כל מילה עוזרת לשפר.</div>
+  <div class="field" style="margin-top:12px"><label for="fbTx" class="vh">המשוב שלך</label><textarea id="fbTx" class="textbox" rows="6" placeholder="למשל: המשרות לא בתחום שלי, או: המכתב היה ארוך מדי"></textarea></div>
+  <button class="btn btn-primary btn-block" onclick="sendFeedback()">שליחה</button>`)}
+function sendFeedback(){const t=($('fbTx').value||'').trim();if(!t){toast('המשוב ריק');return}S.feedback=S.feedback||[];
+  S.feedback.push({t:t.slice(0,1000),at:new Date().toISOString(),page:(document.querySelector('.page.active')||{}).id||''});track('feedback');save();closeSheet();toast('תודה! המשוב נשמר')}
