@@ -49,7 +49,8 @@ function paintAppTab(id){
         <div class="kv"><span>${a.status==='saved'?'נשמרה':'הוגשה'}</span><b>${agoTxt(daysSince(a.date))}</b></div>
         ${a.iv?`<div class="kv"><span>ראיון</span><b>${escB(a.iv)}</b></div>`:''}
         <div class="kv"><span>התאמה</span><b class="num">${j.fit.toFixed(1)} מתוך 5</b></div>
-        <div class="kv"><span>שכר</span><b>${escB(salaryTxt(j))}</b></div></div>
+        <div class="kv"><span>שכר</span><b>${escB(salaryTxt(j))}</b></div>
+        ${REAL&&a.status==='saved'?`<div class="kv"><span>פתוחה להגשה?</span><b>${openTxt(j)}</b></div>`:''}</div>
       ${fu?`<div class="s-sec"><h4>הודעת המשך</h4><textarea class="textbox" id="fuText" rows="7" aria-label="הודעת המשך">${esc(a.follow||followText(j))}</textarea>
         <div class="duo"><button class="btn btn-ghost" onclick="copyText($('fuText').value,'ההודעה הועתקה')">${ICO.copy}העתק</button><button class="btn btn-primary" onclick="sentFollow('${id}')">שלחתי</button></div></div>`:''}
       ${REAL?`<div class="s-sec"><button class="btn btn-ghost btn-block" onclick="openPrep('${a.jobId}')">${ICO.spark||''}הכנה לראיון${j.prep&&j.prep.questions&&j.prep.questions.length?` · ${j.prep.questions.length} שאלות מוכנות`:''}</button></div>`:''}
@@ -60,6 +61,7 @@ function paintAppTab(id){
         <div class="field"><label for="edNote">הערות שלי</label><textarea id="edNote" class="textbox" rows="3" placeholder="עם מי דיברתי, מה ביקשו, מה הלאה…" onchange="appOf('${id}').note=this.value;save()">${esc(a.note||'')}</textarea></div></div>
       <div class="s-sec"><a class="btn btn-ghost btn-block ext" href="${j.url||LI_URL+'jobs/'}" target="_blank" rel="noopener">פתח את המשרה${ICO.open}</a>
         ${CLOUDM?`<button class="btn btn-ghost btn-block" style="margin-top:8px" onclick="askAboutJob('${a.jobId}')">לשאול את ${escB(N('assistant'))} על המשרה</button>`:''}
+        ${CLOUDM&&a.status==='saved'?`<button class="btn btn-ghost btn-block" style="margin-top:8px" onclick="markClosed('${id}')">המשרה נסגרה</button>`:''}
         <button class="btn btn-ghost btn-block" style="margin-top:8px;color:var(--rose)" onclick="closeSheet();removeApp('${id}')">להסיר מההגשות</button></div>`;
   }else if(appTab==='letter'){
     el.innerHTML=`<div class="s-sec" style="margin-top:12px"><label for="letterBox" class="vh">מכתב פנייה</label><textarea class="textbox" id="letterBox" rows="13" oninput="appOf('${id}').letter=this.value;save()">${esc(a.letter||(j.letter&&j.letter.text)||(REAL?'':letterFor(j)))}</textarea>
@@ -303,6 +305,14 @@ function storiesHtml(){
 
 /* ═════════ הסרה בהחלקה + היסטוריה ═════════ */
 let lastRemoved=null;
+/* האם המשרה עדיין פתוחה: מה שדורון בדק בבוקר */
+function openTxt(j){const c=j.check;if(!c)return`${escB(N('hunter'))} יבדוק מחר בבוקר`;
+  const d=agoTxt(daysSince(c.at));
+  return c.st==='open'?`כן, נבדק ${escB(d)}`:c.st==='unknown'?`לא הצלחתי לבדוק (האתר לא ענה${c.n>1?` ${c.n} פעמים`:''}). כדאי לפתוח ולבדוק`:'נסגרה'}
+async function markClosed(id){const a=appOf(id);if(!a)return;const j=JOBS[a.jobId],now=new Date().toISOString();
+  j.closed_at=now;closedToHistory();save();closeSheet();refreshApps();
+  if(CLOUDM&&ME){try{const {data}=await SB.from('jobs').select('card').eq('user_id',ME.id).eq('id',a.jobId).maybeSingle();
+    if(data)await SB.from('jobs').update({card:Object.assign({},data.card,{closed_at:now,closed_by:'user'})}).eq('user_id',ME.id).eq('id',a.jobId)}catch(e){console.warn(e)}}}
 function removeApp(id){
   const a=appOf(id);if(!a)return;const j=JOBS[a.jobId];
   S.apps=S.apps.filter(x=>x.id!==id);S.history=S.history||[];

@@ -203,9 +203,13 @@ for u in users:
                 c = row["card"]
                 act.log("hunter", f"בודק אם {c['title']} ב-{c['co']} עדיין פתוחה: "
                         + {"open": "פתוחה ✓", "closed": "נסגרה ✗", "unknown": "האתר לא ענה, משאיר אותה"}[st])
+                now_iso = datetime.now(timezone.utc).isoformat()
                 if st == "closed":
-                    db.update_job(u["user_id"], row["id"], {"card": {**c, "closed_at": datetime.now(timezone.utc).isoformat()}})
+                    db.update_job(u["user_id"], row["id"], {"card": {**c, "closed_at": now_iso, "check": {"st": st, "at": now_iso}}})
                     closed.append(c)
+                elif (c.get("check") or {}).get("st") != st or st == "unknown":   # "לא הצלחתי לבדוק" מוצג באפליקציה
+                    n = ((c.get("check") or {}).get("n") or 0) + 1 if st == "unknown" else 0
+                    db.update_job(u["user_id"], row["id"], {"card": {**c, "check": {"st": st, "at": now_iso, "n": n}}})
         if closed:
             db.add_run(u["user_id"], "hunter", ("המשרות האלה נסגרו ולא מקבלות יותר מועמדים: " if len(closed) > 1 else "המשרה הזו נסגרה ולא מקבלת יותר מועמדים: ")
                        + "; ".join(f"{c['title']} ב-{c['co']}" for c in closed) + ". הוצאתי מההגשות, והיא בהיסטוריה.")

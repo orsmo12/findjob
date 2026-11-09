@@ -135,7 +135,7 @@ const PALETTE=[['#0F6E54','#2BA37E'],['#14532D','#3F8F5F'],['#0E7C86','#19A7A6']
 function coIni(n){const w=String(n||'?').replace(/[^A-Za-z0-9\u0590-\u05FF ]/g,'').trim().split(/\s+/);return (w.length>1?w[0][0]+w[1][0]:w[0].slice(0,2))||'?'}
 function fromFeed(f){const o={};f.jobs.forEach((j,i)=>{let h=0;for(const ch of j.co)h=(h*31+ch.charCodeAt(0))>>>0;
   o[j.id]={co:j.co,ini:coIni(j.co),c:PALETTE[h%PALETTE.length],title:j.title,loc:j.loc,fit:j.fit,reasons:j.reasons||[],gaps:j.gaps||[],
-    partial:!!j.partial,tags:j.tags||[],src:j.src,posted:j.posted_days,salary:j.salary||'',desc:String(j.desc||'').replace(/[*#_`>\\]/g,'').replace(/\s+/g,' ').trim(),url:j.url,letter:j.letter||null,brief:j.brief||null,prep:j.prep||null,tailor:j.tailor||null,closed_at:j.closed_at||null,warn:j.warn||'',deck:true}});return o}
+    partial:!!j.partial,tags:j.tags||[],src:j.src,posted:j.posted_days,salary:j.salary||'',desc:String(j.desc||'').replace(/[*#_`>\\]/g,'').replace(/\s+/g,' ').trim(),url:j.url,letter:j.letter||null,brief:j.brief||null,prep:j.prep||null,tailor:j.tailor||null,check:j.check||null,closed_at:j.closed_at||null,warn:j.warn||'',deck:true}});return o}
 let JOBS=CLOUDM?{}:FEEDD?fromFeed(FEEDD):DEMO_JOBS;
 function feedWhen(){if(!FEEDD||!FEEDD.generated_at)return'';const d=new Date(FEEDD.generated_at),h=Math.round((Date.now()-d)/36e5);
   return h<1?'מהשעה האחרונה':h<24?`מלפני ${h===1?'שעה':h===2?'שעתיים':h+' שעות'}`:`מ-${d.toLocaleDateString('he-IL')}`}
