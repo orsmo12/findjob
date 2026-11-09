@@ -62,6 +62,11 @@ def same_company(a: str, b: str) -> bool:
 
 
 # ── דף קריירה באתר של החברה עצמה (כשאין לוח ציבורי שאפשר לקרוא) ─────────────
+# כותרת שנראית כמו משרה (ולא "הטבות לעובדים" או "לימודים"): שם תפקיד באנגלית או בעברית
+JOB_TITLE = re.compile(r"engineer|developer|programmer|architect|analyst|scientist|designer|manager|specialist|technician|"
+                       r"intern|student|graduate|junior|lead|head of|director|administrator|coordinator|consultant|researcher|"
+                       r"operator|planner|buyer|accountant|recruiter|representative|officer|expert|tester|\bqa\b|devops|"
+                       r"מהנדס|מפתח|מתכנת|מנהל|מנתח|מעצב|טכנאי|סטודנט|ג׳וניור|רכז|חוקר|בודק|יועץ|ראש צוות", re.I)
 JOB_PATH = re.compile(r"/(careers?|jobs?|positions?|open-positions|join-us|vacancies)/", re.I)
 
 
@@ -81,6 +86,8 @@ def site_links(page: str, base: str) -> list[dict]:
             continue
         title = re.sub(r"\s+", " ", _text(txt)).strip()
         if not (4 <= len(title) <= 120) or re.search(r"^(apply|read more|learn more|more|view|details|לפרטים|הגש)", title, re.I):
+            continue
+        if not JOB_TITLE.search(title):
             continue
         if path not in seen:
             seen.add(path)

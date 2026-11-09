@@ -58,3 +58,10 @@ def test_official_site_marks_company_as_existing():
     finally:
         A.discover = orig
     assert status[0]["status"] == "by_name" and status[0]["official"] == "hailo.ai" and cache["hailo"]["official"] == "hailo.ai"
+
+
+def test_site_links_skip_non_job_pages():
+    page = """<a href="/en/career/benefits-for-employees">Benefits for employees</a><a href="/en/career/study">Study</a>
+    <a href="/en/career/current-vacancies/mechanical-design-engineer">Mechanical Design Engineer</a>
+    <a href="/en/career/current-vacancies/mehandes">מהנדס תהליך</a>"""
+    assert [l["title"] for l in A.site_links(page, "https://x.com/en/career/")] == ["Mechanical Design Engineer", "מהנדס תהליך"]
