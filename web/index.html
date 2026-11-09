@@ -962,6 +962,13 @@ a.person>svg{flex:0 0 18px;width:18px;height:18px;fill:none;stroke:var(--ink3);s
 .tour-foot{display:flex;justify-content:space-between;align-items:center;gap:10px}.tour-foot>span:last-child{display:flex;gap:6px}
 .tour-dots{display:flex;gap:5px}.tour-dots i{width:7px;height:7px;border-radius:50%;background:var(--glass-edge)}.tour-dots i.on{background:var(--brand);width:18px;border-radius:4px}
 @media (prefers-reduced-motion:reduce){.tour-hole{transition:none}}
+.dev-tag{font-size:11px;font-weight:600;padding:2px 7px;border-radius:7px;background:var(--hi-lt);color:var(--hi-ink);margin-inline-start:6px;vertical-align:2px}
+.dr-item[hidden]{display:none}
+.dev-sum{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:12px 0}
+.dev-sum span{background:var(--brand-lt);border-radius:12px;padding:8px 10px;font-size:12.5px;color:var(--ink2)}.dev-sum b{display:block;font-size:18px;color:var(--brand)}
+.dev-sum .bad b{color:var(--rose)}
+.dev-fb{border-bottom:1px solid var(--glass-edge);padding:10px 0;font-size:13px}.dev-fb p{margin:4px 0 6px;color:var(--ink);font-size:14px}.dev-fb ul{margin:6px 18px 0 0;color:var(--ink2)}
+.dev-fb select{font:inherit;padding:5px 8px;border-radius:9px;border:1px solid var(--glass-edge);background:var(--solid);color:var(--ink)}
 
 </style>
 <link rel="manifest" href="/manifest.webmanifest">
@@ -1016,6 +1023,7 @@ a.person>svg{flex:0 0 18px;width:18px;height:18px;fill:none;stroke:var(--ink3);s
       <div class="dr-group" id="g3">החשבון שלי</div>
       <div role="list" aria-labelledby="g3">
         <button role="listitem" class="dr-item" data-pg="profile" onclick="goPage('profile')"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg><span class="lbl">הפרופיל שלי</span></button>
+        <button role="listitem" class="dr-item" id="drDev" hidden onclick="closeDrawer();openDev()"><svg viewBox="0 0 24 24"><path d="M8 9l-4 3 4 3M16 9l4 3-4 3M13.5 6l-3 12"/></svg><span class="lbl">כלי מפתח</span><span class="dev-tag">מפתח</span></button>
         <button role="listitem" class="dr-item" onclick="closeDrawer();tourStart()"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/></svg><span class="lbl">סיור באפליקציה</span></button>
         <button role="listitem" class="dr-item" onclick="closeDrawer();openFeedback()"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg><span class="lbl">משוב</span></button>
         <button role="listitem" class="dr-item" data-pg="settings" onclick="goPage('settings')"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1.1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.5-1.1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.8.3H9a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8V9a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z"/></svg><span class="lbl">הגדרות</span></button>
@@ -1914,6 +1922,7 @@ function syncChrome(){
   const q=queue().length, ap=S.apps.filter(appNeedsMe).length, li=hotPosts().length+fixesLeft().length;
   [['bdJobs',q],['bdApps',ap],['bdLi',li]].forEach(([i,n])=>{$(i).hidden=!n;$(i).textContent=n;$(i).setAttribute('aria-label',`${n} מחכים לך`)});
   $('menuDot').hidden=!(q||hotPosts().length);
+  {const d=$('drDev');if(d)d.hidden=!(CLOUDM&&typeof isOwner==='function'&&isOwner())}
   document.title=(q?`(${q}) `:'')+document.title.replace(/^\(\d+\)\s*/,'');   // מספר המשרות החדשות בלשונית
   try{if('setAppBadge' in navigator)q?navigator.setAppBadge(q):navigator.clearAppBadge()}catch(e){}
   const iv=S.apps.find(a=>a.status==='interview'&&a.iv);
@@ -2834,7 +2843,8 @@ function renderProfile(){
     <section class="card glass" aria-labelledby="cvH"><h2 class="card-h" id="cvH">קורות חיים</h2>
       <div class="row"><span class="ri">${ROW_IC.doc}</span><span class="rl"><b>${escB(p.cvName||(p.cv?'הודבקו כטקסט':'עוד לא הועלו'))}</b><span>${p.cv||p.cvName?'כל הסוכנים עובדים לפיהם':'בלעדיהם הסוכנים לא יכולים להתאים לך משרות'}</span></span>${p.cv||p.cvName?'<span class="pill-ok">פעיל</span>':'<span class="pill-warn">חסר</span>'}</div>
       <div class="duo"><label for="cvFile" class="btn btn-sm btn-ghost">${p.cvName?'להחליף קובץ':'להעלות קובץ'}</label><button class="btn btn-sm btn-ghost" onclick="editCvText()">לערוך כטקסט</button></div>
-      ${CLOUDM?`<div class="field" style="margin-top:12px"><label for="ghIn">שם המשתמש שלך ב-GitHub</label><div style="display:flex;gap:8px"><input id="ghIn" class="ltr" placeholder="username" value="${escB((p.ans||{}).github||'')}" autocomplete="off"><button class="btn btn-sm btn-ghost" onclick="saveGithub()">שמירה</button></div></div>`:''}
+      ${CLOUDM&&domainOf(ans())!=='פיתוח תוכנה'?`<div class="field" style="margin-top:12px"><label for="pfIn">קישור לתיק עבודות או לפרויקטים</label><div style="display:flex;gap:8px"><input id="pfIn" class="ltr" type="url" placeholder="https://" value="${escB(kitOf(p).site||'')}" autocomplete="off"><button class="btn btn-sm btn-ghost" onclick="savePortfolio()">שמירה</button></div><div class="help">נכנס לטפסי הגשה ולמכתבים. ב${escB(domainOf(ans()))} תיק עבודות שווה יותר מ-GitHub.</div></div>`:''}
+      ${CLOUDM&&domainOf(ans())==='פיתוח תוכנה'?`<div class="field" style="margin-top:12px"><label for="ghIn">שם המשתמש שלך ב-GitHub</label><div style="display:flex;gap:8px"><input id="ghIn" class="ltr" placeholder="username" value="${escB((p.ans||{}).github||'')}" autocomplete="off"><button class="btn btn-sm btn-ghost" onclick="saveGithub()">שמירה</button></div></div>`:''}
       ${typeof cvSuggestHtml==='function'?cvSuggestHtml():''}</section>
     <section class="card glass" aria-labelledby="kitH"><h2 class="card-h" id="kitH">פרטים לטפסי הגשה</h2>
       ${(()=>{const d=kitData(),miss=['phone','email','city','edu','auth'].filter(k=>!d[k]).length;return`<div class="card-sub">${miss?`חסרים ${miss} פרטים. איתם ערכת ההגשה ממלאת טפסים כמעט לבד.`:'מוכן. ערכת ההגשה ממלאת מהם טפסים.'}</div>
@@ -2935,6 +2945,7 @@ function chName(v){const m=String(v||'').trim().match(/(?:t\.me\/(?:s\/)?|@)?([A
 function addChannel(){const c=chName($('tgCh').value);if(!c){toast('צריך קישור לערוץ ציבורי, למשל t.me/hitechjobsjunior');return}
   const p=prof();p.ans=p.ans||{};p.ans.telegram=p.ans.telegram||[];if(!p.ans.telegram.includes(c))p.ans.telegram.push(c);save();renderProfile();toast(`${N('hunter')} יקרא את ${c} מהסריקה הבאה`)}
 function rmChannel(c){const p=prof();p.ans.telegram=(p.ans.telegram||[]).filter(x=>x!==c);save();renderProfile()}
+function savePortfolio(){const v=($('pfIn').value||'').trim(),p=prof();p.ans=p.ans||{};p.ans.kit=Object.assign({},p.ans.kit,{site:v});save();toast('נשמר')}
 function liHow(){openSheet(`<h3 id="sheetTitle">איך ${escB(N('linkedin'))} קורא את הפרופיל</h3>
   <div class="sheet-sub">findjob לא נכנס לחשבון ה-LinkedIn שלך. ${escB(N('linkedin'))} קורא עותק שאתה שומר:</div>
   <ol class="how-ol"><li>בפרופיל שלך ב-LinkedIn לוחצים More (או "עוד")</li><li>בוחרים Save to PDF</li><li>כאן לוחצים ${prof().li_text?'"עדכנתי את הפרופיל"':'"להעלות את הפרופיל"'} ובוחרים את הקובץ</li></ol>
@@ -3072,7 +3083,7 @@ async function cloudLoad(){
     loadJobs(uid),
     SB.from('runs').select('agent,stats,created_at').eq('user_id',uid).order('created_at',{ascending:false}).limit(150)]);
   if(pr){const p=prof();p.first=pr.first||p.first;p.name=pr.name||p.name;p.cv=pr.cv_text||p.cv;p.ans=Object.assign({},pr.answers||{},p.ans||{});
-    if(pr.team&&Object.keys(pr.team).length)S.team=pr.team;const st=pr.state||{};['apps','todos','stories'].forEach(k=>{if(Array.isArray(st[k]))S[k]=st[k]});if(st.targets)S.targets=st.targets;if(Array.isArray(st.history))S.history=st.history;if(Array.isArray(st.chat))S.chat=st.chat;if(Array.isArray(st.accepted))S.accepted=st.accepted;if(Array.isArray(st.dismissed))S.dismissed=st.dismissed;if(Array.isArray(st.cvDone))S.cvDone=st.cvDone;if(st.usage)S.usage=st.usage;if(st.ai_key)S.ai_key=st.ai_key;if(Array.isArray(st.feedback))S.feedback=st.feedback;if(Array.isArray(st.my_letters))S.my_letters=st.my_letters;if(st.push)S.push=st.push;if(st.tourDone)S.tourDone=true;p.li_text=pr.li_text||'';LI=Object.assign({},pr.li||{},{fixes:((pr.li_fixes||{}).fixes)||[]});if(pr.cv_text)S.onboarded=true}
+    if(pr.team&&Object.keys(pr.team).length)S.team=pr.team;const st=pr.state||{};['apps','todos','stories'].forEach(k=>{if(Array.isArray(st[k]))S[k]=st[k]});if(st.targets)S.targets=st.targets;if(Array.isArray(st.history))S.history=st.history;if(Array.isArray(st.chat))S.chat=st.chat;if(Array.isArray(st.accepted))S.accepted=st.accepted;if(Array.isArray(st.dismissed))S.dismissed=st.dismissed;if(Array.isArray(st.cvDone))S.cvDone=st.cvDone;if(st.usage)S.usage=st.usage;if(st.ai_key)S.ai_key=st.ai_key;if(Array.isArray(st.feedback))S.feedback=st.feedback;if(Array.isArray(st.my_letters))S.my_letters=st.my_letters;if(st.push)S.push=st.push;if(st.tourDone)S.tourDone=true;if(st.fb_status)S.fb_status=st.fb_status;p.li_text=pr.li_text||'';LI=Object.assign({},pr.li||{},{fixes:((pr.li_fixes||{}).fixes)||[]});if(pr.cv_text)S.onboarded=true}
   prof().key='cloud';
   RUNS=runs||[];const hr=RUNS.filter(r=>(r.agent||'hunter')==='hunter');
   if(hr.length||(jobs&&jobs.length)){
@@ -3085,7 +3096,7 @@ async function cloudLoad(){
   _decSnap=Object.assign({},S.decisions);_profSnap=profRow();
   LS.set(SKEY,S);window.__runsReady=true;if(typeof applyTeam==='function')applyTeam();buildWorkflow();
 }
-function profRow(){const p=prof();return JSON.stringify({first:p.first||'',name:p.name||'',cv_text:p.cv||'',answers:p.ans||{},team:S.team||{},state:{apps:S.apps,todos:S.todos,stories:S.stories,targets:S.targets||{added:[],removed:[]},history:S.history||[],chat:(S.chat||[]).slice(-40),accepted:S.accepted||[],dismissed:S.dismissed||[],cvDone:S.cvDone||[],usage:S.usage||{},ai_key:S.ai_key||'',feedback:(S.feedback||[]).slice(-30),my_letters:(S.my_letters||[]).slice(0,5),push:S.push||null,tourDone:!!S.tourDone},li_text:p.li_text||''})}
+function profRow(){const p=prof();return JSON.stringify({first:p.first||'',name:p.name||'',cv_text:p.cv||'',answers:p.ans||{},team:S.team||{},state:{apps:S.apps,todos:S.todos,stories:S.stories,targets:S.targets||{added:[],removed:[]},history:S.history||[],chat:(S.chat||[]).slice(-40),accepted:S.accepted||[],dismissed:S.dismissed||[],cvDone:S.cvDone||[],usage:S.usage||{},ai_key:S.ai_key||'',feedback:(S.feedback||[]).slice(-30),my_letters:(S.my_letters||[]).slice(0,5),push:S.push||null,tourDone:!!S.tourDone,fb_status:S.fb_status||{}},li_text:p.li_text||''})}
 function cloudSync(){clearTimeout(_syncT);_syncT=setTimeout(async()=>{
   if(!ME)return;
   const row=profRow();
@@ -3400,6 +3411,26 @@ function setPref(x){const p=prof();p.ans=p.ans||{};const a=p.ans,clean=v=>String
     case 'set_salary':if(!SALS.includes(x.salary))return false;a.salary=x.salary;return true;
     case 'add_channel':{const ch=chName(x.channel);if(!ch)return false;a.telegram=a.telegram||[];if(!a.telegram.includes(ch))a.telegram.push(ch);return true}
   }return false}
+
+/* ═════════ כלי מפתח: רק לבעלים (מי שמקבל את דוח השימוש) ═════════ */
+const isOwner=()=>!!((typeof RUNS!=='undefined'&&RUNS)||[]).find(x=>x.stats&&x.stats.usage_report);
+const FB_ST={'':'חדש',got:'התקבלה',doing:'בעבודה',done:'נוספה',no:'לא כרגע'};
+function openDev(){const ur=(RUNS||[]).find(x=>x.stats&&x.stats.usage_report),u=ur?ur.stats.usage_report:{rows:[],feedback:[]};
+  const fails=(RUNS||[]).filter(r=>r.stats&&Array.isArray(r.stats.failures)&&Date.now()-new Date(r.created_at)<14*864e5);
+  const fb=u.feedback||[],st=S.fb_status||{};
+  openSheet(`<h3 id="sheetTitle">כלי מפתח <span class="dev-tag">מפתח</span></h3><div class="sheet-sub">רק אתה רואה את זה. ${ur?'הדוח מ-'+new Date(ur.created_at).toLocaleDateString('he-IL'):'הדוח הראשון יגיע בסריקת הבוקר'}.</div>
+    <div class="dev-sum"><span><b class="num">${u.rows.length}</b> משתמשים</span><span><b class="num">${u.rows.filter(r=>r.days_week).length}</b> פעילים השבוע</span><span><b class="num">${fb.filter(f=>!st[f.key]).length}</b> משובים חדשים</span><span class="${fails.length?'bad':''}"><b class="num">${fails.length}</b> ריצות עם תקלות</span></div>
+    <button class="btn btn-sm btn-ghost btn-block" onclick="openUsage()">דוח שימוש מלא</button>
+    <h4 class="sub-h">משובים ובקשות</h4>
+    ${fb.length?fb.map(f=>`<div class="dev-fb"><div><b>${escB(f.name)}</b> · ${escB(f.at)}</div><p>${escB(f.t)}</p>
+      <label class="vh" for="fb-${escB(f.key)}">סטטוס</label><select id="fb-${escB(f.key)}" onchange="setFbStatus('${escB(f.key)}',this.value)">${Object.entries(FB_ST).map(([k,l])=>`<option value="${k}"${(st[f.key]||'')===k?' selected':''}>${l}</option>`).join('')}</select></div>`).join('')
+      :'<p class="card-sub">אין משובים מהחודש האחרון.</p>'}
+    <p class="card-sub">כשמשנים סטטוס, המשתמש מקבל הודעה בסריקת הבוקר.</p>
+    <h4 class="sub-h">ריצות עם תקלות (14 ימים)</h4>
+    ${fails.length?fails.map(r=>`<div class="dev-fb"><div><b>${escB(r.stats.job||'ריצה')}</b> · ${new Date(r.created_at).toLocaleString('he-IL',{day:'numeric',month:'numeric',hour:'2-digit',minute:'2-digit'})}${r.stats.run?` · <a class="ext" href="${escB(r.stats.run)}" target="_blank" rel="noopener">ליומן</a>`:''}</div>
+      <ul>${r.stats.failures.slice(0,6).map(f=>`<li dir="auto">${escB(f.where)} · ${escB(f.user)} · <span dir="ltr">${escB(f.error)}</span></li>`).join('')}</ul></div>`).join('')
+      :'<p class="card-sub">אין תקלות. הכל רץ.</p>'}`)}
+function setFbStatus(k,v){S.fb_status=Object.assign({},S.fb_status);if(v)S.fb_status[k]=v;else delete S.fb_status[k];save();toast('נשמר. המשתמש יקבל עדכון בבוקר')}
 
 cloudBoot();
 </script>

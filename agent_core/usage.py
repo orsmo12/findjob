@@ -32,11 +32,29 @@ def report(users: list[dict], profiles: list[dict], jobs_by_user: dict[str, list
                      "saved": dec("save"), "skipped": dec("skip"), "waiting": dec(None),
                      "applied": sum(1 for a in st.get("apps") or [] if a.get("status") not in (None, "saved")),
                      "chat": c.get("chat", 0), "add_job": c.get("add_job", 0), "pages": pages})
-        for f in (st.get("feedback") or [])[-10:]:
-            if f.get("at", "") >= week:
-                feedback.append({"name": rows[-1]["name"], "t": f.get("t", "")[:500], "at": f.get("at", "")[:10]})
+        month = (datetime.now(timezone.utc) - timedelta(days=30)).date().isoformat()
+        for f in (st.get("feedback") or [])[-15:]:
+            if f.get("at", "") >= month:   # המפתח מסמן סטטוס לכל משוב (key), והמשתמש מקבל עדכון
+                feedback.append({"name": rows[-1]["name"], "t": f.get("t", "")[:500], "at": f.get("at", "")[:10],
+                                 "key": f"{u['id'][:8]}|{f.get('at', '')}", "new": f.get("at", "") >= week})
     active = sum(1 for r in rows if r["days_week"])
     msg = (f"דוח שימוש שבועי: {len(rows)} משתמשים, {active} נכנסו השבוע. "
            + " · ".join(f"{r['name']}: {r['days_week']} ימים, {r['saved']} שמורות, {r['applied']} הגשות" for r in rows[:6])
-           + (f". {len(feedback)} משובים חדשים." if feedback else "."))
+           + (f". {sum(1 for f in feedback if f['new'])} משובים חדשים." if any(f['new'] for f in feedback) else "."))
     return admin, {"rows": rows, "feedback": feedback, "msg": msg}
+
+
+FB_STATUS = {"got": "התקבלה", "doing": "בעבודה", "done": "נוספה לאפליקציה", "no": "לא תיכנס כרגע"}
+
+
+def feedback_updates(statuses: dict, profiles: list[dict], seen: dict) -> list[tuple[str, str, str, str]]:
+    """(user_id, key, status, message) לכל משוב שהמפתח שינה לו סטטוס ועוד לא דווח למשתמש."""
+    out = []
+    for p in profiles:
+        uid = p.get("user_id") or ""
+        for f in ((p.get("state") or {}).get("feedback") or []):
+            key = f"{uid[:8]}|{f.get('at', '')}"
+            st = statuses.get(key)
+            if st in FB_STATUS and seen.get(key) != st:
+                out.append((uid, key, st, f"עדכון על הבקשה שלך \"{str(f.get('t', ''))[:70]}\": {FB_STATUS[st]}. תודה ששלחת!"))
+    return out

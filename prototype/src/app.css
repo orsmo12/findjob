@@ -816,3 +816,10 @@ a.person>svg{flex:0 0 18px;width:18px;height:18px;fill:none;stroke:var(--ink3);s
 .tour-foot{display:flex;justify-content:space-between;align-items:center;gap:10px}.tour-foot>span:last-child{display:flex;gap:6px}
 .tour-dots{display:flex;gap:5px}.tour-dots i{width:7px;height:7px;border-radius:50%;background:var(--glass-edge)}.tour-dots i.on{background:var(--brand);width:18px;border-radius:4px}
 @media (prefers-reduced-motion:reduce){.tour-hole{transition:none}}
+.dev-tag{font-size:11px;font-weight:600;padding:2px 7px;border-radius:7px;background:var(--hi-lt);color:var(--hi-ink);margin-inline-start:6px;vertical-align:2px}
+.dr-item[hidden]{display:none}
+.dev-sum{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:12px 0}
+.dev-sum span{background:var(--brand-lt);border-radius:12px;padding:8px 10px;font-size:12.5px;color:var(--ink2)}.dev-sum b{display:block;font-size:18px;color:var(--brand)}
+.dev-sum .bad b{color:var(--rose)}
+.dev-fb{border-bottom:1px solid var(--glass-edge);padding:10px 0;font-size:13px}.dev-fb p{margin:4px 0 6px;color:var(--ink);font-size:14px}.dev-fb ul{margin:6px 18px 0 0;color:var(--ink2)}
+.dev-fb select{font:inherit;padding:5px 8px;border-radius:9px;border:1px solid var(--glass-edge);background:var(--solid);color:var(--ink)}

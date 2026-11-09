@@ -299,6 +299,16 @@ try:
         if admin and rep:
             db.add_run(admin, "strategist", rep["msg"], {"usage_report": rep})
             print(f"דוח שימוש: {len(rep['rows'])} משתמשים")
+        if admin:   # סטטוס לבקשות ולמשובים: המפתח מסמן בכלי המפתח, המשתמש מקבל הודעה פעם אחת לכל שינוי
+            allp = httpx.get(db._url("profiles"), headers=db._h(), params={"select": "user_id,state"}, timeout=30).json()
+            owner = next((p for p in allp if p["user_id"] == admin), {})
+            stats_ = (owner.get("state") or {}).get("fb_status") or {}
+            seen = db.system_memory("feedback").get("seen") or {}
+            ups = U.feedback_updates(stats_, allp, seen)
+            for uid, key, st, msg in ups:
+                db.add_run(uid, "assistant", msg); seen[key] = st
+            if ups:
+                db.save_system_memory("feedback", {"seen": seen})
 except Exception as e:  # noqa: BLE001
     print(f"דוח שימוש נכשל: {type(e).__name__}: {e}")
     RR.fail("דוח שימוש", None, e)

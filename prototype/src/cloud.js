@@ -44,7 +44,7 @@ async function cloudLoad(){
     loadJobs(uid),
     SB.from('runs').select('agent,stats,created_at').eq('user_id',uid).order('created_at',{ascending:false}).limit(150)]);
   if(pr){const p=prof();p.first=pr.first||p.first;p.name=pr.name||p.name;p.cv=pr.cv_text||p.cv;p.ans=Object.assign({},pr.answers||{},p.ans||{});
-    if(pr.team&&Object.keys(pr.team).length)S.team=pr.team;const st=pr.state||{};['apps','todos','stories'].forEach(k=>{if(Array.isArray(st[k]))S[k]=st[k]});if(st.targets)S.targets=st.targets;if(Array.isArray(st.history))S.history=st.history;if(Array.isArray(st.chat))S.chat=st.chat;if(Array.isArray(st.accepted))S.accepted=st.accepted;if(Array.isArray(st.dismissed))S.dismissed=st.dismissed;if(Array.isArray(st.cvDone))S.cvDone=st.cvDone;if(st.usage)S.usage=st.usage;if(st.ai_key)S.ai_key=st.ai_key;if(Array.isArray(st.feedback))S.feedback=st.feedback;if(Array.isArray(st.my_letters))S.my_letters=st.my_letters;if(st.push)S.push=st.push;if(st.tourDone)S.tourDone=true;p.li_text=pr.li_text||'';LI=Object.assign({},pr.li||{},{fixes:((pr.li_fixes||{}).fixes)||[]});if(pr.cv_text)S.onboarded=true}
+    if(pr.team&&Object.keys(pr.team).length)S.team=pr.team;const st=pr.state||{};['apps','todos','stories'].forEach(k=>{if(Array.isArray(st[k]))S[k]=st[k]});if(st.targets)S.targets=st.targets;if(Array.isArray(st.history))S.history=st.history;if(Array.isArray(st.chat))S.chat=st.chat;if(Array.isArray(st.accepted))S.accepted=st.accepted;if(Array.isArray(st.dismissed))S.dismissed=st.dismissed;if(Array.isArray(st.cvDone))S.cvDone=st.cvDone;if(st.usage)S.usage=st.usage;if(st.ai_key)S.ai_key=st.ai_key;if(Array.isArray(st.feedback))S.feedback=st.feedback;if(Array.isArray(st.my_letters))S.my_letters=st.my_letters;if(st.push)S.push=st.push;if(st.tourDone)S.tourDone=true;if(st.fb_status)S.fb_status=st.fb_status;p.li_text=pr.li_text||'';LI=Object.assign({},pr.li||{},{fixes:((pr.li_fixes||{}).fixes)||[]});if(pr.cv_text)S.onboarded=true}
   prof().key='cloud';
   RUNS=runs||[];const hr=RUNS.filter(r=>(r.agent||'hunter')==='hunter');
   if(hr.length||(jobs&&jobs.length)){
@@ -57,7 +57,7 @@ async function cloudLoad(){
   _decSnap=Object.assign({},S.decisions);_profSnap=profRow();
   LS.set(SKEY,S);window.__runsReady=true;if(typeof applyTeam==='function')applyTeam();buildWorkflow();
 }
-function profRow(){const p=prof();return JSON.stringify({first:p.first||'',name:p.name||'',cv_text:p.cv||'',answers:p.ans||{},team:S.team||{},state:{apps:S.apps,todos:S.todos,stories:S.stories,targets:S.targets||{added:[],removed:[]},history:S.history||[],chat:(S.chat||[]).slice(-40),accepted:S.accepted||[],dismissed:S.dismissed||[],cvDone:S.cvDone||[],usage:S.usage||{},ai_key:S.ai_key||'',feedback:(S.feedback||[]).slice(-30),my_letters:(S.my_letters||[]).slice(0,5),push:S.push||null,tourDone:!!S.tourDone},li_text:p.li_text||''})}
+function profRow(){const p=prof();return JSON.stringify({first:p.first||'',name:p.name||'',cv_text:p.cv||'',answers:p.ans||{},team:S.team||{},state:{apps:S.apps,todos:S.todos,stories:S.stories,targets:S.targets||{added:[],removed:[]},history:S.history||[],chat:(S.chat||[]).slice(-40),accepted:S.accepted||[],dismissed:S.dismissed||[],cvDone:S.cvDone||[],usage:S.usage||{},ai_key:S.ai_key||'',feedback:(S.feedback||[]).slice(-30),my_letters:(S.my_letters||[]).slice(0,5),push:S.push||null,tourDone:!!S.tourDone,fb_status:S.fb_status||{}},li_text:p.li_text||''})}
 function cloudSync(){clearTimeout(_syncT);_syncT=setTimeout(async()=>{
   if(!ME)return;
   const row=profRow();
@@ -372,3 +372,23 @@ function setPref(x){const p=prof();p.ans=p.ans||{};const a=p.ans,clean=v=>String
     case 'set_salary':if(!SALS.includes(x.salary))return false;a.salary=x.salary;return true;
     case 'add_channel':{const ch=chName(x.channel);if(!ch)return false;a.telegram=a.telegram||[];if(!a.telegram.includes(ch))a.telegram.push(ch);return true}
   }return false}
+
+/* ═════════ כלי מפתח: רק לבעלים (מי שמקבל את דוח השימוש) ═════════ */
+const isOwner=()=>!!((typeof RUNS!=='undefined'&&RUNS)||[]).find(x=>x.stats&&x.stats.usage_report);
+const FB_ST={'':'חדש',got:'התקבלה',doing:'בעבודה',done:'נוספה',no:'לא כרגע'};
+function openDev(){const ur=(RUNS||[]).find(x=>x.stats&&x.stats.usage_report),u=ur?ur.stats.usage_report:{rows:[],feedback:[]};
+  const fails=(RUNS||[]).filter(r=>r.stats&&Array.isArray(r.stats.failures)&&Date.now()-new Date(r.created_at)<14*864e5);
+  const fb=u.feedback||[],st=S.fb_status||{};
+  openSheet(`<h3 id="sheetTitle">כלי מפתח <span class="dev-tag">מפתח</span></h3><div class="sheet-sub">רק אתה רואה את זה. ${ur?'הדוח מ-'+new Date(ur.created_at).toLocaleDateString('he-IL'):'הדוח הראשון יגיע בסריקת הבוקר'}.</div>
+    <div class="dev-sum"><span><b class="num">${u.rows.length}</b> משתמשים</span><span><b class="num">${u.rows.filter(r=>r.days_week).length}</b> פעילים השבוע</span><span><b class="num">${fb.filter(f=>!st[f.key]).length}</b> משובים חדשים</span><span class="${fails.length?'bad':''}"><b class="num">${fails.length}</b> ריצות עם תקלות</span></div>
+    <button class="btn btn-sm btn-ghost btn-block" onclick="openUsage()">דוח שימוש מלא</button>
+    <h4 class="sub-h">משובים ובקשות</h4>
+    ${fb.length?fb.map(f=>`<div class="dev-fb"><div><b>${escB(f.name)}</b> · ${escB(f.at)}</div><p>${escB(f.t)}</p>
+      <label class="vh" for="fb-${escB(f.key)}">סטטוס</label><select id="fb-${escB(f.key)}" onchange="setFbStatus('${escB(f.key)}',this.value)">${Object.entries(FB_ST).map(([k,l])=>`<option value="${k}"${(st[f.key]||'')===k?' selected':''}>${l}</option>`).join('')}</select></div>`).join('')
+      :'<p class="card-sub">אין משובים מהחודש האחרון.</p>'}
+    <p class="card-sub">כשמשנים סטטוס, המשתמש מקבל הודעה בסריקת הבוקר.</p>
+    <h4 class="sub-h">ריצות עם תקלות (14 ימים)</h4>
+    ${fails.length?fails.map(r=>`<div class="dev-fb"><div><b>${escB(r.stats.job||'ריצה')}</b> · ${new Date(r.created_at).toLocaleString('he-IL',{day:'numeric',month:'numeric',hour:'2-digit',minute:'2-digit'})}${r.stats.run?` · <a class="ext" href="${escB(r.stats.run)}" target="_blank" rel="noopener">ליומן</a>`:''}</div>
+      <ul>${r.stats.failures.slice(0,6).map(f=>`<li dir="auto">${escB(f.where)} · ${escB(f.user)} · <span dir="ltr">${escB(f.error)}</span></li>`).join('')}</ul></div>`).join('')
+      :'<p class="card-sub">אין תקלות. הכל רץ.</p>'}`)}
+function setFbStatus(k,v){S.fb_status=Object.assign({},S.fb_status);if(v)S.fb_status[k]=v;else delete S.fb_status[k];save();toast('נשמר. המשתמש יקבל עדכון בבוקר')}

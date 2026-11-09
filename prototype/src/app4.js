@@ -19,7 +19,8 @@ function renderProfile(){
     <section class="card glass" aria-labelledby="cvH"><h2 class="card-h" id="cvH">קורות חיים</h2>
       <div class="row"><span class="ri">${ROW_IC.doc}</span><span class="rl"><b>${escB(p.cvName||(p.cv?'הודבקו כטקסט':'עוד לא הועלו'))}</b><span>${p.cv||p.cvName?'כל הסוכנים עובדים לפיהם':'בלעדיהם הסוכנים לא יכולים להתאים לך משרות'}</span></span>${p.cv||p.cvName?'<span class="pill-ok">פעיל</span>':'<span class="pill-warn">חסר</span>'}</div>
       <div class="duo"><label for="cvFile" class="btn btn-sm btn-ghost">${p.cvName?'להחליף קובץ':'להעלות קובץ'}</label><button class="btn btn-sm btn-ghost" onclick="editCvText()">לערוך כטקסט</button></div>
-      ${CLOUDM?`<div class="field" style="margin-top:12px"><label for="ghIn">שם המשתמש שלך ב-GitHub</label><div style="display:flex;gap:8px"><input id="ghIn" class="ltr" placeholder="username" value="${escB((p.ans||{}).github||'')}" autocomplete="off"><button class="btn btn-sm btn-ghost" onclick="saveGithub()">שמירה</button></div></div>`:''}
+      ${CLOUDM&&domainOf(ans())!=='פיתוח תוכנה'?`<div class="field" style="margin-top:12px"><label for="pfIn">קישור לתיק עבודות או לפרויקטים</label><div style="display:flex;gap:8px"><input id="pfIn" class="ltr" type="url" placeholder="https://" value="${escB(kitOf(p).site||'')}" autocomplete="off"><button class="btn btn-sm btn-ghost" onclick="savePortfolio()">שמירה</button></div><div class="help">נכנס לטפסי הגשה ולמכתבים. ב${escB(domainOf(ans()))} תיק עבודות שווה יותר מ-GitHub.</div></div>`:''}
+      ${CLOUDM&&domainOf(ans())==='פיתוח תוכנה'?`<div class="field" style="margin-top:12px"><label for="ghIn">שם המשתמש שלך ב-GitHub</label><div style="display:flex;gap:8px"><input id="ghIn" class="ltr" placeholder="username" value="${escB((p.ans||{}).github||'')}" autocomplete="off"><button class="btn btn-sm btn-ghost" onclick="saveGithub()">שמירה</button></div></div>`:''}
       ${typeof cvSuggestHtml==='function'?cvSuggestHtml():''}</section>
     <section class="card glass" aria-labelledby="kitH"><h2 class="card-h" id="kitH">פרטים לטפסי הגשה</h2>
       ${(()=>{const d=kitData(),miss=['phone','email','city','edu','auth'].filter(k=>!d[k]).length;return`<div class="card-sub">${miss?`חסרים ${miss} פרטים. איתם ערכת ההגשה ממלאת טפסים כמעט לבד.`:'מוכן. ערכת ההגשה ממלאת מהם טפסים.'}</div>
@@ -120,6 +121,7 @@ function chName(v){const m=String(v||'').trim().match(/(?:t\.me\/(?:s\/)?|@)?([A
 function addChannel(){const c=chName($('tgCh').value);if(!c){toast('צריך קישור לערוץ ציבורי, למשל t.me/hitechjobsjunior');return}
   const p=prof();p.ans=p.ans||{};p.ans.telegram=p.ans.telegram||[];if(!p.ans.telegram.includes(c))p.ans.telegram.push(c);save();renderProfile();toast(`${N('hunter')} יקרא את ${c} מהסריקה הבאה`)}
 function rmChannel(c){const p=prof();p.ans.telegram=(p.ans.telegram||[]).filter(x=>x!==c);save();renderProfile()}
+function savePortfolio(){const v=($('pfIn').value||'').trim(),p=prof();p.ans=p.ans||{};p.ans.kit=Object.assign({},p.ans.kit,{site:v});save();toast('נשמר')}
 function liHow(){openSheet(`<h3 id="sheetTitle">איך ${escB(N('linkedin'))} קורא את הפרופיל</h3>
   <div class="sheet-sub">findjob לא נכנס לחשבון ה-LinkedIn שלך. ${escB(N('linkedin'))} קורא עותק שאתה שומר:</div>
   <ol class="how-ol"><li>בפרופיל שלך ב-LinkedIn לוחצים More (או "עוד")</li><li>בוחרים Save to PDF</li><li>כאן לוחצים ${prof().li_text?'"עדכנתי את הפרופיל"':'"להעלות את הפרופיל"'} ובוחרים את הקובץ</li></ol>
