@@ -24,7 +24,7 @@ def test_exact_host_vs_similar_company():
 
 def test_low_confidence_is_not_scanned(monkeypatch=None):
     orig = A.discover
-    A.discover = lambda cx, name, slugs=None, reject=None: {"board": "site", "url": "https://www.hailotalent.com/careers", "confirm": True}
+    A.discover = lambda cx, name, slugs=None, reject=None, seen=None: {"board": "site", "url": "https://www.hailotalent.com/careers", "confirm": True}
     try:
         jobs, status, cache = A.collect_targets([{"name": "Hailo", "why": ["הוספת בעצמך"]}], {"titles": ["Backend Developer"]}, {})
     finally:
@@ -34,9 +34,9 @@ def test_low_confidence_is_not_scanned(monkeypatch=None):
 
 
 def test_rejected_site_is_rediscovered():
-    seen = {}
-    def fake(cx, name, slugs=None, reject=None):
-        seen["reject"] = reject; return None
+    got = {}
+    def fake(cx, name, slugs=None, reject=None, seen=None):
+        got["reject"] = reject; return None
     orig = A.discover; A.discover = fake
     from datetime import datetime, timezone
     cache = {"hailo": {"b": {"board": "site", "url": "https://www.hailotalent.com/careers", "confirm": True},
@@ -45,7 +45,7 @@ def test_rejected_site_is_rediscovered():
         _, status, _ = A.collect_targets([{"name": "Hailo", "reject": ["https://www.hailotalent.com/careers"]}], {"titles": []}, cache)
     finally:
         A.discover = orig
-    assert seen["reject"] == ["https://www.hailotalent.com/careers"] and status[0]["status"] == "by_name"
+    assert got["reject"] == ["https://www.hailotalent.com/careers"] and status[0]["status"] == "by_name"
 
 
 def test_official_site_marks_company_as_existing():
