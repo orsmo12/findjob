@@ -204,5 +204,26 @@ for u in db.profiles_ready():
     except Exception as e:  # noqa: BLE001
         print(f"קורות חיים מ-GitHub נכשל: {type(e).__name__}: {e}"); act.flush(); RR.fail("קורות חיים מ-GitHub", u["user_id"], e)
 
+# "להכין עכשיו": ריצה למשתמש אחד. בודקים גם שהמשרות השמורות עדיין פתוחות, ומסמנים לאפליקציה שסיימנו
+import os as _os
+if (_os.environ.get("ONLY_USER") or "").strip():
+    from agent_core.agents.live import check as still_open
+    import httpx as _hx
+    for u in db.profiles_ready():
+        act.start(u["user_id"])
+        try:
+            with _hx.Client(timeout=12, follow_redirects=True, headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/124"}) as cx:
+                for row in db.saved_open(u["user_id"]):
+                    c, st = row["card"], still_open(row["card"].get("url", ""), cx)
+                    now_iso = datetime.now(timezone.utc).isoformat()
+                    upd = {**c, "check": {"st": st, "at": now_iso, "n": 0}, **({"closed_at": now_iso} if st == "closed" else {})}
+                    db.update_job(u["user_id"], row["id"], {"card": upd})
+                    if st == "closed":
+                        db.add_run(u["user_id"], "hunter", f"בדקתי עכשיו: {c['title']} ב-{c['co']} נסגרה למועמדים. העברתי להיסטוריה.")
+        except Exception as e:  # noqa: BLE001
+            RR.fail("בדיקת משרות (להכין עכשיו)", u["user_id"], e)
+        act.flush()
+        db.save_memory(u["user_id"], "assistant", {"prep_done": datetime.now(timezone.utc).isoformat()})
+
 budget_sync.push()
 RR.send("המשימות")

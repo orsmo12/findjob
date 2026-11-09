@@ -950,6 +950,11 @@ a.person>svg{flex:0 0 18px;width:18px;height:18px;fill:none;stroke:var(--ink3);s
 .br-ic{width:24px;height:24px}
 .br-toggle{margin-top:8px}
 .tb-dot{box-shadow:0 0 0 2px #fff,0 0 0 3px rgba(23,59,51,.55)}
+#prepBar{position:fixed;z-index:60;left:12px;right:12px;bottom:calc(84px + env(safe-area-inset-bottom));max-width:440px;margin:auto;background:var(--brand);color:#fff;border-radius:16px;padding:12px 14px;display:flex;flex-direction:column;gap:3px;box-shadow:var(--g-shadow-lg);font-size:13px}
+#prepBar b{font-size:14px}#prepBar span{opacity:.9}
+#prepBar i{display:block;height:5px;border-radius:3px;background:rgba(255,255,255,.2);margin-top:6px;overflow:hidden}#prepBar u{display:block;height:100%;background:var(--hi);transition:width 1s}
+#prepBar.done{background:var(--hi);color:var(--hi-ink)}
+@media (prefers-reduced-motion:reduce){#prepBar u{transition:none}}
 
 </style>
 <link rel="manifest" href="/manifest.webmanifest">
@@ -2149,7 +2154,8 @@ function renderApps(){
   const list=S.apps.filter(a=>inSeg(a,trFilter));
   if(!list.length){$('appsList').innerHTML=historyHtml(true)+`<div class="empty"><div class="empty-ic">📋</div><h3>עוד אין כאן משרות</h3><p>משרות שתשמור יגיעו לכאן, עם מכתב פנייה מוכן.</p><button class="btn btn-primary" onclick="goPage('jobs')">למשרות החדשות</button></div>`;return}
   const order={interview:0,screening:1,offer:2,saved:3,applied:4,rejected:5,ghosted:6,withdrew:7};
-  $('appsList').innerHTML=list.slice().sort((x,y)=>order[x.status]-order[y.status]).map(a=>{
+  const prepBtn=CLOUDM&&S.apps.some(a=>a.status==='saved')?`<button class="btn btn-sm btn-ghost btn-block" style="margin-bottom:10px" onclick="prepNow()">${ICO.spark||''}לעדכן הכל עכשיו</button>`:'';
+  $('appsList').innerHTML=prepBtn+list.slice().sort((x,y)=>order[x.status]-order[y.status]).map(a=>{
     const j=JOBS[a.jobId],fu=followDue(a);
     return`<div class="swipe" data-id="${a.id}"><div class="swipe-bg" aria-hidden="true"><span>הסרה</span><span>הסרה</span></div><article class="app glass">${j.closed_at?`<div class="closed-tag">המשרה נסגרה למועמדים חדשים</div>`:''}
       <button class="app-top" style="width:100%;text-align:right" onclick="openApp('${a.id}')" aria-label="${escB(j.title)} ב-${escB(j.co)}, ${STATUSES[a.status]}">
@@ -2204,7 +2210,7 @@ function paintAppTab(id){
         <div class="field"><label for="edNote">הערות שלי</label><textarea id="edNote" class="textbox" rows="3" placeholder="עם מי דיברתי, מה ביקשו, מה הלאה…" onchange="appOf('${id}').note=this.value;save()">${esc(a.note||'')}</textarea></div></div>
       <div class="s-sec"><a class="btn btn-ghost btn-block ext" href="${j.url||LI_URL+'jobs/'}" target="_blank" rel="noopener">פתח את המשרה${ICO.open}</a>
         ${CLOUDM?`<button class="btn btn-ghost btn-block" style="margin-top:8px" onclick="askAboutJob('${a.jobId}')">לשאול את ${escB(N('assistant'))} על המשרה</button>`:''}
-        ${CLOUDM&&a.status==='saved'?`<button class="btn btn-ghost btn-block" style="margin-top:8px" onclick="markClosed('${id}')">המשרה נסגרה</button>`:''}
+        ${CLOUDM&&a.status==='saved'?`<button class="btn btn-ghost btn-block" style="margin-top:8px" onclick="prepNow()">${ICO.spark||''}להכין עכשיו</button><button class="btn btn-ghost btn-block" style="margin-top:8px" onclick="markClosed('${id}')">המשרה נסגרה</button>`:''}
         <button class="btn btn-ghost btn-block" style="margin-top:8px;color:var(--rose)" onclick="closeSheet();removeApp('${id}')">להסיר מההגשות</button></div>`;
   }else if(appTab==='letter'){
     el.innerHTML=kitTabHtml(a,j,id);
@@ -3282,6 +3288,25 @@ function aiKeyCard(){return `<section class="card glass" aria-labelledby="akH"><
     <div class="duo"><button class="btn btn-sm btn-ghost" onclick="openOnb(3)">להחליף</button><button class="btn btn-sm btn-ghost" onclick="removeAiKey()">להסיר</button></div>`
   :`<div class="card-sub">בלי מפתח אישי, הסוכנים עובדים במכסה משותפת ומוגבלת. מפתח חינמי לוקח דקה.</div>
     <button class="btn btn-sm btn-primary btn-block" onclick="openOnb(3)">ליצור מפתח חינמי</button>`}</section>`}
+
+/* "להכין עכשיו": ריצה של הסוכנים רק בשבילך (מכתב, סקירה, הכנה, התאמת קורות חיים, בדיקה שהמשרות פתוחות) */
+let _prep=null;
+async function prepNow(){
+  if(_prep){toast('הסוכנים כבר עובדים. אפשר להמשיך להשתמש באפליקציה');return}
+  closeSheet();let d={},r;
+  try{const {data:{session}}=await SB.auth.getSession();
+    r=await fetch('/api/prepnow',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:session&&session.access_token})});d=await r.json()}catch(e){}
+  if(!r||!d.ok){toast(d.error==='wait'?`אפשר להפעיל פעם ב-10 דקות. עוד ${d.minutes} דק׳`:d.error==='no_token'?'הכפתור עוד לא מחובר. המפתח צריך להשלים הגדרה אחת':d.error==='auth'?'צריך להתחבר מחדש':'לא הצלחתי להפעיל. נסה שוב בעוד דקה');return}
+  _prep={at:d.at,t0:Date.now()};prepBar();_prep.timer=setInterval(prepPoll,15000);
+}
+function prepBar(done){let b=$('prepBar');if(!b){b=document.createElement('div');b.id='prepBar';b.setAttribute('role','status');document.body.appendChild(b)}
+  if(done){b.innerHTML=`<b>מוכן ✓</b><span>הכל עודכן. המכתבים, הסקירות וההכנה מחכים בהגשות.</span>`;b.classList.add('done');setTimeout(()=>b.remove(),6000);return}
+  const p=Math.min(92,Math.round((Date.now()-_prep.t0)/2400));
+  b.innerHTML=`<b>הסוכנים עובדים בשבילך</b><span>בדרך כלל 2 עד 4 דקות. בסיום הכל יופיע בהגשות ובמשרד.</span><i><u style="width:${p}%"></u></i>`}
+async function prepPoll(){if(!_prep)return;prepBar();
+  try{const {data}=await SB.from('runs').select('plan,created_at').eq('user_id',ME.id).eq('agent','assistant').gte('created_at',_prep.at).not('plan','is',null).limit(5);
+    if((data||[]).some(x=>x.plan&&x.plan.prep_done)){clearInterval(_prep.timer);_prep=null;await cloudLoad();if(typeof refreshApps==='function')refreshApps();prepBar(true);return}}catch(e){}
+  if(Date.now()-_prep.t0>9*60e3){clearInterval(_prep.timer);_prep=null;const b=$('prepBar');if(b)b.remove();toast('זה לוקח יותר מהרגיל. התוצאות יופיעו כשהריצה תסתיים');try{await cloudLoad();refreshApps()}catch(e){}}}
 
 cloudBoot();
 </script>

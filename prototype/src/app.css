@@ -804,3 +804,8 @@ a.person>svg{flex:0 0 18px;width:18px;height:18px;fill:none;stroke:var(--ink3);s
 .br-ic{width:24px;height:24px}
 .br-toggle{margin-top:8px}
 .tb-dot{box-shadow:0 0 0 2px #fff,0 0 0 3px rgba(23,59,51,.55)}
+#prepBar{position:fixed;z-index:60;left:12px;right:12px;bottom:calc(84px + env(safe-area-inset-bottom));max-width:440px;margin:auto;background:var(--brand);color:#fff;border-radius:16px;padding:12px 14px;display:flex;flex-direction:column;gap:3px;box-shadow:var(--g-shadow-lg);font-size:13px}
+#prepBar b{font-size:14px}#prepBar span{opacity:.9}
+#prepBar i{display:block;height:5px;border-radius:3px;background:rgba(255,255,255,.2);margin-top:6px;overflow:hidden}#prepBar u{display:block;height:100%;background:var(--hi);transition:width 1s}
+#prepBar.done{background:var(--hi);color:var(--hi-ink)}
+@media (prefers-reduced-motion:reduce){#prepBar u{transition:none}}

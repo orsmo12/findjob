@@ -10,7 +10,8 @@ function renderApps(){
   const list=S.apps.filter(a=>inSeg(a,trFilter));
   if(!list.length){$('appsList').innerHTML=historyHtml(true)+`<div class="empty"><div class="empty-ic">📋</div><h3>עוד אין כאן משרות</h3><p>משרות שתשמור יגיעו לכאן, עם מכתב פנייה מוכן.</p><button class="btn btn-primary" onclick="goPage('jobs')">למשרות החדשות</button></div>`;return}
   const order={interview:0,screening:1,offer:2,saved:3,applied:4,rejected:5,ghosted:6,withdrew:7};
-  $('appsList').innerHTML=list.slice().sort((x,y)=>order[x.status]-order[y.status]).map(a=>{
+  const prepBtn=CLOUDM&&S.apps.some(a=>a.status==='saved')?`<button class="btn btn-sm btn-ghost btn-block" style="margin-bottom:10px" onclick="prepNow()">${ICO.spark||''}לעדכן הכל עכשיו</button>`:'';
+  $('appsList').innerHTML=prepBtn+list.slice().sort((x,y)=>order[x.status]-order[y.status]).map(a=>{
     const j=JOBS[a.jobId],fu=followDue(a);
     return`<div class="swipe" data-id="${a.id}"><div class="swipe-bg" aria-hidden="true"><span>הסרה</span><span>הסרה</span></div><article class="app glass">${j.closed_at?`<div class="closed-tag">המשרה נסגרה למועמדים חדשים</div>`:''}
       <button class="app-top" style="width:100%;text-align:right" onclick="openApp('${a.id}')" aria-label="${escB(j.title)} ב-${escB(j.co)}, ${STATUSES[a.status]}">
@@ -65,7 +66,7 @@ function paintAppTab(id){
         <div class="field"><label for="edNote">הערות שלי</label><textarea id="edNote" class="textbox" rows="3" placeholder="עם מי דיברתי, מה ביקשו, מה הלאה…" onchange="appOf('${id}').note=this.value;save()">${esc(a.note||'')}</textarea></div></div>
       <div class="s-sec"><a class="btn btn-ghost btn-block ext" href="${j.url||LI_URL+'jobs/'}" target="_blank" rel="noopener">פתח את המשרה${ICO.open}</a>
         ${CLOUDM?`<button class="btn btn-ghost btn-block" style="margin-top:8px" onclick="askAboutJob('${a.jobId}')">לשאול את ${escB(N('assistant'))} על המשרה</button>`:''}
-        ${CLOUDM&&a.status==='saved'?`<button class="btn btn-ghost btn-block" style="margin-top:8px" onclick="markClosed('${id}')">המשרה נסגרה</button>`:''}
+        ${CLOUDM&&a.status==='saved'?`<button class="btn btn-ghost btn-block" style="margin-top:8px" onclick="prepNow()">${ICO.spark||''}להכין עכשיו</button><button class="btn btn-ghost btn-block" style="margin-top:8px" onclick="markClosed('${id}')">המשרה נסגרה</button>`:''}
         <button class="btn btn-ghost btn-block" style="margin-top:8px;color:var(--rose)" onclick="closeSheet();removeApp('${id}')">להסיר מההגשות</button></div>`;
   }else if(appTab==='letter'){
     el.innerHTML=kitTabHtml(a,j,id);
