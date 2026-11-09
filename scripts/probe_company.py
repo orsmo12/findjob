@@ -47,6 +47,10 @@ def main(name: str) -> None:
                     if "newrelic" not in m.group(0).lower():
                         print("   pos>", m.group(0)[:200])
                 print("   has COMPANY_POSITIONS_DATA:", "COMPANY_POSITIONS_DATA" in page, "| incapsula:", "Incapsula" in page)
+            print("   site_links:", A.site_links(page, str(r.url))[:5])
+            for m in re.finditer(r"<a[^>]+href=[\"'][^\"']*[0-9A-F]{2}\.[0-9A-F]{3}[^>]*>.{0,400}?</a>", page, re.S | re.I):
+                print("   a>", re.sub(r"\s+", " ", m.group(0))[:400])
+                break
             print("   ids:", sorted(set(re.findall(r"\b[0-9A-F]{2}\.[0-9A-F]{3}\b", page)))[:15])
         b = A.discover(cx, name)
         print("-- discover():", b)
