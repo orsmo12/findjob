@@ -107,7 +107,7 @@ function actionText(x){const j=x.job_id&&JOBS[x.job_id],n=j?`${j.title} ב-${j.c
   return{set_status:`לעדכן את ${n} ל"${ST_HE[x.status]||x.status}"${x.iv?` (${x.iv})`:''}`,add_note:`להוסיף הערה ל-${n}: "${x.text}"`,
     set_letter:`להחליף את מכתב הפנייה ל-${n} בגרסה החדשה`,add_job:`להוסיף משרה מהקישור`,save_job:`לשמור את ${n} ולהעביר להגשות`,
     skip_job:`לדלג על ${n}`,remove_app:`להסיר את ${n} מההגשות`,add_todo:`להוסיף משימה: "${x.text}"`,add_story:`להוסיף לבנק הסיפורים: "${x.title}"`,add_role:`להוסיף לחיפוש את התפקיד ${x.role}`,remove_role:`להוריד מהחיפוש את התפקיד ${x.role}`,add_target:`להוסיף את ${x.name} לחברות היעד`,remove_target:`להסיר את ${x.name} מחברות היעד`,
-    set_area:`לחפש באזורים: ${(x.locs||[]).join(', ')}`,set_mode:`לעדכן אופן עבודה: ${x.mode}`,add_exclude:`לא להציג משרות עם "${x.word}" בכותרת`,remove_exclude:`להציג שוב משרות עם "${x.word}"`,set_salary:`לעדכן ציפיות שכר: ${x.salary}`,feedback:`לשלוח למפתח את הבקשה: "${x.text}"`}[x.type]}
+    set_area:`לחפש באזורים: ${(x.locs||[]).join(', ')}`,set_mode:`לעדכן אופן עבודה: ${x.mode}`,add_exclude:`לא להציג משרות עם "${x.word}" בכותרת`,remove_exclude:`להציג שוב משרות עם "${x.word}"`,set_salary:`לעדכן ציפיות שכר: ${x.salary}`,add_channel:`להוסיף את ערוץ הטלגרם ${x.channel}`,feedback:`לשלוח למפתח את הבקשה: "${x.text}"`}[x.type]}
 function actionCard(x,idx){
   const txt=actionText(x);if(!txt)return null;const h=S.chat[idx]||{};
   const el=document.createElement('div');el.className='act-card';
@@ -131,7 +131,7 @@ async function runAction(x){
     case 'add_todo':S.todos.unshift({id:'t'+Date.now(),text:x.text,done:false});break;
     case 'add_story':S.stories.push({id:'s'+Date.now(),t:x.title,b:x.body||''});break;
     case 'feedback':S.feedback=S.feedback||[];S.feedback.push({t:String(x.text||'').slice(0,1000),at:new Date().toISOString(),page:'chat'});track('feedback');break;
-    case 'add_role':case 'remove_role':case 'add_target':case 'remove_target':case 'set_area':case 'set_mode':case 'add_exclude':case 'remove_exclude':case 'set_salary':
+    case 'add_role':case 'remove_role':case 'add_target':case 'remove_target':case 'set_area':case 'set_mode':case 'add_exclude':case 'remove_exclude':case 'set_salary':case 'add_channel':
       if(!setPref(x))return false;save();if(curPg==='profile')renderProfile();toast(`עודכן. ${N('hunter')} יחפש לפי זה מהסריקה הבאה`);return true;
     case 'add_job':toggleChat();openAddJob();setTimeout(()=>{const i=$('ajUrl');if(i)i.value=x.url||''},250);return true;
     default:return false;
@@ -370,4 +370,5 @@ function setPref(x){const p=prof();p.ans=p.ans||{};const a=p.ans,clean=v=>String
     case 'add_exclude':{const w=clean(x.word);if(!w)return false;a.exclude=a.exclude||[];if(lower(a.exclude,w)<0)a.exclude.push(w);return true}
     case 'remove_exclude':{const i=lower(a.exclude||[],clean(x.word));if(i<0)return false;a.exclude.splice(i,1);return true}
     case 'set_salary':if(!SALS.includes(x.salary))return false;a.salary=x.salary;return true;
+    case 'add_channel':{const ch=chName(x.channel);if(!ch)return false;a.telegram=a.telegram||[];if(!a.telegram.includes(ch))a.telegram.push(ch);return true}
   }return false}

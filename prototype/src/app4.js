@@ -46,6 +46,10 @@ function renderProfile(){
       <div class="card-sub">${escB(N('strategist'))} בנה את זה מקורות החיים ומהתשובות שלך, ומעדכן בכל שינוי.</div>
       <ul class="plan-list">${planWhy().map(w=>`<li>${escB(w)}</li>`).join('')}</ul>
       ${typeof lastMeeting==='function'&&lastMeeting()?`<button class="link" style="font-size:13px;color:var(--brand);margin:6px 0" onclick="openMeeting()">לדוח של הישיבה השבועית</button>`:''}
+      <h3 class="sub-h">ערוצי טלגרם</h3>
+      <div class="card-sub">${escB(N('hunter'))} קורא ערוצים ציבוריים של משרות, בלי חשבון.${(p.ans||{}).telegram&&p.ans.telegram.length?'':(domainOf(ans())==='פיתוח תוכנה'?' כרגע: hitechjobsjunior (ברירת מחדל).':'')}</div>
+      <div class="learned">${((p.ans||{}).telegram||[]).map(c=>`<span class="chip" dir="ltr">${escB(c)}<button aria-label="להסיר את ${escB(c)}" onclick="rmChannel('${escB(c).replace(/'/g,"\\'")}')">×</button></span>`).join('')}</div>
+      <div class="todo-foot" style="padding:8px 0 0;border:0"><label for="tgCh" class="vh">ערוץ טלגרם להוספה</label><input id="tgCh" class="ltr" placeholder="t.me/channel" onkeydown="if(event.key==='Enter')addChannel()"><button class="btn btn-sm btn-ghost" onclick="addChannel()">הוסף</button></div>
       <h3 class="sub-h">חברות יעד</h3>
       <div class="card-sub">כך ${escB(N('hunter'))} בדק אותן בסריקה האחרונה:</div>
       ${(()=>{const rt=realTargets();return rt?targetsHtml(rt):`<div class="learned">${targetCompanies().map(c=>`<span class="chip" title="${escB(c.why.join(' · '))}">${escB(c.name)}<button aria-label="להסיר את ${escB(c.name)}" onclick="removeTarget('${escB(c.name).replace(/'/g,"\\'")}')">×</button></span>`).join('')}</div>`})()}
@@ -112,6 +116,10 @@ function openLetterPrefs(){const p=prof();
 function saveLetterPrefs(){const p=prof();p.ans=p.ans||{};p.ans.now=$('lpNow').value.trim();
   S.my_letters=$('lpLet').value.split(/\n\s*-{3,}\s*\n/).map(x=>x.trim()).filter(x=>x.length>80).slice(0,3);save();closeSheet();renderProfile();
   toast(`נשמר. המכתבים הבאים של ${N('assistant')} ייכתבו לפי זה`)}
+function chName(v){const m=String(v||'').trim().match(/(?:t\.me\/(?:s\/)?|@)?([A-Za-z][A-Za-z0-9_]{3,31})\/?$/);return m?m[1]:''}
+function addChannel(){const c=chName($('tgCh').value);if(!c){toast('צריך קישור לערוץ ציבורי, למשל t.me/hitechjobsjunior');return}
+  const p=prof();p.ans=p.ans||{};p.ans.telegram=p.ans.telegram||[];if(!p.ans.telegram.includes(c))p.ans.telegram.push(c);save();renderProfile();toast(`${N('hunter')} יקרא את ${c} מהסריקה הבאה`)}
+function rmChannel(c){const p=prof();p.ans.telegram=(p.ans.telegram||[]).filter(x=>x!==c);save();renderProfile()}
 function liHow(){openSheet(`<h3 id="sheetTitle">איך ${escB(N('linkedin'))} קורא את הפרופיל</h3>
   <div class="sheet-sub">findjob לא נכנס לחשבון ה-LinkedIn שלך. ${escB(N('linkedin'))} קורא עותק שאתה שומר:</div>
   <ol class="how-ol"><li>בפרופיל שלך ב-LinkedIn לוחצים More (או "עוד")</li><li>בוחרים Save to PDF</li><li>כאן לוחצים ${prof().li_text?'"עדכנתי את הפרופיל"':'"להעלות את הפרופיל"'} ובוחרים את הקובץ</li></ol>
