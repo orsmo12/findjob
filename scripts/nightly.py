@@ -141,7 +141,8 @@ for u in users:
                         + f": {len(mine)} משרות בישראל")
             else:
                 # חברה מהקטלוג קיימת בוודאות: החיפוש פשוט לא החזיר אותה הפעם. רק שם שהוספת בעצמך אולי לא מדויק
-                b.update(status="not_found" if "הוספת בעצמך" in b["why"] else "by_name_miss")
+                # חברה מוכרת (קטלוג) או שמצאנו את האתר הרשמי שלה: היא קיימת, פשוט אין עכשיו משרות. רק שם שהוספת ולא נמצא בשום מקום — אולי לא מדויק
+                b.update(status="not_found" if "הוספת בעצמך" in b["why"] and not b.get("official") else "by_name_miss")
                 if b["status"] == "not_found":  # אולי שגיאת כתיב: השם הכי קרוב מבין החברות שהחיפוש החזיר ומהקטלוג
                     import difflib
                     pool = {j["company"]: j["company"] for j in got if j.get("company")}
@@ -153,7 +154,8 @@ for u in users:
                 if b["status"] == "not_found":
                     cache.setdefault(b["name"].lower(), {"b": None, "at": datetime.now(timezone.utc).isoformat()})["nf"] = datetime.now(timezone.utc).isoformat()
                 act.log("hunter", f"{b['name']}: " + ("לא מצאתי משרות בשם הזה. אולי השם לא מדויק?" if b["status"] == "not_found"
-                                                      else "החיפוש לפי השם לא החזיר הפעם משרות שלה. אנסה שוב בסריקה הבאה."))
+                                                      else (f"מצאתי את האתר שלה ({b['official']}), אבל כרגע אין בו רשימת משרות שאפשר לקרוא, והחיפוש לפי השם לא החזיר משרות. אנסה שוב בסריקה הבאה."
+                                                            if b.get("official") else "החיפוש לפי השם לא החזיר הפעם משרות שלה. אנסה שוב בסריקה הבאה.")))
         if any(b.get("found_as") or b["status"] == "not_found" for b in by_name[:3] if "הוספת בעצמך" in b["why"]):
             fixed = [b for b in by_name[:3] if "הוספת בעצמך" in b["why"]]
             db.add_run(u["user_id"], "hunter", " ".join(

@@ -238,8 +238,10 @@ def _search(q: str, n: int = 8) -> list[str]:
         return []
 
 
-def discover(cx: httpx.Client, name: str, slugs: list[str] | None = None, reject: list[str] | None = None) -> dict | None:
-    """מחפש את הלוח של החברה. מקבל רק לוח שהשם שלו תואם את שם החברה, ושבאמת עונה."""
+def discover(cx: httpx.Client, name: str, slugs: list[str] | None = None, reject: list[str] | None = None,
+             seen: dict | None = None) -> dict | None:
+    """seen (אם ניתן) מקבל את האתר הרשמי שנמצא גם כשאין בו משרות לקריאה: כך יודעים שהחברה קיימת.
+    מחפש את הלוח של החברה. מקבל רק לוח שהשם שלו תואם את שם החברה, ושבאמת עונה."""
     cands = list(dict.fromkeys((slugs or []) + [re.sub(r"[^a-z0-9]", "", name.lower()), norm(name)]))
     for slug in [c for c in cands if c][:4]:
         for kind in BOARDS:
@@ -273,6 +275,8 @@ def discover(cx: httpx.Client, name: str, slugs: list[str] | None = None, reject
             continue
         page = rr.text
         texts.append(page)
+        if seen is not None and rr.status_code == 200 and exact_host(name, str(rr.url)) and "official" not in seen:
+            seen["official"] = host_of(str(rr.url))
         if (site is None or site.get("confirm")) and rr.status_code == 200 and len(site_links(page, str(rr.url))) >= 2:
             # ביטחון גבוה רק כשהשם זהה וגם הדף מזכיר את ישראל. hailotalent.com או hailo.de (סולמות בגרמניה) ל-Hailo:
             # אולי חברה אחרת, המשתמש מאשר
@@ -336,14 +340,18 @@ def collect_targets(targets: list[dict], plan: dict, cache: dict | None = None, 
                 b = c["board"]
             elif not fresh and discovered < discover_max:
                 discovered += 1
-                b = discover(cx, name, c.get("slugs"), c.get("reject"))
-                cache[key] = {"b": b, "at": now.isoformat(), "v": CACHE_V, **({"as": ent["as"]} if ent and ent.get("as") else {})}
+                seen: dict = {}
+                b = discover(cx, name, c.get("slugs"), c.get("reject"), seen)
+                cache[key] = {"b": b, "at": now.isoformat(), "v": CACHE_V, **({"as": ent["as"]} if ent and ent.get("as") else {}),
+                              **({"official": seen["official"]} if seen.get("official") else {})}
                 act.log("hunter", f"מחפש איפה {name} מפרסמת משרות: " + (f"נמצא לוח {board_label(b)} ✓" if b else "אין לוח ציבורי שאפשר לקרוא. אחפש אותה לפי השם ב-LinkedIn וב-Indeed"))
             elif not fresh:
                 status.append({"name": name, "status": "pending", "why": c.get("why", []), "auto": c.get("auto", False)})
                 continue
             if not b:
-                status.append({"name": name, "status": "by_name", "why": c.get("why", []), "auto": c.get("auto", False)})
+                off = (cache.get(key) or {}).get("official")
+                status.append({"name": name, "status": "by_name", "why": c.get("why", []), "auto": c.get("auto", False),
+                               **({"official": off} if off else {})})
                 continue
             if b.get("confirm"):   # ביטחון נמוך: לא סורקים עד שהמשתמש מאשר. בינתיים מחפשים לפי השם
                 status.append({"name": name, "status": "confirm", "found": {"url": b.get("url", ""), "host": host_of(b.get("url", "")),

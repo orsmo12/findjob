@@ -46,3 +46,15 @@ def test_rejected_site_is_rediscovered():
     finally:
         A.discover = orig
     assert seen["reject"] == ["https://www.hailotalent.com/careers"] and status[0]["status"] == "by_name"
+
+
+def test_official_site_marks_company_as_existing():
+    orig = A.discover
+    def fake(cx, name, slugs=None, reject=None, seen=None):
+        seen["official"] = "hailo.ai"; return None
+    A.discover = fake
+    try:
+        _, status, cache = A.collect_targets([{"name": "Hailo", "why": ["הוספת בעצמך"]}], {"titles": []}, {})
+    finally:
+        A.discover = orig
+    assert status[0]["status"] == "by_name" and status[0]["official"] == "hailo.ai" and cache["hailo"]["official"] == "hailo.ai"
