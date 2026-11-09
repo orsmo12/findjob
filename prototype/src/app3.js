@@ -425,7 +425,7 @@ if(k==='full'&&(R.first.test(L)||R.last.test(L)))k=R.first.test(L)?'first':'last
 let v=k==='letter'?(clip.length>200?clip:''):D[k];
 if(k&&v){set(e,v);const sure=k!=='letter'&&k!=='city'&&k!=='salary'&&k!=='start';mark(e,sure?'#3E8A66':'#E9A825');n++;if(!sure)y++}
 else if(e.required||e.getAttribute('aria-required')==='true'){mark(e,'#E9A825');y++}}
-const b=document.createElement('div');b.dir='rtl';b.style.cssText='position:fixed;z-index:2147483647;top:12px;left:12px;right:12px;max-width:420px;margin:auto;background:#1E4A38;color:#fff;font:15px/1.5 system-ui,sans-serif;padding:12px 16px;border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.3)';
+const b=document.createElement('div');b.dir='rtl';b.style.cssText='position:fixed;z-index:2147483647;top:12px;left:12px;right:12px;max-width:420px;margin:auto;background:#2F4858;color:#fff;font:15px/1.5 system-ui,sans-serif;padding:12px 16px;border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.3)';
 b.textContent='findjob מילא '+n+' שדות. '+(y?y+' מסומנים בצהוב: כדאי לבדוק (קובץ קורות חיים, בחירות, מכתב). ':'')+'בדוק הכל ושלח בעצמך. findjob לא שולח.';b.onclick=()=>b.remove();document.body.appendChild(b);setTimeout(()=>b.remove(),12000)})()`;
   return 'javascript:'+encodeURIComponent(src)}
 function openFillHelp(){const href=fillBookmarklet();
