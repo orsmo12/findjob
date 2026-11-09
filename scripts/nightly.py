@@ -172,7 +172,17 @@ for u in users:
         db.save_memory(u["user_id"], "boards", {"cache": cache})
         ok = [b for b in boards if b["status"] == "board"]
         print(f"{u['user_id'][:8]}: לוחות חברה: {len(ok)} מתוך {len(targets)} ({', '.join(b['name'] + ' ' + b['board'] for b in ok[:12])}), {len(direct)} משרות רלוונטיות")
-        feed = run(prof, plan, raw=collect(plan) + direct + named, seen=db.seen_ids(u["user_id"]), persist=False, rate_top=fair_rate_top(u))
+        tg = []
+        try:   # ערוצי טלגרם ציבוריים: מה שהוספת, או ברירת המחדל לתוכנה
+            from agent_core.agents import telegram as TG
+            chans = [c for c in (TG.channel_name(x) for x in (prof["answers"].get("telegram") or [])) if c] \
+                or (TG.DEFAULT_CHANNELS if plan.get("domain", "פיתוח תוכנה") == "פיתוח תוכנה" else [])
+            tg = TG.collect(chans) if chans else []
+        except BudgetDeferred:
+            act.log("hunter", "מכסת ה-AI נגמרה לפני הטלגרם. אקרא אותו בסריקה הבאה.")
+        except Exception as e:  # noqa: BLE001
+            RR.fail("טלגרם", u["user_id"], e)
+        feed = run(prof, plan, raw=collect(plan) + direct + named + tg, seen=db.seen_ids(u["user_id"]), persist=False, rate_top=fair_rate_top(u))
         feed["stats"]["direct_boards"] = len(ok)
         feed["stats"]["boards"] = boards
         if feed["jobs"]:
