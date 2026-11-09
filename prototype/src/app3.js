@@ -384,12 +384,11 @@ function kitTabHtml(a,j,id){
       ${REAL&&!a.letter&&!j.letter?`<div class="hint-line">${N('assistant')} מכין את המכתב. הוא יופיע כאן תוך שעתיים בערך.</div>`:j.letter&&!j.letter.checked?`<div class="hint-line">חלק מהמשפטים הוסרו כי לא נמצאו בקורות החיים. כדאי לקרוא לפני ששולחים.</div>`:`<div class="hint-line ok">✓ כל שם, טכנולוגיה ומספר במכתב נבדקו מול קורות החיים והמודעה</div>`}
       <button class="btn btn-ghost btn-sm" onclick="copyText($('letterBox').value,'המכתב הועתק')">${ICO.copy}להעתיק את המכתב</button></div>
     <div class="s-sec"><h4>הפרטים שלך לטופס</h4>
-      ${KIT_FIELDS.filter(([k])=>d[k]&&!['first','last'].includes(k)).map(([k,l])=>`<div class="kit-row"><span>${l}</span><b dir="auto">${escB(d[k])}</b><button aria-label="להעתיק ${l}" onclick="copyText(${escB(JSON.stringify(d[k]))},'${l} הועתק')">${ICO.copy}</button></div>`).join('')}
-      ${missing.length?`<p class="card-sub" style="margin-top:6px">חסר: ${escB(missing.map(m=>m[1]).join(', '))}. <button class="link" style="color:var(--brand);font-weight:600" onclick="closeSheet();openKitEdit()">להשלים</button></p>`:''}</div>
+      <p class="card-sub">${KIT_FIELDS.filter(([k])=>!['first','last'].includes(k)).length-missing.length} מתוך ${KIT_FIELDS.filter(([k])=>!['first','last'].includes(k)).length} מולאו${missing.length?`. חסר: ${escB(missing.map(m=>m[1]).join(', '))}`:''}. <button class="link" style="color:var(--brand);font-weight:600" onclick="closeSheet();openKitEdit()">${missing.length?'להשלים':'לערוך'}</button></p></div>
     <div class="s-sec"><h4>מילוי הטופס</h4>
       <ol class="how-ol"><li>להעתיק את המכתב (למעלה)</li><li>לפתוח את המשרה ולהגיע לטופס</li><li>ללחוץ על הסימנייה "findjob · מילוי". היא ממלאת את מה שהיא מזהה ומסמנת בצהוב מה לבדוק. היא לא שולחת לעולם</li></ol>
       <div class="duo"><button class="btn btn-ghost" onclick="openFillHelp()">איך מוסיפים את הסימנייה</button><a class="btn btn-primary ext" href="${j.url||LI_URL+'jobs/'}" target="_blank" rel="noopener" onclick="copyText($('letterBox').value,'המכתב הועתק. הדבק אותו בטופס')">לפתוח את המשרה${ICO.open}</a></div>
-      <p class="card-sub" style="margin-top:8px">בטלפון אפשר גם להעתיק כל פרט בלחיצה מהרשימה למעלה. ${CLOUDM?`שאלה בטופס? <button class="link" style="color:var(--brand);font-weight:600" onclick="askAboutJob('${a.jobId}');$('chatInput').value+='בטופס ההגשה שואלים: '">${escB(N('assistant'))} זמין בצ׳אט</button>`:''}</p></div>
+      <p class="card-sub" style="margin-top:8px">${CLOUDM?`שאלה בטופס? <button class="link" style="color:var(--brand);font-weight:600" onclick="askAboutJob('${a.jobId}');$('chatInput').value+='בטופס ההגשה שואלים: '">${escB(N('assistant'))} זמין בצ׳אט</button>`:''}</p></div>
     <div class="s-sec">${appliedBox(a,true)}</div>`;
 }
 
@@ -436,4 +435,4 @@ function openFillHelp(){const href=fillBookmarklet();
     <h4 class="sub-h">בטלפון</h4><ol class="how-ol"><li>להעתיק את הקוד בכפתור למטה</li><li>להוסיף לסימניות דף כלשהו, ולערוך את הסימנייה: שם "findjob מילוי", ובכתובת להדביק את הקוד</li>
       <li>אנדרואיד (Chrome): בדף הטופס מקלידים בשורת הכתובת "findjob מילוי" ובוחרים את הסימנייה. אייפון (Safari): פותחים את הסימניות ולוחצים עליה</li></ol>
     <button class="btn btn-ghost btn-block" onclick="copyText(${escB(JSON.stringify(href))},'הקוד הועתק')">${ICO.copy}להעתיק את הקוד</button>
-    <p class="card-sub" style="margin-top:8px">יש אתרים שחוסמים סימניות כאלה. אז מעתיקים כל פרט בלחיצה מערכת ההגשה. הסימנייה עובדת עם Greenhouse, Lever, Comeet, Workday ורוב הטפסים הרגילים.</p>`)}
+    <p class="card-sub" style="margin-top:8px">הסימנייה עובדת עם Greenhouse, Lever, Comeet, Workday ורוב הטפסים הרגילים. יש אתרים שחוסמים סימניות כאלה, ושם ממלאים ידנית.</p>`)}

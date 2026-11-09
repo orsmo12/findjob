@@ -511,7 +511,7 @@ details.letter textarea:focus{border-color:var(--brand)}
   border:1px solid var(--glass-brd);border-bottom:0;box-shadow:0 -20px 60px -20px rgba(16,60,44,.4);
   transform:translateY(102%);transition:transform .38s cubic-bezier(.22,.9,.25,1.05);direction:rtl}
 .sheet.open .sheet-panel{transform:none}
-.sheet-grab{width:40px;height:5px;border-radius:3px;background:rgba(18,40,32,.16);margin:10px auto 2px;flex-shrink:0}
+.sheet-grab{width:40px;height:5px;border-radius:3px;background:rgba(18,40,32,.16);margin:10px auto 28px;flex-shrink:0}  /* מקום לכפתור הסגירה: התוכן לא נגלל מתחתיו */
 .sheet-body{overflow-y:auto;padding:12px 20px calc(24px + env(safe-area-inset-bottom,0px))}
 .sheet-body h3{font-size:19px;font-weight:700;letter-spacing:-.01em}
 .sheet-sub{font-size:13px;color:var(--ink3);margin-top:3px}
@@ -642,7 +642,7 @@ body.pg-jobs #toasts{bottom:calc(120px + env(safe-area-inset-bottom,0px))}
 .dr-item.dr-sub svg{width:17px;height:17px}
 .dr-item.dr-sub[hidden]{display:none}
 .sheet-panel{position:relative}
-.sheet-x{position:absolute;top:12px;left:14px;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:rgba(18,40,32,.06);color:var(--ink2);z-index:2}
+.sheet-x{position:absolute;top:8px;left:14px;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:rgba(18,40,32,.06);color:var(--ink2);z-index:2}
 .sheet-x svg{width:15px;height:15px;stroke:currentColor;stroke-width:2.3;fill:none;stroke-linecap:round}
 .sheet-body h3{padding-left:40px}
 .btn .oi{width:16px;height:16px}
@@ -2547,12 +2547,11 @@ function kitTabHtml(a,j,id){
       ${REAL&&!a.letter&&!j.letter?`<div class="hint-line">${N('assistant')} מכין את המכתב. הוא יופיע כאן תוך שעתיים בערך.</div>`:j.letter&&!j.letter.checked?`<div class="hint-line">חלק מהמשפטים הוסרו כי לא נמצאו בקורות החיים. כדאי לקרוא לפני ששולחים.</div>`:`<div class="hint-line ok">✓ כל שם, טכנולוגיה ומספר במכתב נבדקו מול קורות החיים והמודעה</div>`}
       <button class="btn btn-ghost btn-sm" onclick="copyText($('letterBox').value,'המכתב הועתק')">${ICO.copy}להעתיק את המכתב</button></div>
     <div class="s-sec"><h4>הפרטים שלך לטופס</h4>
-      ${KIT_FIELDS.filter(([k])=>d[k]&&!['first','last'].includes(k)).map(([k,l])=>`<div class="kit-row"><span>${l}</span><b dir="auto">${escB(d[k])}</b><button aria-label="להעתיק ${l}" onclick="copyText(${escB(JSON.stringify(d[k]))},'${l} הועתק')">${ICO.copy}</button></div>`).join('')}
-      ${missing.length?`<p class="card-sub" style="margin-top:6px">חסר: ${escB(missing.map(m=>m[1]).join(', '))}. <button class="link" style="color:var(--brand);font-weight:600" onclick="closeSheet();openKitEdit()">להשלים</button></p>`:''}</div>
+      <p class="card-sub">${KIT_FIELDS.filter(([k])=>!['first','last'].includes(k)).length-missing.length} מתוך ${KIT_FIELDS.filter(([k])=>!['first','last'].includes(k)).length} מולאו${missing.length?`. חסר: ${escB(missing.map(m=>m[1]).join(', '))}`:''}. <button class="link" style="color:var(--brand);font-weight:600" onclick="closeSheet();openKitEdit()">${missing.length?'להשלים':'לערוך'}</button></p></div>
     <div class="s-sec"><h4>מילוי הטופס</h4>
       <ol class="how-ol"><li>להעתיק את המכתב (למעלה)</li><li>לפתוח את המשרה ולהגיע לטופס</li><li>ללחוץ על הסימנייה "findjob · מילוי". היא ממלאת את מה שהיא מזהה ומסמנת בצהוב מה לבדוק. היא לא שולחת לעולם</li></ol>
       <div class="duo"><button class="btn btn-ghost" onclick="openFillHelp()">איך מוסיפים את הסימנייה</button><a class="btn btn-primary ext" href="${j.url||LI_URL+'jobs/'}" target="_blank" rel="noopener" onclick="copyText($('letterBox').value,'המכתב הועתק. הדבק אותו בטופס')">לפתוח את המשרה${ICO.open}</a></div>
-      <p class="card-sub" style="margin-top:8px">בטלפון אפשר גם להעתיק כל פרט בלחיצה מהרשימה למעלה. ${CLOUDM?`שאלה בטופס? <button class="link" style="color:var(--brand);font-weight:600" onclick="askAboutJob('${a.jobId}');$('chatInput').value+='בטופס ההגשה שואלים: '">${escB(N('assistant'))} זמין בצ׳אט</button>`:''}</p></div>
+      <p class="card-sub" style="margin-top:8px">${CLOUDM?`שאלה בטופס? <button class="link" style="color:var(--brand);font-weight:600" onclick="askAboutJob('${a.jobId}');$('chatInput').value+='בטופס ההגשה שואלים: '">${escB(N('assistant'))} זמין בצ׳אט</button>`:''}</p></div>
     <div class="s-sec">${appliedBox(a,true)}</div>`;
 }
 
@@ -2599,7 +2598,7 @@ function openFillHelp(){const href=fillBookmarklet();
     <h4 class="sub-h">בטלפון</h4><ol class="how-ol"><li>להעתיק את הקוד בכפתור למטה</li><li>להוסיף לסימניות דף כלשהו, ולערוך את הסימנייה: שם "findjob מילוי", ובכתובת להדביק את הקוד</li>
       <li>אנדרואיד (Chrome): בדף הטופס מקלידים בשורת הכתובת "findjob מילוי" ובוחרים את הסימנייה. אייפון (Safari): פותחים את הסימניות ולוחצים עליה</li></ol>
     <button class="btn btn-ghost btn-block" onclick="copyText(${escB(JSON.stringify(href))},'הקוד הועתק')">${ICO.copy}להעתיק את הקוד</button>
-    <p class="card-sub" style="margin-top:8px">יש אתרים שחוסמים סימניות כאלה. אז מעתיקים כל פרט בלחיצה מערכת ההגשה. הסימנייה עובדת עם Greenhouse, Lever, Comeet, Workday ורוב הטפסים הרגילים.</p>`)}
+    <p class="card-sub" style="margin-top:8px">הסימנייה עובדת עם Greenhouse, Lever, Comeet, Workday ורוב הטפסים הרגילים. יש אתרים שחוסמים סימניות כאלה, ושם ממלאים ידנית.</p>`)}
 
 /* ═════════ ONBOARDING ═════════ */
 let onbStep=0, onbDraft=null, onbSingle=false;
