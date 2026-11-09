@@ -114,10 +114,10 @@ module.exports = async (req, res) => {
   const shared = !/^gsk_\w{20,}/.test(own);
   if (!shared) key = own;   // מפתח אישי של המשתמש, אם הכניס
   const today = new Date().toISOString().slice(0, 10);
-  let used = null;   // null = אין עמודת chat_use (לא הורץ ה-SQL), ואז לא מגבילים
+  let used = null, chatUse = null;   // null = אין עמודת chat_use (לא הורץ ה-SQL), ואז לא מגבילים
   if (shared) {
     const [u] = (await sb(`/rest/v1/profiles?select=chat_use&user_id=eq.${user.id}`, token)) || [];
-    if (u) used = (u.chat_use && u.chat_use.day === today) ? (u.chat_use.n || 0) : 0;
+    if (u) { chatUse = u.chat_use || {}; used = chatUse.day === today ? (chatUse.n || 0) : 0; }
     if (used !== null && used >= SHARED_DAILY) return res.status(429).json({ error: 'limit', limit: SHARED_DAILY });
   }
   if (!key) return res.status(500).json({ error: 'no_key' });
@@ -148,7 +148,7 @@ module.exports = async (req, res) => {
       if (used !== null) {   // סופרים רק תשובה שהצליחה
         await fetch(SB + `/rest/v1/profiles?user_id=eq.${user.id}`, { method: 'PATCH',
           headers: { apikey: PK, Authorization: 'Bearer ' + token, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
-          body: JSON.stringify({ chat_use: { day: today, n: used + 1 } }) }).catch(() => {});
+          body: JSON.stringify({ chat_use: { ...(chatUse || {}), day: today, n: used + 1 } }) }).catch(() => {});
       }
       return res.status(200).json({ reply: t, action, left: used !== null ? SHARED_DAILY - used - 1 : null });
     } catch (e) { /* המודל הבא */ }

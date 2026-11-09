@@ -793,3 +793,13 @@ a.person>svg{flex:0 0 18px;width:18px;height:18px;fill:none;stroke:var(--ink3);s
 .kit-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--glass-edge);font-size:14px}
 .kit-row span{color:var(--ink2);min-width:96px;font-size:13px}.kit-row b{flex:1;font-weight:500;overflow-wrap:anywhere}
 .kit-row button{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;color:var(--brand)}.kit-row button svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2}
+.br-list li[hidden]{display:none}
+.brief{padding:14px 16px}
+.brief-top{margin-bottom:8px}
+.br-list{gap:7px}
+.br-list li{font-size:13.5px;line-height:1.45}
+.br-t{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.br-list.all .br-t{-webkit-line-clamp:unset;display:block}
+.br-go{cursor:pointer;font-weight:600}
+.br-ic{width:24px;height:24px}
+.br-toggle{margin-top:8px}

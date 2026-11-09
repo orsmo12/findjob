@@ -104,6 +104,8 @@ function briefItems(closed,sug){
     const t=st.msg.split(/(?<=\.)\s/)[0];if(seen.has(t))return;seen.add(t);
     out.push({ic:ICO[BR_IC[r.agent]||'spark'],t:`${N(r.agent||'assistant')}: ${t}`})});
   closed.forEach(h=>out.unshift({ic:ICO.jobs,t:`${h.title} ב-${h.co} נסגרה למועמדים ועברה להיסטוריה.`}));
+  const q=typeof queue==='function'?queue():[];   // משרות חדשות: תמיד ראשונות
+  if(q.length)out.unshift({ic:ICO.jobs,t:`${N('hunter')}: ${q.length===1?'משרה חדשה אחת מחכה לך':q.length+' משרות חדשות מחכות לך'}.`,go:"goPage('jobs')"});
   if(sug.length)out.push({ic:ICO.spark,t:`${N('strategist')} מציע תפקיד חדש לחיפוש: ${sug.map(x=>x.value).join(', ')}.`});
   return out}
 function renderHome(){
@@ -120,8 +122,8 @@ function renderHome(){
     <div class="greet"><h2 class="greet-h">${hi}, ${escB(prof().first)}</h2><p>${escB(date)}</p></div>
     ${REAL?(FEEDD&&FEEDD.generated_at&&CLOUDM?'':`<div class="notice">${FEEDD&&FEEDD.generated_at?`המשרות אמיתיות, מהחיפוש של ${N('hunter')} ${escB(feedWhen())}.`:prof().cv?`${N('hunter')} יחפש לך משרות בסריקה הקרובה (07:00 או 15:00).`:`כדי ש${N('hunter')} יתחיל לחפש, צריך קורות חיים. <button class="link" style="color:var(--brand);font-weight:600" onclick="goPage('profile')">להעלאה</button>`} ${CLOUDM?'':'מסכי LinkedIn וההכנה לראיונות עוד מציגים דוגמאות.'}</div>`):prof().key?'':`<div class="notice">מוצגות דוגמאות עד שתחבר את הסוכנים. <button class="link" style="color:var(--brand);font-weight:600" onclick="goPage('settings')">לחיבור</button></div>`}
     <section class="brief" aria-labelledby="brH"><div class="brief-top"><h2 id="brH">מה חדש</h2><span>${escB(N('assistant'))} · ב-24 השעות האחרונות</span></div>
-      ${brief.length?`<ul class="br-list">${brief.map((x,i)=>`<li${i>3?' class="br-more" hidden':''}><span class="br-ic" aria-hidden="true">${x.ic}</span><span>${escB(x.t)}</span></li>`).join('')}</ul>
-      ${brief.length>4?`<button class="br-toggle" onclick="this.previousElementSibling.querySelectorAll('.br-more').forEach(l=>l.hidden=!l.hidden);this.textContent=this.textContent.startsWith('עוד')?'פחות':'עוד ${brief.length-4}'">עוד ${brief.length-4}</button>`:''}`
+      ${brief.length?`<ul class="br-list">${brief.map((x,i)=>`<li${i>2?' class="br-more" hidden':''}${x.go?` class="br-go" onclick="${x.go}"`:''}><span class="br-ic" aria-hidden="true">${x.ic}</span><span class="br-t">${escB(x.t)}</span></li>`).join('')}</ul>
+      ${brief.length>3?`<button class="br-toggle" onclick="const L=this.previousElementSibling,open=L.classList.toggle('all');L.querySelectorAll('.br-more').forEach(l=>l.hidden=!open);this.textContent=open?'פחות':'עוד ${brief.length-3}'">עוד ${brief.length-3}</button>`:''}`
       :`<p>אין חדש מאז הבוקר. הצעדים הבאים מחכים למטה.</p>`}</section>
     <section class="next glass" aria-labelledby="nxH"><div class="next-h"><h2 id="nxH">הצעדים הבאים</h2>${steps.length>5?`<span>5 מתוך ${steps.length}</span>`:''}</div>
       ${shown.length?shown.map(x=>`<button class="nx" onclick="${x.go}"><span class="ic ${x.c}" aria-hidden="true">${x.ic}</span><span class="tx"><b>${escB(x.b)}</b><span>${escB(x.s)}</span></span>${x.w?`<span class="when ${x.w[1]}">${x.w[0]}</span>`:''}<span class="chev" aria-hidden="true"></span></button>`).join('')
