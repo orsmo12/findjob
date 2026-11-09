@@ -64,5 +64,18 @@ def main(name: str) -> None:
                 print(f"   {j['title'][:60]} | {j['location'][:30]} | desc {len(j.get('description') or '')} | {j['url'][:90]}")
 
 
+def probe_tg(ch: str) -> None:
+    """tg:<ערוץ> — בודק שקריאת ערוץ טלגרם ציבורי עובדת (בלי AI)."""
+    from agent_core.agents import telegram as T
+    with httpx.Client(timeout=15, follow_redirects=True, headers=T.UA) as cx:
+        r = cx.get(f"https://t.me/s/{ch}")
+        print(f"== t.me/s/{ch}: {r.status_code}, {len(r.text)} chars, {r.text.count('tgme_widget_message_wrap')} posts on page")
+        posts = T.parse(r.text, days=7)
+        print(f"-- recent posts (7 days): {len(posts)}")
+        for p in posts[-6:]:
+            print("  ", p["at"][:16], p["post"], "|", p["text"][:110].replace("\n", " "), "| links:", p["links"][:2])
+
+
 if __name__ == "__main__":
-    main(" ".join(sys.argv[1:]) or "Hailo")
+    arg = " ".join(sys.argv[1:]) or "Hailo"
+    probe_tg(arg[3:]) if arg.startswith("tg:") else main(arg)
