@@ -1,19 +1,30 @@
 /* ═════════ CLOUD — חיבור ל-Supabase (רק בגרסה המאוחסנת) ═════════
-   התחברות בקישור למייל. הפרופיל, קורות החיים והשאלון נשמרים בענן, והסוכנים קוראים אותם משם בלילה.
+   התחברות עם Google (או קישור למייל, שעובד רק לחברי הצוות ב-Supabase). הפרופיל, קורות החיים והשאלון נשמרים בענן, והסוכנים קוראים אותם משם בלילה.
    המשרות שדורון מצא נטענות מהענן. כל משתמש רואה רק את הנתונים שלו (RLS). */
 let SB=null,ME=null,LI={},RUNS=[],CHAT=[],_profSnap='',_decSnap={},_syncT=null;
 function cloudLogin(msg){
   const o=$('onb');o.classList.add('open');o.classList.remove('qmode');
   $('onbSteps').innerHTML='';$('onbBack').style.visibility='hidden';
   $('onbBody').innerHTML=`<div class="logo-mark" style="margin-bottom:22px"><svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21"/><path d="M8 10.8l1.8 1.8L13.3 9"/></svg></div>
-    <h1>כניסה ל-findjob</h1><p class="lead">נשלח לך קישור כניסה למייל. בלי סיסמה.</p>
-    <div class="field"><label for="loginEmail">המייל שלך</label><input id="loginEmail" class="ltr" type="email" autocomplete="email" inputmode="email" placeholder="name@gmail.com" onkeydown="if(event.key==='Enter')cloudSend()">
-    <div class="help" id="loginHelp">${msg||''}</div></div>`;
-  $('onbFoot').innerHTML=`<button class="btn btn-primary btn-block" id="loginBtn" onclick="cloudSend()">שלחו לי קישור</button>`;
+    <h1>כניסה ל-findjob</h1><p class="lead">נכנסים עם חשבון Google. findjob מקבל רק שם ומייל, בלי גישה למייל, ליומן או לקבצים.</p>
+    <div class="help" id="loginHelp" style="margin-bottom:14px">${msg||''}</div>
+    <details class="login-mail"><summary>כניסה עם קישור למייל</summary>
+    <div class="field" style="margin-top:12px"><label for="loginEmail">המייל שלך</label><input id="loginEmail" class="ltr" type="email" autocomplete="email" inputmode="email" placeholder="name@gmail.com" onkeydown="if(event.key==='Enter')cloudSend()">
+    <div class="help" id="mailHelp"></div></div>
+    <button class="btn btn-ghost btn-block" id="loginBtn" onclick="cloudSend()">שלחו לי קישור</button></details>`;
+  $('onbFoot').innerHTML=`<button class="btn btn-primary btn-block" id="googleBtn" onclick="cloudGoogle()"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" style="margin-inline-end:8px;vertical-align:-3px;background:#fff;border-radius:50%;padding:1px"><path fill="#4285F4" d="M22.6 12.2c0-.8-.1-1.5-.2-2.2H12v4.2h5.9a5 5 0 0 1-2.2 3.3v2.7h3.6c2.1-1.9 3.3-4.8 3.3-8z"/><path fill="#34A853" d="M12 23c3 0 5.5-1 7.3-2.7l-3.6-2.8c-1 .7-2.2 1.1-3.7 1.1-2.9 0-5.3-1.9-6.2-4.5H2.1v2.8A11 11 0 0 0 12 23z"/><path fill="#FBBC05" d="M5.8 14.1a6.6 6.6 0 0 1 0-4.2V7.1H2.1a11 11 0 0 0 0 9.8z"/><path fill="#EA4335" d="M12 5.4c1.6 0 3.1.6 4.2 1.7l3.2-3.2A11 11 0 0 0 2.1 7.1l3.7 2.8C6.7 7.3 9.1 5.4 12 5.4z"/></svg>המשך עם Google</button>`;
   setTimeout(()=>$('splash').classList.add('hide'),400);
 }
+async function cloudGoogle(){
+  const b=$('googleBtn'),h=$('loginHelp');b.disabled=true;
+  const {error}=await SB.auth.signInWithOAuth({provider:'google',options:{redirectTo:location.origin+location.pathname,queryParams:{prompt:'select_account'}}});
+  if(error){b.disabled=false;h.textContent='הכניסה עם Google לא הצליחה: '+error.message;h.style.color='var(--rose)'}
+}
+function authErr(){const q=new URLSearchParams((location.hash||'').slice(1)+'&'+(location.search||'').slice(1));
+  const e=q.get('error_description')||q.get('error');if(!e)return '';
+  history.replaceState(null,'',location.pathname);return 'הכניסה לא הושלמה ('+e.replace(/\+/g,' ')+'). נסה שוב.'}
 async function cloudSend(){
-  const em=($('loginEmail').value||'').trim(),h=$('loginHelp');
+  const em=($('loginEmail').value||'').trim(),h=$('mailHelp');
   if(!/^\S+@\S+\.\S+$/.test(em)){h.textContent='צריך כתובת מייל תקינה';h.style.color='var(--rose)';return}
   $('loginBtn').disabled=true;
   const {error}=await SB.auth.signInWithOtp({email:em,options:{emailRedirectTo:location.origin+location.pathname}});
@@ -54,9 +65,11 @@ function cloudSync(){clearTimeout(_syncT);_syncT=setTimeout(async()=>{
 async function cloudBoot(){
   SB=supabase.createClient(CLOUD.url,CLOUD.key,{auth:{persistSession:true,detectSessionInUrl:true,flowType:'implicit'}});
   const {data:{session}}=await SB.auth.getSession();
-  if(!session){cloudLogin();SB.auth.onAuthStateChange((ev,s)=>{if(s&&!ME)location.reload()});return}
+  if(!session){cloudLogin(authErr());SB.auth.onAuthStateChange((ev,s)=>{if(s&&!ME)location.reload()});return}
   ME=session.user;
   try{await cloudLoad()}catch(e){console.warn(e);toast('אין חיבור לענן כרגע. מוצג מה ששמור במכשיר')}
+  {const md=ME.user_metadata||{},p=prof(),full=(md.full_name||md.name||'').trim();
+   if(full&&!p.name)p.name=full;if(full&&!p.first)p.first=full.split(/\s+/)[0];}
   closeOnb();init();
 }
 function cloudLogout(){SB.auth.signOut().then(()=>{LS.clear();location.reload()})}
