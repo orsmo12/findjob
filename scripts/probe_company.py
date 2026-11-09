@@ -51,6 +51,9 @@ def main(name: str) -> None:
             for m in re.finditer(r"<a[^>]+href=[\"'][^\"']*[0-9A-F]{2}\.[0-9A-F]{3}[^>]*>.{0,400}?</a>", page, re.S | re.I):
                 print("   a>", re.sub(r"\s+", " ", m.group(0))[:400])
                 break
+            for i in sorted(set(re.findall(r"\b[0-9A-F]{2}\.[0-9A-F]{3}\b", page)))[1:3]:
+                k = page.find(i)
+                print(f"   ctx {i}>", re.sub(r"\s+", " ", page[max(0, k - 400):k + 300]))
             print("   ids:", sorted(set(re.findall(r"\b[0-9A-F]{2}\.[0-9A-F]{3}\b", page)))[:15])
         b = A.discover(cx, name)
         print("-- discover():", b)
