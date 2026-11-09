@@ -14,6 +14,7 @@ from agent_core import cloud_store as db
 from agent_core import handoffs as H
 from agent_core import run_report as RR, budget_sync
 from agent_core.agents.letters import write_letter
+from agent_core.agents.letter_graph import write_letter_v4
 from agent_core.agents.research import brief
 from agent_core.agents.prep import prepare
 from agent_core.agents.tasks import build_tasks
@@ -37,8 +38,10 @@ def do_kind(kind: str, row: dict, u: dict, cv: str, name: str) -> dict:
         return {"brief": brief(job["co"], job["title"], cv)}
     if kind == "tailor":
         return {"tailor": G.tailor_cv(cv, job)}
-    if kind == "letter":
-        return {"letter": write_letter(cv, job, name)}
+    if kind == "letter":   # v4: לולאת LangGraph עם הסקירה של גיל, "המצב שלי" והמכתבים שהמשתמש העלה
+        st, a = u.get("state") or {}, u.get("answers") or {}
+        return {"letter": write_letter_v4(cv, job, name, row.get("brief"), str(a.get("now") or "")[:400],
+                                          [str(x) for x in st.get("my_letters") or []][:3], may_reuse=True)}
     if kind == "prep":
         prep = row.get("prep") or prepare(cv, job)
         if prep.get("tasks") is None or prep.get("more_tasks"):

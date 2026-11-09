@@ -23,7 +23,8 @@ function renderProfile(){
       ${typeof cvSuggestHtml==='function'?cvSuggestHtml():''}</section>
     <section class="card glass" aria-labelledby="kitH"><h2 class="card-h" id="kitH">פרטים לטפסי הגשה</h2>
       ${(()=>{const d=kitData(),miss=['phone','email','city','edu','auth'].filter(k=>!d[k]).length;return`<div class="card-sub">${miss?`חסרים ${miss} פרטים. איתם ערכת ההגשה ממלאת טפסים כמעט לבד.`:'מוכן. ערכת ההגשה ממלאת מהם טפסים.'}</div>
-      <button class="btn btn-sm ${miss?'btn-primary':'btn-ghost'} btn-block" style="margin-top:8px" onclick="openKitEdit()">${miss?'להשלים פרטים':'לערוך'}</button>`})()}</section>
+      <button class="btn btn-sm ${miss?'btn-primary':'btn-ghost'} btn-block" style="margin-top:8px" onclick="openKitEdit()">${miss?'להשלים פרטים':'לערוך'}</button>`})()}
+      ${CLOUDM?`<button class="row" style="margin-top:8px" onclick="openLetterPrefs()"><span class="ri">${ROW_IC.doc}</span><span class="rl"><b>המצב שלי והמכתבים שכתבתי</b><span>${escB([(p.ans||{}).now?'המצב עודכן':'המצב: עוד לא כתבת',(S.my_letters||[]).length?`${S.my_letters.length} מכתבים שלך`:'בלי מכתבים לדוגמה'].join(' · '))}</span></span><span class="chev" aria-hidden="true"></span></button>`:''}</section>
 
     ${CLOUDM?`<section class="card glass" aria-labelledby="liH"><h2 class="card-h" id="liH">פרופיל LinkedIn</h2>
       <div class="field"><label for="liUrl">הקישור לפרופיל שלך</label><div style="display:flex;gap:8px"><input id="liUrl" class="ltr" type="url" placeholder="https://www.linkedin.com/in/…" value="${escB((p.ans||{}).linkedin||'')}" autocomplete="off"><button class="btn btn-sm btn-ghost" onclick="saveLinkedin()">שמירה</button></div></div>
@@ -101,6 +102,16 @@ async function readCv(f){try{
   if(/\.docx$/i.test(f.name)){await loadScript('https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js');
     return (await mammoth.extractRawText({arrayBuffer:await f.arrayBuffer()})).value}
 }catch(e){console.warn(e)}return''}
+function openLetterPrefs(){const p=prof();
+  openSheet(`<h3 id="sheetTitle">למכתבים של ${escB(N('assistant'))}</h3><div class="sheet-sub">${escB(N('assistant'))} כותב כל מכתב לפי המצב שלך היום, ובסגנון של מכתבים שכתבת. משתמשים רק בעובדות שלך.</div>
+    <div class="field" style="margin-top:12px"><label for="lpNow">המצב שלי היום</label><textarea id="lpNow" class="textbox" rows="3" placeholder="למשל: מחכה לציון אחרון בתואר, ממוצע 85. זמין להתחיל מיד.">${esc((p.ans||{}).now||'')}</textarea>
+      <div class="help">גובר על מה שכתוב בקורות החיים, כי הוא מתעדכן.</div></div>
+    <div class="field"><label for="lpLet">מכתבים שכתבת ואהבת (עד 3)</label><textarea id="lpLet" class="textbox ltr" rows="9" dir="auto" placeholder="מדביקים מכתב. בין מכתב למכתב: שורה עם ---">${esc((S.my_letters||[]).join('\n---\n'))}</textarea>
+      <div class="help">${escB(N('assistant'))} ילמד מהם את הסגנון שלך, וישתמש בפסקאות מהם כשהן נכונות למשרה.</div></div>
+    <button class="btn btn-primary btn-block" onclick="saveLetterPrefs()">שמירה</button>`)}
+function saveLetterPrefs(){const p=prof();p.ans=p.ans||{};p.ans.now=$('lpNow').value.trim();
+  S.my_letters=$('lpLet').value.split(/\n\s*-{3,}\s*\n/).map(x=>x.trim()).filter(x=>x.length>80).slice(0,3);save();closeSheet();renderProfile();
+  toast(`נשמר. המכתבים הבאים של ${N('assistant')} ייכתבו לפי זה`)}
 function liHow(){openSheet(`<h3 id="sheetTitle">איך ${escB(N('linkedin'))} קורא את הפרופיל</h3>
   <div class="sheet-sub">findjob לא נכנס לחשבון ה-LinkedIn שלך. ${escB(N('linkedin'))} קורא עותק שאתה שומר:</div>
   <ol class="how-ol"><li>בפרופיל שלך ב-LinkedIn לוחצים More (או "עוד")</li><li>בוחרים Save to PDF</li><li>כאן לוחצים ${prof().li_text?'"עדכנתי את הפרופיל"':'"להעלות את הפרופיל"'} ובוחרים את הקובץ</li></ol>
