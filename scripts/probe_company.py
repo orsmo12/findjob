@@ -39,6 +39,10 @@ def main(name: str) -> None:
                 print("   >", m.replace("\n", " ")[:220])
             for s in re.findall(r"<script[^>]+src=[\"']([^\"']+)", page)[:30]:
                 print("   script:", s[:160])
+            if "comeet" in u:  # מה יש בדף של Comeet: נתוני משרות מוטמעים, טוקן, קריאות API
+                for m in re.finditer(r"(COMPANY_[A-Z_]+\s*=|[\"']token[\"']|careers-api|positions\?)[^;\n]{0,160}", page):
+                    print("   comeet>", m.group(0)[:200])
+                print("   has COMPANY_POSITIONS_DATA:", "COMPANY_POSITIONS_DATA" in page, "| incapsula:", "Incapsula" in page)
             print("   ids:", sorted(set(re.findall(r"\b[0-9A-F]{2}\.[0-9A-F]{3}\b", page)))[:15])
         print("-- discover():", A.discover(cx, name))
 
