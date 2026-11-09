@@ -273,10 +273,12 @@ def discover(cx: httpx.Client, name: str, slugs: list[str] | None = None, reject
             continue
         page = rr.text
         texts.append(page)
-        if site is None and rr.status_code == 200 and len(site_links(page, str(rr.url))) >= 2:
-            site = {"board": "site", "url": str(rr.url)}
-            if not exact_host(name, str(rr.url)):   # hailotalent.com ל-Hailo: אולי חברה אחרת. המשתמש מאשר
-                site["confirm"] = True
+        if (site is None or site.get("confirm")) and rr.status_code == 200 and len(site_links(page, str(rr.url))) >= 2:
+            # ביטחון גבוה רק כשהשם זהה וגם הדף מזכיר את ישראל. hailotalent.com או hailo.de (סולמות בגרמניה) ל-Hailo:
+            # אולי חברה אחרת, המשתמש מאשר
+            sure = exact_host(name, str(rr.url)) and bool(ISRAEL.search(_text(page)))
+            if site is None or sure:
+                site = {"board": "site", "url": str(rr.url), **({} if sure else {"confirm": True})}
         for kind, rx in (("greenhouse", r"boards(?:-api)?\.greenhouse\.io/(?:v1/boards/|embed/job_board\?for=)?([a-z0-9]+)"),
                          ("lever", r"jobs\.lever\.co/([a-z0-9\-]+)"), ("ashby", r"jobs\.ashbyhq\.com/([a-z0-9\-.]+)")):
             for m in re.finditer(rx, page, re.I):
