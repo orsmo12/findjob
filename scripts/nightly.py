@@ -109,6 +109,12 @@ for u in users:
         for a in learned.get("auto_targets") or []:  # חברות שהצוות הוסיף לבד (אפשר להסיר בפרופיל)
             if a["name"].lower() not in removed and a["name"].lower() not in have:
                 targets.append({"name": a["name"], "why": [a.get("why", "הצוות הוסיף")], "auto": True})
+        conf, rej = tc.get("boards") or {}, tc.get("reject") or {}
+        for t in targets:   # מה שאישרת או דחית בפרופיל ("זו החברה?")
+            k = next((n for n in conf if n.lower() == t["name"].lower()), None)
+            if k:
+                t["board"] = conf[k]
+            t["reject"] = next((v for n, v in rej.items() if n.lower() == t["name"].lower()), [])
         act.log("strategist", f"גם לבדוק ישירות את דפי הקריירה של {len(targets)} חברות יעד: {', '.join(t['name'] for t in targets[:6])}…", to="hunter")
         cache = db.latest_plan(u["user_id"], "boards").get("cache") or {}
         direct, boards, cache = collect_targets(targets, plan, cache)
@@ -154,6 +160,13 @@ for u in users:
                 (f"חיפשתי את {b['name']}: היא מפרסמת משרות בשם {b['found_as']}, ואני מחפש לפי השם הזה." if b.get("found_as")
                  else (f"לא מצאתי חברה בשם {b['name']}." + (f" התכוונת ל-{b['suggest']}? אפשר לתקן בפרופיל ‹ חברות יעד." if b.get("suggest") else " כדאי לבדוק את השם בפרופיל ‹ חברות יעד.")) if b["status"] == "not_found" else "")
                 for b in fixed).strip())
+        asked = {b["name"].lower() for r in db.recent_runs(u["user_id"], "hunter", days=10)[:1]
+                 for b in ((r.get("stats") or {}).get("boards") or []) if b.get("status") == "confirm"}
+        new_conf = [b for b in boards if b["status"] == "confirm" and b["name"].lower() not in asked]
+        if new_conf:
+            db.add_run(u["user_id"], "hunter", " ".join(f"חיפשתי את {b['name']} ומצאתי דף קריירה באתר {b['found']['host']}. "
+                                                       "אני לא בטוח שזו אותה חברה, אז לא סרקתי אותו." for b in new_conf)
+                       + " אפשר לאשר או לדחות בפרופיל ‹ חברות יעד.")
         db.save_memory(u["user_id"], "boards", {"cache": cache})
         ok = [b for b in boards if b["status"] == "board"]
         print(f"{u['user_id'][:8]}: לוחות חברה: {len(ok)} מתוך {len(targets)} ({', '.join(b['name'] + ' ' + b['board'] for b in ok[:12])}), {len(direct)} משרות רלוונטיות")

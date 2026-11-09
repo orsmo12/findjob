@@ -45,18 +45,27 @@ function realTargets(){
 /* חברות יעד: מקובצות לפי איך שדורון באמת בודק אותן */
 const bd=t=>`<bdi dir="ltr">${escB(t)}</bdi>`;
 function targetsHtml(rt){
-  const G={fix:[],board:[],name:[],pending:[]};
-  rt.forEach(b=>{(b.status==='not_found'?G.fix:b.status==='board'?G.board:(b.status==='pending'||b.status==='new')?G.pending:G.name).push(b)});
+  const G={fix:[],board:[],name:[],pending:[],confirm:[]};
+  const tc=S.targets||{},dec=n=>{const k=n.toLowerCase();return Object.keys(tc.boards||{}).some(x=>x.toLowerCase()===k)?'yes':Object.keys(tc.reject||{}).some(x=>x.toLowerCase()===k)?'no':''};
+  rt.forEach(b=>{if(b.status==='confirm'){const d=dec(b.name);if(d){G.pending.push({...b,status:d==='yes'?'confirmed':'rejected'});return}TG_FOUND[b.name]=b.found;G.confirm.push(b);return}
+    (b.status==='not_found'?G.fix:b.status==='board'?G.board:(b.status==='pending'||b.status==='new')?G.pending:G.name).push(b)});
   const x=b=>`<button class="tg-x" aria-label="להסיר את ${escB(b.name)}" onclick="removeTarget('${escB(b.name).replace(/'/g,"\\'")}')">×</button>`;
   const q=n=>escB(n).replace(/'/g,"\\'");
   const sec=(t,sub,body)=>body?`<div class="tg-sec"><div class="tg-sec-h"><b>${t}</b>${sub?`<span>${sub}</span>`:''}</div>${body}</div>`:'';
   return `<div class="tg-sum"><span><b class="num">${G.board.length}</b> נסרקות ישירות</span><span><b class="num">${G.name.length}</b> לפי שם</span>${G.fix.length?`<span class="bad"><b class="num">${G.fix.length}</b> צריך לבדוק</span>`:''}</div>`
+   +sec('זו החברה?',`${escB(N('hunter'))} מצא דף קריירה, אבל השם לא זהה. לא סורקים עד שתאשר`,G.confirm.map(b=>`<div class="tg-fix"><div><b>${bd(b.name)}</b><span>נמצא באתר <a class="ext" href="${escB(b.found.url)}" target="_blank" rel="noopener">${bd(b.found.host)}</a></span></div>
+      <div class="tg-fix-btns"><button class="btn btn-sm btn-primary" onclick="confirmTarget('${q(b.name)}',true)">כן, זו החברה</button><button class="btn btn-sm btn-ghost" onclick="confirmTarget('${q(b.name)}',false)">לא</button></div></div>`).join(''))
    +sec('צריך לבדוק','',G.fix.map(b=>`<div class="tg-fix"><div><b>${bd(b.name)}</b><span>לא נמצאה חברה בשם הזה${b.suggest?`. התכוונת ל-${bd(b.suggest)}?`:'.'}</span></div>
       <div class="tg-fix-btns">${b.suggest?`<button class="btn btn-sm btn-primary" onclick="renameTarget('${q(b.name)}','${q(b.suggest)}')">לתקן ל-${bd(b.suggest)}</button>`:''}<button class="btn btn-sm btn-ghost" onclick="editTarget('${q(b.name)}')">לערוך</button>${x(b)}</div></div>`).join(''))
    +sec('נסרקות ישירות מדף הקריירה','כל המשרות בישראל, בלי חסימות',`<div class="tg-grid">${G.board.map(b=>`<div class="tg-chip ok"><b>${bd(b.name)}</b><span>${b.rel} בתחום שלך, מתוך ${b.il} בישראל</span><span class="tg-src">דרך ${bd(b.board)}</span>${x(b)}</div>`).join('')}</div>`)
    +sec('מחפשים לפי השם','ב-LinkedIn וב-Indeed, כי אין להן דף קריירה ציבורי',`<div class="tg-grid">${G.name.map(b=>`<div class="tg-chip"><b>${bd(b.name)}</b><span>${b.status==='by_name_ok'?`${b.n} משרות בתחום שלך`+(b.found_as?`</span><span class="tg-src">במודעות: ${bd(b.found_as)}`:''):b.status==='by_name_miss'?'הפעם לא עלו משרות בתחום שלך':'ייבדק בסריקה הקרובה'}</span>${x(b)}</div>`).join('')}</div>`)
-   +sec('ייבדקו בסריקה הקרובה','',`<div class="tg-grid">${G.pending.map(b=>`<div class="tg-chip"><b>${bd(b.name)}</b><span>${b.status==='new'?'הוספת עכשיו':'בתור'}</span>${x(b)}</div>`).join('')}</div>`);
+   +sec('ייבדקו בסריקה הקרובה','',`<div class="tg-grid">${G.pending.map(b=>`<div class="tg-chip"><b>${bd(b.name)}</b><span>${b.status==='new'?'הוספת עכשיו':b.status==='confirmed'?'אישרת. תיסרק מהאתר שלה':b.status==='rejected'?'דחית. נחפש שוב':'בתור'}</span>${x(b)}</div>`).join('')}</div>`);
 }
+const TG_FOUND={};
+function confirmTarget(n,yes){const f=TG_FOUND[n];if(!f)return;S.targets=S.targets||{added:[],removed:[]};
+  if(yes){S.targets.boards=Object.assign({},S.targets.boards,{[n]:f.board});toast(`${N('hunter')} יסרוק את ${n} מ-${f.host} בסריקה הבאה`)}
+  else{S.targets.reject=Object.assign({},S.targets.reject);S.targets.reject[n]=[...(S.targets.reject[n]||[]),f.url];toast(`הבנתי. ${N('hunter')} יחפש את ${n} במקום אחר`)}
+  save();renderProfile()}
 function renameTarget(from,to){to=(to||'').trim();if(!to||to===from)return;S.targets=S.targets||{added:[],removed:[]};
   const i=S.targets.added.indexOf(from);if(i>=0)S.targets.added[i]=to;else{S.targets.added.unshift(to);if(!S.targets.removed.includes(from))S.targets.removed.push(from)}
   S.targets.removed=S.targets.removed.filter(x=>x!==to);save();renderProfile();toast(`עודכן ל-${to}. ${N('hunter')} יבדוק אותה בסריקה הבאה`)}

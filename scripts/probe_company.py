@@ -48,7 +48,13 @@ def main(name: str) -> None:
                         print("   pos>", m.group(0)[:200])
                 print("   has COMPANY_POSITIONS_DATA:", "COMPANY_POSITIONS_DATA" in page, "| incapsula:", "Incapsula" in page)
             print("   ids:", sorted(set(re.findall(r"\b[0-9A-F]{2}\.[0-9A-F]{3}\b", page)))[:15])
-        print("-- discover():", A.discover(cx, name))
+        b = A.discover(cx, name)
+        print("-- discover():", b)
+        if b:
+            items = A.read_board(cx, b, name, {"software", "engineer", "developer", "junior", "student", "intern", "graduate", "ai"})
+            print(f"-- read_board: {None if items is None else len(items)} jobs in Israel")
+            for j in (items or [])[:8]:
+                print(f"   {j['title'][:60]} | {j['location'][:30]} | desc {len(j.get('description') or '')} | {j['url'][:90]}")
 
 
 if __name__ == "__main__":
