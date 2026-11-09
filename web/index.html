@@ -906,6 +906,9 @@ a.person>svg{flex:0 0 18px;width:18px;height:18px;fill:none;stroke:var(--ink3);s
 .tailor-ed small{display:block;font-size:11.5px;color:var(--ink3);margin-bottom:2px}
 .tl-b{color:var(--ink3);text-decoration:line-through;text-decoration-color:rgba(0,0,0,.25);font-size:13.5px;margin-bottom:8px}
 .tl-a{font-size:14px;line-height:1.55}
+.cvs-open{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;text-align:right;margin-top:12px;padding:12px 14px;border-radius:14px;border:1px solid var(--glass-brd);background:var(--glass);color:var(--ink);cursor:pointer;font:inherit}
+.cvs-open span{display:flex;flex-direction:column;gap:3px}.cvs-open em{font-style:normal;font-size:12.5px;color:var(--ink2)}
+.cvs-open svg{width:16px;height:16px;flex:none;color:var(--ink3)}
 
 </style>
 <link rel="manifest" href="/manifest.webmanifest">
@@ -3023,13 +3026,26 @@ function openMeeting(){const m=lastMeeting();if(!m)return;const r=m.stats.report
 /* קובי: מה עשית ב-GitHub ולא כתוב בקורות החיים. אתה בוחר, רואה את השינוי, ומאשר */
 function saveGithub(){const v=($('ghIn').value||'').trim().replace(/^@/,'').split('/').pop();const p=prof();p.ans=p.ans||{};p.ans.github=v;save();toast(v?`${N('linkedin')} יעבור על ה-GitHub שלך בשעתיים הקרובות`:'נמחק')}
 function lastCvSuggest(){return (RUNS||[]).find(r=>r.agent==='linkedin'&&r.stats&&Array.isArray(r.stats.cv_suggest))||null}
-function cvSuggestHtml(){const r=lastCvSuggest();if(!r||!r.stats.cv_suggest.length)return'';const done=new Set(S.cvDone||[]);
-  const L=r.stats.cv_suggest.filter(x=>!done.has(x.line));if(!L.length)return'';
-  return `<h3 class="sub-h">${escB(N('linkedin'))}: מה עשית ולא כתוב בקורות החיים</h3>`+L.map((x,i)=>`<label class="cvs-row"><input type="checkbox" class="cvs-ck" data-i="${r.stats.cv_suggest.indexOf(x)}" checked>
-    <span><b dir="ltr" lang="en">${escB(x.line)}</b><em>${escB(x.why)}</em><a href="${escB(x.url)}" target="_blank" rel="noopener" lang="en">${escB(x.repo)}${x.proof?' · '+escB(x.proof):''}</a></span></label>`).join('')
-    +`<button class="btn btn-sm btn-primary btn-block" style="margin-top:8px" onclick="previewCv()">לראות את קורות החיים המעודכנים</button>`}
+const cvKey=x=>x.kind==='skill'?'skill:'+x.skill:x.line;
+function cvPending(){const r=lastCvSuggest();if(!r)return[];const done=new Set(S.cvDone||[]);return r.stats.cv_suggest.filter(x=>!done.has(cvKey(x)))}
+/* בפרופיל: שורה קצרה. הרשימה המלאה נפתחת בחלון */
+function cvSuggestHtml(){const L=cvPending();if(!L.length)return'';const sk=L.filter(x=>x.kind==='skill').length,ln=L.length-sk;
+  return `<button class="cvs-open" onclick="openCvSuggest()"><span><b>${escB(N('linkedin'))} מצא ${L.length} תוספות לקורות החיים</b><em>${[ln?`${ln} שורות על מה שעשית`:'',sk?`${sk} מילות מפתח לכישורים`:''].filter(Boolean).join(' · ')}. מתוך הריפוזיטוריז שלך ב-GitHub</em></span>${ICO.open||'›'}</button>`}
+function openCvSuggest(){const r=lastCvSuggest(),L=cvPending();if(!L.length)return;
+  const row=x=>`<label class="cvs-row"><input type="checkbox" class="cvs-ck" data-i="${r.stats.cv_suggest.indexOf(x)}" checked>
+    <span><b dir="ltr" lang="en">${escB(x.line)}</b>${x.why?`<em>${escB(x.why)}</em>`:''}<a href="${escB(x.url)}" target="_blank" rel="noopener" lang="en">${escB(x.repo)}${x.proof?' · '+escB(x.proof):''}</a></span></label>`;
+  const ln=L.filter(x=>x.kind!=='skill'),sk=L.filter(x=>x.kind==='skill');
+  openSheet(`<h3 id="sheetTitle">תוספות לקורות החיים</h3><div class="sheet-sub">${escB(N('linkedin'))} מצא אותן בריפוזיטוריז שלך. רק מה שמופיע שם. מסמנים, רואים את התוצאה, ומאשרים.</div>
+    ${ln.length?`<h4 class="sub-h">שורות חדשות</h4>${ln.map(row).join('')}`:''}
+    ${sk.length?`<h4 class="sub-h">מילות מפתח לשורת הכישורים</h4>${sk.map(row).join('')}`:''}
+    <button class="btn btn-primary btn-block" style="margin-top:10px" onclick="previewCv()">לראות את קורות החיים המעודכנים</button>`)}
 function cvWithAdditions(cv,adds){const lines=cv.split('\n');
-  adds.forEach(x=>{const w=(x.where||'').toLowerCase();let i=w?lines.findIndex(l=>l.toLowerCase().includes(w)):-1;
+  const skills=adds.filter(x=>x.kind==='skill').map(x=>x.skill);
+  if(skills.length){let i=lines.findIndex(l=>/skills|technolog|tools|כישורים/i.test(l));
+    if(i<0){lines.push('','Skills',skills.join(', '))}
+    else{if(!/[:：]\s*\S/.test(lines[i])){let k=i+1;while(k<lines.length&&!lines[k].trim())k++;i=k<lines.length?k:i}
+      lines[i]=lines[i].replace(/[\s,;.]*$/,'')+', '+skills.join(', ')}}
+  adds.filter(x=>x.kind!=='skill').forEach(x=>{const w=(x.where||'').toLowerCase();let i=w?lines.findIndex(l=>l.toLowerCase().includes(w)):-1;
     if(i<0)i=lines.findIndex(l=>/^\s*projects\b/i.test(l));
     if(i<0){lines.push('','Additional','• '+x.line);return}
     let k=i+1;while(k<lines.length&&lines[k].trim()&&!/^[A-Z][A-Za-z &]{2,30}$/.test(lines[k].trim()))k++;
@@ -3037,11 +3053,11 @@ function cvWithAdditions(cv,adds){const lines=cv.split('\n');
   return lines.join('\n')}
 function previewCv(){const r=lastCvSuggest(),sel=[...document.querySelectorAll('.cvs-ck')].filter(c=>c.checked).map(c=>r.stats.cv_suggest[+c.dataset.i]);
   if(!sel.length){toast('לא סימנת אף שורה');return}const cv=prof().cv||'',nu=cvWithAdditions(cv,sel);window.__cvNew={text:nu,sel};
-  const set=new Set(sel.map(x=>'• '+x.line));
+  const set=new Set(sel.filter(x=>x.kind!=='skill').map(x=>'• '+x.line)),sks=sel.filter(x=>x.kind==='skill').map(x=>x.skill);
   openSheet(`<h3 id="sheetTitle">קורות החיים המעודכנים</h3><div class="sheet-sub">השורות החדשות מסומנות בירוק. שום דבר לא משתנה עד שתאשר.</div>
-    <pre class="cv-pre" dir="ltr">${nu.split('\n').map(l=>set.has(l)?`<mark>${escB(l)}</mark>`:escB(l)).join('\n')}</pre>
+    <pre class="cv-pre" dir="ltr">${nu.split('\n').map(l=>set.has(l)?`<mark>${escB(l)}</mark>`:sks.some(k=>l.endsWith(k)||l.includes(', '+k+','))?escB(l).replace(new RegExp('(, )('+sks.map(k=>k.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')).join('|')+')','g'),'$1<mark>$2</mark>'):escB(l)).join('\n')}</pre>
     <div class="duo"><button class="btn btn-ghost" onclick="closeSheet()">ביטול</button><button class="btn btn-primary" onclick="applyCv()">לאשר ולעדכן</button></div>`)}
-function applyCv(){const n=window.__cvNew;if(!n)return;prof().cv=n.text;S.cvDone=(S.cvDone||[]).concat(n.sel.map(x=>x.line));save();
+function applyCv(){const n=window.__cvNew;if(!n)return;prof().cv=n.text;S.cvDone=(S.cvDone||[]).concat(n.sel.map(cvKey));save();
   openSheet(`<h3 id="sheetTitle">קורות החיים עודכנו</h3><div class="sheet-sub">כל הסוכנים עובדים מעכשיו לפי הגרסה החדשה.</div>
     <p style="font-size:14px;margin:12px 0">אפשר לשמור כ-PDF: בחלון ההדפסה בוחרים "שמירה כ-PDF". זה PDF פשוט מהטקסט. אם יש לך קובץ מעוצב, אפשר להעתיק אליו את השורות החדשות.</p>
     <button class="btn btn-primary btn-block" onclick="cvPdf()">ל-PDF</button>`);renderProfile()}

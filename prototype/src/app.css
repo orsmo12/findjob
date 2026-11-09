@@ -760,3 +760,6 @@ a.person>svg{flex:0 0 18px;width:18px;height:18px;fill:none;stroke:var(--ink3);s
 .tailor-ed small{display:block;font-size:11.5px;color:var(--ink3);margin-bottom:2px}
 .tl-b{color:var(--ink3);text-decoration:line-through;text-decoration-color:rgba(0,0,0,.25);font-size:13.5px;margin-bottom:8px}
 .tl-a{font-size:14px;line-height:1.55}
+.cvs-open{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;text-align:right;margin-top:12px;padding:12px 14px;border-radius:14px;border:1px solid var(--glass-brd);background:var(--glass);color:var(--ink);cursor:pointer;font:inherit}
+.cvs-open span{display:flex;flex-direction:column;gap:3px}.cvs-open em{font-style:normal;font-size:12.5px;color:var(--ink2)}
+.cvs-open svg{width:16px;height:16px;flex:none;color:var(--ink3)}

@@ -147,13 +147,15 @@ CV:
 GITHUB EVIDENCE:
 {ev}
 
-Return JSON only: {{"suggestions": [up to 5 items, each {{
+Return JSON only: {{"skills": [up to 6 items, each {{"skill": "a technology, tool or keyword shown in the evidence (languages, files) that the CV does not mention, written as employers write it, e.g. Docker, CI/CD, PostgreSQL", "repo": "repo name", "why": "one short sentence in Hebrew"}}],
+ "suggestions": [up to 5 items, each {{
   "repo": "repo name from the evidence",
   "line": "one CV bullet in English, past tense, factual, max 22 words; only facts shown in that repo",
   "where": "which CV section/project it belongs to (as written in the CV), or 'Projects'",
   "why": "one sentence in Hebrew: what this shows an employer and which job requirement it answers",
   "proof": "the exact file or README phrase that proves it"}}]}}
-Never invent numbers, users, companies or results. Skip anything already clearly written in the CV."""
+Never invent numbers, users, companies or results. Skip anything already clearly written in the CV.
+A skill goes in "skills" only if it literally appears in that repo's evidence and is not already in the CV."""
 
 
 def cv_suggestions(cv: str, evidence: list[dict], gaps: list[str]) -> list[dict]:
@@ -173,6 +175,16 @@ def cv_suggestions(cv: str, evidence: list[dict], gaps: list[str]) -> list[dict]
             continue
         out.append({"repo": e["repo"], "url": e["url"], "line": line, "where": str(s.get("where", "Projects"))[:60],
                     "why": str(s.get("why", ""))[:200], "proof": str(s.get("proof", ""))[:120]})
+    cvl, have = cv.lower(), set()
+    for k in (d.get("skills") or [])[:6]:   # שינויים קטנים: מילות מפתח לשורת הכישורים
+        sk, e = str(k.get("skill", "")).strip(), ev_by.get(str(k.get("repo", "")).lower())
+        if not e or not (2 <= len(sk) <= 30) or sk.lower() in cvl or sk.lower() in have:
+            continue
+        if sk.lower() not in evidence_text(e).lower():   # רק מה שמופיע בריפו עצמו
+            continue
+        have.add(sk.lower())
+        out.append({"kind": "skill", "skill": sk, "line": sk, "repo": e["repo"], "url": e["url"], "where": "Skills",
+                    "why": str(k.get("why", ""))[:160], "proof": ""})
     act.log("linkedin", f"עברתי על {len(evidence)} ריפוזיטוריז ב-GitHub: {len(out)} דברים שעשית ולא כתובים בקורות החיים.")
     return out
 
