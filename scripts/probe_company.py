@@ -42,6 +42,10 @@ def main(name: str) -> None:
             if "comeet" in u:  # מה יש בדף של Comeet: נתוני משרות מוטמעים, טוקן, קריאות API
                 for m in re.finditer(r"(COMPANY_[A-Z_]+\s*=|[\"']token[\"']|careers-api|positions\?)[^;\n]{0,160}", page):
                     print("   comeet>", m.group(0)[:200])
+                print("   vars:", sorted(set(re.findall(r"(?:var|window\.|const|let)\s*([A-Za-z_][A-Za-z0-9_]{4,})\s*=", page)))[:60])
+                for m in re.finditer(r".{0,80}(position|D5\.007|uid)[^\n]{0,120}", page, re.I):
+                    if "newrelic" not in m.group(0).lower():
+                        print("   pos>", m.group(0)[:200])
                 print("   has COMPANY_POSITIONS_DATA:", "COMPANY_POSITIONS_DATA" in page, "| incapsula:", "Incapsula" in page)
             print("   ids:", sorted(set(re.findall(r"\b[0-9A-F]{2}\.[0-9A-F]{3}\b", page)))[:15])
         print("-- discover():", A.discover(cx, name))
