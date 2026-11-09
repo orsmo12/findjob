@@ -1,2 +1,2 @@
-{"name":"findjob","short_name":"findjob","start_url":"/","display":"standalone","background_color":"#EEF4F0","theme_color":"#0F6E54","lang":"he","dir":"rtl",
+{"name":"findjob","short_name":"findjob","start_url":"/","display":"standalone","background_color":"#F5F1E4","theme_color":"#1E4A38","lang":"he","dir":"rtl",
  "icons":[{"src":"/icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}]}
