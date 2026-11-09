@@ -113,7 +113,7 @@ function renderHome(){
   const shown=steps.slice(0,5);
   $('homeScroll').innerHTML=`
     <div class="greet"><h2 class="greet-h">${hi}, ${escB(prof().first)}</h2><p>${escB(date)}</p></div>
-    ${REAL?(FEEDD&&FEEDD.generated_at&&CLOUDM?'':`<div class="notice">${FEEDD&&FEEDD.generated_at?`המשרות אמיתיות, מהחיפוש של ${N('hunter')} ${escB(feedWhen())}.`:prof().cv?`${N('hunter')} יחפש לך משרות בסריקה הקרובה (05:15 או 17:15).`:`כדי ש${N('hunter')} יתחיל לחפש, צריך קורות חיים. <button class="link" style="color:var(--brand);font-weight:600" onclick="goPage('profile')">להעלאה</button>`} ${CLOUDM?'':'מסכי LinkedIn וההכנה לראיונות עוד מציגים דוגמאות.'}</div>`):prof().key?'':`<div class="notice">מוצגות דוגמאות עד שתחבר את הסוכנים. <button class="link" style="color:var(--brand);font-weight:600" onclick="goPage('settings')">לחיבור</button></div>`}
+    ${REAL?(FEEDD&&FEEDD.generated_at&&CLOUDM?'':`<div class="notice">${FEEDD&&FEEDD.generated_at?`המשרות אמיתיות, מהחיפוש של ${N('hunter')} ${escB(feedWhen())}.`:prof().cv?`${N('hunter')} יחפש לך משרות בסריקה הקרובה (07:00 או 15:00).`:`כדי ש${N('hunter')} יתחיל לחפש, צריך קורות חיים. <button class="link" style="color:var(--brand);font-weight:600" onclick="goPage('profile')">להעלאה</button>`} ${CLOUDM?'':'מסכי LinkedIn וההכנה לראיונות עוד מציגים דוגמאות.'}</div>`):prof().key?'':`<div class="notice">מוצגות דוגמאות עד שתחבר את הסוכנים. <button class="link" style="color:var(--brand);font-weight:600" onclick="goPage('settings')">לחיבור</button></div>`}
     <div class="brief"><div class="brief-top"><span>הבריף של ${escB(N('assistant'))}</span><span class="new num">${new Date().toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'})}</span></div><p>${escB(brief)}</p></div>
     <section class="next glass" aria-labelledby="nxH"><div class="next-h"><h2 id="nxH">הצעדים הבאים</h2>${steps.length>5?`<span>5 מתוך ${steps.length}</span>`:''}</div>
       ${shown.length?shown.map(x=>`<button class="nx" onclick="${x.go}"><span class="ic ${x.c}" aria-hidden="true">${x.ic}</span><span class="tx"><b>${escB(x.b)}</b><span>${escB(x.s)}</span></span>${x.w?`<span class="when ${x.w[1]}">${x.w[0]}</span>`:''}<span class="chev" aria-hidden="true"></span></button>`).join('')
@@ -168,7 +168,7 @@ function renderJobs(){
   if(!q.length){
     $('deckActions').style.display='none';
     const sv=S.apps.filter(a=>a.status==='saved').length;
-    deck.innerHTML=`<div class="empty"><div class="empty-ic">✓</div><h3>סיימת את המשרות של היום</h3><p>${escB(N('hunter'))} יחפש שוב בסריקה הבאה (05:15 או 17:15).${sv?(sv===1?' בינתיים משרה אחת ששמרת מחכה להגשה.':` בינתיים ${sv} משרות ששמרת מחכות להגשה.`):''}</p>${sv?`<button class="btn btn-primary" onclick="goPage('apps')">להגשות</button>`:`<button class="btn btn-ghost" onclick="goPage('main')">ללוח הבקרה</button>`}</div>`;
+    deck.innerHTML=`<div class="empty"><div class="empty-ic">✓</div><h3>סיימת את המשרות של היום</h3><p>${escB(N('hunter'))} יחפש שוב בסריקה הבאה (07:00 או 15:00).${sv?(sv===1?' בינתיים משרה אחת ששמרת מחכה להגשה.':` בינתיים ${sv} משרות ששמרת מחכות להגשה.`):''}</p>${sv?`<button class="btn btn-primary" onclick="goPage('apps')">להגשות</button>`:`<button class="btn btn-ghost" onclick="goPage('main')">ללוח הבקרה</button>`}</div>`;
     return;
   }
   $('deckActions').style.display='';

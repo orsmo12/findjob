@@ -30,7 +30,11 @@ def _url(table: str) -> str:
 
 def profiles_ready() -> list[dict]:
     """רק משתמשים שהעלו קורות חיים. בלי קורות חיים לא מחפשים."""
-    r = httpx.get(_url("profiles"), headers=_h(), params={"select": "*", "cv_text": "neq."}, timeout=30)
+    params = {"select": "*", "cv_text": "neq."}
+    only = (os.environ.get("ONLY_USER") or "").strip()
+    if only:  # ריצה למשתמש אחד ("להכין עכשיו")
+        params["user_id"] = f"eq.{only}"
+    r = httpx.get(_url("profiles"), headers=_h(), params=params, timeout=30)
     r.raise_for_status()
     return r.json()
 
@@ -167,6 +171,20 @@ def recent_runs(user_id: str, agent: str, days: int = 14) -> list[dict]:
 def save_memory(user_id: str, agent: str, plan: dict) -> None:
     """שורה שקטה ב-runs (בלי הודעה למשתמש) ששומרת זיכרון של סוכן."""
     r = httpx.post(_url("runs"), headers=_h(), json={"user_id": user_id, "agent": agent, "stats": {"memory": True}, "plan": plan}, timeout=30)
+    r.raise_for_status()
+
+
+def system_memory(agent: str) -> dict:
+    """זיכרון של המערכת כולה (לא של משתמש): למשל מצב מכסת ה-AI בין ריצות."""
+    r = httpx.get(_url("runs"), headers=_h(), timeout=30, params={
+        "select": "plan", "user_id": "is.null", "agent": f"eq.{agent}", "order": "created_at.desc", "limit": "1"})
+    r.raise_for_status()
+    rows = r.json()
+    return (rows[0].get("plan") or {}) if rows else {}
+
+
+def save_system_memory(agent: str, plan: dict) -> None:
+    r = httpx.post(_url("runs"), headers=_h(), json={"user_id": None, "agent": agent, "stats": {"memory": True}, "plan": plan}, timeout=30)
     r.raise_for_status()
 
 

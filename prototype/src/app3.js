@@ -159,7 +159,7 @@ let omAll=false;
 function renderOfficeMsgs(){
   const el=$('omList');if(!el)return;
   const U=CLOUDM?realUpdates():UPDATES;
-  if(CLOUDM&&!U.length){el.innerHTML=`<p class="card-sub" style="padding:10px 4px">כאן יופיע מה שהסוכנים עשו בפועל: חיפושים, מכתבים, סקירות. הסריקה הבאה: 05:15 או 17:15.</p>`;return}
+  if(CLOUDM&&!U.length){el.innerHTML=`<p class="card-sub" style="padding:10px 4px">כאן יופיע מה שהסוכנים עשו בפועל: חיפושים, מכתבים, סקירות. הסריקה הבאה: 07:00 או 15:00.</p>`;return}
   const list=omAll?U:U.slice(0,5);
   el.innerHTML=list.map((u,i)=>{const a=CAREER.agents[u.a];return`<button class="om-item" onclick="${u.usage?'openUsage()':u.report?'openMeeting()':`openAgSheet(${u.a})`}"><span class="om-face"><canvas id="om-${i}" width="96" height="96"></canvas></span><span class="om-tx"><b>${a.name}</b><i>${u.time}</i><p>${escB(u.body)}</p></span></button>`}).join('')
     +(U.length>5?`<button class="om-more" onclick="omAll=!omAll;renderOfficeMsgs()">${omAll?'הצג פחות':`הצג עוד ${U.length-5}`}</button>`:'');

@@ -8,6 +8,8 @@ const MODELS = ['openai/gpt-oss-120b', 'qwen/qwen3.8-27b', 'openai/gpt-oss-20b',
 const STATUS = { saved: 'שמור', applied: 'הוגש', screening: 'סינון', interview: 'ראיון', offer: 'הצעה', rejected: 'נדחה', ghosted: 'אין מענה', withdrew: 'ויתרתי' };
 const PRIO = { interview: 0, screening: 1, offer: 2, saved: 3, applied: 4 };
 
+const SHARED_DAILY = 40;   // הודעות צ׳אט ביום לכל משתמש על המפתח המשותף, כדי שמשתמש אחד לא יגמור אותו לכולם. מפתח אישי: בלי הגבלה
+
 const clean = v => String(v || '').trim().replace(/^GROQ_API_KEY=/, '').replace(/^["']|["']$/g, '').trim();
 const cut = (s, n) => { s = String(s || '').replace(/\s+/g, ' ').trim(); return s.length > n ? s.slice(0, n) + '…' : s; };
 
@@ -100,7 +102,15 @@ module.exports = async (req, res) => {
   if (!user || !user.id) return res.status(401).json({ error: 'auth' });
   const [prof] = (await sb(`/rest/v1/profiles?select=first,cv_text,answers,state,li,li_fixes&user_id=eq.${user.id}`, token)) || [];
   const own = String(((prof && prof.state) || {}).ai_key || '').trim();
-  if (/^gsk_\w{20,}/.test(own)) key = own;   // מפתח אישי של המשתמש, אם הכניס
+  const shared = !/^gsk_\w{20,}/.test(own);
+  if (!shared) key = own;   // מפתח אישי של המשתמש, אם הכניס
+  const today = new Date().toISOString().slice(0, 10);
+  let used = null;   // null = אין עמודת chat_use (לא הורץ ה-SQL), ואז לא מגבילים
+  if (shared) {
+    const [u] = (await sb(`/rest/v1/profiles?select=chat_use&user_id=eq.${user.id}`, token)) || [];
+    if (u) used = (u.chat_use && u.chat_use.day === today) ? (u.chat_use.n || 0) : 0;
+    if (used !== null && used >= SHARED_DAILY) return res.status(429).json({ error: 'limit', limit: SHARED_DAILY });
+  }
   if (!key) return res.status(500).json({ error: 'no_key' });
   const jobs = (await sb(`/rest/v1/jobs?select=card,decision,letter,brief,prep&user_id=eq.${user.id}&order=created_at.desc&limit=80`, token)) || [];
   const lastUser = [...messages].reverse().find(m => m.role === 'user');
@@ -126,7 +136,12 @@ module.exports = async (req, res) => {
           if (action.job_id && !ids.has(action.job_id)) action = null;   // רק משרות שקיימות אצלו
         } catch (e) { action = null; }
       }
-      return res.status(200).json({ reply: t, action });
+      if (used !== null) {   // סופרים רק תשובה שהצליחה
+        await fetch(SB + `/rest/v1/profiles?user_id=eq.${user.id}`, { method: 'PATCH',
+          headers: { apikey: PK, Authorization: 'Bearer ' + token, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+          body: JSON.stringify({ chat_use: { day: today, n: used + 1 } }) }).catch(() => {});
+      }
+      return res.status(200).json({ reply: t, action, left: used !== null ? SHARED_DAILY - used - 1 : null });
     } catch (e) { /* המודל הבא */ }
   }
   return res.status(503).json({ error: 'busy' });

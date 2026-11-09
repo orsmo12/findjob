@@ -9,7 +9,7 @@ import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-SCAN = [ROOT / "agent_core", ROOT / "scripts", ROOT / "scheduler.py"]
+SCAN = [ROOT / "agent_core", ROOT / "scripts", ROOT / "legacy"]
 FORBIDDEN = {
     r"add_cookies\(":                "התחברות לאתר עם cookies של המשתמש",
     r"storage_state\s*=":            "שימוש ב-session שמור של המשתמש",

@@ -26,3 +26,6 @@ grant all on public.agent_tasks to service_role;
 
 -- קובי: התאמת קורות חיים למשרה (הצעות לפני ← אחרי, רק מעובדות שכבר בקורות החיים)
 alter table public.jobs add column if not exists tailor jsonb;
+
+-- סבב 2ב: מונה הודעות צ׳אט יומי על המפתח המשותף (לכל משתמש)
+alter table public.profiles add column if not exists chat_use jsonb default '{}'::jsonb;

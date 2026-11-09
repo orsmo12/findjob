@@ -5,8 +5,9 @@ on:
   workflow_dispatch:          # כפתור "Run workflow" להרצה ידנית
     inputs:
       meeting: { description: "לכפות ישיבה שבועית (1)", required: false, default: "" }
+      user: { description: "רק למשתמש אחד (user_id). ריק = כולם", required: false, default: "" }
 concurrency:
-  group: findjob-agents      # סוכן אחד בכל פעם: חולקים את מכסת Groq
+  group: findjob-agents-${{ github.event.inputs.user || 'all' }}   # ריצה אחת בכל פעם לכל משתמש (או לכולם). ריצה של משתמש אחד לא מחכה לסריקה של כולם
   cancel-in-progress: false
 jobs:
   hunt:
@@ -24,6 +25,7 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ONLY_USER: ${{ github.event.inputs.user }}
           FORCE_MEETING: ${{ github.event.inputs.meeting }}
       - name: agents work on the tasks the scan created (Gil, Kobi, Maya, Shai)
         if: always()
@@ -33,3 +35,4 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ONLY_USER: ${{ github.event.inputs.user }}

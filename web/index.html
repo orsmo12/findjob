@@ -1113,39 +1113,39 @@ const IC={
 const AGD=(what,does,gives,to)=>`<p class="agd-what">${what}</p><ul class="agd-list">${does.map(x=>`<li>${x}</li>`).join('')}</ul>`
   +`<div class="agd-row"><b>מה אתה מקבל</b><span>${gives}</span></div>`+(to?`<div class="agd-row"><b>עובד עם</b><span>${to}</span></div>`:'');
 const TEAM_DEFAULT=[
-  {key:'strategist',name:'יואב',role:'מנהל הצוות',state:'working',sched:'לפני כל סריקה (כל 12 שעות) · ישיבת צוות פעם בשבוע',
+  {key:'strategist',name:'יואב',role:'מנהל הצוות',state:'working',sched:'לפני כל סריקה ואחריה (מחלק משימות) · ישיבת צוות פעם בשבוע',
    desc:AGD('בונה את תוכנית החיפוש ומוביל את הצוות.',[
      'מתרגם את קורות החיים והשאלון לתפקידים, אזורים, רמה וחברות יעד, בהתאם לתחום שלך',
      'מנהל ישיבה שבועית: בודק מה הביא משרות ומה לא, ומתקן',
      'מוריד חיפושים שלא מביאים כלום ומוסיף חברות שמביאות משרות מתאימות',
      'מציע תפקידים חדשים שמתאימים לך, לאישורך'],
      'תוכנית חיפוש שקופה בפרופיל, דוח ישיבה במשרד והצעות לאישור','דורון (מה לחפש), מאיה (אילו כישורים חסרים)')},
-  {key:'hunter',name:'דורון',role:'צייד משרות',state:'working',sched:'כל 12 שעות: בבוקר ואחר הצהריים',
+  {key:'hunter',name:'דורון',role:'צייד משרות',state:'working',sched:'פעמיים ביום: 07:00 ו-15:00 · בודק משרות שמורות בבוקר',
    desc:AGD('מוצא משרות ומדרג אותן מול קורות החיים שלך.',[
      'אוסף מ-LinkedIn ו-Indeed ומדפי הקריירה של חברות היעד',
      'קורא כל מודעה במלואה ומסנן משרות שדורשות יותר ניסיון ממה שיש לך',
      'מדרג 1–5 לפי דרישות החובה שעמדת בהן, עם סיבות ומה חסר',
      'בודק שמשרות ששמרת עדיין פתוחות, ומעביר משרה שנסגרה להיסטוריה'],
      'משרות חדשות עם ציון, סיבות ומה חסר','יואב (תוכנית), שי, גיל ומאיה (משרות ששמרת)')},
-  {key:'researcher',name:'גיל',role:'חוקר חברות',state:'idle',sched:'כל שעתיים, למשרות ששמרת',
+  {key:'researcher',name:'גיל',role:'חוקר חברות',state:'idle',sched:'לפי משימות: משרה ששמרת או משרה בציון גבוה מאוד',
    desc:AGD('מכין סקירה על כל חברה ששמרת.',[
      'מחפש מידע ציבורי: מה החברה עושה, שלב, טכנולוגיות וחדשות',
      'כל עובדה עם קישור למקור. מה שאין לו מקור לא נכתב',
      'מכין חיפושים מוכנים ב-LinkedIn לאנשים שיכולים להמליץ עליך'],
      'סקירת חברה עם מקורות בכל הגשה','שי (המכתב), מאיה (ההכנה)')},
-  {key:'coach',name:'מאיה',role:'מאמנת ראיונות וכישורים',state:'idle',sched:'כל שעתיים, למשרות ששמרת',
+  {key:'coach',name:'מאיה',role:'מאמנת ראיונות וכישורים',state:'idle',sched:'לפי משימות: משרה ששמרת או משרה בציון גבוה מאוד',
    desc:AGD('מכינה אותך לראיון ומחזקת כישורים שחסרים.',[
      'שאלות צפויות לפי דרישות המודעה, עם רמז איך לענות מהניסיון שלך',
      'מטלות בית לדוגמה ממקורות ציבוריים, עם פתרון. אפשר לבקש אחרת',
      'כרטיס לכל כישור שחסר שוב ושוב: מה זה, איך מכניסים לפרויקט שלך, ושני מקורות לימוד'],
      'מסך הכנה לכל ראיון וכרטיסי כישורים','יואב (הפערים מהישיבה), קובי (פרויקטים לקורות החיים)')},
-  {key:'linkedin',name:'קובי',role:'קורות חיים ו-LinkedIn',state:'sleeping',sched:'כל 12 שעות · קורות חיים פעם בשבוע',
+  {key:'linkedin',name:'קובי',role:'קורות חיים ו-LinkedIn',state:'sleeping',sched:'לפי משימות (קורות חיים למשרה) · פוסטים וקורות חיים פעם בשבוע',
    desc:AGD('אחראי על איך שאתה נראה למגייסים.',[
      'עובר על הריפוזיטוריז הציבוריים שלך ב-GitHub ומציע שורות לקורות החיים, רק מעובדות שבקוד',
      'מציע שיפורים לפרופיל ה-LinkedIn מתוך ה-PDF שהעלית',
      'מוצא פוסטים מהשבוע, מכין שתי הצעות תגובה וטיוטת פוסט שבועית'],
      'הצעות לקורות חיים (אתה מאשר, ומקבל PDF), שיפורי פרופיל ותגובות מוכנות. אתה זה שמפרסם','מאיה (כישורים), שי (המכתבים)')},
-  {key:'assistant',name:'שי',role:'עוזר אישי',state:'working',sched:'כל שעתיים, ובצ׳אט בכל רגע',
+  {key:'assistant',name:'שי',role:'עוזר אישי',state:'working',sched:'לפי משימות (מכתבים) · בוקר: בריף · בצ׳אט בכל רגע',
    desc:AGD('כותב בשבילך ומחזיק את התמונה המלאה.',[
      'מכתב פנייה קצר לכל משרה ששמרת, רק מתוך קורות החיים והמודעה',
      'בריף בלוח הבקרה: מה חדש ומה הצעד הבא',
@@ -1175,7 +1175,7 @@ function realWorkflow(n){
     const day=x=>new Date(x.getFullYear(),x.getMonth(),x.getDate()).getTime(),diff=Math.round((day(now)-day(d))/864e5);
     return diff===0?hm:diff===1?`אתמול ${hm}`:`${d.getDate()}.${d.getMonth()+1} ${hm}`};
   const logs=RUNS.filter(r=>r.stats&&r.stats.log).slice(0,60);
-  if(!logs.length)return[{cmd:`${n('strategist')}.ממתין`,out:'כאן תראה בזמן אמת מה כל סוכן עושה. הסריקה הבאה: 05:15 או 17:15.',tag:'מתוזמן',state:'idle'}];
+  if(!logs.length)return[{cmd:`${n('strategist')}.ממתין`,out:'כאן תראה בזמן אמת מה כל סוכן עושה. הסריקה הבאה: 07:00 או 15:00.',tag:'מתוזמן',state:'idle'}];
   const live=Date.now()-new Date(logs[0].created_at)<4*6e4;
   return logs.map((r,i)=>({cmd:`${n(r.agent||'hunter')}.${r.stats.to?'← '+n(r.stats.to):''}`.replace(/\.$/,''),out:r.stats.log,
     tag:ago(r.created_at),state:live&&i===0?'working':'idle'}));
@@ -1948,7 +1948,7 @@ function renderHome(){
   const shown=steps.slice(0,5);
   $('homeScroll').innerHTML=`
     <div class="greet"><h2 class="greet-h">${hi}, ${escB(prof().first)}</h2><p>${escB(date)}</p></div>
-    ${REAL?(FEEDD&&FEEDD.generated_at&&CLOUDM?'':`<div class="notice">${FEEDD&&FEEDD.generated_at?`המשרות אמיתיות, מהחיפוש של ${N('hunter')} ${escB(feedWhen())}.`:prof().cv?`${N('hunter')} יחפש לך משרות בסריקה הקרובה (05:15 או 17:15).`:`כדי ש${N('hunter')} יתחיל לחפש, צריך קורות חיים. <button class="link" style="color:var(--brand);font-weight:600" onclick="goPage('profile')">להעלאה</button>`} ${CLOUDM?'':'מסכי LinkedIn וההכנה לראיונות עוד מציגים דוגמאות.'}</div>`):prof().key?'':`<div class="notice">מוצגות דוגמאות עד שתחבר את הסוכנים. <button class="link" style="color:var(--brand);font-weight:600" onclick="goPage('settings')">לחיבור</button></div>`}
+    ${REAL?(FEEDD&&FEEDD.generated_at&&CLOUDM?'':`<div class="notice">${FEEDD&&FEEDD.generated_at?`המשרות אמיתיות, מהחיפוש של ${N('hunter')} ${escB(feedWhen())}.`:prof().cv?`${N('hunter')} יחפש לך משרות בסריקה הקרובה (07:00 או 15:00).`:`כדי ש${N('hunter')} יתחיל לחפש, צריך קורות חיים. <button class="link" style="color:var(--brand);font-weight:600" onclick="goPage('profile')">להעלאה</button>`} ${CLOUDM?'':'מסכי LinkedIn וההכנה לראיונות עוד מציגים דוגמאות.'}</div>`):prof().key?'':`<div class="notice">מוצגות דוגמאות עד שתחבר את הסוכנים. <button class="link" style="color:var(--brand);font-weight:600" onclick="goPage('settings')">לחיבור</button></div>`}
     <div class="brief"><div class="brief-top"><span>הבריף של ${escB(N('assistant'))}</span><span class="new num">${new Date().toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'})}</span></div><p>${escB(brief)}</p></div>
     <section class="next glass" aria-labelledby="nxH"><div class="next-h"><h2 id="nxH">הצעדים הבאים</h2>${steps.length>5?`<span>5 מתוך ${steps.length}</span>`:''}</div>
       ${shown.length?shown.map(x=>`<button class="nx" onclick="${x.go}"><span class="ic ${x.c}" aria-hidden="true">${x.ic}</span><span class="tx"><b>${escB(x.b)}</b><span>${escB(x.s)}</span></span>${x.w?`<span class="when ${x.w[1]}">${x.w[0]}</span>`:''}<span class="chev" aria-hidden="true"></span></button>`).join('')
@@ -2003,7 +2003,7 @@ function renderJobs(){
   if(!q.length){
     $('deckActions').style.display='none';
     const sv=S.apps.filter(a=>a.status==='saved').length;
-    deck.innerHTML=`<div class="empty"><div class="empty-ic">✓</div><h3>סיימת את המשרות של היום</h3><p>${escB(N('hunter'))} יחפש שוב בסריקה הבאה (05:15 או 17:15).${sv?(sv===1?' בינתיים משרה אחת ששמרת מחכה להגשה.':` בינתיים ${sv} משרות ששמרת מחכות להגשה.`):''}</p>${sv?`<button class="btn btn-primary" onclick="goPage('apps')">להגשות</button>`:`<button class="btn btn-ghost" onclick="goPage('main')">ללוח הבקרה</button>`}</div>`;
+    deck.innerHTML=`<div class="empty"><div class="empty-ic">✓</div><h3>סיימת את המשרות של היום</h3><p>${escB(N('hunter'))} יחפש שוב בסריקה הבאה (07:00 או 15:00).${sv?(sv===1?' בינתיים משרה אחת ששמרת מחכה להגשה.':` בינתיים ${sv} משרות ששמרת מחכות להגשה.`):''}</p>${sv?`<button class="btn btn-primary" onclick="goPage('apps')">להגשות</button>`:`<button class="btn btn-ghost" onclick="goPage('main')">ללוח הבקרה</button>`}</div>`;
     return;
   }
   $('deckActions').style.display='';
@@ -2244,7 +2244,7 @@ let omAll=false;
 function renderOfficeMsgs(){
   const el=$('omList');if(!el)return;
   const U=CLOUDM?realUpdates():UPDATES;
-  if(CLOUDM&&!U.length){el.innerHTML=`<p class="card-sub" style="padding:10px 4px">כאן יופיע מה שהסוכנים עשו בפועל: חיפושים, מכתבים, סקירות. הסריקה הבאה: 05:15 או 17:15.</p>`;return}
+  if(CLOUDM&&!U.length){el.innerHTML=`<p class="card-sub" style="padding:10px 4px">כאן יופיע מה שהסוכנים עשו בפועל: חיפושים, מכתבים, סקירות. הסריקה הבאה: 07:00 או 15:00.</p>`;return}
   const list=omAll?U:U.slice(0,5);
   el.innerHTML=list.map((u,i)=>{const a=CAREER.agents[u.a];return`<button class="om-item" onclick="${u.usage?'openUsage()':u.report?'openMeeting()':`openAgSheet(${u.a})`}"><span class="om-face"><canvas id="om-${i}" width="96" height="96"></canvas></span><span class="om-tx"><b>${a.name}</b><i>${u.time}</i><p>${escB(u.body)}</p></span></button>`}).join('')
     +(U.length>5?`<button class="om-more" onclick="omAll=!omAll;renderOfficeMsgs()">${omAll?'הצג פחות':`הצג עוד ${U.length-5}`}</button>`:'');
@@ -2460,7 +2460,7 @@ function renderOnb(){
     foot=`<button class="btn btn-primary btn-block" id="onbKeyBtn" ${/^gsk_\w{20,}/.test(p.key)?'':'disabled'} onclick="onbNext()">${onbSingle?'שמור':'לחבר ולהמשיך'}</button><button class="link-btn" onclick="${onbSingle?'closeOnb()':'onbGo(1)'}">${onbSingle?'ביטול':'אחבר אחר כך'}</button>`;
   }else{
     body=`<div class="empty-ic" style="margin:20px 0 22px;background:var(--mint-lt)">✓</div><h1>הכל מוכן, ${escB(p.first)}</h1>
-      <p class="lead">${CLOUDM?N('hunter')+' יחפש לך משרות בסריקה הקרובה (05:15 או 17:15), לפי קורות החיים והתשובות שלך.':p.key?N('hunter')+' כבר מחפש לך משרות.':'כשתחבר את הסוכנים, '+N('hunter')+' יתחיל לחפש לך משרות.'} בינתיים הכנו ${DECK.length} משרות לדוגמה: מחליקים ימינה כדי לשמור ושמאלה כדי לדלג.</p>`;
+      <p class="lead">${CLOUDM?N('hunter')+' יחפש לך משרות בסריקה הקרובה (07:00 או 15:00), לפי קורות החיים והתשובות שלך.':p.key?N('hunter')+' כבר מחפש לך משרות.':'כשתחבר את הסוכנים, '+N('hunter')+' יתחיל לחפש לך משרות.'} בינתיים הכנו ${DECK.length} משרות לדוגמה: מחליקים ימינה כדי לשמור ושמאלה כדי לדלג.</p>`;
     foot=`<button class="btn btn-primary btn-block" onclick="finishOnb('jobs')">למשרות</button><button class="link-btn" onclick="finishOnb('main')">ללוח הבקרה</button>`;
   }
   $('onbBody').innerHTML=body;$('onbFoot').innerHTML=foot;$('onbBody').scrollTop=0;
@@ -2741,7 +2741,7 @@ function renderSettings(){
     ${CLOUDM&&typeof aiKeyCard==='function'?aiKeyCard():''}
     ${CLOUDM&&ME?`<section class="card glass" aria-labelledby="accH"><h2 class="card-h" id="accH">החשבון</h2><div class="card-sub" dir="ltr" style="text-align:right">${escB(ME.email||'')}</div><button class="btn btn-sm btn-ghost btn-block" style="margin-top:12px" onclick="cloudLogout()">יציאה</button></section>`:''}
     <section class="card glass" aria-labelledby="aiH"><h2 class="card-h" id="aiH">הסוכנים</h2>
-      ${CLOUDM?`<div class="ok-line">הסוכנים מחוברים ורצים בענן</div><div class="card-sub" style="margin:6px 0 0">${N('hunter')} מחפש כל 12 שעות ובודק שהמשרות ששמרת עדיין פתוחות. ${N('assistant')}, ${N('researcher')} ו${N('coach')} מכינים מכתב, סקירה והכנה כל שעתיים.</div>`:p.key?`<div class="ok-line">הסוכנים מחוברים ועובדים</div>`:`<div class="warn-line">הסוכנים עוד לא מחוברים</div><div class="card-sub" style="margin:6px 0 0">עד שתחבר, מוצגות דוגמאות.</div>`}
+      ${CLOUDM?`<div class="ok-line">הסוכנים מחוברים ורצים בענן</div><div class="card-sub" style="margin:6px 0 0">${N('hunter')} מחפש פעמיים ביום ובודק כל בוקר שהמשרות ששמרת עדיין פתוחות. ${N('assistant')}, ${N('researcher')} ו${N('coach')} מכינים מכתב, סקירה והכנה לכל משרה ששמרת, אחרי כל סריקה ועוד כמה פעמים ביום.</div>`:p.key?`<div class="ok-line">הסוכנים מחוברים ועובדים</div>`:`<div class="warn-line">הסוכנים עוד לא מחוברים</div><div class="card-sub" style="margin:6px 0 0">עד שתחבר, מוצגות דוגמאות.</div>`}
       <button class="btn btn-sm ${p.key?'btn-ghost':'btn-primary'} btn-block" style="margin-top:12px" onclick="openOnb(3)" ${CLOUDM?'hidden':''}>${p.key?'להחליף מפתח':'לחבר עכשיו'}</button></section>
 
     <section class="card glass" aria-labelledby="ntH"><h2 class="card-h" id="ntH">התראות</h2>
@@ -2879,7 +2879,7 @@ async function cloudChat(v){
   try{const {data:{session}}=await SB.auth.getSession();
     const r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:S.chat.slice(-14),token:session&&session.access_token,focus:chatFocus})});
     d=await r.json().catch(()=>({}));
-    if(!d.reply)d.reply=d.error==='no_key'?'הצ׳אט עוד לא מחובר לשרת.':r.status===401?'צריך להתחבר מחדש.':'יש עומס כרגע. נסה שוב בעוד דקה.';
+    if(!d.reply)d.reply=d.error==='no_key'?'הצ׳אט עוד לא מחובר לשרת.':r.status===401?'צריך להתחבר מחדש.':d.error==='limit'?`הגעת היום ל-${d.limit} הודעות על המפתח המשותף, כדי שיישאר גם לאחרים. מחר זה מתאפס. עם מפתח AI אישי וחינמי (בהגדרות) אין הגבלה.`:'יש עומס כרגע. נסה שוב בעוד דקה.';
   }catch(e){d={reply:'אין חיבור כרגע. נסה שוב.'}}
   typing.remove();
   S.chat.push({role:'assistant',content:d.reply,action:d.action||null});S.chat=S.chat.slice(-40);save();

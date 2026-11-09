@@ -56,7 +56,7 @@ def test_targets_follow_profile_and_user_edits():
 
 def test_no_hardcoded_user_in_agents():
     root = Path(__file__).resolve().parents[1]
-    for f in [root / "scheduler.py", root / "agent_core" / "api.py"]:
+    for f in [root / "legacy" / "scheduler.py", root / "legacy" / "agent_core" / "api.py"]:
         if f.exists():
             txt = f.read_text(encoding="utf-8")
             assert "Junior Python Developer" not in txt, f"{f.name}: חיפוש קבוע במקום תוכנית מהפרופיל"

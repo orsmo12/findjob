@@ -15,6 +15,7 @@ from agent_core.profile import build_search_plan
 from agent_core.agents.hunter import run, collect, rerate, RATING_V, BudgetDeferred
 from agent_core import activity as act
 from agent_core import handoffs as H
+from agent_core import run_report as RR, budget_sync
 from agent_core.agents.live import check as still_open
 import httpx as _httpx
 import httpx
@@ -29,6 +30,7 @@ if not db.configured():
     sys.exit("SUPABASE_URL / SUPABASE_SERVICE_KEY חסרים")
 
 import os
+budget_sync.pull()
 from agent_core.llm_router import clean_key, use_key
 k = clean_key(os.environ.get("GROQ_API_KEY"), "GROQ_API_KEY")
 raw = os.environ.get("GROQ_API_KEY") or ""
@@ -89,6 +91,7 @@ for u in users:
         act.flush()
     except Exception as e:  # noqa: BLE001
         print(f"{u['user_id'][:8]}: דירוג מחדש נכשל: {type(e).__name__}: {e}")
+        RR.fail("דירוג מחדש", u["user_id"], e)
         act.flush()
     act.start(u["user_id"])
     try:
@@ -172,6 +175,7 @@ for u in users:
     except Exception as e:  # משתמש אחד שנכשל לא עוצר את האחרים
         import traceback; traceback.print_exc()
         print(f"{u['user_id'][:8]}: חיפוש נכשל: {type(e).__name__}: {e}")
+        RR.fail("חיפוש", u["user_id"], e)
         act.log("hunter", "החיפוש נעצר בגלל תקלה. אנסה שוב בריצה הבאה.")
         act.flush()
     act.start(u["user_id"])
@@ -193,6 +197,7 @@ for u in users:
         act.flush()
     except Exception as e:  # noqa: BLE001
         print(f"{u['user_id'][:8]}: בדיקת משרות נכשלה: {type(e).__name__}: {e}")
+        RR.fail("בדיקת משרות", u["user_id"], e)
         act.flush()
     act.start(u["user_id"])
     try:  # קובי: פוסטים חמים וטיוטת פוסט, פעם בשבוע
@@ -215,6 +220,7 @@ for u in users:
         pass
     except Exception as e:  # noqa: BLE001
         print(f"{u['user_id'][:8]}: LinkedIn נכשל: {type(e).__name__}: {e}")
+        RR.fail("LinkedIn", u["user_id"], e)
         act.flush()
 
 
@@ -243,6 +249,7 @@ for u in users:
         print(f"{u['user_id'][:8]}: ישיבה: {len(r['issues'])} בעיות, {len(r['actions'])} שינויים, {len(r['suggestions'])} הצעות")
     except Exception as e:  # noqa: BLE001
         print(f"{u['user_id'][:8]}: ישיבה נכשלה: {type(e).__name__}: {e}")
+        RR.fail("ישיבה", u["user_id"], e)
         act.flush()
 
 
@@ -259,3 +266,7 @@ try:
             print(f"דוח שימוש: {len(rep['rows'])} משתמשים")
 except Exception as e:  # noqa: BLE001
     print(f"דוח שימוש נכשל: {type(e).__name__}: {e}")
+    RR.fail("דוח שימוש", None, e)
+
+budget_sync.push()
+RR.send("הסריקה")

@@ -141,3 +141,32 @@ def check_budget(estimated_tokens: int = 1000, agent: str = "") -> bool:
 
 def log_usage(tokens_used: int, agent: str = "unknown", task: str = "") -> None:
     record("unknown", agent, task, tokens_used)
+
+
+# ── שמירת מצב המכסה בין ריצות (Supabase) ──────────────────────────────────────
+# כל ריצה ב-GitHub Actions מתחילה על מחשב נקי. בלי זה, ריצת המכתבים לא יודעת שהסריקה כבר ניצלה את המכסה.
+def snapshot() -> dict:
+    """כל קבצי המכסה של היום (שם מקוצר של המפתח בלבד, אף פעם לא המפתח עצמו)."""
+    out = {}
+    for f in _BASE.parent.glob("llm_budget*.json"):
+        try:
+            d = json.loads(f.read_text(encoding="utf-8"))
+        except Exception:  # noqa: BLE001
+            continue
+        if d.get("date") == date.today().isoformat():
+            out[f.name] = d
+    return out
+
+
+def restore(files: dict) -> None:
+    for name, d in (files or {}).items():
+        if re.fullmatch(r"llm_budget(_[0-9a-f]{10})?\.json", name) and d.get("date") == date.today().isoformat():
+            p = _BASE.with_name(name)
+            if not p.exists():
+                p.parent.mkdir(parents=True, exist_ok=True)
+                p.write_text(json.dumps(d, ensure_ascii=False), encoding="utf-8")
+
+
+def quota_note(agent: str) -> str:
+    """ההודעה למשתמש כשהמכסה נגמרה באמצע עבודה."""
+    return "הגעתי לגבול מכסת ה-AI להיום. הכנתי חלק, והשאר יוכן בריצה הבאה."

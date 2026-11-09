@@ -12,6 +12,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from agent_core import cloud_store as db
 from agent_core import handoffs as H
+from agent_core import run_report as RR, budget_sync
 from agent_core.agents.letters import write_letter
 from agent_core.agents.research import brief
 from agent_core.agents.prep import prepare
@@ -26,6 +27,7 @@ from datetime import datetime, timedelta, timezone
 
 if not db.configured():
     sys.exit("SUPABASE_URL / SUPABASE_SERVICE_KEY חסרים")
+budget_sync.pull()
 
 
 def do_kind(kind: str, row: dict, u: dict, cv: str, name: str) -> dict:
@@ -83,9 +85,14 @@ def work_by_tasks(u: dict, cv: str, name: str, done: dict) -> None:
             except BudgetDeferred:
                 print("מכסה: ממשיכים בריצה הבאה")
                 act.log(agent, "הגעתי למכסת ה-AI. את המשימות שנשארו אעשה בריצה הבאה.")
-                act.flush(); return
+                act.flush()
+                if not done.get("_quota"):   # הודעה אחת למשתמש, לא אחת לכל משימה
+                    done["_quota"] = True
+                    db.add_run(uid, agent, budget_sync.bg.quota_note(agent))
+                return
             except Exception as e:  # noqa: BLE001
                 print(f"{t['id']}: {type(e).__name__}: {e}")
+                RR.fail(f"משימה {t['kind']}", uid, e)
                 H.finish(t, False, {"error": type(e).__name__}, "לא הצלחתי הפעם. אנסה שוב בריצה הבאה."); continue
             if upd:
                 db.update_job(uid, row["id"], upd)
@@ -125,6 +132,7 @@ for u in db.profiles_ready():
         (work_by_tasks if H.available() else work_legacy)(u, cv, name, done)
     except Exception as e:  # noqa: BLE001
         print(f"{u['user_id'][:8]}: משימות נכשלו: {type(e).__name__}: {e}")
+        RR.fail("משימות", u["user_id"], e)
     act.flush()
     names = lambda xs: ", ".join(xs[:3]) + (f" ועוד {len(xs) - 3}" if len(xs) > 3 else "")
     if done.get("letter"):
@@ -169,7 +177,7 @@ for u in db.profiles_ready():
     except BudgetDeferred:
         print("מכסה: כרטיסי כישורים בריצה הבאה")
     except Exception as e:  # noqa: BLE001
-        print(f"כרטיסי כישורים נכשלו: {type(e).__name__}: {e}"); act.flush()
+        print(f"כרטיסי כישורים נכשלו: {type(e).__name__}: {e}"); act.flush(); RR.fail("כרטיסי כישורים", u["user_id"], e)
 
     # ── קובי: מה עשית ב-GitHub ולא כתוב בקורות החיים (פעם בשבוע, או כשהשם משתנה) ──
     try:
@@ -191,4 +199,7 @@ for u in db.profiles_ready():
     except BudgetDeferred:
         print("מכסה: GitHub בריצה הבאה")
     except Exception as e:  # noqa: BLE001
-        print(f"קורות חיים מ-GitHub נכשל: {type(e).__name__}: {e}"); act.flush()
+        print(f"קורות חיים מ-GitHub נכשל: {type(e).__name__}: {e}"); act.flush(); RR.fail("קורות חיים מ-GitHub", u["user_id"], e)
+
+budget_sync.push()
+RR.send("המשימות")

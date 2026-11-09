@@ -89,7 +89,7 @@ async function cloudChat(v){
   try{const {data:{session}}=await SB.auth.getSession();
     const r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:S.chat.slice(-14),token:session&&session.access_token,focus:chatFocus})});
     d=await r.json().catch(()=>({}));
-    if(!d.reply)d.reply=d.error==='no_key'?'הצ׳אט עוד לא מחובר לשרת.':r.status===401?'צריך להתחבר מחדש.':'יש עומס כרגע. נסה שוב בעוד דקה.';
+    if(!d.reply)d.reply=d.error==='no_key'?'הצ׳אט עוד לא מחובר לשרת.':r.status===401?'צריך להתחבר מחדש.':d.error==='limit'?`הגעת היום ל-${d.limit} הודעות על המפתח המשותף, כדי שיישאר גם לאחרים. מחר זה מתאפס. עם מפתח AI אישי וחינמי (בהגדרות) אין הגבלה.`:'יש עומס כרגע. נסה שוב בעוד דקה.';
   }catch(e){d={reply:'אין חיבור כרגע. נסה שוב.'}}
   typing.remove();
   S.chat.push({role:'assistant',content:d.reply,action:d.action||null});S.chat=S.chat.slice(-40);save();

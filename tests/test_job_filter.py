@@ -2,7 +2,7 @@
 import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from agent_core.agents.job_finder import _too_senior
+from agent_core.agents.hunter import too_senior as _too_senior
 
 STUDENT = {"levels": ["student", "intern", "junior"], "max_years": 1}
 MID = {"levels": ["mid"], "max_years": 5}
