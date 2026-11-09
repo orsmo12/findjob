@@ -52,7 +52,7 @@ def parse(page: str, days: int = 3) -> list[dict]:
         links = [html.unescape(u) for u in links if "t.me/" not in u]
         text = _text(body)
         if len(text) > 40:
-            out.append({"post": post, "text": text[:2500], "links": links[:4], "at": at.isoformat()})
+            out.append({"post": post, "text": text[:4000], "links": links[:16], "at": at.isoformat()})
     return out
 
 
@@ -61,7 +61,8 @@ def fetch(channel: str, cx: httpx.Client, days: int = 3) -> list[dict]:
     return parse(r.text, days) if r.status_code == 200 else []
 
 
-PROMPT = """These are posts from a public Telegram channel of job ads in Israel. For each post that is a real job ad, extract the fields.
+PROMPT = """These are posts from a public Telegram channel of job ads in Israel. A post may list several roles (a digest): return one item per role.
+For each role, the url is the link that belongs to that role (links are listed in the order they appear).
 Return JSON only: {{"jobs": [{{"i": post number, "title": "job title as written", "company": "company as written, or empty if not named",
 "location": "as written or empty", "url": "the application link from the post's links, or empty", "requirements": "short, only from the post"}}]}}
 Skip posts that are not a specific job. Never invent a company, link or requirement.
@@ -73,7 +74,7 @@ def extract(posts: list[dict]) -> list[dict]:
     if not posts:
         return []
     from agent_core.llm_router import chat
-    block = "\n\n".join(f"POST {i}:\n{p['text'][:1200]}\nLINKS: {' '.join(p['links']) or 'none'}" for i, p in enumerate(posts))
+    block = "\n\n".join(f"POST {i}:\n{p['text'][:3000]}\nLINKS (in order): {' '.join(p['links']) or 'none'}" for i, p in enumerate(posts))
     raw = chat("hunter", "telegram_extract", [{"role": "user", "content": PROMPT.format(posts=block)}], tier="light", max_tokens=2000)
     m = re.search(r"\{.*\}", raw or "", re.S)
     try:
@@ -97,8 +98,11 @@ def to_jobs(items: list[dict], posts: list[dict]) -> list[dict]:
             continue
         url = str(x.get("url") or "").strip()
         url = url if url in p["links"] else (p["links"][0] if p["links"] else f"https://t.me/{p['post']}")
+        k = low.find(title.lower())   # בפוסט מרוכז: רק הקטע של התפקיד הזה, עד התפקיד הבא
+        nxt = p["text"].find("🔹", k + len(title))
+        seg = p["text"][k:nxt if nxt > 0 else len(p["text"])].strip()
         out.append({"title": title, "company": co or "לא צוין בפוסט", "location": str(x.get("location") or "") or "Israel",
-                    "url": url, "description": p["text"], "source": "Telegram", "posted": p["at"][:10], "salary": "",
+                    "url": url, "description": seg if len(seg) > 20 else p["text"], "source": "Telegram", "posted": p["at"][:10], "salary": "",
                     "remote": False, "query": "telegram"})
     return out
 

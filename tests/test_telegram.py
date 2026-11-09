@@ -26,3 +26,12 @@ def test_extraction_is_grounded_in_post():
 
 def test_channel_names():
     assert [T.channel_name(x) for x in ("https://t.me/s/hitechjobsjunior", "@abc_jobs", "t.me/abcd", "a b")] == ["hitechjobsjunior", "abc_jobs", "abcd", None]
+
+
+def test_digest_post_gives_each_role_its_own_segment():
+    posts = [{"post": "c/1", "text": "Junior roles\n🔹 Junior QA Engineer\n🏢 Acme · 📍 Haifa\n🔹 NOC Engineer Student\n🏢 Global-e · 📍 Petah Tikva",
+              "links": ["https://acme.com/j/1", "https://global-e.com/c/2"], "at": "2026-11-09T06:01:00+00:00"}]
+    jobs = T.to_jobs([{"i": 0, "title": "Junior QA Engineer", "company": "Acme", "url": "https://acme.com/j/1"},
+                      {"i": 0, "title": "NOC Engineer Student", "company": "Global-e", "url": "https://global-e.com/c/2"}], posts)
+    assert [j["company"] for j in jobs] == ["Acme", "Global-e"]
+    assert "Global-e" not in jobs[0]["description"] and jobs[1]["url"].endswith("/c/2")
