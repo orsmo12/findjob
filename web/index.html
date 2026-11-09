@@ -2753,6 +2753,7 @@ function planWhy(){
   w.push(a.locs&&a.locs.length?'באזורים: '+a.locs.join(', ')+(a.mode==='מהבית'?', מהבית בלבד':''):'בכל הארץ');
   if(a.exp) w.push(`בלי משרות שדורשות יותר ניסיון ממה שיש לך (${a.exp})`);
   if(learnedChips().some(([r,n])=>r==='בכירה מדי'&&n>=2)) w.push('דילגת על משרות בכירות, אז מסננים חזק יותר');
+  if((a.exclude||[]).length)w.push('לא להציג משרות עם: '+a.exclude.join(', '));
   return w;
 }
 function targetCompanies(){
@@ -3125,7 +3126,8 @@ const ST_HE={saved:'שמור',applied:'הוגש',screening:'סינון',intervie
 function actionText(x){const j=x.job_id&&JOBS[x.job_id],n=j?`${j.title} ב-${j.co}`:'';
   return{set_status:`לעדכן את ${n} ל"${ST_HE[x.status]||x.status}"${x.iv?` (${x.iv})`:''}`,add_note:`להוסיף הערה ל-${n}: "${x.text}"`,
     set_letter:`להחליף את מכתב הפנייה ל-${n} בגרסה החדשה`,add_job:`להוסיף משרה מהקישור`,save_job:`לשמור את ${n} ולהעביר להגשות`,
-    skip_job:`לדלג על ${n}`,remove_app:`להסיר את ${n} מההגשות`,add_todo:`להוסיף משימה: "${x.text}"`,add_story:`להוסיף לבנק הסיפורים: "${x.title}"`,feedback:`לשלוח למפתח את הבקשה: "${x.text}"`}[x.type]}
+    skip_job:`לדלג על ${n}`,remove_app:`להסיר את ${n} מההגשות`,add_todo:`להוסיף משימה: "${x.text}"`,add_story:`להוסיף לבנק הסיפורים: "${x.title}"`,add_role:`להוסיף לחיפוש את התפקיד ${x.role}`,remove_role:`להוריד מהחיפוש את התפקיד ${x.role}`,add_target:`להוסיף את ${x.name} לחברות היעד`,remove_target:`להסיר את ${x.name} מחברות היעד`,
+    set_area:`לחפש באזורים: ${(x.locs||[]).join(', ')}`,set_mode:`לעדכן אופן עבודה: ${x.mode}`,add_exclude:`לא להציג משרות עם "${x.word}" בכותרת`,remove_exclude:`להציג שוב משרות עם "${x.word}"`,set_salary:`לעדכן ציפיות שכר: ${x.salary}`,feedback:`לשלוח למפתח את הבקשה: "${x.text}"`}[x.type]}
 function actionCard(x,idx){
   const txt=actionText(x);if(!txt)return null;const h=S.chat[idx]||{};
   const el=document.createElement('div');el.className='act-card';
@@ -3149,6 +3151,8 @@ async function runAction(x){
     case 'add_todo':S.todos.unshift({id:'t'+Date.now(),text:x.text,done:false});break;
     case 'add_story':S.stories.push({id:'s'+Date.now(),t:x.title,b:x.body||''});break;
     case 'feedback':S.feedback=S.feedback||[];S.feedback.push({t:String(x.text||'').slice(0,1000),at:new Date().toISOString(),page:'chat'});track('feedback');break;
+    case 'add_role':case 'remove_role':case 'add_target':case 'remove_target':case 'set_area':case 'set_mode':case 'add_exclude':case 'remove_exclude':case 'set_salary':
+      if(!setPref(x))return false;save();if(curPg==='profile')renderProfile();toast(`עודכן. ${N('hunter')} יחפש לפי זה מהסריקה הבאה`);return true;
     case 'add_job':toggleChat();openAddJob();setTimeout(()=>{const i=$('ajUrl');if(i)i.value=x.url||''},250);return true;
     default:return false;
   }
@@ -3371,6 +3375,22 @@ async function deleteAccount(){
     await SB.from('jobs').delete().eq('user_id',ME.id);await SB.from('profiles').delete().eq('user_id',ME.id);
     toast('הנתונים נמחקו. את החשבון עצמו המפתח ימחק ידנית');}
   try{await SB.auth.signOut()}catch(e){}LS.clear();setTimeout(()=>location.reload(),error?2500:300)}
+
+/* שי משנה הגדרות חיפוש, רק אחרי אישור בכרטיס */
+const AREAS=['תל אביב','גוש דן והמרכז','השרון','ירושלים','חיפה והצפון','באר שבע והדרום'],MODES=['מהמשרד','היברידי','מהבית','לא משנה לי'],SALS=['עד ₪12K','₪12–16K','₪16–20K','₪20–25K','₪25K ומעלה'];
+function setPref(x){const p=prof();p.ans=p.ans||{};const a=p.ans,clean=v=>String(v||'').trim().slice(0,60),T=S.targets=S.targets||{added:[],removed:[]};
+  const lower=(L,v)=>L.findIndex(y=>y.toLowerCase()===v.toLowerCase());
+  switch(x.type){
+    case 'add_role':{const r=clean(x.role);if(!r)return false;a.roles=a.roles||[];if(lower(a.roles,r)<0)a.roles.push(r);return true}
+    case 'remove_role':{const i=lower(a.roles||[],clean(x.role));if(i<0)return false;a.roles.splice(i,1);return true}
+    case 'add_target':{const n=clean(x.name);if(!n)return false;T.removed=T.removed.filter(v=>v.toLowerCase()!==n.toLowerCase());if(lower(T.added,n)<0)T.added.unshift(n);return true}
+    case 'remove_target':{const n=clean(x.name);if(!n)return false;T.added=T.added.filter(v=>v.toLowerCase()!==n.toLowerCase());if(lower(T.removed,n)<0)T.removed.push(n);return true}
+    case 'set_area':{const L=(x.locs||[]).filter(v=>AREAS.includes(v));if(!L.length)return false;a.locs=L;return true}
+    case 'set_mode':if(!MODES.includes(x.mode))return false;a.mode=x.mode;return true;
+    case 'add_exclude':{const w=clean(x.word);if(!w)return false;a.exclude=a.exclude||[];if(lower(a.exclude,w)<0)a.exclude.push(w);return true}
+    case 'remove_exclude':{const i=lower(a.exclude||[],clean(x.word));if(i<0)return false;a.exclude.splice(i,1);return true}
+    case 'set_salary':if(!SALS.includes(x.salary))return false;a.salary=x.salary;return true;
+  }return false}
 
 cloudBoot();
 </script>

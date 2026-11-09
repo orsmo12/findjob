@@ -166,10 +166,18 @@ def years_too_many(req: int, plan: dict) -> bool:
     return bool(mx) and req > mx + 1
 
 
+def excluded(job: dict, plan: dict) -> bool:
+    """כלל סינון שהמשתמש אישר: המילה מופיעה בכותרת (כמילה שלמה, בלי תלות ברישיות)."""
+    t = " " + re.sub(r"[^\w.#+]+", " ", job.get("title", "").lower()) + " "
+    return any(f" {w.lower()} " in t for w in plan.get("exclude_words") or [])
+
+
 def prefilter(jobs: list[dict], plan: dict, seen_ids: set[str]) -> tuple[list[dict], dict]:
-    stats = {"collected": len(jobs), "too_senior": 0, "already_seen": 0}
+    stats = {"collected": len(jobs), "too_senior": 0, "already_seen": 0, "excluded": 0}
     keep = []
     for j in jobs:
+        if excluded(j, plan):
+            stats["excluded"] += 1; continue
         if j["id"] in seen_ids:
             stats["already_seen"] += 1; continue
         if too_senior(j, plan):

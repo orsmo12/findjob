@@ -19,6 +19,7 @@ function planWhy(){
   w.push(a.locs&&a.locs.length?'באזורים: '+a.locs.join(', ')+(a.mode==='מהבית'?', מהבית בלבד':''):'בכל הארץ');
   if(a.exp) w.push(`בלי משרות שדורשות יותר ניסיון ממה שיש לך (${a.exp})`);
   if(learnedChips().some(([r,n])=>r==='בכירה מדי'&&n>=2)) w.push('דילגת על משרות בכירות, אז מסננים חזק יותר');
+  if((a.exclude||[]).length)w.push('לא להציג משרות עם: '+a.exclude.join(', '));
   return w;
 }
 function targetCompanies(){
