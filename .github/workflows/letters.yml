@@ -1,7 +1,7 @@
-name: findjob assistant (letters, research, prep)
+name: "findjob assistant (tasks: research, CV tailoring, prep, letters)"
 on:
   schedule:
-    - cron: "23 5-21/2 * * *"   # כל שעתיים, בערך 07:00–23:00 שעון ישראל
+    - cron: "23 5-21/2 * * *"   # כל שעתיים, בערך 07:00–23:00 שעון ישראל: אוסף משימות על משרות ששמרת. בלי משימות — נגמר מהר
   workflow_dispatch: {}
 concurrency:
   group: findjob-agents      # סוכן אחד בכל פעם: חולקים את מכסת Groq

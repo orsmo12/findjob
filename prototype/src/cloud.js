@@ -32,11 +32,16 @@ async function cloudSend(){
   if(error){h.textContent='לא הצלחתי לשלוח: '+error.message;h.style.color='var(--rose)';return}
   h.style.color='var(--brand)';h.textContent='נשלח. פתח את המייל באותו מכשיר ולחץ על הקישור.';
 }
+/* משרות מהענן. אם עמודת tailor עוד לא קיימת (לא הורץ supabase/agent_tasks.sql) — טוענים בלעדיה */
+async function loadJobs(uid,cols='id,card,decision,letter,brief,prep,tailor,created_at'){
+  const r=await SB.from('jobs').select(cols).eq('user_id',uid).or('decision.is.null,decision.neq.filtered').order('created_at',{ascending:false}).limit(200);
+  return r.error&&cols.includes('tailor')?loadJobs(uid,cols.replace(',tailor','')):r;
+}
 async function cloudLoad(){
   const uid=ME.id;
   const [{data:pr},{data:jobs},{data:runs}]=await Promise.all([
     SB.from('profiles').select('*').eq('user_id',uid).maybeSingle(),
-    SB.from('jobs').select('id,card,decision,letter,brief,prep,created_at').eq('user_id',uid).or('decision.is.null,decision.neq.filtered').order('created_at',{ascending:false}).limit(200),
+    loadJobs(uid),
     SB.from('runs').select('agent,stats,created_at').eq('user_id',uid).order('created_at',{ascending:false}).limit(150)]);
   if(pr){const p=prof();p.first=pr.first||p.first;p.name=pr.name||p.name;p.cv=pr.cv_text||p.cv;p.ans=Object.assign({},pr.answers||{},p.ans||{});
     if(pr.team&&Object.keys(pr.team).length)S.team=pr.team;const st=pr.state||{};['apps','todos','stories'].forEach(k=>{if(Array.isArray(st[k]))S[k]=st[k]});if(st.targets)S.targets=st.targets;if(Array.isArray(st.history))S.history=st.history;if(Array.isArray(st.chat))S.chat=st.chat;if(Array.isArray(st.accepted))S.accepted=st.accepted;if(Array.isArray(st.dismissed))S.dismissed=st.dismissed;if(Array.isArray(st.cvDone))S.cvDone=st.cvDone;if(st.usage)S.usage=st.usage;if(st.ai_key)S.ai_key=st.ai_key;if(Array.isArray(st.feedback))S.feedback=st.feedback;p.li_text=pr.li_text||'';LI=Object.assign({},pr.li||{},{fixes:((pr.li_fixes||{}).fixes)||[]});if(pr.cv_text)S.onboarded=true}
@@ -44,7 +49,7 @@ async function cloudLoad(){
   RUNS=runs||[];const hr=RUNS.filter(r=>(r.agent||'hunter')==='hunter');
   if(hr.length||(jobs&&jobs.length)){
     const live=(jobs||[]).filter(r=>r.decision!=='filtered'&&(r.decision!=='skip'||S.decisions[r.id]));
-    setFeed({generated_at:hr.length?hr[0].created_at:null,stats:hr.length?(hr[0].stats||{}):{},jobs:live.map(r=>Object.assign({},r.card,{letter:r.letter||null,brief:r.brief||null,prep:r.prep||null,closed_at:(r.card&&r.card.closed_at)||null})).sort((a,b)=>b.fit-a.fit)});
+    setFeed({generated_at:hr.length?hr[0].created_at:null,stats:hr.length?(hr[0].stats||{}):{},jobs:live.map(r=>Object.assign({},r.card,{letter:r.letter||null,brief:r.brief||null,prep:r.prep||null,tailor:r.tailor||null,closed_at:(r.card&&r.card.closed_at)||null})).sort((a,b)=>b.fit-a.fit)});
     (jobs||[]).forEach(r=>{if(r.decision&&r.decision!=='filtered')S.decisions[r.id]=r.decision});
   }
   S.apps=(S.apps||[]).filter(a=>JOBS[a.jobId]);

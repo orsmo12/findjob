@@ -1,13 +1,17 @@
 """
-assistant_job.py — מה שרץ בענן כל שעתיים ביום, לכל משרה ששמרת:
-  שי: מכתב פנייה · גיל: סקירת חברה עם מקורות · מאיה: שאלות הכנה.
-הכל מחכה באפליקציה. שום דבר לא נשלח ושום חשבון לא נוגעים בו.
+assistant_job.py — הסוכנים שעובדים לפי משימות: גיל (סקירה), קובי (התאמת קורות חיים), מאיה (הכנה), שי (מכתב).
+
+יואב מתאם: לכל משרה ששמרת ושחסר לה משהו, הוא יוצר משימה לסוכן המתאים (טבלת agent_tasks).
+דורון יוצר משימות בעצמו כשהוא מוצא משרה בציון גבוה מאוד. כל סוכן מבצע את המשימות שלו, לפי הסדר:
+סקירה ← התאמת קורות חיים ← הכנה ← מכתב (המכתב מחכה לסקירה). אין משימות: הריצה נגמרת מהר.
+רץ מיד אחרי הסריקה, ועוד כל שעתיים ביום. הכל מחכה באפליקציה. שום דבר לא נשלח ושום חשבון לא נוגעים בו.
 """
 import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from agent_core import cloud_store as db
+from agent_core import handoffs as H
 from agent_core.agents.letters import write_letter
 from agent_core.agents.research import brief
 from agent_core.agents.prep import prepare
@@ -23,50 +27,113 @@ from datetime import datetime, timedelta, timezone
 if not db.configured():
     sys.exit("SUPABASE_URL / SUPABASE_SERVICE_KEY חסרים")
 
-from agent_core.llm_router import use_key
-for u in db.profiles_ready():
-    _k = ((u.get("state") or {}).get("ai_key") or "").strip()
-    use_key(_k if _k.startswith("gsk_") and len(_k) > 30 else None)   # מפתח אישי אם יש, אחרת המשותף
-    cv, name = u["cv_text"], u.get("name") or u.get("first") or ""
-    done = {"letter": [], "brief": [], "prep": []}
-    act.start(u["user_id"])
-    for row in db.saved_missing(u["user_id"]):
+
+def do_kind(kind: str, row: dict, u: dict, cv: str, name: str) -> dict:
+    """מבצע עבודה אחת על משרה ומחזיר את השדות לעדכון."""
+    job = row["card"]
+    if kind == "brief":
+        return {"brief": brief(job["co"], job["title"], cv)}
+    if kind == "tailor":
+        return {"tailor": G.tailor_cv(cv, job)}
+    if kind == "letter":
+        return {"letter": write_letter(cv, job, name)}
+    if kind == "prep":
+        prep = row.get("prep") or prepare(cv, job)
+        if prep.get("tasks") is None or prep.get("more_tasks"):
+            used = {t["url"] for t in prep.get("tasks") or []} | set(prep.get("used_tasks") or [])
+            # מטלות בית מ-GitHub מתאימות לתחומי תוכנה. בתחום אחר — לא ממציאים, נשאר ריק
+            fresh = build_tasks(job, need=4, exclude=used) if domain_of(u) == "פיתוח תוכנה" else []
+            prep = {**prep, "tasks": (prep.get("tasks") or []) + fresh, "more_tasks": False}
+            if not fresh and (row.get("prep") or {}).get("more_tasks"):
+                prep["no_more_tasks"] = True
+        return {"prep": prep}
+    return {}
+
+
+DONE_NOTE = {"brief": "הסקירה על {co} מוכנה", "tailor": "הצעות להתאמת קורות החיים ל-{co} מוכנות",
+             "prep": "שאלות ההכנה ל-{co} מוכנות", "letter": "המכתב ל-{co} מוכן"}
+DONE_KEY = {"brief": "brief", "tailor": "tailor", "prep": "prep", "letter": "letter"}
+
+
+def record(upd: dict, job: dict, done: dict) -> None:
+    for k in upd:
+        if k != "brief" or upd[k].get("found"):
+            done.setdefault(k, []).append(job["co"])
+
+
+def work_by_tasks(u: dict, cv: str, name: str, done: dict) -> None:
+    uid = u["user_id"]
+    # יואב מתאם: מה חסר במשרות ששמרת, ולמי זה הולך
+    existing = H._open(uid)
+    for row in db.saved_jobs(uid):
+        miss = H.missing_for_saved(row)
+        if miss:
+            H.request_for_job(uid, "strategist", {**row["card"], "id": row["id"]}, miss, "נשמרה משרה", existing)
+    act.flush()
+    # כל סוכן מבצע את המשימות שלו, לפי הסדר
+    for agent in H.ORDER:
+        for t in H.due(uid, agent):
+            row = db.get_job(uid, t["job_id"]) if t.get("job_id") else None
+            if not row or (row["card"] or {}).get("closed_at") or row.get("decision") in ("skip", "removed", "filtered"):
+                H.finish(t, False, {"why": "המשרה נסגרה, הוסרה או שדילגת עליה"}); continue
+            if t["kind"] != "prep" and row.get(DONE_KEY[t["kind"]]) and (t["kind"] != "letter" or (row["letter"].get("v") or 0) >= 3):
+                H.finish(t, True, {"skip": "כבר מוכן"}); continue
+            try:
+                upd = do_kind(t["kind"], row, u, cv, name)
+            except BudgetDeferred:
+                print("מכסה: ממשיכים בריצה הבאה")
+                act.log(agent, "הגעתי למכסת ה-AI. את המשימות שנשארו אעשה בריצה הבאה.")
+                act.flush(); return
+            except Exception as e:  # noqa: BLE001
+                print(f"{t['id']}: {type(e).__name__}: {e}")
+                H.finish(t, False, {"error": type(e).__name__}, "לא הצלחתי הפעם. אנסה שוב בריצה הבאה."); continue
+            if upd:
+                db.update_job(uid, row["id"], upd)
+                record(upd, row["card"], done)
+            H.finish(t, True, {"fields": list(upd)}, DONE_NOTE[t["kind"]].format(co=row["card"]["co"]))
+            act.flush()
+
+
+def work_legacy(u: dict, cv: str, name: str, done: dict) -> None:
+    """בלי טבלת משימות: כמו קודם, עובר על כל משרה שמורה שחסר לה משהו."""
+    for row in db.saved_jobs(u["user_id"], with_tailor=False):
         job, upd = row["card"], {}
+        miss = [k for k in H.missing_for_saved({**row, "tailor": True})]
+        if not miss:
+            continue
         act.log("assistant", f"נשמרה משרה: {job['title']} ב-{job['co']}. גיל — מחקר על החברה, מאיה — שאלות הכנה.", to="researcher")
         try:
-            if not row.get("letter") or (row["letter"].get("v") or 0) < 3:  # v3: מכתב קצר וממוקד, בדיקת מקור כוללת את שם המשרה
-                upd["letter"] = write_letter(cv, job, name)
-            if not row.get("brief"):
-                upd["brief"] = brief(job["co"], job["title"], cv)
-            prep = row.get("prep")
-            if not prep:
-                prep = prepare(cv, job); upd["prep"] = prep
-            if prep.get("tasks") is None or prep.get("more_tasks"):
-                used = {t["url"] for t in prep.get("tasks") or []} | set(prep.get("used_tasks") or [])
-                # מטלות בית מ-GitHub מתאימות לתחומי תוכנה. בתחום אחר — לא ממציאים, נשאר ריק
-                fresh = build_tasks(job, need=4, exclude=used) if domain_of(u) == "פיתוח תוכנה" else []
-                prep = {**prep, "tasks": (prep.get("tasks") or []) + fresh, "more_tasks": False}
-                if not fresh and row.get("prep") and row["prep"].get("more_tasks"):
-                    prep["no_more_tasks"] = True
-                upd["prep"] = prep
+            for k in miss:
+                upd.update(do_kind(k, {**row, **upd}, u, cv, name))
         except BudgetDeferred:
             print("מכסה: ממשיכים בריצה הבאה")
         except Exception as e:  # noqa: BLE001
             print(f"{row['id']}: {type(e).__name__}: {e}")
         if upd:
             db.update_job(u["user_id"], row["id"], upd)
-            for k in upd:
-                if k != "brief" or upd[k].get("found"):
-                    done[k].append(job["co"])
-            act.debug(f"{u['user_id'][:8]} · {job['co']}: {', '.join(upd)}"
-                  + (" (לא נמצא מידע על החברה)" if "brief" in upd and not upd["brief"].get("found") else ""))
+            record(upd, job, done)
+
+
+from agent_core.llm_router import use_key
+for u in db.profiles_ready():
+    _k = ((u.get("state") or {}).get("ai_key") or "").strip()
+    use_key(_k if _k.startswith("gsk_") and len(_k) > 30 else None)   # מפתח אישי אם יש, אחרת המשותף
+    cv, name = u["cv_text"], u.get("name") or u.get("first") or ""
+    done: dict = {}
+    act.start(u["user_id"])
+    try:
+        (work_by_tasks if H.available() else work_legacy)(u, cv, name, done)
+    except Exception as e:  # noqa: BLE001
+        print(f"{u['user_id'][:8]}: משימות נכשלו: {type(e).__name__}: {e}")
     act.flush()
     names = lambda xs: ", ".join(xs[:3]) + (f" ועוד {len(xs) - 3}" if len(xs) > 3 else "")
-    if done["letter"]:
+    if done.get("letter"):
         db.add_run(u["user_id"], "assistant", f"מכתב פנייה מוכן ל-{names(done['letter'])}. כל פרט בו נבדק מול קורות החיים.")
-    if done["brief"]:
+    if done.get("brief"):
         db.add_run(u["user_id"], "researcher", f"הכנתי סקירה עם מקורות על {names(done['brief'])}.")
-    if done["prep"]:
+    if done.get("tailor"):
+        db.add_run(u["user_id"], "linkedin", f"הכנתי הצעות להתאמת קורות החיים ל-{names(done['tailor'])}. רק ניסוח וסדר, בלי שום פרט חדש. נמצאות בגיליון ההגשה.")
+    if done.get("prep"):
         db.add_run(u["user_id"], "coach", f"שאלות הכנה מוכנות ל-{names(done['prep'])}, לפי מה שכתוב במודעה.")
     # מאיה: שיפורי פרופיל LinkedIn — רק כשהעלית PDF חדש של הפרופיל
     lf = dict(u.get("li_fixes") or {})      # עמודה נפרדת: קובי ומאיה לא דורסים זה את זה

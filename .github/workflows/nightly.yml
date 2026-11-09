@@ -1,7 +1,7 @@
 name: findjob nightly
 on:
   schedule:
-    - cron: "17 3,15 * * *"  # כל 12 שעות: 05:17 ו-17:17 שעון ישראל (GitHub עובד ב-UTC)
+    - cron: "47 4,12 * * *"  # פעמיים ביום: 06:47 ו-14:47 שעון ישראל בחורף (07:47 ו-15:47 בקיץ). GitHub עובד ב-UTC
   workflow_dispatch:          # כפתור "Run workflow" להרצה ידנית
     inputs:
       meeting: { description: "לכפות ישיבה שבועית (1)", required: false, default: "" }
@@ -12,7 +12,7 @@ jobs:
   hunt:
     if: github.repository == 'orsmo12/findjob'   # בעותק ציבורי (אם יהיה) הסוכנים לא רצים
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 55
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -25,3 +25,11 @@ jobs:
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           FORCE_MEETING: ${{ github.event.inputs.meeting }}
+      - name: agents work on the tasks the scan created (Gil, Kobi, Maya, Shai)
+        if: always()
+        run: python -u scripts/assistant_job.py
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

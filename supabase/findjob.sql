@@ -58,3 +58,5 @@ alter table public.profiles add column if not exists li jsonb default '{}'::json
 alter table public.profiles add column if not exists li_text text default '';        -- טקסט מ-PDF של פרופיל ה-LinkedIn
 alter table public.profiles add column if not exists li_fixes jsonb default '{}'::jsonb;  -- מאיה: שיפורי פרופיל
 -- משרה שנסגרה למועמדים: card.closed_at (בתוך ה-JSON, בלי עמודה נפרדת)
+
+-- סבב 2א: משימות בין סוכנים והתאמת קורות חיים למשרה — ראו supabase/agent_tasks.sql

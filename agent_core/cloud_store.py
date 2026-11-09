@@ -86,6 +86,23 @@ def saved_missing(user_id: str) -> list[dict]:
     return r.json()
 
 
+def saved_jobs(user_id: str, with_tailor: bool = True) -> list[dict]:
+    """משרות ששמרת ועוד פתוחות, עם כל מה שהסוכנים הכינו להן (מכתב, סקירה, הכנה, התאמת קורות חיים)."""
+    cols = "id,card,letter,brief,prep" + (",tailor" if with_tailor else "")
+    r = httpx.get(_url("jobs"), headers=_h(), timeout=30, params={
+        "select": cols, "user_id": f"eq.{user_id}", "decision": "eq.save", "card->>closed_at": "is.null"})
+    r.raise_for_status()
+    return r.json()
+
+
+def get_job(user_id: str, job_id: str) -> dict | None:
+    r = httpx.get(_url("jobs"), headers=_h(), timeout=30, params={
+        "select": "id,card,decision,letter,brief,prep,tailor", "user_id": f"eq.{user_id}", "id": f"eq.{job_id}"})
+    r.raise_for_status()
+    rows = r.json()
+    return rows[0] if rows else None
+
+
 def update_job(user_id: str, job_id: str, fields: dict) -> None:
     r = httpx.patch(_url("jobs"), headers=_h(), json=fields,
                     params={"user_id": f"eq.{user_id}", "id": f"eq.{job_id}"}, timeout=30)

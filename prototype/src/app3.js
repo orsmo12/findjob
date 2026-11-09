@@ -54,6 +54,7 @@ function paintAppTab(id){
         <div class="duo"><button class="btn btn-ghost" onclick="copyText($('fuText').value,'ההודעה הועתקה')">${ICO.copy}העתק</button><button class="btn btn-primary" onclick="sentFollow('${id}')">שלחתי</button></div></div>`:''}
       ${REAL?`<div class="s-sec"><button class="btn btn-ghost btn-block" onclick="openPrep('${a.jobId}')">${ICO.spark||''}הכנה לראיון${j.prep&&j.prep.questions&&j.prep.questions.length?` · ${j.prep.questions.length} שאלות מוכנות`:''}</button></div>`:''}
       ${REAL?briefHtml(j):''}
+      ${REAL?tailorHtml(j):''}
       <div class="s-sec"><h4>עריכה</h4>
         <div class="field"><label for="edIv">מועד ראיון או שיחה</label><input id="edIv" value="${escB(a.iv||'')}" placeholder="למשל: רביעי, 14:00" onchange="appOf('${id}').iv=this.value.trim();save();refreshApps()"></div>
         <div class="field"><label for="edNote">הערות שלי</label><textarea id="edNote" class="textbox" rows="3" placeholder="עם מי דיברתי, מה ביקשו, מה הלאה…" onchange="appOf('${id}').note=this.value;save()">${esc(a.note||'')}</textarea></div></div>
@@ -176,6 +177,18 @@ function briefHtml(j){
     ${b.facts.map(f=>`<div class="jc-r" style="margin-bottom:6px"><span class="ic" aria-hidden="true">•</span><span>${escB(f.text)} ${sup(f.src)}</span></div>`).join('')}
     ${b.why_you&&b.why_you.length?`<h4 style="margin-top:12px">איך זה מתחבר אליך</h4>${b.why_you.map(w=>`<div class="jc-r" style="margin-bottom:6px"><span class="ic ok" aria-hidden="true">✓</span><span>${escB(w)}</span></div>`).join('')}`:''}
     <div class="src-list">${b.sources.map((s,i)=>`<a href="${escB(s.url)}" target="_blank" rel="noopener"><span class="src-n">${i+1}</span><span dir="auto">${escB(s.title)}</span><small>${escB(s.domain)}</small></a>`).join('')}</div></div>`;
+}
+/* קובי: התאמת קורות החיים למשרה. רק ניסוח וסדר של מה שכבר כתוב אצלך. אתה מעתיק ומעדכן בעצמך */
+function tailorHtml(j){
+  const t=j.tailor,h=`<h4>קורות חיים למשרה הזו</h4>`;
+  if(!t)return`<div class="s-sec">${h}<p class="card-sub">${escB(N('linkedin'))} יציע איך להדגיש בקורות החיים את מה שהמשרה מבקשת. ההצעות יופיעו כאן אחרי הריצה הקרובה.</p></div>`;
+  if(t.no_ad)return`<div class="s-sec">${h}<p class="card-sub">אין מודעה מלאה למשרה הזו, אז ${escB(N('linkedin'))} לא הציע שינויים.</p></div>`;
+  if(!t.edits.length)return`<div class="s-sec">${h}<p class="card-sub">${escB(N('linkedin'))} בדק: קורות החיים כבר מדגישים את מה שהמשרה מבקשת.${t.order?' '+escB(t.order):''}</p></div>`;
+  return`<div class="s-sec">${h}<p class="card-sub" style="margin-bottom:8px">רק ניסוח וסדר של מה שכבר כתוב אצלך, בלי שום פרט חדש. מעתיקים את מה שמתאים ומעדכנים בקובץ שלך.</p>
+    ${t.order?`<div class="jc-r" style="margin-bottom:10px"><span class="ic" aria-hidden="true">↑</span><span>${escB(t.order)}</span></div>`:''}
+    ${t.edits.map((e,i)=>`<div class="tailor-ed"><div class="tl-b" dir="auto"><small>היום</small>${escB(e.before)}</div><div class="tl-a" dir="auto"><small>מוצע</small><span id="tl${i}">${escB(e.after)}</span></div>
+      ${e.why?`<div class="card-sub" style="margin:4px 0 6px">${escB(e.why)}</div>`:''}
+      <button class="btn btn-ghost btn-sm" onclick="copyText($('tl${i}').textContent,'השורה הועתקה')">${ICO.copy}העתק</button></div>`).join('')}</div>`;
 }
 /* קשרים: חיפושים מוכנים ב-LinkedIn. החיפוש וההודעה נעשים בחשבון שלך, על ידך */
 const SCHOOLS=['HIT','Technion','Tel Aviv University','Hebrew University','Bar-Ilan','Ben-Gurion','Reichman','Ariel University','Afeka','Open University','University of Haifa','Shenkar','Ruppin','Sapir','Azrieli','Jerusalem College of Technology'];

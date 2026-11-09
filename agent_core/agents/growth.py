@@ -175,3 +175,55 @@ def cv_suggestions(cv: str, evidence: list[dict], gaps: list[str]) -> list[dict]
                     "why": str(s.get("why", ""))[:200], "proof": str(s.get("proof", ""))[:120]})
     act.log("linkedin", f"עברתי על {len(evidence)} ריפוזיטוריז ב-GitHub: {len(out)} דברים שעשית ולא כתובים בקורות החיים.")
     return out
+
+
+# ── קובי: התאמת קורות חיים למשרה מסוימת ─────────────────────────────────────
+TAILOR_PROMPT = """You help a candidate adapt their CV to ONE job ad, without adding anything new.
+Pick up to 3 existing CV lines that matter most for this job, and rewrite each so the job's own terms and
+priorities come first. You may reorder, shorten and rephrase. You may NOT add any technology, number,
+company, result or responsibility that is not already in the CV.
+
+JOB: {title} at {co}
+AD:
+{ad}
+
+CV:
+{cv}
+
+Return JSON only: {{"edits": [up to 3 items, each {{
+  "before": "the CV line copied EXACTLY as written in the CV",
+  "after": "the rewritten line, same language as the CV, max 28 words",
+  "why": "one sentence in Hebrew: which requirement in the ad this answers"}}],
+ "order": "one sentence in Hebrew: which CV section or project to move up for this job, or empty"}}"""
+
+
+def _squash(s: str) -> str:
+    return re.sub(r"\s+", " ", s or "").strip().lower()
+
+
+def tailor_edits(cv: str, d: dict) -> list[dict]:
+    """בדיקת אמת להצעות: השורה המקורית חייבת להיות בקורות החיים, והחדשה בלי שום פרט שלא מופיע בהם."""
+    cvs, out = _squash(cv), []
+    for e in (d.get("edits") or [])[:3]:
+        before, after = str(e.get("before", "")).strip(), str(e.get("after", "")).strip()
+        if not before or not after or _squash(before) == _squash(after):
+            continue
+        if _squash(before) not in cvs or not grounded(after, cv):
+            continue
+        out.append({"before": before[:400], "after": after[:400], "why": str(e.get("why", ""))[:200]})
+    return out
+
+
+def tailor_cv(cv: str, job: dict) -> dict:
+    ad = job.get("ad") or job.get("desc") or ""
+    if len(ad) < 200:   # בלי מודעה מלאה אין למה להתאים
+        act.log("linkedin", f"{job.get('co')}: אין מודעה מלאה, אז אין למה להתאים את קורות החיים.")
+        return {"edits": [], "order": "", "v": 1, "no_ad": True}
+    d = _json(chat("linkedin", "cv_tailor", [{"role": "user", "content": TAILOR_PROMPT.format(
+        title=job.get("title", ""), co=job.get("co", ""), ad=ad[:3500], cv=cv[:5000])}], tier="judge", max_tokens=1200))
+    edits = tailor_edits(cv, d)
+    order = str(d.get("order", ""))[:200] if grounded(str(d.get("order", "")), cv + " " + ad) else ""
+    n = len((d.get("edits") or [])[:3])
+    act.log("linkedin", f"התאמתי את קורות החיים ל-{job.get('title')} ב-{job.get('co')}: {len(edits)} שינויים"
+            + (f" (זרקתי {n - len(edits)} עם פרט שלא כתוב אצלך)" if n > len(edits) else ""))
+    return {"edits": edits, "order": order, "v": 1}

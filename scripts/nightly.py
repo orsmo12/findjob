@@ -14,6 +14,7 @@ from agent_core import cloud_store as db
 from agent_core.profile import build_search_plan
 from agent_core.agents.hunter import run, collect, rerate, RATING_V, BudgetDeferred
 from agent_core import activity as act
+from agent_core import handoffs as H
 from agent_core.agents.live import check as still_open
 import httpx as _httpx
 import httpx
@@ -47,6 +48,9 @@ def fair_rate_top(u: dict) -> int:
     return 6
 
 
+# לו"ז: הסריקה רצה פעמיים ביום (בוקר ואחר הצהריים). בדיקת משרות פתוחות ודוח שימוש — רק בבוקר.
+# קובי מחפש פוסטים פעם בשבוע. FORCE_MEETING מריץ הכל.
+MORNING = datetime.now(timezone.utc).hour < 9 or bool(os.environ.get("FORCE_MEETING"))
 users = db.profiles_ready()
 print(f"{len(users)} משתמשים עם קורות חיים")
 for u in users:
@@ -157,6 +161,11 @@ for u in users:
             act.log("hunter", f"{len(feed['jobs'])} משרות חדשות מחכות ל{u.get('first') or 'משתמש'}. כשתישמר משרה — שי, גיל ומאיה, היא שלכם.", to="assistant")
         act.flush()
         db.save_feed(u["user_id"], feed)
+        if H.available():  # דורון: משרה בציון גבוה מאוד — גיל וקובי מתחילים לעבוד עליה מיד
+            existing = H._open(u["user_id"])
+            for j in H.high_fit(feed["jobs"]):
+                H.request_for_job(u["user_id"], "hunter", j, ["brief", "tailor"], f"מצאתי משרה בציון {j['fit']:.1f}", existing)
+            act.flush()
         s = feed["stats"]
         print(f"{u['user_id'][:8]}: נאספו {s['collected']}, בכירות מדי {s['too_senior']}, כבר נראו {s['already_seen']}, "
               f"דורגו {s['rated']} (מתוכם {s.get('ai_senior', 0)} בכירות לפי הדירוג), ציונים {sorted(s.get('fits', []), reverse=True)}, מוצגות {s['shown']}")
@@ -166,8 +175,8 @@ for u in users:
         act.log("hunter", "החיפוש נעצר בגלל תקלה. אנסה שוב בריצה הבאה.")
         act.flush()
     act.start(u["user_id"])
-    try:  # דורון: האם המשרות ששמרת עדיין פתוחות להגשה
-        saved = db.saved_open(u["user_id"])
+    try:  # דורון: האם המשרות ששמרת עדיין פתוחות להגשה (פעם ביום, בסריקת הבוקר)
+        saved = db.saved_open(u["user_id"]) if MORNING else []
         closed = []
         with _httpx.Client(timeout=12, follow_redirects=True, headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/124"}) as cx:
             for row in saved:
@@ -186,8 +195,11 @@ for u in users:
         print(f"{u['user_id'][:8]}: בדיקת משרות נכשלה: {type(e).__name__}: {e}")
         act.flush()
     act.start(u["user_id"])
-    try:  # קובי: פוסטים חמים כל לילה, טיוטת פוסט פעם בשבוע
+    try:  # קובי: פוסטים חמים וטיוטת פוסט, פעם בשבוע
         li = dict(u.get("li") or {})
+        if li.get("updated") and datetime.fromisoformat(li["updated"]) > datetime.now(timezone.utc) - timedelta(days=7) \
+                and not os.environ.get("FORCE_MEETING"):
+            raise StopIteration
         li["posts"] = K.hot_posts(plan, u["cv_text"])
         old = li.get("draft_at")
         if not li.get("draft") or not old or datetime.fromisoformat(old) < datetime.now(timezone.utc) - timedelta(days=7):
@@ -196,9 +208,11 @@ for u in users:
         db.update_profile(u["user_id"], {"li": li})
         n = len(li["posts"])
         db.add_run(u["user_id"], "linkedin", f"מצאתי {n} פוסטים מהשבוע ששווה להגיב עליהם, והכנתי לכל אחד שתי הצעות תגובה." if n
-                   else "לא מצאתי השבוע פוסטים ציבוריים שמתאימים לך. אבדוק שוב מחר.")
+                   else "לא מצאתי השבוע פוסטים ציבוריים שמתאימים לך. אבדוק שוב בשבוע הבא.")
         print(f"{u['user_id'][:8]}: LinkedIn {n} פוסטים")
         act.flush()
+    except StopIteration:
+        pass
     except Exception as e:  # noqa: BLE001
         print(f"{u['user_id'][:8]}: LinkedIn נכשל: {type(e).__name__}: {e}")
         act.flush()
@@ -235,7 +249,7 @@ for u in users:
 # ── דוח שימוש לבעל המערכת: פעם ביום, בסריקת הבוקר ─────────────────────────
 try:
     from agent_core import usage as U
-    if datetime.now(timezone.utc).hour < 9 or os.environ.get("FORCE_MEETING"):
+    if MORNING:
         allp = httpx.get(db._url("profiles"), headers=db._h(), params={"select": "user_id,first,cv_text,answers,state"}, timeout=30).json()
         users_auth = db.auth_users()
         jb = {u["id"]: db.all_jobs(u["id"], days=30) for u in users_auth}

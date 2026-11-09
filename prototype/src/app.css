@@ -756,3 +756,7 @@ a.person>svg{flex:0 0 18px;width:18px;height:18px;fill:none;stroke:var(--ink3);s
 
 .login-mail summary{cursor:pointer;color:var(--ink2);font-size:14px;text-align:center;list-style:none}
 .login-mail summary::-webkit-details-marker{display:none}
+.tailor-ed{border:1px solid var(--glass-brd);border-radius:14px;padding:10px 12px;margin-bottom:10px;background:var(--glass)}
+.tailor-ed small{display:block;font-size:11.5px;color:var(--ink3);margin-bottom:2px}
+.tl-b{color:var(--ink3);text-decoration:line-through;text-decoration-color:rgba(0,0,0,.25);font-size:13.5px;margin-bottom:8px}
+.tl-a{font-size:14px;line-height:1.55}
