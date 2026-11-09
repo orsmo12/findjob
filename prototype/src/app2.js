@@ -22,6 +22,8 @@ function syncChrome(){
   const q=queue().length, ap=S.apps.filter(appNeedsMe).length, li=hotPosts().length+fixesLeft().length;
   [['bdJobs',q],['bdApps',ap],['bdLi',li]].forEach(([i,n])=>{$(i).hidden=!n;$(i).textContent=n;$(i).setAttribute('aria-label',`${n} מחכים לך`)});
   $('menuDot').hidden=!(q||hotPosts().length);
+  document.title=(q?`(${q}) `:'')+document.title.replace(/^\(\d+\)\s*/,'');   // מספר המשרות החדשות בלשונית
+  try{if('setAppBadge' in navigator)q?navigator.setAppBadge(q):navigator.clearAppBadge()}catch(e){}
   const iv=S.apps.find(a=>a.status==='interview'&&a.iv);
   $('drIv').hidden=!iv; if(iv) $('drIvTxt').textContent=`ראיון ב-${JOBS[iv.jobId].co}, ${iv.iv}`;
   const ini=initials(prof().first||prof().name);

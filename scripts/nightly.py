@@ -179,6 +179,12 @@ for u in users:
             act.log("hunter", f"{len(feed['jobs'])} משרות חדשות מחכות ל{u.get('first') or 'משתמש'}. כשתישמר משרה — שי, גיל ומאיה, היא שלכם.", to="assistant")
         act.flush()
         db.save_feed(u["user_id"], feed)
+        if feed["stats"].get("shown"):   # התראה לטלפון, רק למי שהפעיל
+            from agent_core import push as P
+            team = u.get("team") or {}
+            r_ = P.send(ustate.get("push"), P.message(feed["stats"]["shown"], str(team.get("hunter") or "דורון")))
+            if r_ != "skip":
+                print(f"{u['user_id'][:8]}: התראה {r_}")
         if H.available():  # דורון: משרה בציון גבוה מאוד — גיל וקובי מתחילים לעבוד עליה מיד
             existing = H._open(u["user_id"])
             for j in H.high_fit(feed["jobs"]):

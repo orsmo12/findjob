@@ -130,7 +130,8 @@ function renderSettings(){
       <button class="btn btn-sm ${p.key?'btn-ghost':'btn-primary'} btn-block" style="margin-top:12px" onclick="openOnb(3)" ${CLOUDM?'hidden':''}>${p.key?'להחליף מפתח':'לחבר עכשיו'}</button></section>
 
     <section class="card glass" aria-labelledby="ntH"><h2 class="card-h" id="ntH">התראות</h2>
-      <div class="row"><span class="ri">${ROW_IC.bell}</span><span class="rl"><b id="nb">בריף בוקר</b><span>כל יום ב-08:00, הודעה אחת עם מה שחשוב</span></span><button class="switch${S.notif?' on':''}" role="switch" aria-checked="${S.notif}" aria-labelledby="nb" onclick="S.notif=!S.notif;save();renderSettings()"></button></div></section>
+      <div class="row"><span class="ri">${ROW_IC.bell}</span><span class="rl"><b id="nb">משרות חדשות בטלפון</b><span>${CLOUDM?(S.push?'מופעל. הודעה אחת כש'+escB(N('hunter'))+' מוצא משרות חדשות':'הודעה אחת כש'+escB(N('hunter'))+' מוצא משרות חדשות. בלי מייל'):'זמין בגרסה המחוברת'}</span></span>${CLOUDM?`<button class="switch${S.push?' on':''}" role="switch" aria-checked="${!!S.push}" aria-labelledby="nb" onclick="pushToggle()"></button>`:''}</div>
+      <div class="card-sub" style="margin-top:6px">בתוך האפליקציה: מספר על התפריט ובכותרת הלשונית כשיש משרות חדשות.</div></section>
 
     <section class="card glass" aria-labelledby="gnH"><h2 class="card-h" id="gnH">כללי</h2>
       <div class="row"><span class="ri">${ROW_IC.globe}</span><span class="rl"><b>שפה</b><span>עברית</span></span></div>
