@@ -955,6 +955,13 @@ a.person>svg{flex:0 0 18px;width:18px;height:18px;fill:none;stroke:var(--ink3);s
 #prepBar i{display:block;height:5px;border-radius:3px;background:rgba(255,255,255,.2);margin-top:6px;overflow:hidden}#prepBar u{display:block;height:100%;background:var(--hi);transition:width 1s}
 #prepBar.done{background:var(--hi);color:var(--hi-ink)}
 @media (prefers-reduced-motion:reduce){#prepBar u{transition:none}}
+#tour{position:fixed;inset:0;z-index:90}
+.tour-hole{position:fixed;border-radius:14px;box-shadow:0 0 0 200vmax rgba(20,30,36,.55);pointer-events:none;transition:all .25s}
+.tour-card{position:fixed;left:16px;right:16px;max-width:380px;margin:auto;background:var(--solid);color:var(--ink);border-radius:18px;padding:14px 16px;box-shadow:var(--g-shadow-lg);border:1px solid var(--glass-brd)}
+.tour-card b{font-size:16px;color:var(--brand)}.tour-card p{font-size:14px;color:var(--ink2);margin:4px 0 12px;line-height:1.55}
+.tour-foot{display:flex;justify-content:space-between;align-items:center;gap:10px}.tour-foot>span:last-child{display:flex;gap:6px}
+.tour-dots{display:flex;gap:5px}.tour-dots i{width:7px;height:7px;border-radius:50%;background:var(--glass-edge)}.tour-dots i.on{background:var(--brand);width:18px;border-radius:4px}
+@media (prefers-reduced-motion:reduce){.tour-hole{transition:none}}
 
 </style>
 <link rel="manifest" href="/manifest.webmanifest">
@@ -1009,6 +1016,7 @@ a.person>svg{flex:0 0 18px;width:18px;height:18px;fill:none;stroke:var(--ink3);s
       <div class="dr-group" id="g3">החשבון שלי</div>
       <div role="list" aria-labelledby="g3">
         <button role="listitem" class="dr-item" data-pg="profile" onclick="goPage('profile')"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg><span class="lbl">הפרופיל שלי</span></button>
+        <button role="listitem" class="dr-item" onclick="closeDrawer();tourStart()"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/></svg><span class="lbl">סיור באפליקציה</span></button>
         <button role="listitem" class="dr-item" onclick="closeDrawer();openFeedback()"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg><span class="lbl">משוב</span></button>
         <button role="listitem" class="dr-item" data-pg="settings" onclick="goPage('settings')"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1.1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.5-1.1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.8.3H9a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8V9a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z"/></svg><span class="lbl">הגדרות</span></button>
       </div>
@@ -2628,7 +2636,7 @@ function onbCvNext(){const t=$('onbCv');if(t)prof().cv=t.value;save();
   const h=$('onbCvHelp');if(h){h.textContent='בחר קובץ או הדבק לפחות כמה שורות מקורות החיים. אפשר גם להוסיף אחר כך.';h.style.color='var(--rose)'}}
 function onbNext(){commitOnb();if(onbSingle){closeOnb();curPg==='settings'?renderSettings():renderProfile();toast(prof().key?'הסוכנים מחוברים':'נשמר')}else onbGo(1)}
 function commitOnb(){const keep={cv:prof().cv,cvName:prof().cvName,ans:prof().ans||{}};S.profile=Object.assign({},onbDraft,keep);save();syncChrome()}
-function finishOnb(pg){commitOnb();S.onboarded=true;save();closeOnb();goPage(pg);if(curPg===pg&&pg==='main')renderHome()}
+function finishOnb(pg){commitOnb();S.onboarded=true;save();closeOnb();goPage(pg);if(curPg===pg&&pg==='main')renderHome();if(!S.tourDone&&pg==='main')setTimeout(tourStart,700)}
 
 /* ═════════ QUESTIONNAIRE — one question per screen ═════════ */
 const isStudent=a=>a.status==='סטודנט/ית';
@@ -2942,10 +2950,12 @@ function renderSettings(){
     <section class="card glass" aria-labelledby="gnH"><h2 class="card-h" id="gnH">כללי</h2>
       <div class="row"><span class="ri">${ROW_IC.globe}</span><span class="rl"><b>שפה</b><span>עברית</span></span></div>
       <button class="row" onclick="openOnb(0)"><span class="ri">${ROW_IC.replay}</span><span class="rl"><b>להתחיל את ההיכרות מחדש</b><span>קורות חיים, שאלון וחיבור</span></span><span class="chev" aria-hidden="true"></span></button>
-      <button class="row" onclick="confirmWipe()"><span class="ri">${ROW_IC.trash}</span><span class="rl"><b class="danger">למחוק את כל הנתונים שלי</b><span>קורות חיים, משרות, מכתבים ומפתח</span></span></button></section>
+      <a class="row ext" href="/privacy.html" target="_blank" rel="noopener"><span class="ri">${ROW_IC.globe}</span><span class="rl"><b>פרטיות</b><span>מה נשמר, למה, ואיך מוחקים</span></span><span class="chev" aria-hidden="true"></span></a>
+      <button class="row" onclick="tourStart()"><span class="ri">${ROW_IC.replay}</span><span class="rl"><b>סיור באפליקציה</b><span>דקה אחת, מה יש איפה</span></span><span class="chev" aria-hidden="true"></span></button>
+      <button class="row" onclick="confirmWipe()"><span class="ri">${ROW_IC.trash}</span><span class="rl"><b class="danger">${CLOUDM?'למחוק את החשבון והנתונים שלי':'למחוק את כל הנתונים שלי'}</b><span>קורות חיים, משרות, מכתבים ומפתח</span></span></button></section>
     <p style="text-align:center;font-size:12px;color:var(--ink3)">findjob · גרסה 0.2</p>`;
 }
-function confirmWipe(){openSheet(`<h3 id="sheetTitle">למחוק את כל הנתונים?</h3><div class="sheet-sub">קורות החיים, המשרות, המכתבים והמפתח יימחקו מהמכשיר. אי אפשר לשחזר.</div><div class="duo" style="margin-top:20px"><button class="btn btn-ghost" onclick="closeSheet()">ביטול</button><button class="btn" style="background:var(--rose);color:#fff" onclick="LS.clear();location.reload()">למחוק הכל</button></div>`)}
+function confirmWipe(){openSheet(`<h3 id="sheetTitle">${CLOUDM?'למחוק את החשבון והנתונים?':'למחוק את כל הנתונים?'}</h3><div class="sheet-sub">${CLOUDM?'החשבון, קורות החיים, המשרות, המכתבים וההיסטוריה יימחקו לצמיתות, מהענן ומהמכשיר.':'קורות החיים, המשרות, המכתבים והמפתח יימחקו מהמכשיר.'} אי אפשר לשחזר.</div><div class="duo" style="margin-top:20px"><button class="btn btn-ghost" onclick="closeSheet()">ביטול</button><button class="btn" style="background:var(--rose);color:#fff" onclick="${CLOUDM?'deleteAccount()':'LS.clear();location.reload()'}">למחוק הכל</button></div>`)}
 
 /* ═════════ chat with the assistant ═════════ */
 let chatOpen=false;
@@ -2979,6 +2989,33 @@ function init(){
 function saveLinkedin(){const v=($('liUrl').value||'').trim();const p=prof();p.ans=p.ans||{};
   if(v&&!/^https?:\/\/([a-z]+\.)?linkedin\.com\/in\//i.test(v)){toast('זה לא נראה כמו קישור לפרופיל LinkedIn');return}
   p.ans.linkedin=v;save();toast(v?'הקישור נשמר':'הקישור נמחק')}
+
+/* ═════════ סיור באפליקציה (בסגנון TipKit): מצביע על הכפתורים האמיתיים ═════════ */
+const TOUR=[
+  {sel:'#menuBtn',t:'התפריט',d:'משרות, הגשות, LinkedIn והמשרד. המספרים אומרים מה מחכה לך.'},
+  {sel:'.brief',t:'מה חדש',d:()=>`מה הסוכנים עשו ב-24 השעות האחרונות. משרות חדשות תמיד ראשונות.`},
+  {sel:'.next',t:'הצעדים הבאים',d:'מה כדאי לעשות עכשיו, לפי סדר חשיבות. לחיצה מובילה ישר למקום.'},
+  {sel:'#chatBtn',t:()=>`${N('assistant')} בצ׳אט`,d:'שואלים כל דבר: איזו משרה מתאימה, תרגול ראיון, או שאלה מטופס הגשה.'},
+  {sel:'#tbAvatar',t:'הפרופיל שלך',d:'קורות חיים, פרטים לטפסים וחברות יעד. ככל שהוא מלא יותר, הסוכנים מדייקים יותר.'},
+  {sel:'#menuBtn',t:'הכל אצלך',d:()=>`${N('hunter')} מחפש פעמיים ביום. אתה מחליק ימינה כדי לשמור משרה, והצוות מכין לה מכתב, סקירה והכנה. שום דבר לא נשלח בלי שתלחץ.`},
+];
+let tourI=-1;
+function tourStart(){if(curPg!=='main')goPage('main');closeDrawer&&closeDrawer();tourI=0;setTimeout(tourShow,150)}
+function tourEnd(){tourI=-1;S.tourDone=true;save();$('tour')&&$('tour').remove();document.removeEventListener('keydown',tourKey)}
+function tourKey(e){if(e.key==='Escape')tourEnd();if(e.key==='ArrowLeft'||e.key==='Enter')tourNext();if(e.key==='ArrowRight'&&tourI>0){tourI--;tourShow()}}
+function tourNext(){tourI++;tourI>=TOUR.length?tourEnd():tourShow()}
+function tourShow(){
+  const st=TOUR[tourI],el=document.querySelector(st.sel);if(!el){tourNext();return}
+  el.scrollIntoView({block:'center',behavior:matchMedia('(prefers-reduced-motion:reduce)').matches?'auto':'smooth'});
+  setTimeout(()=>{const r=el.getBoundingClientRect(),pad=6,vh=innerHeight,below=r.bottom+200<vh;
+    let w=$('tour');if(!w){w=document.createElement('div');w.id='tour';document.body.appendChild(w);document.addEventListener('keydown',tourKey)}
+    const v=x=>typeof x==='function'?x():x;
+    w.innerHTML=`<div class="tour-hole" style="top:${r.top-pad}px;left:${r.left-pad}px;width:${r.width+pad*2}px;height:${r.height+pad*2}px"></div>
+      <div class="tour-card" role="dialog" aria-modal="true" aria-labelledby="tourT" style="${below?`top:${Math.min(r.bottom+14,vh-190)}px`:`bottom:${Math.max(vh-r.top+14,12)}px`}">
+        <b id="tourT">${escB(v(st.t))}</b><p>${escB(v(st.d))}</p>
+        <div class="tour-foot"><span class="tour-dots" aria-label="צעד ${tourI+1} מתוך ${TOUR.length}">${TOUR.map((_,i)=>`<i${i===tourI?' class="on"':''}></i>`).join('')}</span>
+          <span><button class="btn btn-sm btn-ghost" onclick="tourEnd()">דלג</button><button class="btn btn-sm btn-primary" id="tourNext" onclick="tourNext()">${tourI===TOUR.length-1?'סיימתי':'הבא'}</button></span></div></div>`;
+    $('tourNext').focus()},260)}
 
 /* ═════════ CLOUD — חיבור ל-Supabase (רק בגרסה המאוחסנת) ═════════
    התחברות עם Google (או קישור למייל, שעובד רק לחברי הצוות ב-Supabase). הפרופיל, קורות החיים והשאלון נשמרים בענן, והסוכנים קוראים אותם משם בלילה.
@@ -3026,7 +3063,7 @@ async function cloudLoad(){
     loadJobs(uid),
     SB.from('runs').select('agent,stats,created_at').eq('user_id',uid).order('created_at',{ascending:false}).limit(150)]);
   if(pr){const p=prof();p.first=pr.first||p.first;p.name=pr.name||p.name;p.cv=pr.cv_text||p.cv;p.ans=Object.assign({},pr.answers||{},p.ans||{});
-    if(pr.team&&Object.keys(pr.team).length)S.team=pr.team;const st=pr.state||{};['apps','todos','stories'].forEach(k=>{if(Array.isArray(st[k]))S[k]=st[k]});if(st.targets)S.targets=st.targets;if(Array.isArray(st.history))S.history=st.history;if(Array.isArray(st.chat))S.chat=st.chat;if(Array.isArray(st.accepted))S.accepted=st.accepted;if(Array.isArray(st.dismissed))S.dismissed=st.dismissed;if(Array.isArray(st.cvDone))S.cvDone=st.cvDone;if(st.usage)S.usage=st.usage;if(st.ai_key)S.ai_key=st.ai_key;if(Array.isArray(st.feedback))S.feedback=st.feedback;if(Array.isArray(st.my_letters))S.my_letters=st.my_letters;if(st.push)S.push=st.push;p.li_text=pr.li_text||'';LI=Object.assign({},pr.li||{},{fixes:((pr.li_fixes||{}).fixes)||[]});if(pr.cv_text)S.onboarded=true}
+    if(pr.team&&Object.keys(pr.team).length)S.team=pr.team;const st=pr.state||{};['apps','todos','stories'].forEach(k=>{if(Array.isArray(st[k]))S[k]=st[k]});if(st.targets)S.targets=st.targets;if(Array.isArray(st.history))S.history=st.history;if(Array.isArray(st.chat))S.chat=st.chat;if(Array.isArray(st.accepted))S.accepted=st.accepted;if(Array.isArray(st.dismissed))S.dismissed=st.dismissed;if(Array.isArray(st.cvDone))S.cvDone=st.cvDone;if(st.usage)S.usage=st.usage;if(st.ai_key)S.ai_key=st.ai_key;if(Array.isArray(st.feedback))S.feedback=st.feedback;if(Array.isArray(st.my_letters))S.my_letters=st.my_letters;if(st.push)S.push=st.push;if(st.tourDone)S.tourDone=true;p.li_text=pr.li_text||'';LI=Object.assign({},pr.li||{},{fixes:((pr.li_fixes||{}).fixes)||[]});if(pr.cv_text)S.onboarded=true}
   prof().key='cloud';
   RUNS=runs||[];const hr=RUNS.filter(r=>(r.agent||'hunter')==='hunter');
   if(hr.length||(jobs&&jobs.length)){
@@ -3039,7 +3076,7 @@ async function cloudLoad(){
   _decSnap=Object.assign({},S.decisions);_profSnap=profRow();
   LS.set(SKEY,S);window.__runsReady=true;if(typeof applyTeam==='function')applyTeam();buildWorkflow();
 }
-function profRow(){const p=prof();return JSON.stringify({first:p.first||'',name:p.name||'',cv_text:p.cv||'',answers:p.ans||{},team:S.team||{},state:{apps:S.apps,todos:S.todos,stories:S.stories,targets:S.targets||{added:[],removed:[]},history:S.history||[],chat:(S.chat||[]).slice(-40),accepted:S.accepted||[],dismissed:S.dismissed||[],cvDone:S.cvDone||[],usage:S.usage||{},ai_key:S.ai_key||'',feedback:(S.feedback||[]).slice(-30),my_letters:(S.my_letters||[]).slice(0,5),push:S.push||null},li_text:p.li_text||''})}
+function profRow(){const p=prof();return JSON.stringify({first:p.first||'',name:p.name||'',cv_text:p.cv||'',answers:p.ans||{},team:S.team||{},state:{apps:S.apps,todos:S.todos,stories:S.stories,targets:S.targets||{added:[],removed:[]},history:S.history||[],chat:(S.chat||[]).slice(-40),accepted:S.accepted||[],dismissed:S.dismissed||[],cvDone:S.cvDone||[],usage:S.usage||{},ai_key:S.ai_key||'',feedback:(S.feedback||[]).slice(-30),my_letters:(S.my_letters||[]).slice(0,5),push:S.push||null,tourDone:!!S.tourDone},li_text:p.li_text||''})}
 function cloudSync(){clearTimeout(_syncT);_syncT=setTimeout(async()=>{
   if(!ME)return;
   const row=profRow();
@@ -3058,6 +3095,7 @@ async function cloudBoot(){
   {const md=ME.user_metadata||{},p=prof(),full=(md.full_name||md.name||'').trim();
    if(full&&!p.name)p.name=full;if(full&&!p.first)p.first=full.split(/\s+/)[0];}
   closeOnb();init();
+  if(S.onboarded&&!S.tourDone)setTimeout(()=>{if(curPg==='main')tourStart()},1200);   // סיור פעם אחת
 }
 function cloudLogout(){SB.auth.signOut().then(()=>{LS.clear();location.reload()})}
 
@@ -3325,6 +3363,14 @@ async function pushToggle(){
   const perm=await Notification.requestPermission();if(perm!=='granted'){toast('צריך לאשר התראות בדפדפן');return}
   try{const r=await navigator.serviceWorker.ready,sub=await r.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64u(VAPID_PUB)});
     S.push=sub.toJSON();save();renderSettings();toast(`מופעל. ${N('hunter')} ישלח הודעה כשיש משרות חדשות`)}catch(e){toast('לא הצלחתי להפעיל התראות בדפדפן הזה')}}
+
+/* מחיקת החשבון: פונקציה במסד שמוחקת רק את המשתמש המחובר, וכל הנתונים שלו נמחקים איתו */
+async function deleteAccount(){
+  const {error}=await SB.rpc('delete_my_account');
+  if(error){   // אם הפונקציה עוד לא הותקנה: מוחקים לפחות את מה שמותר מהאפליקציה
+    await SB.from('jobs').delete().eq('user_id',ME.id);await SB.from('profiles').delete().eq('user_id',ME.id);
+    toast('הנתונים נמחקו. את החשבון עצמו המפתח ימחק ידנית');}
+  try{await SB.auth.signOut()}catch(e){}LS.clear();setTimeout(()=>location.reload(),error?2500:300)}
 
 cloudBoot();
 </script>

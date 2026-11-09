@@ -44,7 +44,7 @@ async function cloudLoad(){
     loadJobs(uid),
     SB.from('runs').select('agent,stats,created_at').eq('user_id',uid).order('created_at',{ascending:false}).limit(150)]);
   if(pr){const p=prof();p.first=pr.first||p.first;p.name=pr.name||p.name;p.cv=pr.cv_text||p.cv;p.ans=Object.assign({},pr.answers||{},p.ans||{});
-    if(pr.team&&Object.keys(pr.team).length)S.team=pr.team;const st=pr.state||{};['apps','todos','stories'].forEach(k=>{if(Array.isArray(st[k]))S[k]=st[k]});if(st.targets)S.targets=st.targets;if(Array.isArray(st.history))S.history=st.history;if(Array.isArray(st.chat))S.chat=st.chat;if(Array.isArray(st.accepted))S.accepted=st.accepted;if(Array.isArray(st.dismissed))S.dismissed=st.dismissed;if(Array.isArray(st.cvDone))S.cvDone=st.cvDone;if(st.usage)S.usage=st.usage;if(st.ai_key)S.ai_key=st.ai_key;if(Array.isArray(st.feedback))S.feedback=st.feedback;if(Array.isArray(st.my_letters))S.my_letters=st.my_letters;if(st.push)S.push=st.push;p.li_text=pr.li_text||'';LI=Object.assign({},pr.li||{},{fixes:((pr.li_fixes||{}).fixes)||[]});if(pr.cv_text)S.onboarded=true}
+    if(pr.team&&Object.keys(pr.team).length)S.team=pr.team;const st=pr.state||{};['apps','todos','stories'].forEach(k=>{if(Array.isArray(st[k]))S[k]=st[k]});if(st.targets)S.targets=st.targets;if(Array.isArray(st.history))S.history=st.history;if(Array.isArray(st.chat))S.chat=st.chat;if(Array.isArray(st.accepted))S.accepted=st.accepted;if(Array.isArray(st.dismissed))S.dismissed=st.dismissed;if(Array.isArray(st.cvDone))S.cvDone=st.cvDone;if(st.usage)S.usage=st.usage;if(st.ai_key)S.ai_key=st.ai_key;if(Array.isArray(st.feedback))S.feedback=st.feedback;if(Array.isArray(st.my_letters))S.my_letters=st.my_letters;if(st.push)S.push=st.push;if(st.tourDone)S.tourDone=true;p.li_text=pr.li_text||'';LI=Object.assign({},pr.li||{},{fixes:((pr.li_fixes||{}).fixes)||[]});if(pr.cv_text)S.onboarded=true}
   prof().key='cloud';
   RUNS=runs||[];const hr=RUNS.filter(r=>(r.agent||'hunter')==='hunter');
   if(hr.length||(jobs&&jobs.length)){
@@ -57,7 +57,7 @@ async function cloudLoad(){
   _decSnap=Object.assign({},S.decisions);_profSnap=profRow();
   LS.set(SKEY,S);window.__runsReady=true;if(typeof applyTeam==='function')applyTeam();buildWorkflow();
 }
-function profRow(){const p=prof();return JSON.stringify({first:p.first||'',name:p.name||'',cv_text:p.cv||'',answers:p.ans||{},team:S.team||{},state:{apps:S.apps,todos:S.todos,stories:S.stories,targets:S.targets||{added:[],removed:[]},history:S.history||[],chat:(S.chat||[]).slice(-40),accepted:S.accepted||[],dismissed:S.dismissed||[],cvDone:S.cvDone||[],usage:S.usage||{},ai_key:S.ai_key||'',feedback:(S.feedback||[]).slice(-30),my_letters:(S.my_letters||[]).slice(0,5),push:S.push||null},li_text:p.li_text||''})}
+function profRow(){const p=prof();return JSON.stringify({first:p.first||'',name:p.name||'',cv_text:p.cv||'',answers:p.ans||{},team:S.team||{},state:{apps:S.apps,todos:S.todos,stories:S.stories,targets:S.targets||{added:[],removed:[]},history:S.history||[],chat:(S.chat||[]).slice(-40),accepted:S.accepted||[],dismissed:S.dismissed||[],cvDone:S.cvDone||[],usage:S.usage||{},ai_key:S.ai_key||'',feedback:(S.feedback||[]).slice(-30),my_letters:(S.my_letters||[]).slice(0,5),push:S.push||null,tourDone:!!S.tourDone},li_text:p.li_text||''})}
 function cloudSync(){clearTimeout(_syncT);_syncT=setTimeout(async()=>{
   if(!ME)return;
   const row=profRow();
@@ -76,6 +76,7 @@ async function cloudBoot(){
   {const md=ME.user_metadata||{},p=prof(),full=(md.full_name||md.name||'').trim();
    if(full&&!p.name)p.name=full;if(full&&!p.first)p.first=full.split(/\s+/)[0];}
   closeOnb();init();
+  if(S.onboarded&&!S.tourDone)setTimeout(()=>{if(curPg==='main')tourStart()},1200);   // סיור פעם אחת
 }
 function cloudLogout(){SB.auth.signOut().then(()=>{LS.clear();location.reload()})}
 
@@ -343,3 +344,11 @@ async function pushToggle(){
   const perm=await Notification.requestPermission();if(perm!=='granted'){toast('צריך לאשר התראות בדפדפן');return}
   try{const r=await navigator.serviceWorker.ready,sub=await r.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64u(VAPID_PUB)});
     S.push=sub.toJSON();save();renderSettings();toast(`מופעל. ${N('hunter')} ישלח הודעה כשיש משרות חדשות`)}catch(e){toast('לא הצלחתי להפעיל התראות בדפדפן הזה')}}
+
+/* מחיקת החשבון: פונקציה במסד שמוחקת רק את המשתמש המחובר, וכל הנתונים שלו נמחקים איתו */
+async function deleteAccount(){
+  const {error}=await SB.rpc('delete_my_account');
+  if(error){   // אם הפונקציה עוד לא הותקנה: מוחקים לפחות את מה שמותר מהאפליקציה
+    await SB.from('jobs').delete().eq('user_id',ME.id);await SB.from('profiles').delete().eq('user_id',ME.id);
+    toast('הנתונים נמחקו. את החשבון עצמו המפתח ימחק ידנית');}
+  try{await SB.auth.signOut()}catch(e){}LS.clear();setTimeout(()=>location.reload(),error?2500:300)}

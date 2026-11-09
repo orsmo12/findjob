@@ -136,10 +136,12 @@ function renderSettings(){
     <section class="card glass" aria-labelledby="gnH"><h2 class="card-h" id="gnH">כללי</h2>
       <div class="row"><span class="ri">${ROW_IC.globe}</span><span class="rl"><b>שפה</b><span>עברית</span></span></div>
       <button class="row" onclick="openOnb(0)"><span class="ri">${ROW_IC.replay}</span><span class="rl"><b>להתחיל את ההיכרות מחדש</b><span>קורות חיים, שאלון וחיבור</span></span><span class="chev" aria-hidden="true"></span></button>
-      <button class="row" onclick="confirmWipe()"><span class="ri">${ROW_IC.trash}</span><span class="rl"><b class="danger">למחוק את כל הנתונים שלי</b><span>קורות חיים, משרות, מכתבים ומפתח</span></span></button></section>
+      <a class="row ext" href="/privacy.html" target="_blank" rel="noopener"><span class="ri">${ROW_IC.globe}</span><span class="rl"><b>פרטיות</b><span>מה נשמר, למה, ואיך מוחקים</span></span><span class="chev" aria-hidden="true"></span></a>
+      <button class="row" onclick="tourStart()"><span class="ri">${ROW_IC.replay}</span><span class="rl"><b>סיור באפליקציה</b><span>דקה אחת, מה יש איפה</span></span><span class="chev" aria-hidden="true"></span></button>
+      <button class="row" onclick="confirmWipe()"><span class="ri">${ROW_IC.trash}</span><span class="rl"><b class="danger">${CLOUDM?'למחוק את החשבון והנתונים שלי':'למחוק את כל הנתונים שלי'}</b><span>קורות חיים, משרות, מכתבים ומפתח</span></span></button></section>
     <p style="text-align:center;font-size:12px;color:var(--ink3)">findjob · גרסה 0.2</p>`;
 }
-function confirmWipe(){openSheet(`<h3 id="sheetTitle">למחוק את כל הנתונים?</h3><div class="sheet-sub">קורות החיים, המשרות, המכתבים והמפתח יימחקו מהמכשיר. אי אפשר לשחזר.</div><div class="duo" style="margin-top:20px"><button class="btn btn-ghost" onclick="closeSheet()">ביטול</button><button class="btn" style="background:var(--rose);color:#fff" onclick="LS.clear();location.reload()">למחוק הכל</button></div>`)}
+function confirmWipe(){openSheet(`<h3 id="sheetTitle">${CLOUDM?'למחוק את החשבון והנתונים?':'למחוק את כל הנתונים?'}</h3><div class="sheet-sub">${CLOUDM?'החשבון, קורות החיים, המשרות, המכתבים וההיסטוריה יימחקו לצמיתות, מהענן ומהמכשיר.':'קורות החיים, המשרות, המכתבים והמפתח יימחקו מהמכשיר.'} אי אפשר לשחזר.</div><div class="duo" style="margin-top:20px"><button class="btn btn-ghost" onclick="closeSheet()">ביטול</button><button class="btn" style="background:var(--rose);color:#fff" onclick="${CLOUDM?'deleteAccount()':'LS.clear();location.reload()'}">למחוק הכל</button></div>`)}
 
 /* ═════════ chat with the assistant ═════════ */
 let chatOpen=false;
@@ -173,3 +175,30 @@ function init(){
 function saveLinkedin(){const v=($('liUrl').value||'').trim();const p=prof();p.ans=p.ans||{};
   if(v&&!/^https?:\/\/([a-z]+\.)?linkedin\.com\/in\//i.test(v)){toast('זה לא נראה כמו קישור לפרופיל LinkedIn');return}
   p.ans.linkedin=v;save();toast(v?'הקישור נשמר':'הקישור נמחק')}
+
+/* ═════════ סיור באפליקציה (בסגנון TipKit): מצביע על הכפתורים האמיתיים ═════════ */
+const TOUR=[
+  {sel:'#menuBtn',t:'התפריט',d:'משרות, הגשות, LinkedIn והמשרד. המספרים אומרים מה מחכה לך.'},
+  {sel:'.brief',t:'מה חדש',d:()=>`מה הסוכנים עשו ב-24 השעות האחרונות. משרות חדשות תמיד ראשונות.`},
+  {sel:'.next',t:'הצעדים הבאים',d:'מה כדאי לעשות עכשיו, לפי סדר חשיבות. לחיצה מובילה ישר למקום.'},
+  {sel:'#chatBtn',t:()=>`${N('assistant')} בצ׳אט`,d:'שואלים כל דבר: איזו משרה מתאימה, תרגול ראיון, או שאלה מטופס הגשה.'},
+  {sel:'#tbAvatar',t:'הפרופיל שלך',d:'קורות חיים, פרטים לטפסים וחברות יעד. ככל שהוא מלא יותר, הסוכנים מדייקים יותר.'},
+  {sel:'#menuBtn',t:'הכל אצלך',d:()=>`${N('hunter')} מחפש פעמיים ביום. אתה מחליק ימינה כדי לשמור משרה, והצוות מכין לה מכתב, סקירה והכנה. שום דבר לא נשלח בלי שתלחץ.`},
+];
+let tourI=-1;
+function tourStart(){if(curPg!=='main')goPage('main');closeDrawer&&closeDrawer();tourI=0;setTimeout(tourShow,150)}
+function tourEnd(){tourI=-1;S.tourDone=true;save();$('tour')&&$('tour').remove();document.removeEventListener('keydown',tourKey)}
+function tourKey(e){if(e.key==='Escape')tourEnd();if(e.key==='ArrowLeft'||e.key==='Enter')tourNext();if(e.key==='ArrowRight'&&tourI>0){tourI--;tourShow()}}
+function tourNext(){tourI++;tourI>=TOUR.length?tourEnd():tourShow()}
+function tourShow(){
+  const st=TOUR[tourI],el=document.querySelector(st.sel);if(!el){tourNext();return}
+  el.scrollIntoView({block:'center',behavior:matchMedia('(prefers-reduced-motion:reduce)').matches?'auto':'smooth'});
+  setTimeout(()=>{const r=el.getBoundingClientRect(),pad=6,vh=innerHeight,below=r.bottom+200<vh;
+    let w=$('tour');if(!w){w=document.createElement('div');w.id='tour';document.body.appendChild(w);document.addEventListener('keydown',tourKey)}
+    const v=x=>typeof x==='function'?x():x;
+    w.innerHTML=`<div class="tour-hole" style="top:${r.top-pad}px;left:${r.left-pad}px;width:${r.width+pad*2}px;height:${r.height+pad*2}px"></div>
+      <div class="tour-card" role="dialog" aria-modal="true" aria-labelledby="tourT" style="${below?`top:${Math.min(r.bottom+14,vh-190)}px`:`bottom:${Math.max(vh-r.top+14,12)}px`}">
+        <b id="tourT">${escB(v(st.t))}</b><p>${escB(v(st.d))}</p>
+        <div class="tour-foot"><span class="tour-dots" aria-label="צעד ${tourI+1} מתוך ${TOUR.length}">${TOUR.map((_,i)=>`<i${i===tourI?' class="on"':''}></i>`).join('')}</span>
+          <span><button class="btn btn-sm btn-ghost" onclick="tourEnd()">דלג</button><button class="btn btn-sm btn-primary" id="tourNext" onclick="tourNext()">${tourI===TOUR.length-1?'סיימתי':'הבא'}</button></span></div></div>`;
+    $('tourNext').focus()},260)}
