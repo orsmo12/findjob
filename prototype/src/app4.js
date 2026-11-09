@@ -24,8 +24,8 @@ function renderProfile(){
 
     ${CLOUDM?`<section class="card glass" aria-labelledby="liH"><h2 class="card-h" id="liH">פרופיל LinkedIn</h2>
       <div class="field"><label for="liUrl">הקישור לפרופיל שלך</label><div style="display:flex;gap:8px"><input id="liUrl" class="ltr" type="url" placeholder="https://www.linkedin.com/in/…" value="${escB((p.ans||{}).linkedin||'')}" autocomplete="off"><button class="btn btn-sm btn-ghost" onclick="saveLinkedin()">שמירה</button></div></div>
-      <div class="card-sub" style="margin-top:10px">${p.li_text?`${escB(N('linkedin'))} עובר על הפרופיל לפי ה-PDF שהעלית, והשיפורים מופיעים במסך LinkedIn. שינית משהו בפרופיל? מעלים PDF חדש, והקישור נשאר אותו קישור.`:`כדי ש${escB(N('linkedin'))} יציע שיפורים לפרופיל, צריך עותק שלו: ב-LinkedIn נכנסים לפרופיל ← "עוד" (More) ← "שמירה כ-PDF", ומעלים כאן.`}</div>
-      <label for="liFile" class="btn btn-sm ${p.li_text?'btn-ghost':'btn-primary'} btn-block">${p.li_text?'להעלות PDF חדש של הפרופיל':'להעלות PDF של הפרופיל'}</label>
+      <div class="card-sub" style="margin-top:10px">${p.li_text?`${escB(N('linkedin'))} בודק את הפרופיל, והשיפורים במסך LinkedIn.`:`${escB(N('linkedin'))} יציע שיפורים לפרופיל אחרי שתעלה אותו.`} <button class="link" style="color:var(--brand);font-weight:600" onclick="liHow()">איך?</button></div>
+      <label for="liFile" class="btn btn-sm ${p.li_text?'btn-ghost':'btn-primary'} btn-block">${p.li_text?'עדכנתי את הפרופיל':'להעלות את הפרופיל'}</label>
       <input type="file" id="liFile" class="vh" accept=".pdf,application/pdf" onchange="onLiFile(this)"></section>`:''}
     <section class="card glass" aria-labelledby="qH"><h2 class="card-h" id="qH">עליי</h2>
       <div class="card-sub">${done<total?`ענית על ${done} מתוך ${total} שאלות. כל תשובה עוזרת לסוכנים לדייק.`:'ענית על כל השאלות. אפשר לעדכן בכל רגע.'}</div>
@@ -35,16 +35,18 @@ function renderProfile(){
       <button class="row" onclick="openQuestions('locs')"><span class="ri">${ROW_IC.pin}</span><span class="rl"><b>${escB((a.locs||[]).join(', ')||'אזור עבודה')}</b><span>${escB([a.mode,a.start&&('התחלה: '+a.start)].filter(Boolean).join(' · ')||'עוד לא ענית')}</span></span><span class="chev" aria-hidden="true"></span></button>
       <button class="btn btn-sm ${done<total?'btn-primary':'btn-ghost'} btn-block" style="margin-top:8px" onclick="openQuestions()">${done<total?'להמשיך את השאלון':'לעבור על כל התשובות'}</button></section>
 
-    <section class="card glass" id="planCard" aria-labelledby="plH"><h2 class="card-h" id="plH">מה מחפשים בשבילך</h2>
+    <section class="card glass" id="planCard" aria-labelledby="plH">
+      ${typeof suggestionsHtml==='function'?suggestionsHtml():''}
+      <details class="plan-d"${S.planOpen?' open':''} ontoggle="S.planOpen=this.open">
+      <summary><span><h2 class="card-h" id="plH">מה מחפשים בשבילך</h2><span class="plan-tags">${planTags().map(t=>`<i>${escB(t)}</i>`).join('')}</span>${planAlert()}</span><span class="chev" aria-hidden="true"></span></summary>
       <div class="card-sub">${escB(N('strategist'))} בנה את זה מקורות החיים ומהתשובות שלך, ומעדכן בכל שינוי.</div>
       <ul class="plan-list">${planWhy().map(w=>`<li>${escB(w)}</li>`).join('')}</ul>
-      ${typeof suggestionsHtml==='function'?suggestionsHtml():''}
       ${typeof lastMeeting==='function'&&lastMeeting()?`<button class="link" style="font-size:13px;color:var(--brand);margin:6px 0" onclick="openMeeting()">לדוח של הישיבה השבועית</button>`:''}
       <h3 class="sub-h">חברות יעד</h3>
       <div class="card-sub">כך ${escB(N('hunter'))} בדק אותן בסריקה האחרונה:</div>
       ${(()=>{const rt=realTargets();return rt?targetsHtml(rt):`<div class="learned">${targetCompanies().map(c=>`<span class="chip" title="${escB(c.why.join(' · '))}">${escB(c.name)}<button aria-label="להסיר את ${escB(c.name)}" onclick="removeTarget('${escB(c.name).replace(/'/g,"\\'")}')">×</button></span>`).join('')}</div>`})()}
       <div class="todo-foot" style="padding:12px 0 0;border:0"><label for="tgIn" class="vh">חברה להוספה</label><input id="tgIn" placeholder="להוסיף חברה" onkeydown="if(event.key==='Enter')addTarget()"><button class="btn btn-sm btn-ghost" onclick="addTarget()">הוסף</button></div>
-      ${(S.targets&&(S.targets.added.length||S.targets.removed.length))?`<button class="link" style="font-size:13px;color:var(--brand);margin-top:8px" onclick="S.targets={added:[],removed:[]};save();renderProfile()">להחזיר לבחירה של ${escB(N('strategist'))}</button>`:''}</section>
+      ${(S.targets&&(S.targets.added.length||S.targets.removed.length))?`<button class="link" style="font-size:13px;color:var(--brand);margin-top:8px" onclick="S.targets={added:[],removed:[]};save();renderProfile()">להחזיר לבחירה של ${escB(N('strategist'))}</button>`:''}</details></section>
 
     <section class="card glass" aria-labelledby="tmH"><h2 class="card-h" id="tmH">הצוות שלי</h2>
       <div class="card-sub">אפשר לתת לכל סוכן שם אחר. התפקיד נשאר אותו תפקיד.</div>
@@ -96,6 +98,10 @@ async function readCv(f){try{
   if(/\.docx$/i.test(f.name)){await loadScript('https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js');
     return (await mammoth.extractRawText({arrayBuffer:await f.arrayBuffer()})).value}
 }catch(e){console.warn(e)}return''}
+function liHow(){openSheet(`<h3 id="sheetTitle">איך ${escB(N('linkedin'))} קורא את הפרופיל</h3>
+  <div class="sheet-sub">findjob לא נכנס לחשבון ה-LinkedIn שלך. ${escB(N('linkedin'))} קורא עותק שאתה שומר:</div>
+  <ol class="how-ol"><li>בפרופיל שלך ב-LinkedIn לוחצים More (או "עוד")</li><li>בוחרים Save to PDF</li><li>כאן לוחצים ${prof().li_text?'"עדכנתי את הפרופיל"':'"להעלות את הפרופיל"'} ובוחרים את הקובץ</li></ol>
+  <p class="card-sub">כל פעם שאתה משנה משהו בפרופיל, מעלים עותק חדש, ו${escB(N('linkedin'))} בודק שוב.</p>`)}
 function onLiFile(inp){const f=inp.files[0];if(!f)return;readCv(f).then(t=>{if(t&&t.trim().length>80){prof().li_text=t.slice(0,15000);save();renderProfile();toast(`${N('linkedin')} יעבור על הפרופיל בשעתיים הקרובות`)}else toast('לא הצלחתי לקרוא את הקובץ. ודא שזה ה-PDF ש-LinkedIn מייצר',{ms:4200})});inp.value=''}
 function afterCv(){if($('onb').classList.contains('open'))renderOnb();else{renderProfile();toast('קורות החיים עודכנו')}}
 

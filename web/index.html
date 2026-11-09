@@ -314,8 +314,8 @@ body.drawer-open .burger span:nth-child(3){top:6px;transform:rotate(-45deg)}
 .greet h1{font-size:25px;font-weight:700;letter-spacing:-.02em}
 .greet p{font-size:14px;color:var(--ink2);margin-top:3px}
 .brief{position:relative;border-radius:var(--rad-xl);padding:18px;color:#fff;overflow:hidden;cursor:pointer;text-align:right;width:100%;
-  background:linear-gradient(150deg,#0C3A2D 0%,#11573F 55%,#17785A 100%);
-  box-shadow:0 22px 46px -24px rgba(8,60,42,.8),inset 0 1px 0 rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.12)}
+  background:linear-gradient(150deg,#132F23 0%,#1E4A38 55%,#2A5E46 100%);
+  box-shadow:0 22px 46px -24px rgba(20,40,28,.75),inset 0 1px 0 rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.12)}
 .brief::before{content:'';position:absolute;width:240px;height:240px;left:-80px;top:-120px;border-radius:50%;background:radial-gradient(circle,rgba(160,240,200,.28),transparent 65%)}
 .brief>*{position:relative}
 .brief-top{display:flex;justify-content:space-between;align-items:center;font-size:12.5px;color:rgba(255,255,255,.7);margin-bottom:10px}
@@ -911,6 +911,31 @@ a.person>svg{flex:0 0 18px;width:18px;height:18px;fill:none;stroke:var(--ink3);s
 .cvs-open{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;text-align:right;margin-top:12px;padding:12px 14px;border-radius:14px;border:1px solid var(--glass-brd);background:var(--glass);color:var(--ink);cursor:pointer;font:inherit}
 .cvs-open span{display:flex;flex-direction:column;gap:3px}.cvs-open em{font-style:normal;font-size:12.5px;color:var(--ink2)}
 .cvs-open svg{width:16px;height:16px;flex:none;color:var(--ink3)}
+
+.brief{cursor:default}
+.brief-top h2{font-size:16px;font-weight:700;color:#fff;margin:0}
+.br-list{list-style:none;display:flex;flex-direction:column;gap:9px}
+.br-list li{display:flex;gap:10px;align-items:flex-start;font-size:14px;line-height:1.5;color:rgba(255,255,255,.93)}
+.br-ic{flex:none;width:26px;height:26px;border-radius:8px;background:rgba(255,255,255,.12);display:grid;place-items:center;margin-top:1px}
+.br-ic svg{width:15px;height:15px;stroke:#fff;fill:none;stroke-width:1.9}
+.br-toggle{margin-top:10px;font-size:13px;color:var(--hi);font-weight:600}
+
+.plan-d>summary{list-style:none;display:flex;align-items:center;justify-content:space-between;gap:10px;cursor:pointer}
+.plan-d>summary::-webkit-details-marker{display:none}
+.plan-d>summary>span:first-child{display:flex;flex-direction:column;gap:7px;min-width:0}
+.plan-d>summary .card-h{margin:0}
+.plan-d>summary .chev{width:8px;height:8px;border-left:2px solid var(--ink3);border-bottom:2px solid var(--ink3);transform:rotate(45deg);flex-shrink:0;transition:transform .2s}
+.plan-d[open]>summary .chev{transform:rotate(-45deg)}
+.plan-d[open]>summary{margin-bottom:10px}
+.plan-tags{display:flex;flex-wrap:wrap;gap:5px}
+.plan-tags i{font-style:normal;font-size:12px;padding:3px 9px;border-radius:9px;background:var(--brand-lt);color:var(--brand)}
+.plan-alert{font-size:12.5px;font-weight:600;color:var(--hi-ink);background:var(--hi-lt);padding:3px 9px;border-radius:9px;align-self:flex-start}
+.how-ol{margin:12px 22px 12px 0;display:flex;flex-direction:column;gap:6px;font-size:14px}
+.chk-btn{display:inline-flex;align-items:center;gap:8px;padding:7px 12px;border-radius:12px;border:1px solid var(--glass-edge);background:var(--solid);font-size:13.5px;font-weight:600;color:var(--ink)}
+.chk-btn.wide{width:100%;justify-content:center;padding:11px}
+.chk-btn .box{width:18px;height:18px;border-radius:5px;border:2px solid var(--ink3);display:grid;place-items:center;font-size:12px;line-height:1;color:#fff}
+.chk-btn.on .box{background:var(--brand);border-color:var(--brand)}
+.chk-btn.on{color:var(--brand)}
 
 </style>
 <link rel="manifest" href="/manifest.webmanifest">
@@ -1934,6 +1959,18 @@ function nextSteps(){
   const fl=(REAL&&!CLOUDM)?0:fixesLeft().length; if(fl) out.push({ic:ICO.spark,c:'i-teal',b:fl===1?'שיפור אחד לפרופיל LinkedIn':`${fl} שיפורים לפרופיל LinkedIn`,s:'טקסט מוכן להעתקה',go:"goPage('linkedin','liFixes')"});
   return out;
 }
+/* הבריף של שי: רק מה שחדש או השתנה. לא חוזר על "הצעדים הבאים" */
+const BR_IC={hunter:'jobs',researcher:'spark',assistant:'mail',coach:'cal',linkedin:'li',strategist:'spark'};
+function briefItems(closed,sug){
+  const out=[],day=Date.now()-864e5,seen=new Set();
+  ((typeof RUNS!=='undefined'&&RUNS)||[]).forEach(r=>{const st=r.stats||{};
+    if(!st.msg||st.memory||st.failures||st.usage_report||new Date(r.created_at)<day)return;
+    if(r.agent==='hunter'&&st.shown!=null)return;   // "מצאתי X משרות" כבר בצעדים הבאים
+    const t=st.msg.split(/(?<=\.)\s/)[0];if(seen.has(t))return;seen.add(t);
+    out.push({ic:ICO[BR_IC[r.agent]||'spark'],t:`${N(r.agent||'assistant')}: ${t}`})});
+  closed.forEach(h=>out.unshift({ic:ICO.jobs,t:`${h.title} ב-${h.co} נסגרה למועמדים ועברה להיסטוריה.`}));
+  if(sug.length)out.push({ic:ICO.spark,t:`${N('strategist')} מציע תפקיד חדש לחיפוש: ${sug.map(x=>x.value).join(', ')}.`});
+  return out}
 function renderHome(){
   const h=new Date().getHours();
   const hi=h<5?'לילה טוב':h<12?'בוקר טוב':h<17?'צהריים טובים':h<21?'ערב טוב':'לילה טוב';
@@ -1942,19 +1979,15 @@ function renderHome(){
   const saved=S.apps.filter(a=>a.status==='saved'&&JOBS[a.jobId]&&!JOBS[a.jobId].closed_at),ready=saved.filter(a=>JOBS[a.jobId].letter);
   const sug=(typeof pendingSuggestions==='function')?pendingSuggestions():[],sk=(typeof lastSkills==='function')?lastSkills():null;
   const posts=(typeof LI!=='undefined'&&LI.posts)||[],closed=(S.history||[]).filter(h=>h.reason==='closed'&&h.date&&Date.now()-new Date(h.date)<3*864e5);
-  const brief=[q.length?`${N('hunter')} מצא ${q.length===1?'משרה חדשה אחת':q.length+' משרות חדשות'} שמתאימות לך.`:'עברת על כל המשרות החדשות.',
-    ready.length?`${ready.length===1?`המכתב ל-${JOBS[ready[0].jobId].co} מוכן`:`${ready.length} מכתבים מוכנים`}, ${ready.length===1?'המשרה מחכה':'המשרות מחכות'} להגשה.`:saved.length?`${saved.length} משרות ששמרת מחכות להגשה.`:'',
-    iv?`יש לך ראיון ב-${JOBS[iv.jobId].co}${iv.iv?' ב'+iv.iv:''}. ההכנה במסך ההכנה.`:'',
-    fu.length?`${fu.map(a=>JOBS[a.jobId].co).join(' ו-')} עוד לא ענו. כדאי לשלוח הודעת המשך.`:'',
-    closed.length?`${closed.length===1?'משרה אחת ששמרת נסגרה':closed.length+' משרות ששמרת נסגרו'} ועברו להיסטוריה.`:'',
-    sug.length?`${N('strategist')} מציע תפקיד חדש לחיפוש: ${sug.map(x=>x.value).join(', ')}.`:'',
-    sk&&sk.stats.skills.cards&&sk.stats.skills.cards.length&&Date.now()-new Date(sk.created_at)<7*864e5?`${N('coach')} הכינה כרטיסי כישורים: ${sk.stats.skills.cards.map(c=>c.skill).join(', ')}.`:'',
-    posts.length?`${N('linkedin')} מצא ${posts.length} פוסטים ששווה להגיב עליהם.`:''].filter(Boolean).join(' ');
+  const brief=briefItems(closed,sug);
   const shown=steps.slice(0,5);
   $('homeScroll').innerHTML=`
     <div class="greet"><h2 class="greet-h">${hi}, ${escB(prof().first)}</h2><p>${escB(date)}</p></div>
     ${REAL?(FEEDD&&FEEDD.generated_at&&CLOUDM?'':`<div class="notice">${FEEDD&&FEEDD.generated_at?`המשרות אמיתיות, מהחיפוש של ${N('hunter')} ${escB(feedWhen())}.`:prof().cv?`${N('hunter')} יחפש לך משרות בסריקה הקרובה (07:00 או 15:00).`:`כדי ש${N('hunter')} יתחיל לחפש, צריך קורות חיים. <button class="link" style="color:var(--brand);font-weight:600" onclick="goPage('profile')">להעלאה</button>`} ${CLOUDM?'':'מסכי LinkedIn וההכנה לראיונות עוד מציגים דוגמאות.'}</div>`):prof().key?'':`<div class="notice">מוצגות דוגמאות עד שתחבר את הסוכנים. <button class="link" style="color:var(--brand);font-weight:600" onclick="goPage('settings')">לחיבור</button></div>`}
-    <div class="brief"><div class="brief-top"><span>הבריף של ${escB(N('assistant'))}</span><span class="new num">${new Date().toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'})}</span></div><p>${escB(brief)}</p></div>
+    <section class="brief" aria-labelledby="brH"><div class="brief-top"><h2 id="brH">מה חדש</h2><span>${escB(N('assistant'))} · ב-24 השעות האחרונות</span></div>
+      ${brief.length?`<ul class="br-list">${brief.map((x,i)=>`<li${i>3?' class="br-more" hidden':''}><span class="br-ic" aria-hidden="true">${x.ic}</span><span>${escB(x.t)}</span></li>`).join('')}</ul>
+      ${brief.length>4?`<button class="br-toggle" onclick="this.previousElementSibling.querySelectorAll('.br-more').forEach(l=>l.hidden=!l.hidden);this.textContent=this.textContent.startsWith('עוד')?'פחות':'עוד ${brief.length-4}'">עוד ${brief.length-4}</button>`:''}`
+      :`<p>אין חדש מאז הבוקר. הצעדים הבאים מחכים למטה.</p>`}</section>
     <section class="next glass" aria-labelledby="nxH"><div class="next-h"><h2 id="nxH">הצעדים הבאים</h2>${steps.length>5?`<span>5 מתוך ${steps.length}</span>`:''}</div>
       ${shown.length?shown.map(x=>`<button class="nx" onclick="${x.go}"><span class="ic ${x.c}" aria-hidden="true">${x.ic}</span><span class="tx"><b>${escB(x.b)}</b><span>${escB(x.s)}</span></span>${x.w?`<span class="when ${x.w[1]}">${x.w[0]}</span>`:''}<span class="chev" aria-hidden="true"></span></button>`).join('')
         :'<p style="padding:6px 16px 14px;color:var(--ink2);font-size:14px">אין צעדים פתוחים כרגע. הסוכנים ממשיכים לעבוד ויעדכנו אותך.</p>'}
@@ -2107,11 +2140,15 @@ function renderApps(){
         ${logo(j)}<span class="app-info"><span class="app-title" dir="${dirOf(j.title)||'auto'}" style="display:block;text-align:right">${escB(j.title)}</span><span class="app-sub" style="display:block">${escB(j.co)} · ${escB(appSub(a))}</span></span>
         <span class="status st-${a.status}">${STATUSES[a.status]}</span></button>
       ${fu?`<div class="follow"><span>${daysSince(a.date)} ימים בלי תשובה. הודעה קצרה עכשיו מעלה את הסיכוי לתגובה.</span><button class="btn btn-sm btn-ghost" onclick="openApp('${a.id}','details')">להודעה</button></div>`:''}
-      ${a.status==='saved'?`<div class="app-actions"><button class="btn btn-sm btn-ghost" onclick="openApp('${a.id}','letter')">למכתב</button><button class="btn btn-sm btn-primary" onclick="markApplied('${a.id}')">הגשתי</button></div>`:''}
+      ${a.status==='saved'||a.status==='applied'?`<div class="app-actions"><button class="btn btn-sm btn-ghost" onclick="openApp('${a.id}','letter')">לערכת ההגשה</button>${appliedBox(a)}</div>`:''}
       ${a.status==='interview'||a.status==='screening'?`<div class="app-actions"><button class="btn btn-sm btn-primary" onclick="${REAL?`openPrep('${a.jobId}')`:`openApp('${a.id}','prep')`}">${a.status==='interview'?'להכנה לראיון':'לשאלות הסינון'}</button></div>`:''}
     </article></div>`}).join('')+historyHtml();
   bindAppSwipes();
 }
+/* "הגשתי": ריבוע ריק, ו-✓ ירוק אחרי סימון. לחיצה שנייה מבטלת */
+function appliedBox(a,wide){const on=a.status!=='saved';
+  return `<button class="chk-btn${on?' on':''}${wide?' wide':''}" role="checkbox" aria-checked="${on}" onclick="${on?`unmarkApplied('${a.id}')`:`markApplied('${a.id}')`};${wide?'paintAppTab(\''+a.id+'\')':''}"><span class="box" aria-hidden="true">${on?'✓':''}</span>הגשתי</button>`}
+function unmarkApplied(id){const a=appOf(id);if(!a||a.status!=='applied')return;a.status='saved';save();refreshApps();toast('ביטלתי את הסימון. המשרה חזרה ל"שמור"')}
 function markApplied(id){const a=appOf(id);a.status='applied';a.date=new Date().toISOString();save();refreshApps();toast('סימנתי שהגשת. אזכיר לך לשלוח הודעת המשך בעוד שבוע')}
 function refreshApps(){if(curPg==='apps')renderApps();if(curPg==='main')renderHome();syncChrome()}
 
@@ -2122,7 +2159,7 @@ function openApp(id,tab){
   const hasPrep=!REAL&&(a.status==='interview'||a.status==='screening');
   appTab=tab==='prep'&&!hasPrep?'details':(tab||'details');
   const j=JOBS[a.jobId];
-  const tabs=[['details','פרטים'],['letter','מכתב'],['ref',REAL?'קשרים':'ממליצים'],...(hasPrep?[['prep',a.status==='interview'?'הכנה':'סינון']]:[])];
+  const tabs=[['details','פרטים'],['letter','ערכת הגשה'],['ref',REAL?'קשרים':'ממליצים'],...(hasPrep?[['prep',a.status==='interview'?'הכנה':'סינון']]:[])];
   openSheet(`<div style="display:flex;gap:13px;align-items:center">${logo(j)}<div style="min-width:0"><h3 id="sheetTitle" dir="${dirOf(j.title)||'auto'}" style="text-align:right">${escB(j.title)}</h3><div class="sheet-sub">${escB(j.co)} · ${escB(j.loc)}</div></div></div>
     <div class="tabs" role="tablist">${tabs.map(([k,l])=>`<button role="tab" id="tab-${k}" aria-selected="${appTab===k}" onclick="appTab='${k}';paintAppTab('${id}')">${l}</button>`).join('')}</div>
     <div id="appTab" role="tabpanel"></div>`);
@@ -2143,8 +2180,8 @@ function paintAppTab(id){
         ${REAL&&a.status==='saved'?`<div class="kv"><span>פתוחה להגשה?</span><b>${openTxt(j)}</b></div>`:''}</div>
       ${fu?`<div class="s-sec"><h4>הודעת המשך</h4><textarea class="textbox" id="fuText" rows="7" aria-label="הודעת המשך">${esc(a.follow||followText(j))}</textarea>
         <div class="duo"><button class="btn btn-ghost" onclick="copyText($('fuText').value,'ההודעה הועתקה')">${ICO.copy}העתק</button><button class="btn btn-primary" onclick="sentFollow('${id}')">שלחתי</button></div></div>`:''}
-      ${REAL?`<div class="s-sec"><button class="btn btn-ghost btn-block" onclick="openPrep('${a.jobId}')">${ICO.spark||''}הכנה לראיון${j.prep&&j.prep.questions&&j.prep.questions.length?` · ${j.prep.questions.length} שאלות מוכנות`:''}</button></div>`:''}
       ${REAL?briefHtml(j):''}
+      ${REAL?prepEntry(a,j):''}
       ${REAL?tailorHtml(j):''}
       <div class="s-sec"><h4>עריכה</h4>
         <div class="field"><label for="edIv">מועד ראיון או שיחה</label><input id="edIv" value="${escB(a.iv||'')}" placeholder="למשל: רביעי, 14:00" onchange="appOf('${id}').iv=this.value.trim();save();refreshApps()"></div>
@@ -2157,7 +2194,7 @@ function paintAppTab(id){
     el.innerHTML=`<div class="s-sec" style="margin-top:12px"><label for="letterBox" class="vh">מכתב פנייה</label><textarea class="textbox" id="letterBox" rows="13" oninput="appOf('${id}').letter=this.value;save()">${esc(a.letter||(j.letter&&j.letter.text)||(REAL?'':letterFor(j)))}</textarea>
       ${REAL&&!a.letter&&!j.letter?`<div class="hint-line">${N('assistant')} מכין את המכתב. הוא יופיע כאן תוך שעתיים בערך.</div>`:j.letter&&!j.letter.checked?`<div class="hint-line">חלק מהמשפטים הוסרו כי לא נמצאו בקורות החיים. כדאי לקרוא לפני ששולחים.</div>`:`<div class="hint-line ok">✓ כל שם, טכנולוגיה ומספר במכתב נבדקו מול קורות החיים והמודעה</div>`}
       <div class="duo"><button class="btn btn-ghost" onclick="copyText($('letterBox').value,'המכתב הועתק')">${ICO.copy}העתק</button><a class="btn btn-primary ext" href="${j.url||LI_URL+'jobs/'}" target="_blank" rel="noopener" onclick="copyText($('letterBox').value,'המכתב הועתק. הדבק אותו בטופס')">פתח את המשרה${ICO.open}</a></div>
-      ${a.status==='saved'?`<button class="btn btn-ghost btn-block" style="margin-top:8px" onclick="markApplied('${id}');closeSheet()">הגשתי</button>`:''}</div>`;
+      <div style="margin-top:10px">${appliedBox(a,true)}</div></div>`;
   }else if(appTab==='ref'&&REAL){
     el.innerHTML=refHtml(j,id);
   }else if(appTab==='ref'){
@@ -2270,6 +2307,12 @@ function briefHtml(j){
     ${b.why_you&&b.why_you.length?`<h4 style="margin-top:12px">איך זה מתחבר אליך</h4>${b.why_you.map(w=>`<div class="jc-r" style="margin-bottom:6px"><span class="ic ok" aria-hidden="true">✓</span><span>${escB(w)}</span></div>`).join('')}`:''}
     <div class="src-list">${b.sources.map((s,i)=>`<a href="${escB(s.url)}" target="_blank" rel="noopener"><span class="src-n">${i+1}</span><span dir="auto">${escB(s.title)}</span><small>${escB(s.domain)}</small></a>`).join('')}</div></div>`;
 }
+/* הכניסה להכנה לראיון, מתחת לסקירת החברה: מה מחכה בפנים */
+function prepEntry(a,j){const p=j.prep||{},sk=(typeof lastSkills==='function'&&lastSkills())?lastSkills().stats.skills.cards||[]:[];
+  const parts=[(p.questions||[]).length?`${p.questions.length} שאלות צפויות`:'',(p.tasks||[]).length?`${p.tasks.length} מטלות בית לתרגול`:'',
+    sk.length?`${sk.length} כרטיסי כישורים`:'',j.brief&&j.brief.found?'סקירת החברה':''].filter(Boolean);
+  return`<div class="s-sec"><button class="btn btn-ghost btn-block" onclick="openPrep('${a.jobId}')">${ICO.spark||''}הכנה לראיון</button>
+    <p class="card-sub" style="margin-top:6px;text-align:center">${parts.length?'בפנים: '+escB(parts.join(', ')):`${escB(N('coach'))} מכינה שאלות, מטלות וכרטיסי כישורים למשרה הזו`}</p></div>`}
 /* קובי: התאמת קורות החיים למשרה. רק ניסוח וסדר של מה שכבר כתוב אצלך. אתה מעתיק ומעדכן בעצמך */
 function tailorHtml(j){
   const t=j.tailor,h=`<h4>קורות חיים למשרה הזו</h4>`;
@@ -2311,7 +2354,7 @@ function renderLinkedInReal(){
     ${posts.length?posts.map(p=>postCard(Object.assign({role:'',mins:null},p))).join(''):`<section class="card-solid"><p class="card-sub" style="padding:6px 2px">${escB(N('linkedin'))} מחפש פעמיים ביום פוסטים ציבוריים מהשבוע על גיוס ג׳וניורים וקריירה בהייטק. ${LI.updated?'בסריקה האחרונה לא נמצאו פוסטים שמתאימים לך.':'הם יופיעו כאן אחרי הסריקה הבאה.'}</p></section>`}
     <div class="sec-h" id="liFixes"><h2>הפרופיל שלך</h2><span>${fixes.length?`${fixed} מתוך ${fixes.length} בוצעו`:''}</span></div>
     ${fixes.length?`<section class="card-solid" aria-label="שיפורים לפרופיל">${fixes.map(fixRow).join('')}</section>`
-      :`<section class="card-solid"><p class="card-sub" style="padding:6px 2px">${prof().li_text?`${escB(N('linkedin'))} עובר על הפרופיל שהעלית. השיפורים יופיעו כאן תוך שעתיים בערך.`:`כדי לקבל שיפורים אמיתיים, העלה PDF של פרופיל ה-LinkedIn שלך בעמוד הפרופיל.`}</p>
+      :`<section class="card-solid"><p class="card-sub" style="padding:6px 2px">${prof().li_text?`${escB(N('linkedin'))} עובר על הפרופיל שהעלית. השיפורים יופיעו כאן תוך שעתיים בערך.`:`כדי לקבל שיפורים לפרופיל, מעלים אותו בעמוד הפרופיל.`}</p>
         ${prof().li_text?'':`<button class="btn btn-sm btn-primary btn-block" onclick="goPage('profile')">לעמוד הפרופיל</button>`}</section>`}
     <div class="sec-h"><h2>הפוסט של השבוע</h2><span>${L.posts?'פורסם ✓':'טיוטה'}</span></div>
     <section class="card-solid">${draft||L.postText?`<label for="postDraft" class="vh">טיוטת פוסט</label><textarea class="textbox" id="postDraft" rows="10" oninput="S.li.postText=this.value;save()">${esc(L.postText||draft)}</textarea>
@@ -2587,6 +2630,11 @@ function qDone(){
 const CATALOG=[{"name": "Check Point", "sectors": ["cyber"], "size": "enterprise", "city": "Tel Aviv", "hires_juniors": true, "domains": ["software"]}, {"name": "CyberArk", "sectors": ["cyber"], "size": "enterprise", "city": "Petah Tikva", "hires_juniors": true, "domains": ["software"]}, {"name": "Wiz", "sectors": ["cyber", "devtools"], "size": "scaleup", "city": "Tel Aviv", "hires_juniors": false, "domains": ["software"]}, {"name": "Snyk", "sectors": ["cyber", "devtools"], "size": "scaleup", "city": "Tel Aviv", "hires_juniors": false, "domains": ["software"]}, {"name": "Armis", "sectors": ["cyber"], "size": "scaleup", "city": "Tel Aviv", "hires_juniors": false, "domains": ["software"]}, {"name": "Cato Networks", "sectors": ["cyber"], "size": "scaleup", "city": "Tel Aviv", "hires_juniors": true, "domains": ["software"]}, {"name": "Orca Security", "sectors": ["cyber"], "size": "scaleup", "city": "Tel Aviv", "hires_juniors": false, "domains": ["software"]}, {"name": "Guardz", "sectors": ["cyber"], "size": "startup", "city": "Tel Aviv", "hires_juniors": true, "domains": ["software"]}, {"name": "Island", "sectors": ["cyber"], "size": "scaleup", "city": "Tel Aviv", "hires_juniors": false, "domains": ["software"]}, {"name": "monday.com", "sectors": ["saas"], "size": "enterprise", "city": "Tel Aviv", "hires_juniors": true, "domains": ["software"]}, {"name": "Wix", "sectors": ["saas", "web"], "size": "enterprise", "city": "Tel Aviv", "hires_juniors": true, "domains": ["software"]}, {"name": "Elementor", "sectors": ["saas", "web"], "size": "scaleup", "city": "Ramat Gan", "hires_juniors": true, "domains": ["software"]}, {"name": "Fiverr", "sectors": ["marketplace"], "size": "enterprise", "city": "Tel Aviv", "hires_juniors": true, "domains": ["software"]}, {"name": "Riskified", "sectors": ["fintech", "data"], "size": "scaleup", "city": "Tel Aviv", "hires_juniors": true, "domains": ["software"]}, {"name": "Payoneer", "sectors": ["fintech"], "size": "enterprise", "city": "Petah Tikva", "hires_juniors": true, "domains": ["software"]}, {"name": "Lemonade", "sectors": ["fintech", "ai"], "size": "scaleup", "city": "Tel Aviv", "hires_juniors": false, "domains": ["software"]}, {"name": "Melio", "sectors": ["fintech"], "size": "scaleup", "city": "Tel Aviv", "hires_juniors": false, "domains": ["software"]}, {"name": "Tipalti", "sectors": ["fintech"], "size": "scaleup", "city": "Herzliya", "hires_juniors": true, "domains": ["software"]}, {"name": "Rapyd", "sectors": ["fintech"], "size": "scaleup", "city": "Tel Aviv", "hires_juniors": false, "domains": ["software"]}, {"name": "Pagaya", "sectors": ["fintech", "ai", "data"], "size": "scaleup", "city": "Tel Aviv", "hires_juniors": true, "domains": ["software"]}, {"name": "Nayax", "sectors": ["fintech", "hardware"], "size": "enterprise", "city": "Herzliya", "hires_juniors": true, "domains": ["software", "mechanical"]}, {"name": "HiBob", "sectors": ["saas"], "size": "scaleup", "city": "Tel Aviv", "hires_juniors": true, "domains": ["software"]}, {"name": "AppsFlyer", "sectors": ["data", "adtech"], "size": "enterprise", "city": "Herzliya", "hires_juniors": true, "domains": ["software"]}, {"name": "Taboola", "sectors": ["adtech", "ai"], "size": "enterprise", "city": "Tel Aviv", "hires_juniors": true, "domains": ["software"]}, {"name": "Outbrain", "sectors": ["adtech"], "size": "enterprise", "city": "Netanya", "hires_juniors": true, "domains": ["software"]}, {"name": "Similarweb", "sectors": ["data"], "size": "enterprise", "city": "Tel Aviv", "hires_juniors": true, "domains": ["software"]}, {"name": "Gong", "sectors": ["ai", "saas"], "size": "scaleup", "city": "Ramat Gan", "hires_juniors": false, "domains": ["software"]}, {"name": "JFrog", "sectors": ["devtools"], "size": "enterprise", "city": "Netanya", "hires_juniors": true, "domains": ["software"]}, {"name": "Tabnine", "sectors": ["ai", "devtools"], "size": "startup", "city": "Tel Aviv", "hires_juniors": false, "domains": ["software"]}, {"name": "AI21 Labs", "sectors": ["ai"], "size": "scaleup", "city": "Tel Aviv", "hires_juniors": false, "domains": ["software"]}, {"name": "Lightricks", "sectors": ["ai", "consumer"], "size": "scaleup", "city": "Jerusalem", "hires_juniors": true, "domains": ["software"]}, {"name": "Mobileye", "sectors": ["ai", "automotive", "hardware"], "size": "enterprise", "city": "Jerusalem", "hires_juniors": true, "domains": ["software", "mechanical"]}, {"name": "Hailo", "sectors": ["ai", "hardware"], "size": "scaleup", "city": "Tel Aviv", "hires_juniors": true, "domains": ["software", "mechanical"]}, {"name": "Via", "sectors": ["mobility", "data"], "size": "scaleup", "city": "Tel Aviv", "hires_juniors": false, "domains": ["software"]}, {"name": "vHive", "sectors": ["ai", "hardware"], "size": "startup", "city": "Tel Aviv", "hires_juniors": true, "domains": ["software"]}, {"name": "Earnix", "sectors": ["fintech", "data"], "size": "scaleup", "city": "Ramat Gan", "hires_juniors": true, "domains": ["software"]}, {"name": "NVIDIA Israel", "sectors": ["ai", "hardware"], "size": "enterprise", "city": "Yokneam", "hires_juniors": true, "domains": ["software", "mechanical"]}, {"name": "Intel Israel", "sectors": ["hardware"], "size": "enterprise", "city": "Haifa", "hires_juniors": true, "domains": ["software", "mechanical"]}, {"name": "Israel Aerospace Industries", "sectors": ["defense", "aerospace"], "size": "enterprise", "city": "Lod", "hires_juniors": true, "domains": ["mechanical", "software"]}, {"name": "Rafael", "sectors": ["defense"], "size": "enterprise", "city": "Haifa", "hires_juniors": true, "domains": ["mechanical", "software"]}, {"name": "Elbit Systems", "sectors": ["defense", "aerospace"], "size": "enterprise", "city": "Haifa", "hires_juniors": true, "domains": ["mechanical", "software"]}, {"name": "Applied Materials", "sectors": ["semiconductors"], "size": "enterprise", "city": "Rehovot", "hires_juniors": true, "domains": ["mechanical", "software"]}, {"name": "KLA", "sectors": ["semiconductors"], "size": "enterprise", "city": "Migdal HaEmek", "hires_juniors": true, "domains": ["mechanical", "software"]}, {"name": "Tower Semiconductor", "sectors": ["semiconductors"], "size": "enterprise", "city": "Migdal HaEmek", "hires_juniors": true, "domains": ["mechanical"]}, {"name": "Iscar", "sectors": ["manufacturing"], "size": "enterprise", "city": "Tefen", "hires_juniors": true, "domains": ["mechanical"]}, {"name": "Stratasys", "sectors": ["manufacturing", "3d-printing"], "size": "enterprise", "city": "Rehovot", "hires_juniors": true, "domains": ["mechanical"]}, {"name": "Ormat", "sectors": ["energy"], "size": "enterprise", "city": "Yavne", "hires_juniors": true, "domains": ["mechanical"]}, {"name": "Netafim", "sectors": ["agritech", "manufacturing"], "size": "enterprise", "city": "Beer Sheva", "hires_juniors": true, "domains": ["mechanical"]}, {"name": "Israel Electric Corporation", "sectors": ["energy"], "size": "enterprise", "city": "Haifa", "hires_juniors": true, "domains": ["mechanical"]}, {"name": "Kornit Digital", "sectors": ["manufacturing"], "size": "enterprise", "city": "Rosh HaAyin", "hires_juniors": true, "domains": ["mechanical"]}, {"name": "Plasan", "sectors": ["defense", "manufacturing"], "size": "enterprise", "city": "Karmiel", "hires_juniors": true, "domains": ["mechanical"]}];
 const ROLE_SECTORS={'AI / ML':['ai'],'סייבר':['cyber'],'Data / BI':['data'],'DevOps / Cloud':['devtools'],'Embedded':['hardware']};
 const REGION_CITIES={'תל אביב':['Tel Aviv'],'גוש דן והמרכז':['Tel Aviv','Ramat Gan','Petah Tikva','Herzliya','Rehovot','Rosh HaAyin','Lod','Yavne','Airport City'],'השרון':['Herzliya',"Ra'anana",'Netanya','Kfar Saba'],'ירושלים':['Jerusalem'],'חיפה והצפון':['Haifa','Yokneam','Migdal HaEmek','Tefen','Karmiel'],'באר שבע והדרום':['Beer Sheva']};
+/* שורת הסיכום של "מה מחפשים בשבילך": תגיות קצרות */
+function planTags(){const a=ans(),rt=realTargets(),n=rt?rt.length:targetCompanies().length;
+  return [...(a.roles&&a.roles.length?a.roles.slice(0,3):[domainOf(a)]),...(a.locs||[]).slice(0,2),a.mode&&a.mode!=='לא משנה'?a.mode:'',n?`${n} חברות יעד`:''].filter(Boolean)}
+function planAlert(){const rt=realTargets()||[],k=rt.filter(b=>b.status==='confirm'||b.status==='not_found').length;
+  return k?`<span class="plan-alert">${k===1?'חברה אחת צריכה בדיקה שלך':k+' חברות צריכות בדיקה שלך'}</span>`:''}
 function planWhy(){
   const a=ans(),w=[];
   w.push(a.status==='סטודנט/ית'?(a.track==='משרה מלאה אחרי התואר'?'משרות ג׳וניור למשרה מלאה אחרי התואר':'משרות סטודנט, התמחויות וג׳וניור')
@@ -2683,8 +2731,8 @@ function renderProfile(){
 
     ${CLOUDM?`<section class="card glass" aria-labelledby="liH"><h2 class="card-h" id="liH">פרופיל LinkedIn</h2>
       <div class="field"><label for="liUrl">הקישור לפרופיל שלך</label><div style="display:flex;gap:8px"><input id="liUrl" class="ltr" type="url" placeholder="https://www.linkedin.com/in/…" value="${escB((p.ans||{}).linkedin||'')}" autocomplete="off"><button class="btn btn-sm btn-ghost" onclick="saveLinkedin()">שמירה</button></div></div>
-      <div class="card-sub" style="margin-top:10px">${p.li_text?`${escB(N('linkedin'))} עובר על הפרופיל לפי ה-PDF שהעלית, והשיפורים מופיעים במסך LinkedIn. שינית משהו בפרופיל? מעלים PDF חדש, והקישור נשאר אותו קישור.`:`כדי ש${escB(N('linkedin'))} יציע שיפורים לפרופיל, צריך עותק שלו: ב-LinkedIn נכנסים לפרופיל ← "עוד" (More) ← "שמירה כ-PDF", ומעלים כאן.`}</div>
-      <label for="liFile" class="btn btn-sm ${p.li_text?'btn-ghost':'btn-primary'} btn-block">${p.li_text?'להעלות PDF חדש של הפרופיל':'להעלות PDF של הפרופיל'}</label>
+      <div class="card-sub" style="margin-top:10px">${p.li_text?`${escB(N('linkedin'))} בודק את הפרופיל, והשיפורים במסך LinkedIn.`:`${escB(N('linkedin'))} יציע שיפורים לפרופיל אחרי שתעלה אותו.`} <button class="link" style="color:var(--brand);font-weight:600" onclick="liHow()">איך?</button></div>
+      <label for="liFile" class="btn btn-sm ${p.li_text?'btn-ghost':'btn-primary'} btn-block">${p.li_text?'עדכנתי את הפרופיל':'להעלות את הפרופיל'}</label>
       <input type="file" id="liFile" class="vh" accept=".pdf,application/pdf" onchange="onLiFile(this)"></section>`:''}
     <section class="card glass" aria-labelledby="qH"><h2 class="card-h" id="qH">עליי</h2>
       <div class="card-sub">${done<total?`ענית על ${done} מתוך ${total} שאלות. כל תשובה עוזרת לסוכנים לדייק.`:'ענית על כל השאלות. אפשר לעדכן בכל רגע.'}</div>
@@ -2694,16 +2742,18 @@ function renderProfile(){
       <button class="row" onclick="openQuestions('locs')"><span class="ri">${ROW_IC.pin}</span><span class="rl"><b>${escB((a.locs||[]).join(', ')||'אזור עבודה')}</b><span>${escB([a.mode,a.start&&('התחלה: '+a.start)].filter(Boolean).join(' · ')||'עוד לא ענית')}</span></span><span class="chev" aria-hidden="true"></span></button>
       <button class="btn btn-sm ${done<total?'btn-primary':'btn-ghost'} btn-block" style="margin-top:8px" onclick="openQuestions()">${done<total?'להמשיך את השאלון':'לעבור על כל התשובות'}</button></section>
 
-    <section class="card glass" id="planCard" aria-labelledby="plH"><h2 class="card-h" id="plH">מה מחפשים בשבילך</h2>
+    <section class="card glass" id="planCard" aria-labelledby="plH">
+      ${typeof suggestionsHtml==='function'?suggestionsHtml():''}
+      <details class="plan-d"${S.planOpen?' open':''} ontoggle="S.planOpen=this.open">
+      <summary><span><h2 class="card-h" id="plH">מה מחפשים בשבילך</h2><span class="plan-tags">${planTags().map(t=>`<i>${escB(t)}</i>`).join('')}</span>${planAlert()}</span><span class="chev" aria-hidden="true"></span></summary>
       <div class="card-sub">${escB(N('strategist'))} בנה את זה מקורות החיים ומהתשובות שלך, ומעדכן בכל שינוי.</div>
       <ul class="plan-list">${planWhy().map(w=>`<li>${escB(w)}</li>`).join('')}</ul>
-      ${typeof suggestionsHtml==='function'?suggestionsHtml():''}
       ${typeof lastMeeting==='function'&&lastMeeting()?`<button class="link" style="font-size:13px;color:var(--brand);margin:6px 0" onclick="openMeeting()">לדוח של הישיבה השבועית</button>`:''}
       <h3 class="sub-h">חברות יעד</h3>
       <div class="card-sub">כך ${escB(N('hunter'))} בדק אותן בסריקה האחרונה:</div>
       ${(()=>{const rt=realTargets();return rt?targetsHtml(rt):`<div class="learned">${targetCompanies().map(c=>`<span class="chip" title="${escB(c.why.join(' · '))}">${escB(c.name)}<button aria-label="להסיר את ${escB(c.name)}" onclick="removeTarget('${escB(c.name).replace(/'/g,"\\'")}')">×</button></span>`).join('')}</div>`})()}
       <div class="todo-foot" style="padding:12px 0 0;border:0"><label for="tgIn" class="vh">חברה להוספה</label><input id="tgIn" placeholder="להוסיף חברה" onkeydown="if(event.key==='Enter')addTarget()"><button class="btn btn-sm btn-ghost" onclick="addTarget()">הוסף</button></div>
-      ${(S.targets&&(S.targets.added.length||S.targets.removed.length))?`<button class="link" style="font-size:13px;color:var(--brand);margin-top:8px" onclick="S.targets={added:[],removed:[]};save();renderProfile()">להחזיר לבחירה של ${escB(N('strategist'))}</button>`:''}</section>
+      ${(S.targets&&(S.targets.added.length||S.targets.removed.length))?`<button class="link" style="font-size:13px;color:var(--brand);margin-top:8px" onclick="S.targets={added:[],removed:[]};save();renderProfile()">להחזיר לבחירה של ${escB(N('strategist'))}</button>`:''}</details></section>
 
     <section class="card glass" aria-labelledby="tmH"><h2 class="card-h" id="tmH">הצוות שלי</h2>
       <div class="card-sub">אפשר לתת לכל סוכן שם אחר. התפקיד נשאר אותו תפקיד.</div>
@@ -2755,6 +2805,10 @@ async function readCv(f){try{
   if(/\.docx$/i.test(f.name)){await loadScript('https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js');
     return (await mammoth.extractRawText({arrayBuffer:await f.arrayBuffer()})).value}
 }catch(e){console.warn(e)}return''}
+function liHow(){openSheet(`<h3 id="sheetTitle">איך ${escB(N('linkedin'))} קורא את הפרופיל</h3>
+  <div class="sheet-sub">findjob לא נכנס לחשבון ה-LinkedIn שלך. ${escB(N('linkedin'))} קורא עותק שאתה שומר:</div>
+  <ol class="how-ol"><li>בפרופיל שלך ב-LinkedIn לוחצים More (או "עוד")</li><li>בוחרים Save to PDF</li><li>כאן לוחצים ${prof().li_text?'"עדכנתי את הפרופיל"':'"להעלות את הפרופיל"'} ובוחרים את הקובץ</li></ol>
+  <p class="card-sub">כל פעם שאתה משנה משהו בפרופיל, מעלים עותק חדש, ו${escB(N('linkedin'))} בודק שוב.</p>`)}
 function onLiFile(inp){const f=inp.files[0];if(!f)return;readCv(f).then(t=>{if(t&&t.trim().length>80){prof().li_text=t.slice(0,15000);save();renderProfile();toast(`${N('linkedin')} יעבור על הפרופיל בשעתיים הקרובות`)}else toast('לא הצלחתי לקרוא את הקובץ. ודא שזה ה-PDF ש-LinkedIn מייצר',{ms:4200})});inp.value=''}
 function afterCv(){if($('onb').classList.contains('open'))renderOnb();else{renderProfile();toast('קורות החיים עודכנו')}}
 

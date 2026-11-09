@@ -17,11 +17,15 @@ function renderApps(){
         ${logo(j)}<span class="app-info"><span class="app-title" dir="${dirOf(j.title)||'auto'}" style="display:block;text-align:right">${escB(j.title)}</span><span class="app-sub" style="display:block">${escB(j.co)} · ${escB(appSub(a))}</span></span>
         <span class="status st-${a.status}">${STATUSES[a.status]}</span></button>
       ${fu?`<div class="follow"><span>${daysSince(a.date)} ימים בלי תשובה. הודעה קצרה עכשיו מעלה את הסיכוי לתגובה.</span><button class="btn btn-sm btn-ghost" onclick="openApp('${a.id}','details')">להודעה</button></div>`:''}
-      ${a.status==='saved'?`<div class="app-actions"><button class="btn btn-sm btn-ghost" onclick="openApp('${a.id}','letter')">למכתב</button><button class="btn btn-sm btn-primary" onclick="markApplied('${a.id}')">הגשתי</button></div>`:''}
+      ${a.status==='saved'||a.status==='applied'?`<div class="app-actions"><button class="btn btn-sm btn-ghost" onclick="openApp('${a.id}','letter')">לערכת ההגשה</button>${appliedBox(a)}</div>`:''}
       ${a.status==='interview'||a.status==='screening'?`<div class="app-actions"><button class="btn btn-sm btn-primary" onclick="${REAL?`openPrep('${a.jobId}')`:`openApp('${a.id}','prep')`}">${a.status==='interview'?'להכנה לראיון':'לשאלות הסינון'}</button></div>`:''}
     </article></div>`}).join('')+historyHtml();
   bindAppSwipes();
 }
+/* "הגשתי": ריבוע ריק, ו-✓ ירוק אחרי סימון. לחיצה שנייה מבטלת */
+function appliedBox(a,wide){const on=a.status!=='saved';
+  return `<button class="chk-btn${on?' on':''}${wide?' wide':''}" role="checkbox" aria-checked="${on}" onclick="${on?`unmarkApplied('${a.id}')`:`markApplied('${a.id}')`};${wide?'paintAppTab(\''+a.id+'\')':''}"><span class="box" aria-hidden="true">${on?'✓':''}</span>הגשתי</button>`}
+function unmarkApplied(id){const a=appOf(id);if(!a||a.status!=='applied')return;a.status='saved';save();refreshApps();toast('ביטלתי את הסימון. המשרה חזרה ל"שמור"')}
 function markApplied(id){const a=appOf(id);a.status='applied';a.date=new Date().toISOString();save();refreshApps();toast('סימנתי שהגשת. אזכיר לך לשלוח הודעת המשך בעוד שבוע')}
 function refreshApps(){if(curPg==='apps')renderApps();if(curPg==='main')renderHome();syncChrome()}
 
@@ -32,7 +36,7 @@ function openApp(id,tab){
   const hasPrep=!REAL&&(a.status==='interview'||a.status==='screening');
   appTab=tab==='prep'&&!hasPrep?'details':(tab||'details');
   const j=JOBS[a.jobId];
-  const tabs=[['details','פרטים'],['letter','מכתב'],['ref',REAL?'קשרים':'ממליצים'],...(hasPrep?[['prep',a.status==='interview'?'הכנה':'סינון']]:[])];
+  const tabs=[['details','פרטים'],['letter','ערכת הגשה'],['ref',REAL?'קשרים':'ממליצים'],...(hasPrep?[['prep',a.status==='interview'?'הכנה':'סינון']]:[])];
   openSheet(`<div style="display:flex;gap:13px;align-items:center">${logo(j)}<div style="min-width:0"><h3 id="sheetTitle" dir="${dirOf(j.title)||'auto'}" style="text-align:right">${escB(j.title)}</h3><div class="sheet-sub">${escB(j.co)} · ${escB(j.loc)}</div></div></div>
     <div class="tabs" role="tablist">${tabs.map(([k,l])=>`<button role="tab" id="tab-${k}" aria-selected="${appTab===k}" onclick="appTab='${k}';paintAppTab('${id}')">${l}</button>`).join('')}</div>
     <div id="appTab" role="tabpanel"></div>`);
@@ -53,8 +57,8 @@ function paintAppTab(id){
         ${REAL&&a.status==='saved'?`<div class="kv"><span>פתוחה להגשה?</span><b>${openTxt(j)}</b></div>`:''}</div>
       ${fu?`<div class="s-sec"><h4>הודעת המשך</h4><textarea class="textbox" id="fuText" rows="7" aria-label="הודעת המשך">${esc(a.follow||followText(j))}</textarea>
         <div class="duo"><button class="btn btn-ghost" onclick="copyText($('fuText').value,'ההודעה הועתקה')">${ICO.copy}העתק</button><button class="btn btn-primary" onclick="sentFollow('${id}')">שלחתי</button></div></div>`:''}
-      ${REAL?`<div class="s-sec"><button class="btn btn-ghost btn-block" onclick="openPrep('${a.jobId}')">${ICO.spark||''}הכנה לראיון${j.prep&&j.prep.questions&&j.prep.questions.length?` · ${j.prep.questions.length} שאלות מוכנות`:''}</button></div>`:''}
       ${REAL?briefHtml(j):''}
+      ${REAL?prepEntry(a,j):''}
       ${REAL?tailorHtml(j):''}
       <div class="s-sec"><h4>עריכה</h4>
         <div class="field"><label for="edIv">מועד ראיון או שיחה</label><input id="edIv" value="${escB(a.iv||'')}" placeholder="למשל: רביעי, 14:00" onchange="appOf('${id}').iv=this.value.trim();save();refreshApps()"></div>
@@ -67,7 +71,7 @@ function paintAppTab(id){
     el.innerHTML=`<div class="s-sec" style="margin-top:12px"><label for="letterBox" class="vh">מכתב פנייה</label><textarea class="textbox" id="letterBox" rows="13" oninput="appOf('${id}').letter=this.value;save()">${esc(a.letter||(j.letter&&j.letter.text)||(REAL?'':letterFor(j)))}</textarea>
       ${REAL&&!a.letter&&!j.letter?`<div class="hint-line">${N('assistant')} מכין את המכתב. הוא יופיע כאן תוך שעתיים בערך.</div>`:j.letter&&!j.letter.checked?`<div class="hint-line">חלק מהמשפטים הוסרו כי לא נמצאו בקורות החיים. כדאי לקרוא לפני ששולחים.</div>`:`<div class="hint-line ok">✓ כל שם, טכנולוגיה ומספר במכתב נבדקו מול קורות החיים והמודעה</div>`}
       <div class="duo"><button class="btn btn-ghost" onclick="copyText($('letterBox').value,'המכתב הועתק')">${ICO.copy}העתק</button><a class="btn btn-primary ext" href="${j.url||LI_URL+'jobs/'}" target="_blank" rel="noopener" onclick="copyText($('letterBox').value,'המכתב הועתק. הדבק אותו בטופס')">פתח את המשרה${ICO.open}</a></div>
-      ${a.status==='saved'?`<button class="btn btn-ghost btn-block" style="margin-top:8px" onclick="markApplied('${id}');closeSheet()">הגשתי</button>`:''}</div>`;
+      <div style="margin-top:10px">${appliedBox(a,true)}</div></div>`;
   }else if(appTab==='ref'&&REAL){
     el.innerHTML=refHtml(j,id);
   }else if(appTab==='ref'){
@@ -180,6 +184,12 @@ function briefHtml(j){
     ${b.why_you&&b.why_you.length?`<h4 style="margin-top:12px">איך זה מתחבר אליך</h4>${b.why_you.map(w=>`<div class="jc-r" style="margin-bottom:6px"><span class="ic ok" aria-hidden="true">✓</span><span>${escB(w)}</span></div>`).join('')}`:''}
     <div class="src-list">${b.sources.map((s,i)=>`<a href="${escB(s.url)}" target="_blank" rel="noopener"><span class="src-n">${i+1}</span><span dir="auto">${escB(s.title)}</span><small>${escB(s.domain)}</small></a>`).join('')}</div></div>`;
 }
+/* הכניסה להכנה לראיון, מתחת לסקירת החברה: מה מחכה בפנים */
+function prepEntry(a,j){const p=j.prep||{},sk=(typeof lastSkills==='function'&&lastSkills())?lastSkills().stats.skills.cards||[]:[];
+  const parts=[(p.questions||[]).length?`${p.questions.length} שאלות צפויות`:'',(p.tasks||[]).length?`${p.tasks.length} מטלות בית לתרגול`:'',
+    sk.length?`${sk.length} כרטיסי כישורים`:'',j.brief&&j.brief.found?'סקירת החברה':''].filter(Boolean);
+  return`<div class="s-sec"><button class="btn btn-ghost btn-block" onclick="openPrep('${a.jobId}')">${ICO.spark||''}הכנה לראיון</button>
+    <p class="card-sub" style="margin-top:6px;text-align:center">${parts.length?'בפנים: '+escB(parts.join(', ')):`${escB(N('coach'))} מכינה שאלות, מטלות וכרטיסי כישורים למשרה הזו`}</p></div>`}
 /* קובי: התאמת קורות החיים למשרה. רק ניסוח וסדר של מה שכבר כתוב אצלך. אתה מעתיק ומעדכן בעצמך */
 function tailorHtml(j){
   const t=j.tailor,h=`<h4>קורות חיים למשרה הזו</h4>`;
@@ -221,7 +231,7 @@ function renderLinkedInReal(){
     ${posts.length?posts.map(p=>postCard(Object.assign({role:'',mins:null},p))).join(''):`<section class="card-solid"><p class="card-sub" style="padding:6px 2px">${escB(N('linkedin'))} מחפש פעמיים ביום פוסטים ציבוריים מהשבוע על גיוס ג׳וניורים וקריירה בהייטק. ${LI.updated?'בסריקה האחרונה לא נמצאו פוסטים שמתאימים לך.':'הם יופיעו כאן אחרי הסריקה הבאה.'}</p></section>`}
     <div class="sec-h" id="liFixes"><h2>הפרופיל שלך</h2><span>${fixes.length?`${fixed} מתוך ${fixes.length} בוצעו`:''}</span></div>
     ${fixes.length?`<section class="card-solid" aria-label="שיפורים לפרופיל">${fixes.map(fixRow).join('')}</section>`
-      :`<section class="card-solid"><p class="card-sub" style="padding:6px 2px">${prof().li_text?`${escB(N('linkedin'))} עובר על הפרופיל שהעלית. השיפורים יופיעו כאן תוך שעתיים בערך.`:`כדי לקבל שיפורים אמיתיים, העלה PDF של פרופיל ה-LinkedIn שלך בעמוד הפרופיל.`}</p>
+      :`<section class="card-solid"><p class="card-sub" style="padding:6px 2px">${prof().li_text?`${escB(N('linkedin'))} עובר על הפרופיל שהעלית. השיפורים יופיעו כאן תוך שעתיים בערך.`:`כדי לקבל שיפורים לפרופיל, מעלים אותו בעמוד הפרופיל.`}</p>
         ${prof().li_text?'':`<button class="btn btn-sm btn-primary btn-block" onclick="goPage('profile')">לעמוד הפרופיל</button>`}</section>`}
     <div class="sec-h"><h2>הפוסט של השבוע</h2><span>${L.posts?'פורסם ✓':'טיוטה'}</span></div>
     <section class="card-solid">${draft||L.postText?`<label for="postDraft" class="vh">טיוטת פוסט</label><textarea class="textbox" id="postDraft" rows="10" oninput="S.li.postText=this.value;save()">${esc(L.postText||draft)}</textarea>
