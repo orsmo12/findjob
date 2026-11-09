@@ -68,10 +68,7 @@ function paintAppTab(id){
         ${CLOUDM&&a.status==='saved'?`<button class="btn btn-ghost btn-block" style="margin-top:8px" onclick="markClosed('${id}')">המשרה נסגרה</button>`:''}
         <button class="btn btn-ghost btn-block" style="margin-top:8px;color:var(--rose)" onclick="closeSheet();removeApp('${id}')">להסיר מההגשות</button></div>`;
   }else if(appTab==='letter'){
-    el.innerHTML=`<div class="s-sec" style="margin-top:12px"><label for="letterBox" class="vh">מכתב פנייה</label><textarea class="textbox" id="letterBox" rows="13" oninput="appOf('${id}').letter=this.value;save()">${esc(a.letter||(j.letter&&j.letter.text)||(REAL?'':letterFor(j)))}</textarea>
-      ${REAL&&!a.letter&&!j.letter?`<div class="hint-line">${N('assistant')} מכין את המכתב. הוא יופיע כאן תוך שעתיים בערך.</div>`:j.letter&&!j.letter.checked?`<div class="hint-line">חלק מהמשפטים הוסרו כי לא נמצאו בקורות החיים. כדאי לקרוא לפני ששולחים.</div>`:`<div class="hint-line ok">✓ כל שם, טכנולוגיה ומספר במכתב נבדקו מול קורות החיים והמודעה</div>`}
-      <div class="duo"><button class="btn btn-ghost" onclick="copyText($('letterBox').value,'המכתב הועתק')">${ICO.copy}העתק</button><a class="btn btn-primary ext" href="${j.url||LI_URL+'jobs/'}" target="_blank" rel="noopener" onclick="copyText($('letterBox').value,'המכתב הועתק. הדבק אותו בטופס')">פתח את המשרה${ICO.open}</a></div>
-      <div style="margin-top:10px">${appliedBox(a,true)}</div></div>`;
+    el.innerHTML=kitTabHtml(a,j,id);
   }else if(appTab==='ref'&&REAL){
     el.innerHTML=refHtml(j,id);
   }else if(appTab==='ref'){
@@ -361,3 +358,81 @@ function bindAppSwipes(){
     card.addEventListener('pointerup',end);card.addEventListener('pointercancel',end);
   });
 }
+
+/* ═════════ ערכת הגשה: מה שצריך כדי למלא טופס, במקום אחד ═════════
+   הפרטים הקבועים נשמרים בפרופיל (ans.kit). כפתור המילוי ממלא שדות לפי התוויות שלהם, מסמן בצהוב מה שלא בטוח,
+   ולעולם לא לוחץ "שלח". את ההגשה עושה המשתמש. */
+const KIT_FIELDS=[
+  ['full','שם מלא',p=>p.name||''],['first','שם פרטי',p=>p.first||(p.name||'').split(' ')[0]||''],['last','שם משפחה',p=>(p.name||'').split(' ').slice(1).join(' ')],
+  ['email','מייל',p=>kitOf(p).email||((typeof ME!=='undefined'&&ME&&ME.email)||'')],['phone','טלפון',p=>kitOf(p).phone||''],
+  ['city','עיר',p=>kitOf(p).city||''],['linkedin','LinkedIn',p=>(p.ans||{}).linkedin||''],
+  ['github','GitHub',p=>{const g=((p.ans||{}).github||'').trim();return g?(g.startsWith('http')?g:'https://github.com/'+g.replace(/^@/,'')):''}],
+  ['site','אתר / תיק עבודות',p=>kitOf(p).site||''],['edu','השכלה',p=>kitOf(p).edu||''],
+  ['salary','ציפיות שכר',p=>(p.ans||{}).salaryH||(p.ans||{}).salary||''],['auth','אישור עבודה בישראל',p=>kitOf(p).auth||''],
+  ['start','זמינות',p=>(p.ans||{}).start||''],
+];
+function kitOf(p){return (p.ans||{}).kit||{}}
+function kitData(){const p=prof(),o={};KIT_FIELDS.forEach(([k,,f])=>{const v=f(p);if(v&&!/עוד לא|לא בטוח/.test(v))o[k]=v});return o}
+
+function kitTabHtml(a,j,id){
+  const p=prof(),d=kitData(),missing=KIT_FIELDS.filter(([k])=>!d[k]&&!['first','last'].includes(k));
+  const letter=a.letter||(j.letter&&j.letter.text)||(REAL?'':letterFor(j)),tl=j.tailor&&j.tailor.edits&&j.tailor.edits.length;
+  return `<div class="s-sec" style="margin-top:12px"><h4>קורות חיים</h4>
+      <p class="card-sub">${escB(p.cvName||'קורות החיים מהפרופיל')}${tl?`. ${escB(N('linkedin'))} הציע ${j.tailor.edits.length} התאמות למשרה הזו <button class="link" style="color:var(--brand);font-weight:600" onclick="appTab='details';paintAppTab('${id}')">בלשונית פרטים</button>`:''}</p></div>
+    <div class="s-sec"><h4>מכתב פנייה</h4><label for="letterBox" class="vh">מכתב פנייה</label><textarea class="textbox" id="letterBox" rows="11" oninput="appOf('${id}').letter=this.value;save()">${esc(letter)}</textarea>
+      ${REAL&&!a.letter&&!j.letter?`<div class="hint-line">${N('assistant')} מכין את המכתב. הוא יופיע כאן תוך שעתיים בערך.</div>`:j.letter&&!j.letter.checked?`<div class="hint-line">חלק מהמשפטים הוסרו כי לא נמצאו בקורות החיים. כדאי לקרוא לפני ששולחים.</div>`:`<div class="hint-line ok">✓ כל שם, טכנולוגיה ומספר במכתב נבדקו מול קורות החיים והמודעה</div>`}
+      <button class="btn btn-ghost btn-sm" onclick="copyText($('letterBox').value,'המכתב הועתק')">${ICO.copy}להעתיק את המכתב</button></div>
+    <div class="s-sec"><h4>הפרטים שלך לטופס</h4>
+      ${KIT_FIELDS.filter(([k])=>d[k]&&!['first','last'].includes(k)).map(([k,l])=>`<div class="kit-row"><span>${l}</span><b dir="auto">${escB(d[k])}</b><button aria-label="להעתיק ${l}" onclick="copyText(${escB(JSON.stringify(d[k]))},'${l} הועתק')">${ICO.copy}</button></div>`).join('')}
+      ${missing.length?`<p class="card-sub" style="margin-top:6px">חסר: ${escB(missing.map(m=>m[1]).join(', '))}. <button class="link" style="color:var(--brand);font-weight:600" onclick="closeSheet();openKitEdit()">להשלים</button></p>`:''}</div>
+    <div class="s-sec"><h4>מילוי הטופס</h4>
+      <ol class="how-ol"><li>להעתיק את המכתב (למעלה)</li><li>לפתוח את המשרה ולהגיע לטופס</li><li>ללחוץ על הסימנייה "findjob · מילוי". היא ממלאת את מה שהיא מזהה ומסמנת בצהוב מה לבדוק. היא לא שולחת לעולם</li></ol>
+      <div class="duo"><button class="btn btn-ghost" onclick="openFillHelp()">איך מוסיפים את הסימנייה</button><a class="btn btn-primary ext" href="${j.url||LI_URL+'jobs/'}" target="_blank" rel="noopener" onclick="copyText($('letterBox').value,'המכתב הועתק. הדבק אותו בטופס')">לפתוח את המשרה${ICO.open}</a></div>
+      <p class="card-sub" style="margin-top:8px">בטלפון אפשר גם להעתיק כל פרט בלחיצה מהרשימה למעלה. ${CLOUDM?`שאלה בטופס? <button class="link" style="color:var(--brand);font-weight:600" onclick="askAboutJob('${a.jobId}');$('chatInput').value+='בטופס ההגשה שואלים: '">${escB(N('assistant'))} זמין בצ׳אט</button>`:''}</p></div>
+    <div class="s-sec">${appliedBox(a,true)}</div>`;
+}
+
+function openKitEdit(){const k=kitOf(prof()),f=(id,l,v,ph,t)=>`<div class="field"><label for="${id}">${l}</label><input id="${id}" ${t?`type="${t}" class="ltr"`:''} value="${escB(v||'')}" placeholder="${ph}"></div>`;
+  openSheet(`<h3 id="sheetTitle">פרטים לטפסי הגשה</h3><div class="sheet-sub">נשמרים רק אצלך, ומשמשים למילוי טפסים. שום דבר לא נשלח בלי שתלחץ בעצמך.</div>
+    ${f('kEmail','מייל',k.email||((typeof ME!=='undefined'&&ME&&ME.email)||''),'name@gmail.com','email')}${f('kPhone','טלפון',k.phone,'050-0000000','tel')}
+    ${f('kCity','עיר מגורים',k.city,'למשל: תל אביב')}${f('kSite','אתר או תיק עבודות',k.site,'https://','url')}
+    ${f('kEdu','השכלה',k.edu,'למשל: B.Sc. Computer Science, HIT, 2026')}
+    <div class="field"><label for="kAuth">אישור עבודה בישראל</label><select id="kAuth">${['','אזרח/ית ישראלי/ת','תושב/ת קבע','אשרת עבודה'].map(o=>`<option${o===(k.auth||'')?' selected':''}>${o}</option>`).join('')}</select></div>
+    <p class="card-sub">שכר וזמינות נלקחים מהשאלון.</p>
+    <button class="btn btn-primary btn-block" onclick="saveKit()">שמירה</button>`)}
+function saveKit(){const p=prof();p.ans=p.ans||{};p.ans.kit={email:$('kEmail').value.trim(),phone:$('kPhone').value.trim(),city:$('kCity').value.trim(),
+  site:$('kSite').value.trim(),edu:$('kEdu').value.trim(),auth:$('kAuth').value};save();closeSheet();if(curPg==='profile')renderProfile();toast('הפרטים נשמרו')}
+
+/* הסימנייה: קוד שרץ בדף הטופס. הפרטים הקבועים בתוכה. המכתב נלקח מהלוח (אחרי "להעתיק את המכתב") */
+function fillBookmarklet(){
+  const D=JSON.stringify(kitData());
+  const src=`(async()=>{const D=${D};
+const R={first:/first.?name|given.?name|שם פרטי/i,last:/last.?name|family.?name|surname|שם משפחה/i,full:/full.?name|^name$|your name|שם מלא|^שם$/i,
+email:/e-?mail|מייל|דוא.?ל/i,phone:/phone|mobile|\\btel\\b|טלפון|נייד/i,linkedin:/linkedin/i,github:/github/i,site:/website|portfolio|personal site|אתר|תיק עבודות/i,
+city:/city|location|address|current location|עיר|מגורים/i,salary:/salary|compensation|expected pay|שכר/i,start:/start date|notice|availability|available|זמינות|תחילת עבודה/i,
+auth:/authori[sz]ed|work permit|visa|sponsorship|אישור עבודה/i,edu:/education|degree|school|university|השכלה|תואר|מוסד/i,letter:/cover.?letter|motivation|why .*(us|company)|מכתב|ספר.? על עצמך/i};
+const tx=n=>(n.innerText||n.textContent||'').trim();const lab=e=>{let t=[];if(e.id){const l=document.querySelector('label[for="'+CSS.escape(e.id)+'"]');if(l)t.push(tx(l))}const pl=e.closest('label');if(pl)t.push(tx(pl));
+t.push(e.getAttribute('aria-label')||'',e.placeholder||'',e.name||'',e.id||'');const w=e.closest('[class*=field],[class*=question],[data-automation-id]');if(w&&!t[0])t.push(tx(w).slice(0,80));return t.join(' | ')};
+const set=(e,v)=>{const p=e.tagName==='TEXTAREA'?HTMLTextAreaElement.prototype:HTMLInputElement.prototype;Object.getOwnPropertyDescriptor(p,'value').set.call(e,v);e.dispatchEvent(new Event('input',{bubbles:true}));e.dispatchEvent(new Event('change',{bubbles:true}))};
+const mark=(e,c)=>{e.style.outline='3px solid '+c;e.style.outlineOffset='2px'};
+let clip='';try{clip=await navigator.clipboard.readText()}catch(x){}
+let n=0,y=0;
+for(const e of document.querySelectorAll('input,textarea,select')){if(e.disabled||e.type==='hidden'||e.type==='submit'||e.type==='button'||e.offsetParent===null)continue;
+if(e.type==='file'){mark(e,'#E9A825');y++;continue}
+if(e.tagName==='SELECT'||e.type==='checkbox'||e.type==='radio'){if(e.required||e.getAttribute('aria-required')==='true'){mark(e,'#E9A825');y++}continue}
+if(e.value&&e.value.trim())continue;const L=lab(e);let k=Object.keys(R).find(k=>R[k].test(L));
+if(k==='full'&&(R.first.test(L)||R.last.test(L)))k=R.first.test(L)?'first':'last';
+let v=k==='letter'?(clip.length>200?clip:''):D[k];
+if(k&&v){set(e,v);const sure=k!=='letter'&&k!=='city'&&k!=='salary'&&k!=='start';mark(e,sure?'#3E8A66':'#E9A825');n++;if(!sure)y++}
+else if(e.required||e.getAttribute('aria-required')==='true'){mark(e,'#E9A825');y++}}
+const b=document.createElement('div');b.dir='rtl';b.style.cssText='position:fixed;z-index:2147483647;top:12px;left:12px;right:12px;max-width:420px;margin:auto;background:#1E4A38;color:#fff;font:15px/1.5 system-ui,sans-serif;padding:12px 16px;border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.3)';
+b.textContent='findjob מילא '+n+' שדות. '+(y?y+' מסומנים בצהוב: כדאי לבדוק (קובץ קורות חיים, בחירות, מכתב). ':'')+'בדוק הכל ושלח בעצמך. findjob לא שולח.';b.onclick=()=>b.remove();document.body.appendChild(b);setTimeout(()=>b.remove(),12000)})()`;
+  return 'javascript:'+encodeURIComponent(src)}
+function openFillHelp(){const href=fillBookmarklet();
+  openSheet(`<h3 id="sheetTitle">הסימנייה "findjob · מילוי"</h3><div class="sheet-sub">מוסיפים פעם אחת. אחרי שמשנים פרטים בפרופיל, כדאי להוסיף מחדש.</div>
+    <h4 class="sub-h">במחשב</h4><p class="card-sub">גוררים את הכפתור הזה לסרגל הסימניות:</p>
+    <a class="btn btn-primary btn-block" href="${href}" onclick="event.preventDefault();toast('צריך לגרור אותו לסרגל הסימניות')">findjob · מילוי</a>
+    <h4 class="sub-h">בטלפון</h4><ol class="how-ol"><li>להעתיק את הקוד בכפתור למטה</li><li>להוסיף לסימניות דף כלשהו, ולערוך את הסימנייה: שם "findjob מילוי", ובכתובת להדביק את הקוד</li>
+      <li>אנדרואיד (Chrome): בדף הטופס מקלידים בשורת הכתובת "findjob מילוי" ובוחרים את הסימנייה. אייפון (Safari): פותחים את הסימניות ולוחצים עליה</li></ol>
+    <button class="btn btn-ghost btn-block" onclick="copyText(${escB(JSON.stringify(href))},'הקוד הועתק')">${ICO.copy}להעתיק את הקוד</button>
+    <p class="card-sub" style="margin-top:8px">יש אתרים שחוסמים סימניות כאלה. אז מעתיקים כל פרט בלחיצה מערכת ההגשה. הסימנייה עובדת עם Greenhouse, Lever, Comeet, Workday ורוב הטפסים הרגילים.</p>`)}

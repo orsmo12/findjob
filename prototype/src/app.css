@@ -790,3 +790,6 @@ a.person>svg{flex:0 0 18px;width:18px;height:18px;fill:none;stroke:var(--ink3);s
 .chk-btn .box{width:18px;height:18px;border-radius:5px;border:2px solid var(--ink3);display:grid;place-items:center;font-size:12px;line-height:1;color:#fff}
 .chk-btn.on .box{background:var(--brand);border-color:var(--brand)}
 .chk-btn.on{color:var(--brand)}
+.kit-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--glass-edge);font-size:14px}
+.kit-row span{color:var(--ink2);min-width:96px;font-size:13px}.kit-row b{flex:1;font-weight:500;overflow-wrap:anywhere}
+.kit-row button{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;color:var(--brand)}.kit-row button svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2}
