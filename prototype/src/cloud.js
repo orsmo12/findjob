@@ -316,22 +316,23 @@ function aiKeyCard(){return `<section class="card glass" aria-labelledby="akH"><
 
 /* "להכין עכשיו": ריצה של הסוכנים רק בשבילך (מכתב, סקירה, הכנה, התאמת קורות חיים, בדיקה שהמשרות פתוחות) */
 let _prep=null;
-async function prepNow(){
+async function prepNow(kind){kind=kind==='scan'?'scan':'prep';
   if(_prep){toast('הסוכנים כבר עובדים. אפשר להמשיך להשתמש באפליקציה');return}
   closeSheet();let d={},r;
   try{const {data:{session}}=await SB.auth.getSession();
-    r=await fetch('/api/prepnow',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:session&&session.access_token})});d=await r.json()}catch(e){}
+    r=await fetch('/api/prepnow',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:session&&session.access_token,kind})});d=await r.json()}catch(e){}
   if(!r||!d.ok){toast(d.error==='wait'?`אפשר להפעיל פעם ב-10 דקות. עוד ${d.minutes} דק׳`:d.error==='no_token'?'הכפתור עוד לא מחובר. המפתח צריך להשלים הגדרה אחת':d.error==='auth'?'צריך להתחבר מחדש':'לא הצלחתי להפעיל. נסה שוב בעוד דקה');return}
-  _prep={at:d.at,t0:Date.now()};prepBar();_prep.timer=setInterval(prepPoll,15000);
+  _prep={at:d.at,t0:Date.now(),scan:kind==='scan'};prepBar();_prep.timer=setInterval(prepPoll,15000);
 }
 function prepBar(done){let b=$('prepBar');if(!b){b=document.createElement('div');b.id='prepBar';b.setAttribute('role','status');document.body.appendChild(b)}
-  if(done){b.innerHTML=`<b>מוכן ✓</b><span>הכל עודכן. המכתבים, הסקירות וההכנה מחכים בהגשות.</span>`;b.classList.add('done');setTimeout(()=>b.remove(),6000);return}
-  const p=Math.min(92,Math.round((Date.now()-_prep.t0)/2400));
-  b.innerHTML=`<b>הסוכנים עובדים בשבילך</b><span>בדרך כלל 2 עד 4 דקות. בסיום הכל יופיע בהגשות ובמשרד.</span><i><u style="width:${p}%"></u></i>`}
+  if(done){b.innerHTML=_prep&&_prep.scan?`<b>מוכן ✓</b><span>המשרות הראשונות מחכות לך במסך המשרות.</span>`:`<b>מוכן ✓</b><span>הכל עודכן. המכתבים, הסקירות וההכנה מחכים בהגשות.</span>`;b.classList.add('done');setTimeout(()=>b.remove(),6000);return}
+  const p=Math.min(92,Math.round((Date.now()-_prep.t0)/(_prep.scan?9000:2400)));
+  b.innerHTML=_prep.scan?`<b>${escB(N('hunter'))} מחפש לך משרות ראשונות</b><span>בדרך כלל 8 עד 15 דקות. אפשר לסגור את האפליקציה, הכל יחכה כאן.</span><i><u style="width:${p}%"></u></i>`
+    :`<b>הסוכנים עובדים בשבילך</b><span>בדרך כלל 2 עד 4 דקות. בסיום הכל יופיע בהגשות ובמשרד.</span><i><u style="width:${p}%"></u></i>`}
 async function prepPoll(){if(!_prep)return;prepBar();
   try{const {data}=await SB.from('runs').select('plan,created_at').eq('user_id',ME.id).eq('agent','assistant').gte('created_at',_prep.at).not('plan','is',null).limit(5);
     if((data||[]).some(x=>x.plan&&x.plan.prep_done)){clearInterval(_prep.timer);_prep=null;await cloudLoad();if(typeof refreshApps==='function')refreshApps();prepBar(true);return}}catch(e){}
-  if(Date.now()-_prep.t0>9*60e3){clearInterval(_prep.timer);_prep=null;const b=$('prepBar');if(b)b.remove();toast('זה לוקח יותר מהרגיל. התוצאות יופיעו כשהריצה תסתיים');try{await cloudLoad();refreshApps()}catch(e){}}}
+  if(Date.now()-_prep.t0>(_prep.scan?30:9)*60e3){clearInterval(_prep.timer);_prep=null;const b=$('prepBar');if(b)b.remove();toast('זה לוקח יותר מהרגיל. התוצאות יופיעו כשהריצה תסתיים');try{await cloudLoad();refreshApps()}catch(e){}}}
 
 /* התראות לטלפון (Web Push). המפתח הציבורי של השרת. ריק = עוד לא הוגדר */
 const VAPID_PUB='BIJTs9qVwO1m9UMkTlwH31BdzRQcVen8aESezqiYeSad9bZuaBlyuvSmMQ6hBkLGEOUbH3NiXjyfUsmHULBhJxs';

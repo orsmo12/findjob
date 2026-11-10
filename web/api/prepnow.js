@@ -14,7 +14,8 @@ async function sb(path, token, opts = {}) {
 
 module.exports = async (req, res) => {
   if (req.method !== 'POST') return res.status(405).json({ error: 'method' });
-  const { token = '' } = req.body || {};
+  const { token = '', kind = 'prep' } = req.body || {};
+  const wf = kind === 'scan' ? 'nightly.yml' : 'letters.yml';   // scan = סריקה ראשונה למשתמש חדש (חיפוש + כל המשימות)
   const u = await sb('/auth/v1/user', token);
   if (!u.ok || !u.data || !u.data.id) return res.status(401).json({ error: 'auth' });
   const uid = u.data.id;
@@ -25,13 +26,13 @@ module.exports = async (req, res) => {
   const last = use.prep_at ? Date.parse(use.prep_at) : 0;
   const wait = Math.ceil((last + GAP_MIN * 60e3 - Date.now()) / 60e3);
   if (wait > 0) return res.status(429).json({ error: 'wait', minutes: wait, since: use.prep_at });
-  const r = await fetch(`https://api.github.com/repos/${REPO}/actions/workflows/letters.yml/dispatches`, {
+  const r = await fetch(`https://api.github.com/repos/${REPO}/actions/workflows/${wf}/dispatches`, {
     method: 'POST', headers: { Authorization: 'Bearer ' + gh, Accept: 'application/vnd.github+json', 'Content-Type': 'application/json', 'User-Agent': 'findjob' },
-    body: JSON.stringify({ ref: 'main', inputs: { user: uid } }) });
+    body: JSON.stringify({ ref: 'main', inputs: kind === 'scan' ? { user: uid, meeting: '' } : { user: uid } }) });
   if (r.status !== 204) return res.status(502).json({ error: 'dispatch', status: r.status });
   const now = new Date().toISOString();
   if (p.ok && p.data && p.data[0]) {   // נשמר באותה עמודה של מונה הצ׳אט (בלי לדרוס אותו)
     await sb(`/rest/v1/profiles?user_id=eq.${uid}`, token, { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify({ chat_use: { ...use, prep_at: now } }) });
   }
-  return res.status(200).json({ ok: true, at: now });
+  return res.status(200).json({ ok: true, at: now, kind: wf === 'nightly.yml' ? 'scan' : 'prep' });
 };

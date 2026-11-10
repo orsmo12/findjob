@@ -42,7 +42,9 @@ function onbCvNext(){const t=$('onbCv');if(t)prof().cv=t.value;save();
   const h=$('onbCvHelp');if(h){h.textContent='בחר קובץ או הדבק לפחות כמה שורות מקורות החיים. אפשר גם להוסיף אחר כך.';h.style.color='var(--rose)'}}
 function onbNext(){commitOnb();if(onbSingle){closeOnb();curPg==='settings'?renderSettings():renderProfile();toast(prof().key?'הסוכנים מחוברים':'נשמר')}else onbGo(1)}
 function commitOnb(){const keep={cv:prof().cv,cvName:prof().cvName,ans:prof().ans||{}};S.profile=Object.assign({},onbDraft,keep);save();syncChrome()}
-function finishOnb(pg){commitOnb();S.onboarded=true;save();closeOnb();goPage(pg);if(curPg===pg&&pg==='main')renderHome();if(!S.tourDone&&pg==='main')setTimeout(tourStart,700)}
+function finishOnb(pg){commitOnb();const first=!S.onboarded;S.onboarded=true;save();closeOnb();goPage(pg);
+  if(first&&CLOUDM&&!Object.keys(JOBS||{}).length&&typeof prepNow==='function')setTimeout(()=>prepNow('scan'),2500);   // סריקה ראשונה מיד, לא מחכים לסריקה הקבועה
+  if(curPg===pg&&pg==='main')renderHome();if(!S.tourDone&&pg==='main')setTimeout(tourStart,700)}
 
 /* ═════════ QUESTIONNAIRE — one question per screen ═════════ */
 const isStudent=a=>a.status==='סטודנט/ית';
