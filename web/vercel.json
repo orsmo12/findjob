@@ -1,6 +1,6 @@
 {
-  "crons": [
-    { "path": "/api/cron", "schedule": "40 4 * * *" },
-    { "path": "/api/cron", "schedule": "40 12 * * *" }
-  ]
+  "schedules": {
+    "scan-morning": { "schedule": "40 6 * * *", "timezone": "Asia/Jerusalem", "path": "/api/cron", "requestMethod": "GET" },
+    "scan-afternoon": { "schedule": "40 14 * * *", "timezone": "Asia/Jerusalem", "path": "/api/cron", "requestMethod": "GET" }
+  }
 }
