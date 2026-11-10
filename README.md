@@ -83,3 +83,7 @@ Build the app: `cd prototype/src && python build.py --cloud <SUPABASE_URL> <PUBL
 ---
 
 © 2026 Or Smolarchik. Shared as a portfolio project. All rights reserved.
+
+## License
+
+Copyright © 2026 Or Smolarchik. All rights reserved. The code is published for viewing only. See [LICENSE](LICENSE).
