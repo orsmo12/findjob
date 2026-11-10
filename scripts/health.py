@@ -83,6 +83,11 @@ def main() -> None:
         tg = cx.get(U("jobs"), headers=H, params={"select": "card", "card->>src": "eq.Telegram", "limit": "5"}).json()
         print(f"  · משרות מטלגרם במסד: {len(tg)}")
 
+        logs = cx.get(U("runs"), headers=H, params={"select": "stats,created_at", "created_at": f"gte.{since}", "stats->>log": "not.is.null",
+                                                   "order": "created_at.desc", "limit": "400"}).json()
+        tgl = [x["created_at"][11:16] + " " + x["stats"]["log"][:120] for x in logs if "טלגרם" in (x["stats"].get("log") or "")]
+        print("  · יומן טלגרם:", *(tgl[:6] or ["אין רישומים"]), sep="\n      ")
+
     print("\n" + ("הכל תקין ✓" if ok_all else "יש מה לתקן ✗"))
 
 
