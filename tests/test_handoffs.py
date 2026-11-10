@@ -5,7 +5,7 @@ from agent_core.agents.growth import tailor_edits
 
 def test_missing_for_saved_order():
     assert H.missing_for_saved({}) == ["brief", "tailor", "prep", "letter"]
-    full = {"brief": {"found": True}, "tailor": {"edits": []}, "prep": {"tasks": []}, "letter": {"v": 3}}
+    full = {"brief": {"found": True}, "tailor": {"edits": []}, "prep": {"tasks": []}, "letter": {"v": 4}}
     assert H.missing_for_saved(full) == []
     assert H.missing_for_saved({**full, "letter": {"v": 2}}) == ["letter"]          # מכתב בגרסה ישנה נכתב מחדש
     assert H.missing_for_saved({**full, "prep": {"tasks": [], "more_tasks": True}}) == ["prep"]
@@ -43,3 +43,28 @@ def test_tailor_keeps_only_true_edits():
         {"before": "Something not in the CV", "after": "Whatever", "why": "x"}]}
     out = tailor_edits(cv, d)
     assert len(out) == 1 and out[0]["after"].startswith("Built a multi-agent")
+
+
+def test_letter_upgrade_to_v4_is_gradual():
+    full = {"brief": {"x": 1}, "tailor": {"x": 1}, "prep": {"tasks": []}}
+    assert H.missing_for_saved({**full, "letter": {"v": 4, "text": "x"}}) == []
+    assert H.missing_for_saved({**full, "letter": {"v": 3, "text": "x"}}) == ["letter"]   # v3 משודרג ל-v4
+    old = [({**full, "letter": {"v": 3, "text": "x"}}, ["letter"]) for _ in range(5)]
+    new = [({**full}, ["letter"])]   # בלי מכתב בכלל: תמיד נכתב, לא נספר בתקרה
+    out = H.cap_upgrades(old + new)
+    assert sum(1 for _, m in out if "letter" in m) == H.UPGRADES_PER_RUN + 1
+    assert "letter" in out[-1][1]
+
+
+def test_usage_funnel_and_dropoff():
+    from agent_core import usage as U
+    users = [{"id": "a" * 36, "created_at": "2026-11-01"}, {"id": "b" * 36, "created_at": "2026-11-02"}]
+    profs = [{"user_id": "a" * 36, "first": "אור", "state": {"usage": {"m": {"onb_done": 1, "jobs_seen": 1, "job_save": 1},
+              "ev": [{"e": "tour_skip", "p": {"k": "main", "at": 1, "of": 6}}], "err": [{"m": "TypeError: x"}, {"m": "TypeError: x"}]}}},
+             {"user_id": "b" * 36, "first": "גלעד", "state": {"usage": {"m": {}, "ev": [{"e": "onb_q", "p": {"q": "domain"}}]}}}]
+    _, rep = U.report(users, profs, {})
+    fun = dict(rep["funnel"])
+    assert fun["סיים הרשמה"] == 1 and fun["שמר משרה"] == 1
+    assert rep["rows"][0]["stuck"] == "לפני: פתח ערכת הגשה" and rep["rows"][0]["tour"] == "דילג בצעד 2 מתוך 6"
+    assert rep["rows"][1]["stuck"] == "בהרשמה (domain)"
+    assert rep["errors"] == [("TypeError: x", 2)]

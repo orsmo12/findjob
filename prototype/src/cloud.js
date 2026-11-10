@@ -130,6 +130,8 @@ async function runAction(x){
     case 'remove_app':if(!needApp())return false;removeApp(app.id);return true;
     case 'add_todo':S.todos.unshift({id:'t'+Date.now(),text:x.text,done:false});break;
     case 'add_story':S.stories.push({id:'s'+Date.now(),t:x.title,b:x.body||''});break;
+    case 'start_tour':if(chatOpen)toggleChat();setTimeout(()=>tourStart(),300);return true;
+    case 'go_page':if(!['main','jobs','apps','prep','linkedin','office','profile','settings'].includes(x.page))return false;if(chatOpen)toggleChat();goPage(x.page);return true;
     case 'feedback':S.feedback=S.feedback||[];S.feedback.push({t:String(x.text||'').slice(0,1000),at:new Date().toISOString(),page:'chat'});track('feedback');break;
     case 'add_role':case 'remove_role':case 'add_target':case 'remove_target':case 'set_area':case 'set_mode':case 'add_exclude':case 'remove_exclude':case 'set_salary':case 'add_channel':
       if(!setPref(x))return false;save();if(curPg==='profile')renderProfile();toast(`עודכן. ${N('hunter')} יחפש לפי זה מהסריקה הבאה`);return true;
@@ -286,7 +288,8 @@ function openUsage(){const r=(RUNS||[]).find(x=>x.stats&&x.stats.usage_report);i
   openSheet(`<h3 id="sheetTitle">דוח שימוש</h3><div class="sheet-sub">${new Date(r.created_at).toLocaleDateString('he-IL')} · ספירות בלבד, בלי תוכן</div>
   <div class="us-list">${u.rows.map(x=>`<div class="us-row"><b>${escB(x.name)}</b><span>${x.days_week} ימים השבוע · ${x.days} בסך הכל · אחרון ${escB(x.last||'—')}</span>
    <span>${x.cv?'קורות חיים ✓':'בלי קורות חיים'}${x.domain?' · '+escB(x.domain):''} · ${x.saved} שמורות · ${x.skipped} דילוגים · ${x.applied} הגשות · ${x.chat} שאלות בצ׳אט${x.add_job?' · '+x.add_job+' משרות מקישור':''}</span>
-   ${(x.pages||[]).length?`<span>מסכים: ${x.pages.map(p=>escB(p[0])+' ('+p[1]+')').join(', ')}</span>`:''}</div>`).join('')}</div>
+   ${(x.pages||[]).length?`<span>מסכים: ${x.pages.map(p=>escB(p[0])+' ('+p[1]+')').join(', ')}</span>`:''}
+   ${x.stuck||x.tour?`<span>${x.stuck?'נעצר: '+escB(x.stuck):'עבר את כל השלבים'}${x.tour?' · סיור: '+escB(x.tour):''}</span>`:''}</div>`).join('')}</div>
   ${(u.feedback||[]).length?`<div class="s-sec"><h4>משוב</h4>${u.feedback.map(f=>`<p class="us-fb"><b>${escB(f.name)}</b> · ${escB(f.at)}<br>${escB(f.t)}</p>`).join('')}</div>`:''}`)}
 
 /* מפתח AI אישי (Groq, חינם): כל משתמש מקבל מכסה משלו, והסוכנים שלו לא מחכים בתור */
@@ -322,7 +325,7 @@ async function prepNow(kind){kind=kind==='scan'?'scan':'prep';
   try{const {data:{session}}=await SB.auth.getSession();
     r=await fetch('/api/prepnow',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:session&&session.access_token,kind})});d=await r.json()}catch(e){}
   if(!r||!d.ok){toast(d.error==='wait'?`אפשר להפעיל פעם ב-10 דקות. עוד ${d.minutes} דק׳`:d.error==='no_token'?'הכפתור עוד לא מחובר. המפתח צריך להשלים הגדרה אחת':d.error==='auth'?'צריך להתחבר מחדש':'לא הצלחתי להפעיל. נסה שוב בעוד דקה');return}
-  _prep={at:d.at,t0:Date.now(),scan:kind==='scan'};prepBar();_prep.timer=setInterval(prepPoll,15000);
+  track(kind==='scan'?'scan_first':'prep_now');_prep={at:d.at,t0:Date.now(),scan:kind==='scan'};prepBar();_prep.timer=setInterval(prepPoll,15000);
 }
 function prepBar(done){let b=$('prepBar');if(!b){b=document.createElement('div');b.id='prepBar';b.setAttribute('role','status');document.body.appendChild(b)}
   if(done){b.innerHTML=_prep&&_prep.scan?`<b>מוכן ✓</b><span>המשרות הראשונות מחכות לך במסך המשרות.</span>`:`<b>מוכן ✓</b><span>הכל עודכן. המכתבים, הסקירות וההכנה מחכים בהגשות.</span>`;b.classList.add('done');setTimeout(()=>b.remove(),6000);return}
@@ -347,7 +350,7 @@ async function pushToggle(){
   if(!VAPID_PUB||!('PushManager' in window)){toast(VAPID_PUB?'הדפדפן הזה לא תומך בהתראות':'ההתראות עוד לא מחוברות. המפתח צריך להשלים הגדרה אחת');return}
   const perm=await Notification.requestPermission();if(perm!=='granted'){toast('צריך לאשר התראות בדפדפן');return}
   try{const r=await navigator.serviceWorker.ready,sub=await r.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64u(VAPID_PUB)});
-    S.push=sub.toJSON();save();renderSettings();toast(`מופעל. ${N('hunter')} ישלח הודעה כשיש משרות חדשות`)}catch(e){toast('לא הצלחתי להפעיל התראות בדפדפן הזה')}}
+    S.push=sub.toJSON();track('push_on');save();renderSettings();toast(`מופעל. ${N('hunter')} ישלח הודעה כשיש משרות חדשות`)}catch(e){toast('לא הצלחתי להפעיל התראות בדפדפן הזה')}}
 
 /* מחיקת החשבון: פונקציה במסד שמוחקת רק את המשתמש המחובר, וכל הנתונים שלו נמחקים איתו */
 async function deleteAccount(){
@@ -383,6 +386,8 @@ function openDev(){const ur=(RUNS||[]).find(x=>x.stats&&x.stats.usage_report),u=
   openSheet(`<h3 id="sheetTitle">כלי מפתח <span class="dev-tag">מפתח</span></h3><div class="sheet-sub">רק אתה רואה את זה. ${ur?'הדוח מ-'+new Date(ur.created_at).toLocaleDateString('he-IL'):'הדוח הראשון יגיע בסריקת הבוקר'}.</div>
     <div class="dev-sum"><span><b class="num">${u.rows.length}</b> משתמשים</span><span><b class="num">${u.rows.filter(r=>r.days_week).length}</b> פעילים השבוע</span><span><b class="num">${fb.filter(f=>!st[f.key]).length}</b> משובים חדשים</span><span class="${fails.length?'bad':''}"><b class="num">${fails.length}</b> ריצות עם תקלות</span></div>
     <button class="btn btn-sm btn-ghost btn-block" onclick="openUsage()">דוח שימוש מלא</button>
+    ${(u.funnel||[]).length?`<h4 class="sub-h">משפך: כמה משתמשים הגיעו לכל שלב</h4><div class="dev-fun">${u.funnel.map(([l,n])=>`<div><span>${escB(l)}</span><i style="width:${u.rows.length?Math.round(100*n/u.rows.length):0}%"></i><b class="num">${n}</b></div>`).join('')}</div>`:''}
+    ${(u.errors||[]).length?`<h4 class="sub-h">שגיאות באפליקציה אצל משתמשים</h4><ul class="dev-err">${u.errors.map(([m,n])=>`<li><b class="num">${n}×</b> <span dir="ltr">${escB(m)}</span></li>`).join('')}</ul>`:''}
     <h4 class="sub-h">משובים ובקשות</h4>
     ${fb.length?fb.map(f=>`<div class="dev-fb"><div><b>${escB(f.name)}</b> · ${escB(f.at)}</div><p>${escB(f.t)}</p>
       <label class="vh" for="fb-${escB(f.key)}">סטטוס</label><select id="fb-${escB(f.key)}" onchange="setFbStatus('${escB(f.key)}',this.value)">${Object.entries(FB_ST).map(([k,l])=>`<option value="${k}"${(st[f.key]||'')===k?' selected':''}>${l}</option>`).join('')}</select></div>`).join('')

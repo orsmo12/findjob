@@ -142,8 +142,15 @@ async function copyText(t,msg){
   return ok;
 }
 
-function track(ev){try{const u=S.usage=S.usage||{c:{},days:[]};u.c[ev]=(u.c[ev]||0)+1;const d=new Date().toISOString().slice(0,10);
-  if(!u.days.includes(d)){u.days.push(d);u.days=u.days.slice(-60)}u.last=new Date().toISOString();if(!u.first)u.first=u.last}catch(e){}}
+/* מעקב שימוש ללמידה: ספירות, אבני דרך (הפעם הראשונה שמשהו קרה), 200 האירועים האחרונים ושגיאות.
+   בלי תוכן: לא קורות חיים, לא מכתבים, לא מה שנכתב בצ׳אט. רק מה נלחץ ומתי. נשמר בפרופיל (state.usage) */
+const MILES=['onb_done','jobs_seen','job_save','job_skip','kit_open','letter_copy','fill_help','applied','chat','prep_now','scan_first','push_on','tour_done','tour_skip','profile_kit','my_letters','feedback'];
+function track(ev,p){try{const u=S.usage=S.usage||{c:{},days:[]},now=new Date().toISOString();u.c[ev]=(u.c[ev]||0)+1;const d=now.slice(0,10);
+  if(!u.days.includes(d)){u.days.push(d);u.days=u.days.slice(-60)}u.last=now;if(!u.first)u.first=now;
+  if(MILES.includes(ev)){u.m=u.m||{};if(!u.m[ev])u.m[ev]=now}
+  u.ev=(u.ev||[]).concat([{e:ev,t:now.slice(5,16),...(p&&typeof p==='object'?{p}:{})}]).slice(-200)}catch(e){}}
+window.addEventListener('error',e=>{try{const u=S.usage=S.usage||{c:{},days:[]},m=String(e.message||'').slice(0,120);if(!m)return;
+  u.err=(u.err||[]).concat([{m,f:String(e.filename||'').split('/').pop().slice(0,30)+':'+(e.lineno||0),t:new Date().toISOString().slice(5,16)}]).slice(-20)}catch(x){}});
 
 function openFeedback(){openSheet(`<h3 id="sheetTitle">משוב</h3><div class="sheet-sub">מה עבד, מה לא, מה חסר לך. כל מילה עוזרת לשפר.</div>
   <div class="field" style="margin-top:12px"><label for="fbTx" class="vh">המשוב שלך</label><textarea id="fbTx" class="textbox" rows="6" placeholder="למשל: המשרות לא בתחום שלי, או: המכתב היה ארוך מדי"></textarea></div>

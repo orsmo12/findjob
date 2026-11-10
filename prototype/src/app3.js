@@ -27,7 +27,7 @@ function renderApps(){
 function appliedBox(a,wide){const on=a.status!=='saved';
   return `<button class="chk-btn${on?' on':''}${wide?' wide':''}" role="checkbox" aria-checked="${on}" onclick="${on?`unmarkApplied('${a.id}')`:`markApplied('${a.id}')`};${wide?'paintAppTab(\''+a.id+'\')':''}"><span class="box" aria-hidden="true">${on?'✓':''}</span>הגשתי</button>`}
 function unmarkApplied(id){const a=appOf(id);if(!a||a.status!=='applied')return;a.status='saved';save();refreshApps();toast('ביטלתי את הסימון. המשרה חזרה ל"שמור"')}
-function markApplied(id){const a=appOf(id);a.status='applied';a.date=new Date().toISOString();save();refreshApps();toast('סימנתי שהגשת. אזכיר לך לשלוח הודעת המשך בעוד שבוע')}
+function markApplied(id){track('applied');const a=appOf(id);a.status='applied';a.date=new Date().toISOString();save();refreshApps();toast('סימנתי שהגשת. אזכיר לך לשלוח הודעת המשך בעוד שבוע')}
 function refreshApps(){if(curPg==='apps')renderApps();if(curPg==='main')renderHome();syncChrome()}
 
 /* application sheet: details · letter · referrals · prep */
@@ -317,7 +317,7 @@ let lastRemoved=null;
 function openTxt(j){const c=j.check;if(!c)return`${escB(N('hunter'))} יבדוק מחר בבוקר`;
   const d=agoTxt(daysSince(c.at));
   return c.st==='open'?`כן, נבדק ${escB(d)}`:c.st==='unknown'?`לא הצלחתי לבדוק (האתר לא ענה${c.n>1?` ${c.n} פעמים`:''}). כדאי לפתוח ולבדוק`:'נסגרה'}
-async function markClosed(id){const a=appOf(id);if(!a)return;const j=JOBS[a.jobId],now=new Date().toISOString();
+async function markClosed(id){track('job_closed_btn');const a=appOf(id);if(!a)return;const j=JOBS[a.jobId],now=new Date().toISOString();
   j.closed_at=now;closedToHistory();save();closeSheet();refreshApps();
   if(CLOUDM&&ME){try{const {data}=await SB.from('jobs').select('card').eq('user_id',ME.id).eq('id',a.jobId).maybeSingle();
     if(data)await SB.from('jobs').update({card:Object.assign({},data.card,{closed_at:now,closed_by:'user'})}).eq('user_id',ME.id).eq('id',a.jobId)}catch(e){console.warn(e)}}}
@@ -375,14 +375,14 @@ const KIT_FIELDS=[
 function kitOf(p){return (p.ans||{}).kit||{}}
 function kitData(){const p=prof(),o={};KIT_FIELDS.forEach(([k,,f])=>{const v=f(p);if(v&&!/עוד לא|לא בטוח/.test(v))o[k]=v});return o}
 
-function kitTabHtml(a,j,id){
+function kitTabHtml(a,j,id){track('kit_open');
   const p=prof(),d=kitData(),missing=KIT_FIELDS.filter(([k])=>!d[k]&&!['first','last'].includes(k));
   const letter=a.letter||(j.letter&&j.letter.text)||(REAL?'':letterFor(j)),tl=j.tailor&&j.tailor.edits&&j.tailor.edits.length;
   return `<div class="s-sec" style="margin-top:12px"><h4>קורות חיים</h4>
       <p class="card-sub">${escB(p.cvName||'קורות החיים מהפרופיל')}${tl?`. ${escB(N('linkedin'))} הציע ${j.tailor.edits.length} התאמות למשרה הזו <button class="link" style="color:var(--brand);font-weight:600" onclick="appTab='details';paintAppTab('${id}')">בלשונית פרטים</button>`:''}</p></div>
     <div class="s-sec"><h4>מכתב פנייה</h4><label for="letterBox" class="vh">מכתב פנייה</label><textarea class="textbox" id="letterBox" rows="11" oninput="appOf('${id}').letter=this.value;save()">${esc(letter)}</textarea>
       ${REAL&&!a.letter&&!j.letter?`<div class="hint-line">${N('assistant')} מכין את המכתב. הוא יופיע כאן תוך שעתיים בערך.</div>`:j.letter&&!j.letter.checked?`<div class="hint-line">חלק מהמשפטים הוסרו כי לא נמצאו בקורות החיים. כדאי לקרוא לפני ששולחים.</div>`:`<div class="hint-line ok">✓ כל שם, טכנולוגיה ומספר במכתב נבדקו מול קורות החיים והמודעה</div>`}
-      <button class="btn btn-ghost btn-sm" onclick="copyText($('letterBox').value,'המכתב הועתק')">${ICO.copy}להעתיק את המכתב</button></div>
+      <button class="btn btn-ghost btn-sm" onclick="copyText($('letterBox').value,'המכתב הועתק');track('letter_copy')">${ICO.copy}להעתיק את המכתב</button></div>
     <div class="s-sec"><h4>הפרטים שלך לטופס</h4>
       <p class="card-sub">${KIT_FIELDS.filter(([k])=>!['first','last'].includes(k)).length-missing.length} מתוך ${KIT_FIELDS.filter(([k])=>!['first','last'].includes(k)).length} מולאו${missing.length?`. חסר: ${escB(missing.map(m=>m[1]).join(', '))}`:''}. <button class="link" style="color:var(--brand);font-weight:600" onclick="closeSheet();openKitEdit()">${missing.length?'להשלים':'לערוך'}</button></p></div>
     <div class="s-sec"><h4>מילוי הטופס</h4>
@@ -400,7 +400,7 @@ function openKitEdit(){const k=kitOf(prof()),f=(id,l,v,ph,t)=>`<div class="field
     <div class="field"><label for="kAuth">אישור עבודה בישראל</label><select id="kAuth">${['','אזרח/ית ישראלי/ת','תושב/ת קבע','אשרת עבודה'].map(o=>`<option${o===(k.auth||'')?' selected':''}>${o}</option>`).join('')}</select></div>
     <p class="card-sub">שכר וזמינות נלקחים מהשאלון.</p>
     <button class="btn btn-primary btn-block" onclick="saveKit()">שמירה</button>`)}
-function saveKit(){const p=prof();p.ans=p.ans||{};p.ans.kit={email:$('kEmail').value.trim(),phone:$('kPhone').value.trim(),city:$('kCity').value.trim(),
+function saveKit(){track('profile_kit');const p=prof();p.ans=p.ans||{};p.ans.kit={email:$('kEmail').value.trim(),phone:$('kPhone').value.trim(),city:$('kCity').value.trim(),
   site:$('kSite').value.trim(),edu:$('kEdu').value.trim(),auth:$('kAuth').value};save();closeSheet();if(curPg==='profile')renderProfile();toast('הפרטים נשמרו')}
 
 /* הסימנייה: קוד שרץ בדף הטופס. הפרטים הקבועים בתוכה. המכתב נלקח מהלוח (אחרי "להעתיק את המכתב") */
@@ -428,7 +428,7 @@ else if(e.required||e.getAttribute('aria-required')==='true'){mark(e,'#E9A825');
 const b=document.createElement('div');b.dir='rtl';b.style.cssText='position:fixed;z-index:2147483647;top:12px;left:12px;right:12px;max-width:420px;margin:auto;background:#2F4858;color:#fff;font:15px/1.5 system-ui,sans-serif;padding:12px 16px;border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.3)';
 b.textContent='findjob מילא '+n+' שדות. '+(y?y+' מסומנים בצהוב: כדאי לבדוק (קובץ קורות חיים, בחירות, מכתב). ':'')+'בדוק הכל ושלח בעצמך. findjob לא שולח.';b.onclick=()=>b.remove();document.body.appendChild(b);setTimeout(()=>b.remove(),12000)})()`;
   return 'javascript:'+encodeURIComponent(src)}
-function openFillHelp(){const href=fillBookmarklet();
+function openFillHelp(){track('fill_help');const href=fillBookmarklet();
   openSheet(`<h3 id="sheetTitle">הסימנייה "findjob · מילוי"</h3><div class="sheet-sub">מוסיפים פעם אחת. אחרי שמשנים פרטים בפרופיל, כדאי להוסיף מחדש.</div>
     <h4 class="sub-h">במחשב</h4><p class="card-sub">גוררים את הכפתור הזה לסרגל הסימניות:</p>
     <a class="btn btn-primary btn-block" href="${href}" onclick="event.preventDefault();toast('צריך לגרור אותו לסרגל הסימניות')">findjob · מילוי</a>

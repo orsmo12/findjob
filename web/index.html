@@ -955,13 +955,23 @@ a.person>svg{flex:0 0 18px;width:18px;height:18px;fill:none;stroke:var(--ink3);s
 #prepBar i{display:block;height:5px;border-radius:3px;background:rgba(255,255,255,.2);margin-top:6px;overflow:hidden}#prepBar u{display:block;height:100%;background:var(--hi);transition:width 1s}
 #prepBar.done{background:var(--hi);color:var(--hi-ink)}
 @media (prefers-reduced-motion:reduce){#prepBar u{transition:none}}
-#tour{position:fixed;inset:0;z-index:90}
-.tour-hole{position:fixed;border-radius:14px;box-shadow:0 0 0 200vmax rgba(20,30,36,.55);pointer-events:none;transition:all .25s}
-.tour-card{position:fixed;left:16px;right:16px;max-width:380px;margin:auto;background:var(--solid);color:var(--ink);border-radius:18px;padding:14px 16px;box-shadow:var(--g-shadow-lg);border:1px solid var(--glass-brd)}
-.tour-card b{font-size:16px;color:var(--brand)}.tour-card p{font-size:14px;color:var(--ink2);margin:4px 0 12px;line-height:1.55}
+#tour{position:fixed;inset:0;z-index:200}
+.tour-hole{position:fixed;border-radius:16px;box-shadow:0 0 0 3px var(--hi),0 0 0 200vmax rgba(12,20,26,.72);pointer-events:none;transition:all .3s cubic-bezier(.2,.8,.2,1)}
+.tour-hole.pulse::after{content:'';position:absolute;inset:-3px;border-radius:18px;border:3px solid var(--hi);animation:tourPulse 1.8s ease-out 2}
+@keyframes tourPulse{from{opacity:.9;transform:scale(1)}to{opacity:0;transform:scale(1.12)}}
+.tour-card{position:fixed;left:14px;right:14px;max-width:380px;margin:auto;background:#fff;color:#1F2A30;border-radius:20px;padding:14px 16px 14px;
+  box-shadow:0 24px 60px -12px rgba(0,0,0,.55);border-top:5px solid var(--hi)}
+.tour-card::before{content:'';position:fixed;left:calc(var(--ax) - 9px);width:18px;height:18px;background:#fff;transform:rotate(45deg);margin-top:-14px}
+.tour-card.above::before{display:none}
+.tour-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+.tour-n{font-size:12px;font-weight:700;color:#173B33;background:var(--hi-lt);padding:2px 9px;border-radius:9px}
+.tour-x{width:30px;height:30px;border-radius:50%;color:#5E6B73;font-size:14px}
+.tour-card b{font-size:18px;color:#2F4858;display:block;line-height:1.3}
+.tour-card p{font-size:14.5px;color:#4F5D66;margin:6px 0 14px;line-height:1.6}
 .tour-foot{display:flex;justify-content:space-between;align-items:center;gap:10px}.tour-foot>span:last-child{display:flex;gap:6px}
-.tour-dots{display:flex;gap:5px}.tour-dots i{width:7px;height:7px;border-radius:50%;background:var(--glass-edge)}.tour-dots i.on{background:var(--brand);width:18px;border-radius:4px}
-@media (prefers-reduced-motion:reduce){.tour-hole{transition:none}}
+.tour-go{background:#2F4858;color:#fff}
+.tour-dots{display:flex;gap:5px}.tour-dots i{width:7px;height:7px;border-radius:50%;background:#D5DDE1}.tour-dots i.done{background:#7FA3B5}.tour-dots i.on{background:#2F4858;width:20px;border-radius:4px}
+@media (prefers-reduced-motion:reduce){.tour-hole{transition:none}.tour-hole.pulse::after{animation:none}}
 .dev-tag{font-size:11px;font-weight:600;padding:2px 7px;border-radius:7px;background:var(--hi-lt);color:var(--hi-ink);margin-inline-start:6px;vertical-align:2px}
 .dr-item[hidden]{display:none}
 .dev-sum{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:12px 0}
@@ -969,6 +979,9 @@ a.person>svg{flex:0 0 18px;width:18px;height:18px;fill:none;stroke:var(--ink3);s
 .dev-sum .bad b{color:var(--rose)}
 .dev-fb{border-bottom:1px solid var(--glass-edge);padding:10px 0;font-size:13px}.dev-fb p{margin:4px 0 6px;color:var(--ink);font-size:14px}.dev-fb ul{margin:6px 18px 0 0;color:var(--ink2)}
 .dev-fb select{font:inherit;padding:5px 8px;border-radius:9px;border:1px solid var(--glass-edge);background:var(--solid);color:var(--ink)}
+
+.dev-fun{display:grid;gap:6px;margin:6px 0 4px}.dev-fun>div{display:grid;grid-template-columns:110px 1fr 28px;align-items:center;gap:8px;font-size:13px}
+.dev-fun i{height:8px;border-radius:4px;background:var(--brand);min-width:2px}.dev-err{font-size:12.5px;padding-inline-start:16px;margin:4px 0}
 
 </style>
 <link rel="manifest" href="/manifest.webmanifest">
@@ -1440,8 +1453,15 @@ async function copyText(t,msg){
   return ok;
 }
 
-function track(ev){try{const u=S.usage=S.usage||{c:{},days:[]};u.c[ev]=(u.c[ev]||0)+1;const d=new Date().toISOString().slice(0,10);
-  if(!u.days.includes(d)){u.days.push(d);u.days=u.days.slice(-60)}u.last=new Date().toISOString();if(!u.first)u.first=u.last}catch(e){}}
+/* מעקב שימוש ללמידה: ספירות, אבני דרך (הפעם הראשונה שמשהו קרה), 200 האירועים האחרונים ושגיאות.
+   בלי תוכן: לא קורות חיים, לא מכתבים, לא מה שנכתב בצ׳אט. רק מה נלחץ ומתי. נשמר בפרופיל (state.usage) */
+const MILES=['onb_done','jobs_seen','job_save','job_skip','kit_open','letter_copy','fill_help','applied','chat','prep_now','scan_first','push_on','tour_done','tour_skip','profile_kit','my_letters','feedback'];
+function track(ev,p){try{const u=S.usage=S.usage||{c:{},days:[]},now=new Date().toISOString();u.c[ev]=(u.c[ev]||0)+1;const d=now.slice(0,10);
+  if(!u.days.includes(d)){u.days.push(d);u.days=u.days.slice(-60)}u.last=now;if(!u.first)u.first=now;
+  if(MILES.includes(ev)){u.m=u.m||{};if(!u.m[ev])u.m[ev]=now}
+  u.ev=(u.ev||[]).concat([{e:ev,t:now.slice(5,16),...(p&&typeof p==='object'?{p}:{})}]).slice(-200)}catch(e){}}
+window.addEventListener('error',e=>{try{const u=S.usage=S.usage||{c:{},days:[]},m=String(e.message||'').slice(0,120);if(!m)return;
+  u.err=(u.err||[]).concat([{m,f:String(e.filename||'').split('/').pop().slice(0,30)+':'+(e.lineno||0),t:new Date().toISOString().slice(5,16)}]).slice(-20)}catch(x){}});
 
 function openFeedback(){openSheet(`<h3 id="sheetTitle">משוב</h3><div class="sheet-sub">מה עבד, מה לא, מה חסר לך. כל מילה עוזרת לשפר.</div>
   <div class="field" style="margin-top:12px"><label for="fbTx" class="vh">המשוב שלך</label><textarea id="fbTx" class="textbox" rows="6" placeholder="למשל: המשרות לא בתחום שלי, או: המכתב היה ארוך מדי"></textarea></div>
@@ -1902,7 +1922,7 @@ function drawOff(){
 const TITLES={main:'לוח בקרה',jobs:'משרות חדשות',apps:'הגשות',prep:'הכנה לראיון',linkedin:'LinkedIn',office:'המשרד',profile:'הפרופיל שלי',settings:'הגדרות'};
 let curPg='main';
 function goPage(id,anchor){
-  track('page_'+id);
+  track('page_'+id);if(id==='jobs'&&queue().length)track('jobs_seen');
   if(typeof offAnimId!=='undefined') cancelAnimationFrame(offAnimId);
   closeDrawer();closeSheet();if(chatOpen)toggleChat();
   curPg=id;
@@ -1917,6 +1937,7 @@ function goPage(id,anchor){
   if(id==='office'){setTimeout(()=>{sizeOff();drawOff();},80);renderOffice();renderOfficeMsgs();}
   if(anchor) setTimeout(()=>$(anchor)?.scrollIntoView({behavior:'smooth',block:'start'}),60);
   syncChrome();
+  if(typeof pageTip==='function'&&S.tourDone)pageTip(id);
 }
 function syncChrome(){
   const q=queue().length, ap=S.apps.filter(appNeedsMe).length, li=hotPosts().length+fixesLeft().length;
@@ -2115,9 +2136,8 @@ function bindSwipe(card){
 }
 function decide(kind){
   const q=queue();if(!q.length||busy)return;
-  track('job_'+kind);
   const id=q[0],j=JOBS[id],card=$('deck').querySelector(`.jcard[data-id="${id}"]`);
-  busy=true;
+  track('job_'+kind,{fit:j&&j.fit?Math.round(j.fit*10)/10:null,src:j&&j.src||''});busy=true;
   if(card){card.classList.add('fly');card.style.transform=`translateX(${kind==='save'?130:-130}%) rotate(${kind==='save'?14:-14}deg)`;card.style.opacity='0';}
   S.decisions[id]=kind;
   if(kind==='save'&&!S.apps.find(a=>a.jobId===id)) S.apps.unshift({id:'a-'+id,jobId:id,status:'saved',date:new Date().toISOString(),letter:REAL?'':letterFor(j)});
@@ -2190,7 +2210,7 @@ function renderApps(){
 function appliedBox(a,wide){const on=a.status!=='saved';
   return `<button class="chk-btn${on?' on':''}${wide?' wide':''}" role="checkbox" aria-checked="${on}" onclick="${on?`unmarkApplied('${a.id}')`:`markApplied('${a.id}')`};${wide?'paintAppTab(\''+a.id+'\')':''}"><span class="box" aria-hidden="true">${on?'✓':''}</span>הגשתי</button>`}
 function unmarkApplied(id){const a=appOf(id);if(!a||a.status!=='applied')return;a.status='saved';save();refreshApps();toast('ביטלתי את הסימון. המשרה חזרה ל"שמור"')}
-function markApplied(id){const a=appOf(id);a.status='applied';a.date=new Date().toISOString();save();refreshApps();toast('סימנתי שהגשת. אזכיר לך לשלוח הודעת המשך בעוד שבוע')}
+function markApplied(id){track('applied');const a=appOf(id);a.status='applied';a.date=new Date().toISOString();save();refreshApps();toast('סימנתי שהגשת. אזכיר לך לשלוח הודעת המשך בעוד שבוע')}
 function refreshApps(){if(curPg==='apps')renderApps();if(curPg==='main')renderHome();syncChrome()}
 
 /* application sheet: details · letter · referrals · prep */
@@ -2480,7 +2500,7 @@ let lastRemoved=null;
 function openTxt(j){const c=j.check;if(!c)return`${escB(N('hunter'))} יבדוק מחר בבוקר`;
   const d=agoTxt(daysSince(c.at));
   return c.st==='open'?`כן, נבדק ${escB(d)}`:c.st==='unknown'?`לא הצלחתי לבדוק (האתר לא ענה${c.n>1?` ${c.n} פעמים`:''}). כדאי לפתוח ולבדוק`:'נסגרה'}
-async function markClosed(id){const a=appOf(id);if(!a)return;const j=JOBS[a.jobId],now=new Date().toISOString();
+async function markClosed(id){track('job_closed_btn');const a=appOf(id);if(!a)return;const j=JOBS[a.jobId],now=new Date().toISOString();
   j.closed_at=now;closedToHistory();save();closeSheet();refreshApps();
   if(CLOUDM&&ME){try{const {data}=await SB.from('jobs').select('card').eq('user_id',ME.id).eq('id',a.jobId).maybeSingle();
     if(data)await SB.from('jobs').update({card:Object.assign({},data.card,{closed_at:now,closed_by:'user'})}).eq('user_id',ME.id).eq('id',a.jobId)}catch(e){console.warn(e)}}}
@@ -2538,14 +2558,14 @@ const KIT_FIELDS=[
 function kitOf(p){return (p.ans||{}).kit||{}}
 function kitData(){const p=prof(),o={};KIT_FIELDS.forEach(([k,,f])=>{const v=f(p);if(v&&!/עוד לא|לא בטוח/.test(v))o[k]=v});return o}
 
-function kitTabHtml(a,j,id){
+function kitTabHtml(a,j,id){track('kit_open');
   const p=prof(),d=kitData(),missing=KIT_FIELDS.filter(([k])=>!d[k]&&!['first','last'].includes(k));
   const letter=a.letter||(j.letter&&j.letter.text)||(REAL?'':letterFor(j)),tl=j.tailor&&j.tailor.edits&&j.tailor.edits.length;
   return `<div class="s-sec" style="margin-top:12px"><h4>קורות חיים</h4>
       <p class="card-sub">${escB(p.cvName||'קורות החיים מהפרופיל')}${tl?`. ${escB(N('linkedin'))} הציע ${j.tailor.edits.length} התאמות למשרה הזו <button class="link" style="color:var(--brand);font-weight:600" onclick="appTab='details';paintAppTab('${id}')">בלשונית פרטים</button>`:''}</p></div>
     <div class="s-sec"><h4>מכתב פנייה</h4><label for="letterBox" class="vh">מכתב פנייה</label><textarea class="textbox" id="letterBox" rows="11" oninput="appOf('${id}').letter=this.value;save()">${esc(letter)}</textarea>
       ${REAL&&!a.letter&&!j.letter?`<div class="hint-line">${N('assistant')} מכין את המכתב. הוא יופיע כאן תוך שעתיים בערך.</div>`:j.letter&&!j.letter.checked?`<div class="hint-line">חלק מהמשפטים הוסרו כי לא נמצאו בקורות החיים. כדאי לקרוא לפני ששולחים.</div>`:`<div class="hint-line ok">✓ כל שם, טכנולוגיה ומספר במכתב נבדקו מול קורות החיים והמודעה</div>`}
-      <button class="btn btn-ghost btn-sm" onclick="copyText($('letterBox').value,'המכתב הועתק')">${ICO.copy}להעתיק את המכתב</button></div>
+      <button class="btn btn-ghost btn-sm" onclick="copyText($('letterBox').value,'המכתב הועתק');track('letter_copy')">${ICO.copy}להעתיק את המכתב</button></div>
     <div class="s-sec"><h4>הפרטים שלך לטופס</h4>
       <p class="card-sub">${KIT_FIELDS.filter(([k])=>!['first','last'].includes(k)).length-missing.length} מתוך ${KIT_FIELDS.filter(([k])=>!['first','last'].includes(k)).length} מולאו${missing.length?`. חסר: ${escB(missing.map(m=>m[1]).join(', '))}`:''}. <button class="link" style="color:var(--brand);font-weight:600" onclick="closeSheet();openKitEdit()">${missing.length?'להשלים':'לערוך'}</button></p></div>
     <div class="s-sec"><h4>מילוי הטופס</h4>
@@ -2563,7 +2583,7 @@ function openKitEdit(){const k=kitOf(prof()),f=(id,l,v,ph,t)=>`<div class="field
     <div class="field"><label for="kAuth">אישור עבודה בישראל</label><select id="kAuth">${['','אזרח/ית ישראלי/ת','תושב/ת קבע','אשרת עבודה'].map(o=>`<option${o===(k.auth||'')?' selected':''}>${o}</option>`).join('')}</select></div>
     <p class="card-sub">שכר וזמינות נלקחים מהשאלון.</p>
     <button class="btn btn-primary btn-block" onclick="saveKit()">שמירה</button>`)}
-function saveKit(){const p=prof();p.ans=p.ans||{};p.ans.kit={email:$('kEmail').value.trim(),phone:$('kPhone').value.trim(),city:$('kCity').value.trim(),
+function saveKit(){track('profile_kit');const p=prof();p.ans=p.ans||{};p.ans.kit={email:$('kEmail').value.trim(),phone:$('kPhone').value.trim(),city:$('kCity').value.trim(),
   site:$('kSite').value.trim(),edu:$('kEdu').value.trim(),auth:$('kAuth').value};save();closeSheet();if(curPg==='profile')renderProfile();toast('הפרטים נשמרו')}
 
 /* הסימנייה: קוד שרץ בדף הטופס. הפרטים הקבועים בתוכה. המכתב נלקח מהלוח (אחרי "להעתיק את המכתב") */
@@ -2591,7 +2611,7 @@ else if(e.required||e.getAttribute('aria-required')==='true'){mark(e,'#E9A825');
 const b=document.createElement('div');b.dir='rtl';b.style.cssText='position:fixed;z-index:2147483647;top:12px;left:12px;right:12px;max-width:420px;margin:auto;background:#2F4858;color:#fff;font:15px/1.5 system-ui,sans-serif;padding:12px 16px;border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.3)';
 b.textContent='findjob מילא '+n+' שדות. '+(y?y+' מסומנים בצהוב: כדאי לבדוק (קובץ קורות חיים, בחירות, מכתב). ':'')+'בדוק הכל ושלח בעצמך. findjob לא שולח.';b.onclick=()=>b.remove();document.body.appendChild(b);setTimeout(()=>b.remove(),12000)})()`;
   return 'javascript:'+encodeURIComponent(src)}
-function openFillHelp(){const href=fillBookmarklet();
+function openFillHelp(){track('fill_help');const href=fillBookmarklet();
   openSheet(`<h3 id="sheetTitle">הסימנייה "findjob · מילוי"</h3><div class="sheet-sub">מוסיפים פעם אחת. אחרי שמשנים פרטים בפרופיל, כדאי להוסיף מחדש.</div>
     <h4 class="sub-h">במחשב</h4><p class="card-sub">גוררים את הכפתור הזה לסרגל הסימניות:</p>
     <a class="btn btn-primary btn-block" href="${href}" onclick="event.preventDefault();toast('צריך לגרור אותו לסרגל הסימניות')">findjob · מילוי</a>
@@ -2604,7 +2624,7 @@ function openFillHelp(){const href=fillBookmarklet();
 let onbStep=0, onbDraft=null, onbSingle=false;
 function openOnb(step=0){onbSingle=step>0&&S.onboarded;onbStep=step;onbDraft=JSON.parse(JSON.stringify(prof()));closeSheet();closeDrawer();$('onb').classList.add('open');renderOnb()}
 function closeOnb(){$('onb').classList.remove('open','qmode')}
-function onbGo(d){onbStep=Math.max(0,Math.min(4,onbStep+d));if(onbStep===2)qi=Math.min(S.qi||0,Math.max(0,visibleQs().length-1));renderOnb()}
+function onbGo(d){onbStep=Math.max(0,Math.min(4,onbStep+d));track('onb_step',{s:onbStep});if(onbStep===2)qi=Math.min(S.qi||0,Math.max(0,visibleQs().length-1));renderOnb()}
 function renderOnb(){
   if(onbStep===2){renderQ();return}
   $('onb').classList.remove('qmode');
@@ -2644,7 +2664,7 @@ function onbCvNext(){const t=$('onbCv');if(t)prof().cv=t.value;save();
   const h=$('onbCvHelp');if(h){h.textContent='בחר קובץ או הדבק לפחות כמה שורות מקורות החיים. אפשר גם להוסיף אחר כך.';h.style.color='var(--rose)'}}
 function onbNext(){commitOnb();if(onbSingle){closeOnb();curPg==='settings'?renderSettings():renderProfile();toast(prof().key?'הסוכנים מחוברים':'נשמר')}else onbGo(1)}
 function commitOnb(){const keep={cv:prof().cv,cvName:prof().cvName,ans:prof().ans||{}};S.profile=Object.assign({},onbDraft,keep);save();syncChrome()}
-function finishOnb(pg){commitOnb();const first=!S.onboarded;S.onboarded=true;save();closeOnb();goPage(pg);
+function finishOnb(pg){commitOnb();const first=!S.onboarded;if(first)track('onb_done',{domain:(prof().ans||{}).domain||''});S.onboarded=true;save();closeOnb();goPage(pg);
   if(first&&CLOUDM&&!Object.keys(JOBS||{}).length&&typeof prepNow==='function')setTimeout(()=>prepNow('scan'),2500);   // סריקה ראשונה מיד, לא מחכים לסריקה הקבועה
   if(curPg===pg&&pg==='main')renderHome();if(!S.tourDone&&pg==='main')setTimeout(tourStart,700)}
 
@@ -2696,7 +2716,7 @@ function openQuestions(at){if(typeof at==='string')at=visibleQs().findIndex(q=>q
   const v=visibleQs();qi=at!=null?at:Math.max(0,v.findIndex(q=>!answered(q)));if(qi<0)qi=0;
   onbSingle=S.onboarded;onbStep=2;onbDraft=JSON.parse(JSON.stringify(prof()));closeSheet();closeDrawer();$('onb').classList.add('open');renderOnb();
 }
-function renderQ(){
+function renderQ(){try{const q=visibleQs()[qi];if(q)track('onb_q',{q:q.id})}catch(e){}
   const v=visibleQs();
   if(qi>=v.length){qDone();return}
   $('onb').classList.add('qmode');
@@ -2939,7 +2959,7 @@ function openLetterPrefs(){const p=prof();
     <div class="field"><label for="lpLet">מכתבים שכתבת ואהבת (עד 3)</label><textarea id="lpLet" class="textbox ltr" rows="9" dir="auto" placeholder="מדביקים מכתב. בין מכתב למכתב: שורה עם ---">${esc((S.my_letters||[]).join('\n---\n'))}</textarea>
       <div class="help">${escB(N('assistant'))} ילמד מהם את הסגנון שלך, וישתמש בפסקאות מהם כשהן נכונות למשרה.</div></div>
     <button class="btn btn-primary btn-block" onclick="saveLetterPrefs()">שמירה</button>`)}
-function saveLetterPrefs(){const p=prof();p.ans=p.ans||{};p.ans.now=$('lpNow').value.trim();
+function saveLetterPrefs(){track('my_letters');const p=prof();p.ans=p.ans||{};p.ans.now=$('lpNow').value.trim();
   S.my_letters=$('lpLet').value.split(/\n\s*-{3,}\s*\n/).map(x=>x.trim()).filter(x=>x.length>80).slice(0,3);save();closeSheet();renderProfile();
   toast(`נשמר. המכתבים הבאים של ${N('assistant')} ייכתבו לפי זה`)}
 function chName(v){const m=String(v||'').trim().match(/(?:t\.me\/(?:s\/)?|@)?([A-Za-z][A-Za-z0-9_]{3,31})\/?$/);return m?m[1]:''}
@@ -3011,32 +3031,53 @@ function saveLinkedin(){const v=($('liUrl').value||'').trim();const p=prof();p.a
   if(v&&!/^https?:\/\/([a-z]+\.)?linkedin\.com\/in\//i.test(v)){toast('זה לא נראה כמו קישור לפרופיל LinkedIn');return}
   p.ans.linkedin=v;save();toast(v?'הקישור נשמר':'הקישור נמחק')}
 
-/* ═════════ סיור באפליקציה (בסגנון TipKit): מצביע על הכפתורים האמיתיים ═════════ */
-const TOUR=[
-  {sel:'#menuBtn',t:'התפריט',d:'משרות, הגשות, LinkedIn והמשרד. המספרים אומרים מה מחכה לך.'},
-  {sel:'.brief',t:'מה חדש',d:()=>`מה הסוכנים עשו ב-24 השעות האחרונות. משרות חדשות תמיד ראשונות.`},
-  {sel:'.next',t:'הצעדים הבאים',d:'מה כדאי לעשות עכשיו, לפי סדר חשיבות. לחיצה מובילה ישר למקום.'},
-  {sel:'#chatBtn',t:()=>`${N('assistant')} בצ׳אט`,d:'שואלים כל דבר: איזו משרה מתאימה, תרגול ראיון, או שאלה מטופס הגשה.'},
-  {sel:'#tbAvatar',t:'הפרופיל שלך',d:'קורות חיים, פרטים לטפסים וחברות יעד. ככל שהוא מלא יותר, הסוכנים מדייקים יותר.'},
-  {sel:'#menuBtn',t:'הכל אצלך',d:()=>`${N('hunter')} מחפש פעמיים ביום. אתה מחליק ימינה כדי לשמור משרה, והצוות מכין לה מכתב, סקירה והכנה. שום דבר לא נשלח בלי שתלחץ.`},
-];
-let tourI=-1;
-function tourStart(){if(curPg!=='main')goPage('main');closeDrawer&&closeDrawer();tourI=0;setTimeout(tourShow,150)}
-function tourEnd(){tourI=-1;S.tourDone=true;save();$('tour')&&$('tour').remove();document.removeEventListener('keydown',tourKey)}
-function tourKey(e){if(e.key==='Escape')tourEnd();if(e.key==='ArrowLeft'||e.key==='Enter')tourNext();if(e.key==='ArrowRight'&&tourI>0){tourI--;tourShow()}}
-function tourNext(){tourI++;tourI>=TOUR.length?tourEnd():tourShow()}
+/* ═════════ סיור באפליקציה (בסגנון TipKit) ═════════
+   מצביע על הכפתורים האמיתיים, ומותאם למצב של המשתמש: משרות שמחכות, סריקה ראשונה שרצה, קורות חיים חסרים, התחום.
+   סיור ראשי פעם אחת, וטיפ קצר בפעם הראשונה שנכנסים לכל מסך. כל צעד נמדד (track) כדי ללמוד איפה נוטשים. */
+const tv=x=>typeof x==='function'?x():x;
+function tourMain(){const q=queue().length,a=ans(),sw=domainOf(a)==='פיתוח תוכנה',scan=typeof _prep!=='undefined'&&_prep&&_prep.scan,hasCv=!!(prof().cv||prof().cvName);
+  return [
+    {sel:'.brief',t:'מה חדש',d:`כאן ${N('assistant')} מסכם מה הצוות עשה בשבילך ב-24 השעות האחרונות. משרות חדשות תמיד ראשונות.`},
+    q?{sel:'.br-go',t:`${q} משרות מחכות לך`,d:'לחיצה כאן פותחת אותן. מחליקים ימינה כדי לשמור, שמאלה כדי לדלג. כל דילוג מלמד את דורון.'}
+     :scan?{sel:'#prepBar',t:`${N('hunter')} כבר מחפש`,d:'הסריקה הראשונה שלך רצה עכשיו. בעוד כמה דקות יופיעו כאן המשרות הראשונות.'}
+     :{sel:'#menuBtn',t:'משרות',d:`${N('hunter')} מחפש פעמיים ביום. כשיש משרות חדשות, מופיע מספר על התפריט.`},
+    {sel:'.next',t:'הצעדים הבאים',d:'מה כדאי לעשות עכשיו, לפי סדר חשיבות. לחיצה מובילה ישר למקום.'},
+    {sel:'#chatBtn',t:`${N('assistant')} עונה על הכל`,d:'איך משהו עובד באפליקציה, איזו משרה מתאימה, תרגול ראיון, שאלה מטופס הגשה, או לשנות הגדרות חיפוש. הוא מבקש אישור לפני כל שינוי.'},
+    hasCv?{sel:'#tbAvatar',t:'הפרופיל שלך',d:`כדאי להשלים "פרטים לטפסי הגשה"${sw?'':' ותיק עבודות'}. ככה ערכת ההגשה מוכנה, והמכתבים מדויקים יותר.`}
+         :{sel:'#tbAvatar',t:'חסרים קורות חיים',d:'בלי קורות חיים הסוכנים לא יכולים לדרג משרות או לכתוב מכתבים. מעלים בפרופיל, לוקח דקה.'},
+    {sel:'#menuBtn',t:'הכל בתפריט',d:'משרות, הגשות, הכנה לראיון, LinkedIn והמשרד. שום דבר לא נשלח בשמך בלי שתלחץ בעצמך. הסיור נפתח שוב מהתפריט.'},
+  ].filter(Boolean)}
+const PAGE_TIPS={
+  jobs:[{sel:'#deck .jcard',t:'ככה מחליטים',d:'ימינה = לשמור (הצוות מכין מכתב, סקירה והכנה). שמאלה = לדלג. לחיצה על הכרטיס = כל הפרטים ולמה הציון.'},
+        {sel:'#addJobBtn',t:'מצאת משרה בעצמך?',d:'מדביקים קישור, ודורון מדרג אותה כמו כל משרה אחרת.'}],
+  apps:[{sel:'#appsList .app',t:'המשרות ששמרת',d:'בכל משרה: ערכת הגשה (מכתב, פרטים, מילוי טופס), הכנה לראיון וסקירת החברה. מסמנים "הגשתי" אחרי ששלחת.'},
+        {sel:'#appsList > .btn',t:'לא רוצה לחכות?',d:'"לעדכן הכל עכשיו" מריץ את הסוכנים רק בשבילך. בדרך כלל 2 עד 4 דקות.'}],
+  profile:[{sel:'#planCard',t:'מה מחפשים בשבילך',d:'כאן רואים ומשנים תפקידים, אזורים, חברות יעד וערוצי טלגרם. אפשר גם פשוט לבקש מ'+N('assistant')+' בצ׳אט.'}],
+};
+let tourSteps=[],tourI=-1,tourKind='';
+function tourStart(kind){kind=kind||'main';if(kind==='main'){if(curPg!=='main')goPage('main');closeDrawer&&closeDrawer()}
+  tourSteps=(kind==='main'?tourMain():PAGE_TIPS[kind]||[]).filter(st=>document.querySelector(st.sel));if(!tourSteps.length)return;
+  tourKind=kind;tourI=0;track('tour_start',{k:kind});setTimeout(tourShow,kind==='main'?150:450)}
+function pageTip(pg){if(!PAGE_TIPS[pg]||tourI>=0)return;S.tips=S.tips||{};if(S.tips[pg])return;
+  setTimeout(()=>{if(curPg===pg&&tourI<0&&!document.querySelector('.sheet.on, #onb.on')){S.tips[pg]=1;save();tourStart(pg)}},700)}
+function tourEnd(done){const k=tourKind;track(done?'tour_done':'tour_skip',{k,at:tourI,of:tourSteps.length});
+  tourI=-1;if(k==='main')S.tourDone=true;else{S.tips=S.tips||{};S.tips[k]=1}save();$('tour')&&$('tour').remove();document.removeEventListener('keydown',tourKey)}
+function tourKey(e){if(e.key==='Escape')tourEnd(false);if(e.key==='ArrowLeft'||e.key==='Enter'){e.preventDefault();tourNext()}if(e.key==='ArrowRight'&&tourI>0){tourI--;tourShow()}}
+function tourNext(){tourI++;tourI>=tourSteps.length?tourEnd(true):tourShow()}
 function tourShow(){
-  const st=TOUR[tourI],el=document.querySelector(st.sel);if(!el){tourNext();return}
-  el.scrollIntoView({block:'center',behavior:matchMedia('(prefers-reduced-motion:reduce)').matches?'auto':'smooth'});
-  setTimeout(()=>{const r=el.getBoundingClientRect(),pad=6,vh=innerHeight,below=r.bottom+200<vh;
+  const st=tourSteps[tourI],el=document.querySelector(st.sel);if(!el){tourNext();return}
+  const rm=matchMedia('(prefers-reduced-motion:reduce)').matches;
+  el.scrollIntoView({block:'center',behavior:rm?'auto':'smooth'});
+  setTimeout(()=>{const r=el.getBoundingClientRect(),pad=8,vh=innerHeight,below=r.top+r.height/2<vh/2;
     let w=$('tour');if(!w){w=document.createElement('div');w.id='tour';document.body.appendChild(w);document.addEventListener('keydown',tourKey)}
-    const v=x=>typeof x==='function'?x():x;
-    w.innerHTML=`<div class="tour-hole" style="top:${r.top-pad}px;left:${r.left-pad}px;width:${r.width+pad*2}px;height:${r.height+pad*2}px"></div>
-      <div class="tour-card" role="dialog" aria-modal="true" aria-labelledby="tourT" style="${below?`top:${Math.min(r.bottom+14,vh-190)}px`:`bottom:${Math.max(vh-r.top+14,12)}px`}">
-        <b id="tourT">${escB(v(st.t))}</b><p>${escB(v(st.d))}</p>
-        <div class="tour-foot"><span class="tour-dots" aria-label="צעד ${tourI+1} מתוך ${TOUR.length}">${TOUR.map((_,i)=>`<i${i===tourI?' class="on"':''}></i>`).join('')}</span>
-          <span><button class="btn btn-sm btn-ghost" onclick="tourEnd()">דלג</button><button class="btn btn-sm btn-primary" id="tourNext" onclick="tourNext()">${tourI===TOUR.length-1?'סיימתי':'הבא'}</button></span></div></div>`;
-    $('tourNext').focus()},260)}
+    const last=tourI===tourSteps.length-1,ax=Math.max(28,Math.min(innerWidth-28,r.left+r.width/2));
+    w.innerHTML=`<div class="tour-hole${rm?'':' pulse'}" style="top:${r.top-pad}px;left:${r.left-pad}px;width:${r.width+pad*2}px;height:${r.height+pad*2}px"></div>
+      <div class="tour-card ${below?'below':'above'}" role="dialog" aria-modal="true" aria-labelledby="tourT" aria-describedby="tourD" style="${below?`top:${Math.min(r.bottom+pad+16,vh-230)}px`:`bottom:${Math.max(vh-r.top+pad+16,12)}px`};--ax:${ax}px">
+        <div class="tour-top"><span class="tour-n">${tourI+1} מתוך ${tourSteps.length}</span><button class="tour-x" aria-label="לסגור את הסיור" onclick="tourEnd(false)">✕</button></div>
+        <b id="tourT">${escB(tv(st.t))}</b><p id="tourD">${escB(tv(st.d))}</p>
+        <div class="tour-foot"><span class="tour-dots" aria-hidden="true">${tourSteps.map((_,i)=>`<i${i===tourI?' class="on"':i<tourI?' class="done"':''}></i>`).join('')}</span>
+          <span>${tourI>0?`<button class="btn btn-sm btn-ghost" onclick="tourI--;tourShow()">הקודם</button>`:`<button class="btn btn-sm btn-ghost" onclick="tourEnd(false)">דלג</button>`}<button class="btn btn-sm tour-go" id="tourNext" onclick="tourNext()">${last?'הבנתי':'הבא'}</button></span></div></div>`;
+    $('tourNext').focus()},rm?40:320)}
 
 /* ═════════ CLOUD — חיבור ל-Supabase (רק בגרסה המאוחסנת) ═════════
    התחברות עם Google (או קישור למייל, שעובד רק לחברי הצוות ב-Supabase). הפרופיל, קורות החיים והשאלון נשמרים בענן, והסוכנים קוראים אותם משם בלילה.
@@ -3170,6 +3211,8 @@ async function runAction(x){
     case 'remove_app':if(!needApp())return false;removeApp(app.id);return true;
     case 'add_todo':S.todos.unshift({id:'t'+Date.now(),text:x.text,done:false});break;
     case 'add_story':S.stories.push({id:'s'+Date.now(),t:x.title,b:x.body||''});break;
+    case 'start_tour':if(chatOpen)toggleChat();setTimeout(()=>tourStart(),300);return true;
+    case 'go_page':if(!['main','jobs','apps','prep','linkedin','office','profile','settings'].includes(x.page))return false;if(chatOpen)toggleChat();goPage(x.page);return true;
     case 'feedback':S.feedback=S.feedback||[];S.feedback.push({t:String(x.text||'').slice(0,1000),at:new Date().toISOString(),page:'chat'});track('feedback');break;
     case 'add_role':case 'remove_role':case 'add_target':case 'remove_target':case 'set_area':case 'set_mode':case 'add_exclude':case 'remove_exclude':case 'set_salary':case 'add_channel':
       if(!setPref(x))return false;save();if(curPg==='profile')renderProfile();toast(`עודכן. ${N('hunter')} יחפש לפי זה מהסריקה הבאה`);return true;
@@ -3326,7 +3369,8 @@ function openUsage(){const r=(RUNS||[]).find(x=>x.stats&&x.stats.usage_report);i
   openSheet(`<h3 id="sheetTitle">דוח שימוש</h3><div class="sheet-sub">${new Date(r.created_at).toLocaleDateString('he-IL')} · ספירות בלבד, בלי תוכן</div>
   <div class="us-list">${u.rows.map(x=>`<div class="us-row"><b>${escB(x.name)}</b><span>${x.days_week} ימים השבוע · ${x.days} בסך הכל · אחרון ${escB(x.last||'—')}</span>
    <span>${x.cv?'קורות חיים ✓':'בלי קורות חיים'}${x.domain?' · '+escB(x.domain):''} · ${x.saved} שמורות · ${x.skipped} דילוגים · ${x.applied} הגשות · ${x.chat} שאלות בצ׳אט${x.add_job?' · '+x.add_job+' משרות מקישור':''}</span>
-   ${(x.pages||[]).length?`<span>מסכים: ${x.pages.map(p=>escB(p[0])+' ('+p[1]+')').join(', ')}</span>`:''}</div>`).join('')}</div>
+   ${(x.pages||[]).length?`<span>מסכים: ${x.pages.map(p=>escB(p[0])+' ('+p[1]+')').join(', ')}</span>`:''}
+   ${x.stuck||x.tour?`<span>${x.stuck?'נעצר: '+escB(x.stuck):'עבר את כל השלבים'}${x.tour?' · סיור: '+escB(x.tour):''}</span>`:''}</div>`).join('')}</div>
   ${(u.feedback||[]).length?`<div class="s-sec"><h4>משוב</h4>${u.feedback.map(f=>`<p class="us-fb"><b>${escB(f.name)}</b> · ${escB(f.at)}<br>${escB(f.t)}</p>`).join('')}</div>`:''}`)}
 
 /* מפתח AI אישי (Groq, חינם): כל משתמש מקבל מכסה משלו, והסוכנים שלו לא מחכים בתור */
@@ -3362,7 +3406,7 @@ async function prepNow(kind){kind=kind==='scan'?'scan':'prep';
   try{const {data:{session}}=await SB.auth.getSession();
     r=await fetch('/api/prepnow',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:session&&session.access_token,kind})});d=await r.json()}catch(e){}
   if(!r||!d.ok){toast(d.error==='wait'?`אפשר להפעיל פעם ב-10 דקות. עוד ${d.minutes} דק׳`:d.error==='no_token'?'הכפתור עוד לא מחובר. המפתח צריך להשלים הגדרה אחת':d.error==='auth'?'צריך להתחבר מחדש':'לא הצלחתי להפעיל. נסה שוב בעוד דקה');return}
-  _prep={at:d.at,t0:Date.now(),scan:kind==='scan'};prepBar();_prep.timer=setInterval(prepPoll,15000);
+  track(kind==='scan'?'scan_first':'prep_now');_prep={at:d.at,t0:Date.now(),scan:kind==='scan'};prepBar();_prep.timer=setInterval(prepPoll,15000);
 }
 function prepBar(done){let b=$('prepBar');if(!b){b=document.createElement('div');b.id='prepBar';b.setAttribute('role','status');document.body.appendChild(b)}
   if(done){b.innerHTML=_prep&&_prep.scan?`<b>מוכן ✓</b><span>המשרות הראשונות מחכות לך במסך המשרות.</span>`:`<b>מוכן ✓</b><span>הכל עודכן. המכתבים, הסקירות וההכנה מחכים בהגשות.</span>`;b.classList.add('done');setTimeout(()=>b.remove(),6000);return}
@@ -3387,7 +3431,7 @@ async function pushToggle(){
   if(!VAPID_PUB||!('PushManager' in window)){toast(VAPID_PUB?'הדפדפן הזה לא תומך בהתראות':'ההתראות עוד לא מחוברות. המפתח צריך להשלים הגדרה אחת');return}
   const perm=await Notification.requestPermission();if(perm!=='granted'){toast('צריך לאשר התראות בדפדפן');return}
   try{const r=await navigator.serviceWorker.ready,sub=await r.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64u(VAPID_PUB)});
-    S.push=sub.toJSON();save();renderSettings();toast(`מופעל. ${N('hunter')} ישלח הודעה כשיש משרות חדשות`)}catch(e){toast('לא הצלחתי להפעיל התראות בדפדפן הזה')}}
+    S.push=sub.toJSON();track('push_on');save();renderSettings();toast(`מופעל. ${N('hunter')} ישלח הודעה כשיש משרות חדשות`)}catch(e){toast('לא הצלחתי להפעיל התראות בדפדפן הזה')}}
 
 /* מחיקת החשבון: פונקציה במסד שמוחקת רק את המשתמש המחובר, וכל הנתונים שלו נמחקים איתו */
 async function deleteAccount(){
@@ -3423,6 +3467,8 @@ function openDev(){const ur=(RUNS||[]).find(x=>x.stats&&x.stats.usage_report),u=
   openSheet(`<h3 id="sheetTitle">כלי מפתח <span class="dev-tag">מפתח</span></h3><div class="sheet-sub">רק אתה רואה את זה. ${ur?'הדוח מ-'+new Date(ur.created_at).toLocaleDateString('he-IL'):'הדוח הראשון יגיע בסריקת הבוקר'}.</div>
     <div class="dev-sum"><span><b class="num">${u.rows.length}</b> משתמשים</span><span><b class="num">${u.rows.filter(r=>r.days_week).length}</b> פעילים השבוע</span><span><b class="num">${fb.filter(f=>!st[f.key]).length}</b> משובים חדשים</span><span class="${fails.length?'bad':''}"><b class="num">${fails.length}</b> ריצות עם תקלות</span></div>
     <button class="btn btn-sm btn-ghost btn-block" onclick="openUsage()">דוח שימוש מלא</button>
+    ${(u.funnel||[]).length?`<h4 class="sub-h">משפך: כמה משתמשים הגיעו לכל שלב</h4><div class="dev-fun">${u.funnel.map(([l,n])=>`<div><span>${escB(l)}</span><i style="width:${u.rows.length?Math.round(100*n/u.rows.length):0}%"></i><b class="num">${n}</b></div>`).join('')}</div>`:''}
+    ${(u.errors||[]).length?`<h4 class="sub-h">שגיאות באפליקציה אצל משתמשים</h4><ul class="dev-err">${u.errors.map(([m,n])=>`<li><b class="num">${n}×</b> <span dir="ltr">${escB(m)}</span></li>`).join('')}</ul>`:''}
     <h4 class="sub-h">משובים ובקשות</h4>
     ${fb.length?fb.map(f=>`<div class="dev-fb"><div><b>${escB(f.name)}</b> · ${escB(f.at)}</div><p>${escB(f.t)}</p>
       <label class="vh" for="fb-${escB(f.key)}">סטטוס</label><select id="fb-${escB(f.key)}" onchange="setFbStatus('${escB(f.key)}',this.value)">${Object.entries(FB_ST).map(([k,l])=>`<option value="${k}"${(st[f.key]||'')===k?' selected':''}>${l}</option>`).join('')}</select></div>`).join('')

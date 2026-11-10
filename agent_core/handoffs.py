@@ -39,8 +39,31 @@ def missing_for_saved(row: dict) -> list[str]:
     if not p or p.get("tasks") is None or p.get("more_tasks"):
         out.append("prep")
     lt = row.get("letter")
-    if not lt or (lt.get("v") or 0) < 3:
+    if not lt or (lt.get("v") or 0) < LETTER_V:
         out.append("letter")
+    return out
+
+
+LETTER_V = 4          # מכתב בגרסה ישנה נכתב מחדש בלולאת LangGraph
+UPGRADES_PER_RUN = 3  # שדרוג הדרגתי: לכל היותר 3 מכתבים ישנים בכל ריצה למשתמש, כדי לא לשרוף מכסה
+
+
+def is_upgrade(row: dict) -> bool:
+    """כבר יש מכתב, רק בגרסה ישנה. מכתב שהמשתמש ערך בעצמו שמור אצלו (apps[].letter) ולא נדרס."""
+    lt = row.get("letter")
+    return bool(lt and lt.get("text") and (lt.get("v") or 0) < LETTER_V)
+
+
+def cap_upgrades(rows_miss: list[tuple[dict, list[str]]], n: int = UPGRADES_PER_RUN) -> list[tuple[dict, list[str]]]:
+    """מוריד 'letter' ממשרות שהן רק שדרוג, אחרי n הראשונות. מכתב חדש (שלא היה) תמיד נשאר."""
+    out, used = [], 0
+    for row, miss in rows_miss:
+        if "letter" in miss and is_upgrade(row):
+            if used >= n:
+                miss = [k for k in miss if k != "letter"]
+            else:
+                used += 1
+        out.append((row, miss))
     return out
 
 

@@ -70,8 +70,7 @@ def work_by_tasks(u: dict, cv: str, name: str, done: dict) -> None:
     uid = u["user_id"]
     # יואב מתאם: מה חסר במשרות ששמרת, ולמי זה הולך
     existing = H._open(uid)
-    for row in db.saved_jobs(uid):
-        miss = H.missing_for_saved(row)
+    for row, miss in H.cap_upgrades([(r, H.missing_for_saved(r)) for r in db.saved_jobs(uid)]):
         if miss:
             H.request_for_job(uid, "strategist", {**row["card"], "id": row["id"]}, miss, "נשמרה משרה", existing)
     act.flush()
@@ -81,7 +80,7 @@ def work_by_tasks(u: dict, cv: str, name: str, done: dict) -> None:
             row = db.get_job(uid, t["job_id"]) if t.get("job_id") else None
             if not row or (row["card"] or {}).get("closed_at") or row.get("decision") in ("skip", "removed", "filtered"):
                 H.finish(t, False, {"why": "המשרה נסגרה, הוסרה או שדילגת עליה"}); continue
-            if t["kind"] != "prep" and row.get(DONE_KEY[t["kind"]]) and (t["kind"] != "letter" or (row["letter"].get("v") or 0) >= 3):
+            if t["kind"] != "prep" and row.get(DONE_KEY[t["kind"]]) and (t["kind"] != "letter" or (row["letter"].get("v") or 0) >= H.LETTER_V):
                 H.finish(t, True, {"skip": "כבר מוכן"}); continue
             try:
                 upd = do_kind(t["kind"], row, u, cv, name)
@@ -106,9 +105,9 @@ def work_by_tasks(u: dict, cv: str, name: str, done: dict) -> None:
 
 def work_legacy(u: dict, cv: str, name: str, done: dict) -> None:
     """בלי טבלת משימות: כמו קודם, עובר על כל משרה שמורה שחסר לה משהו."""
-    for row in db.saved_jobs(u["user_id"], with_tailor=False):
+    rows = db.saved_jobs(u["user_id"], with_tailor=False)
+    for row, miss in H.cap_upgrades([(r, H.missing_for_saved({**r, "tailor": True})) for r in rows]):
         job, upd = row["card"], {}
-        miss = [k for k in H.missing_for_saved({**row, "tailor": True})]
         if not miss:
             continue
         act.log("assistant", f"נשמרה משרה: {job['title']} ב-{job['co']}. גיל — מחקר על החברה, מאיה — שאלות הכנה.", to="researcher")

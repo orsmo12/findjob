@@ -3,6 +3,7 @@ usage.py — דוח שימוש לבעל המערכת (המשתמש הראשון 
 
 רק ספירות: כמה ימים כל משתמש נכנס, כמה משרות שמר ודילג, כמה שאלות שאל בצ׳אט,
 ואילו מסכים פתח. התוכן של המשתמשים (קורות חיים, מכתבים, שיחות) לא נכלל, חוץ מהמשוב שהם כתבו בכוונה למפתח.
+בנוסף: משפך (כמה הגיעו לכל שלב), איפה נוטשים את ההרשמה והסיור, וטעויות JavaScript שקרו אצל משתמשים.
 """
 from __future__ import annotations
 from datetime import datetime, timedelta, timezone
@@ -15,7 +16,7 @@ def report(users: list[dict], profiles: list[dict], jobs_by_user: dict[str, list
     admin = sorted(users, key=lambda u: u.get("created_at") or "")[0]["id"]
     prof = {p["user_id"]: p for p in profiles}
     week = (datetime.now(timezone.utc) - timedelta(days=7)).date().isoformat()
-    rows, feedback = [], []
+    rows, feedback, errs = [], [], {}
     for u in sorted(users, key=lambda u: u.get("created_at") or ""):
         p = prof.get(u["id"]) or {}
         st = p.get("state") or {}
@@ -31,7 +32,11 @@ def report(users: list[dict], profiles: list[dict], jobs_by_user: dict[str, list
                      "cv": bool(p.get("cv_text")), "own_key": str(st.get("ai_key") or "").startswith("gsk_"), "domain": (p.get("answers") or {}).get("domain") or "",
                      "saved": dec("save"), "skipped": dec("skip"), "waiting": dec(None),
                      "applied": sum(1 for a in st.get("apps") or [] if a.get("status") not in (None, "saved")),
-                     "chat": c.get("chat", 0), "add_job": c.get("add_job", 0), "pages": pages})
+                     "chat": c.get("chat", 0), "add_job": c.get("add_job", 0), "pages": pages,
+                     "m": sorted((us.get("m") or {}).keys()), "stuck": stuck(us), "tour": tour_of(us)})
+        for e in us.get("err") or []:
+            k = str(e.get("m") or "")[:90]
+            errs[k] = errs.get(k, 0) + 1
         month = (datetime.now(timezone.utc) - timedelta(days=30)).date().isoformat()
         for f in (st.get("feedback") or [])[-15:]:
             if f.get("at", "") >= month:   # המפתח מסמן סטטוס לכל משוב (key), והמשתמש מקבל עדכון
@@ -41,7 +46,38 @@ def report(users: list[dict], profiles: list[dict], jobs_by_user: dict[str, list
     msg = (f"דוח שימוש שבועי: {len(rows)} משתמשים, {active} נכנסו השבוע. "
            + " · ".join(f"{r['name']}: {r['days_week']} ימים, {r['saved']} שמורות, {r['applied']} הגשות" for r in rows[:6])
            + (f". {sum(1 for f in feedback if f['new'])} משובים חדשים." if any(f['new'] for f in feedback) else "."))
-    return admin, {"rows": rows, "feedback": feedback, "msg": msg}
+    fun = [(lbl, sum(1 for r in rows if ev in r["m"])) for ev, lbl in FUNNEL]
+    top_err = sorted(errs.items(), key=lambda x: -x[1])[:8]
+    if top_err:
+        msg += f" {sum(errs.values())} שגיאות באפליקציה אצל משתמשים."
+    return admin, {"rows": rows, "feedback": feedback, "msg": msg, "funnel": fun, "errors": top_err}
+
+
+# המשפך: מהרשמה ועד הגשה. כל שלב נרשם פעם אחת למשתמש (usage.m) עם הזמן הראשון שקרה.
+FUNNEL = [("onb_done", "סיים הרשמה"), ("jobs_seen", "ראה משרות"), ("job_save", "שמר משרה"), ("kit_open", "פתח ערכת הגשה"),
+          ("letter_copy", "העתיק מכתב"), ("applied", "סימן הגשה"), ("chat", "דיבר עם שי"), ("push_on", "הפעיל התראות"),
+          ("tour_done", "סיים סיור")]
+
+
+def stuck(us: dict) -> str:
+    """איפה המשתמש נעצר: השלב האחרון במשפך שלא הגיע אליו, או השאלה האחרונה בהרשמה."""
+    m = us.get("m") or {}
+    if "onb_done" not in m:
+        q = next((e.get("p", {}).get("q") or e.get("p", {}).get("s") for e in reversed(us.get("ev") or [])
+                  if e.get("e") in ("onb_q", "onb_step")), None)
+        return f"בהרשמה ({q})" if q is not None else "בהרשמה"
+    for ev, lbl in FUNNEL[1:6]:
+        if ev not in m:
+            return f"לפני: {lbl}"
+    return ""
+
+
+def tour_of(us: dict) -> str:
+    last = next((e for e in reversed(us.get("ev") or []) if e.get("e") in ("tour_done", "tour_skip") and (e.get("p") or {}).get("k") == "main"), None)
+    if not last:
+        return ""
+    p = last.get("p") or {}
+    return "סיים" if last["e"] == "tour_done" else f"דילג בצעד {int(p.get('at', 0)) + 1} מתוך {p.get('of', '?')}"
 
 
 FB_STATUS = {"got": "התקבלה", "doing": "בעבודה", "done": "נוספה לאפליקציה", "no": "לא תיכנס כרגע"}

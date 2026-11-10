@@ -114,7 +114,7 @@ function openLetterPrefs(){const p=prof();
     <div class="field"><label for="lpLet">מכתבים שכתבת ואהבת (עד 3)</label><textarea id="lpLet" class="textbox ltr" rows="9" dir="auto" placeholder="מדביקים מכתב. בין מכתב למכתב: שורה עם ---">${esc((S.my_letters||[]).join('\n---\n'))}</textarea>
       <div class="help">${escB(N('assistant'))} ילמד מהם את הסגנון שלך, וישתמש בפסקאות מהם כשהן נכונות למשרה.</div></div>
     <button class="btn btn-primary btn-block" onclick="saveLetterPrefs()">שמירה</button>`)}
-function saveLetterPrefs(){const p=prof();p.ans=p.ans||{};p.ans.now=$('lpNow').value.trim();
+function saveLetterPrefs(){track('my_letters');const p=prof();p.ans=p.ans||{};p.ans.now=$('lpNow').value.trim();
   S.my_letters=$('lpLet').value.split(/\n\s*-{3,}\s*\n/).map(x=>x.trim()).filter(x=>x.length>80).slice(0,3);save();closeSheet();renderProfile();
   toast(`נשמר. המכתבים הבאים של ${N('assistant')} ייכתבו לפי זה`)}
 function chName(v){const m=String(v||'').trim().match(/(?:t\.me\/(?:s\/)?|@)?([A-Za-z][A-Za-z0-9_]{3,31})\/?$/);return m?m[1]:''}
@@ -186,29 +186,50 @@ function saveLinkedin(){const v=($('liUrl').value||'').trim();const p=prof();p.a
   if(v&&!/^https?:\/\/([a-z]+\.)?linkedin\.com\/in\//i.test(v)){toast('זה לא נראה כמו קישור לפרופיל LinkedIn');return}
   p.ans.linkedin=v;save();toast(v?'הקישור נשמר':'הקישור נמחק')}
 
-/* ═════════ סיור באפליקציה (בסגנון TipKit): מצביע על הכפתורים האמיתיים ═════════ */
-const TOUR=[
-  {sel:'#menuBtn',t:'התפריט',d:'משרות, הגשות, LinkedIn והמשרד. המספרים אומרים מה מחכה לך.'},
-  {sel:'.brief',t:'מה חדש',d:()=>`מה הסוכנים עשו ב-24 השעות האחרונות. משרות חדשות תמיד ראשונות.`},
-  {sel:'.next',t:'הצעדים הבאים',d:'מה כדאי לעשות עכשיו, לפי סדר חשיבות. לחיצה מובילה ישר למקום.'},
-  {sel:'#chatBtn',t:()=>`${N('assistant')} בצ׳אט`,d:'שואלים כל דבר: איזו משרה מתאימה, תרגול ראיון, או שאלה מטופס הגשה.'},
-  {sel:'#tbAvatar',t:'הפרופיל שלך',d:'קורות חיים, פרטים לטפסים וחברות יעד. ככל שהוא מלא יותר, הסוכנים מדייקים יותר.'},
-  {sel:'#menuBtn',t:'הכל אצלך',d:()=>`${N('hunter')} מחפש פעמיים ביום. אתה מחליק ימינה כדי לשמור משרה, והצוות מכין לה מכתב, סקירה והכנה. שום דבר לא נשלח בלי שתלחץ.`},
-];
-let tourI=-1;
-function tourStart(){if(curPg!=='main')goPage('main');closeDrawer&&closeDrawer();tourI=0;setTimeout(tourShow,150)}
-function tourEnd(){tourI=-1;S.tourDone=true;save();$('tour')&&$('tour').remove();document.removeEventListener('keydown',tourKey)}
-function tourKey(e){if(e.key==='Escape')tourEnd();if(e.key==='ArrowLeft'||e.key==='Enter')tourNext();if(e.key==='ArrowRight'&&tourI>0){tourI--;tourShow()}}
-function tourNext(){tourI++;tourI>=TOUR.length?tourEnd():tourShow()}
+/* ═════════ סיור באפליקציה (בסגנון TipKit) ═════════
+   מצביע על הכפתורים האמיתיים, ומותאם למצב של המשתמש: משרות שמחכות, סריקה ראשונה שרצה, קורות חיים חסרים, התחום.
+   סיור ראשי פעם אחת, וטיפ קצר בפעם הראשונה שנכנסים לכל מסך. כל צעד נמדד (track) כדי ללמוד איפה נוטשים. */
+const tv=x=>typeof x==='function'?x():x;
+function tourMain(){const q=queue().length,a=ans(),sw=domainOf(a)==='פיתוח תוכנה',scan=typeof _prep!=='undefined'&&_prep&&_prep.scan,hasCv=!!(prof().cv||prof().cvName);
+  return [
+    {sel:'.brief',t:'מה חדש',d:`כאן ${N('assistant')} מסכם מה הצוות עשה בשבילך ב-24 השעות האחרונות. משרות חדשות תמיד ראשונות.`},
+    q?{sel:'.br-go',t:`${q} משרות מחכות לך`,d:'לחיצה כאן פותחת אותן. מחליקים ימינה כדי לשמור, שמאלה כדי לדלג. כל דילוג מלמד את דורון.'}
+     :scan?{sel:'#prepBar',t:`${N('hunter')} כבר מחפש`,d:'הסריקה הראשונה שלך רצה עכשיו. בעוד כמה דקות יופיעו כאן המשרות הראשונות.'}
+     :{sel:'#menuBtn',t:'משרות',d:`${N('hunter')} מחפש פעמיים ביום. כשיש משרות חדשות, מופיע מספר על התפריט.`},
+    {sel:'.next',t:'הצעדים הבאים',d:'מה כדאי לעשות עכשיו, לפי סדר חשיבות. לחיצה מובילה ישר למקום.'},
+    {sel:'#chatBtn',t:`${N('assistant')} עונה על הכל`,d:'איך משהו עובד באפליקציה, איזו משרה מתאימה, תרגול ראיון, שאלה מטופס הגשה, או לשנות הגדרות חיפוש. הוא מבקש אישור לפני כל שינוי.'},
+    hasCv?{sel:'#tbAvatar',t:'הפרופיל שלך',d:`כדאי להשלים "פרטים לטפסי הגשה"${sw?'':' ותיק עבודות'}. ככה ערכת ההגשה מוכנה, והמכתבים מדויקים יותר.`}
+         :{sel:'#tbAvatar',t:'חסרים קורות חיים',d:'בלי קורות חיים הסוכנים לא יכולים לדרג משרות או לכתוב מכתבים. מעלים בפרופיל, לוקח דקה.'},
+    {sel:'#menuBtn',t:'הכל בתפריט',d:'משרות, הגשות, הכנה לראיון, LinkedIn והמשרד. שום דבר לא נשלח בשמך בלי שתלחץ בעצמך. הסיור נפתח שוב מהתפריט.'},
+  ].filter(Boolean)}
+const PAGE_TIPS={
+  jobs:[{sel:'#deck .jcard',t:'ככה מחליטים',d:'ימינה = לשמור (הצוות מכין מכתב, סקירה והכנה). שמאלה = לדלג. לחיצה על הכרטיס = כל הפרטים ולמה הציון.'},
+        {sel:'#addJobBtn',t:'מצאת משרה בעצמך?',d:'מדביקים קישור, ודורון מדרג אותה כמו כל משרה אחרת.'}],
+  apps:[{sel:'#appsList .app',t:'המשרות ששמרת',d:'בכל משרה: ערכת הגשה (מכתב, פרטים, מילוי טופס), הכנה לראיון וסקירת החברה. מסמנים "הגשתי" אחרי ששלחת.'},
+        {sel:'#appsList > .btn',t:'לא רוצה לחכות?',d:'"לעדכן הכל עכשיו" מריץ את הסוכנים רק בשבילך. בדרך כלל 2 עד 4 דקות.'}],
+  profile:[{sel:'#planCard',t:'מה מחפשים בשבילך',d:'כאן רואים ומשנים תפקידים, אזורים, חברות יעד וערוצי טלגרם. אפשר גם פשוט לבקש מ'+N('assistant')+' בצ׳אט.'}],
+};
+let tourSteps=[],tourI=-1,tourKind='';
+function tourStart(kind){kind=kind||'main';if(kind==='main'){if(curPg!=='main')goPage('main');closeDrawer&&closeDrawer()}
+  tourSteps=(kind==='main'?tourMain():PAGE_TIPS[kind]||[]).filter(st=>document.querySelector(st.sel));if(!tourSteps.length)return;
+  tourKind=kind;tourI=0;track('tour_start',{k:kind});setTimeout(tourShow,kind==='main'?150:450)}
+function pageTip(pg){if(!PAGE_TIPS[pg]||tourI>=0)return;S.tips=S.tips||{};if(S.tips[pg])return;
+  setTimeout(()=>{if(curPg===pg&&tourI<0&&!document.querySelector('.sheet.on, #onb.on')){S.tips[pg]=1;save();tourStart(pg)}},700)}
+function tourEnd(done){const k=tourKind;track(done?'tour_done':'tour_skip',{k,at:tourI,of:tourSteps.length});
+  tourI=-1;if(k==='main')S.tourDone=true;else{S.tips=S.tips||{};S.tips[k]=1}save();$('tour')&&$('tour').remove();document.removeEventListener('keydown',tourKey)}
+function tourKey(e){if(e.key==='Escape')tourEnd(false);if(e.key==='ArrowLeft'||e.key==='Enter'){e.preventDefault();tourNext()}if(e.key==='ArrowRight'&&tourI>0){tourI--;tourShow()}}
+function tourNext(){tourI++;tourI>=tourSteps.length?tourEnd(true):tourShow()}
 function tourShow(){
-  const st=TOUR[tourI],el=document.querySelector(st.sel);if(!el){tourNext();return}
-  el.scrollIntoView({block:'center',behavior:matchMedia('(prefers-reduced-motion:reduce)').matches?'auto':'smooth'});
-  setTimeout(()=>{const r=el.getBoundingClientRect(),pad=6,vh=innerHeight,below=r.bottom+200<vh;
+  const st=tourSteps[tourI],el=document.querySelector(st.sel);if(!el){tourNext();return}
+  const rm=matchMedia('(prefers-reduced-motion:reduce)').matches;
+  el.scrollIntoView({block:'center',behavior:rm?'auto':'smooth'});
+  setTimeout(()=>{const r=el.getBoundingClientRect(),pad=8,vh=innerHeight,below=r.top+r.height/2<vh/2;
     let w=$('tour');if(!w){w=document.createElement('div');w.id='tour';document.body.appendChild(w);document.addEventListener('keydown',tourKey)}
-    const v=x=>typeof x==='function'?x():x;
-    w.innerHTML=`<div class="tour-hole" style="top:${r.top-pad}px;left:${r.left-pad}px;width:${r.width+pad*2}px;height:${r.height+pad*2}px"></div>
-      <div class="tour-card" role="dialog" aria-modal="true" aria-labelledby="tourT" style="${below?`top:${Math.min(r.bottom+14,vh-190)}px`:`bottom:${Math.max(vh-r.top+14,12)}px`}">
-        <b id="tourT">${escB(v(st.t))}</b><p>${escB(v(st.d))}</p>
-        <div class="tour-foot"><span class="tour-dots" aria-label="צעד ${tourI+1} מתוך ${TOUR.length}">${TOUR.map((_,i)=>`<i${i===tourI?' class="on"':''}></i>`).join('')}</span>
-          <span><button class="btn btn-sm btn-ghost" onclick="tourEnd()">דלג</button><button class="btn btn-sm btn-primary" id="tourNext" onclick="tourNext()">${tourI===TOUR.length-1?'סיימתי':'הבא'}</button></span></div></div>`;
-    $('tourNext').focus()},260)}
+    const last=tourI===tourSteps.length-1,ax=Math.max(28,Math.min(innerWidth-28,r.left+r.width/2));
+    w.innerHTML=`<div class="tour-hole${rm?'':' pulse'}" style="top:${r.top-pad}px;left:${r.left-pad}px;width:${r.width+pad*2}px;height:${r.height+pad*2}px"></div>
+      <div class="tour-card ${below?'below':'above'}" role="dialog" aria-modal="true" aria-labelledby="tourT" aria-describedby="tourD" style="${below?`top:${Math.min(r.bottom+pad+16,vh-230)}px`:`bottom:${Math.max(vh-r.top+pad+16,12)}px`};--ax:${ax}px">
+        <div class="tour-top"><span class="tour-n">${tourI+1} מתוך ${tourSteps.length}</span><button class="tour-x" aria-label="לסגור את הסיור" onclick="tourEnd(false)">✕</button></div>
+        <b id="tourT">${escB(tv(st.t))}</b><p id="tourD">${escB(tv(st.d))}</p>
+        <div class="tour-foot"><span class="tour-dots" aria-hidden="true">${tourSteps.map((_,i)=>`<i${i===tourI?' class="on"':i<tourI?' class="done"':''}></i>`).join('')}</span>
+          <span>${tourI>0?`<button class="btn btn-sm btn-ghost" onclick="tourI--;tourShow()">הקודם</button>`:`<button class="btn btn-sm btn-ghost" onclick="tourEnd(false)">דלג</button>`}<button class="btn btn-sm tour-go" id="tourNext" onclick="tourNext()">${last?'הבנתי':'הבא'}</button></span></div></div>`;
+    $('tourNext').focus()},rm?40:320)}

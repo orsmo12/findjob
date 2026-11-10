@@ -2,7 +2,7 @@
 const TITLES={main:'לוח בקרה',jobs:'משרות חדשות',apps:'הגשות',prep:'הכנה לראיון',linkedin:'LinkedIn',office:'המשרד',profile:'הפרופיל שלי',settings:'הגדרות'};
 let curPg='main';
 function goPage(id,anchor){
-  track('page_'+id);
+  track('page_'+id);if(id==='jobs'&&queue().length)track('jobs_seen');
   if(typeof offAnimId!=='undefined') cancelAnimationFrame(offAnimId);
   closeDrawer();closeSheet();if(chatOpen)toggleChat();
   curPg=id;
@@ -17,6 +17,7 @@ function goPage(id,anchor){
   if(id==='office'){setTimeout(()=>{sizeOff();drawOff();},80);renderOffice();renderOfficeMsgs();}
   if(anchor) setTimeout(()=>$(anchor)?.scrollIntoView({behavior:'smooth',block:'start'}),60);
   syncChrome();
+  if(typeof pageTip==='function'&&S.tourDone)pageTip(id);
 }
 function syncChrome(){
   const q=queue().length, ap=S.apps.filter(appNeedsMe).length, li=hotPosts().length+fixesLeft().length;
@@ -215,9 +216,8 @@ function bindSwipe(card){
 }
 function decide(kind){
   const q=queue();if(!q.length||busy)return;
-  track('job_'+kind);
   const id=q[0],j=JOBS[id],card=$('deck').querySelector(`.jcard[data-id="${id}"]`);
-  busy=true;
+  track('job_'+kind,{fit:j&&j.fit?Math.round(j.fit*10)/10:null,src:j&&j.src||''});busy=true;
   if(card){card.classList.add('fly');card.style.transform=`translateX(${kind==='save'?130:-130}%) rotate(${kind==='save'?14:-14}deg)`;card.style.opacity='0';}
   S.decisions[id]=kind;
   if(kind==='save'&&!S.apps.find(a=>a.jobId===id)) S.apps.unshift({id:'a-'+id,jobId:id,status:'saved',date:new Date().toISOString(),letter:REAL?'':letterFor(j)});

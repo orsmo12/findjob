@@ -2,7 +2,7 @@
 let onbStep=0, onbDraft=null, onbSingle=false;
 function openOnb(step=0){onbSingle=step>0&&S.onboarded;onbStep=step;onbDraft=JSON.parse(JSON.stringify(prof()));closeSheet();closeDrawer();$('onb').classList.add('open');renderOnb()}
 function closeOnb(){$('onb').classList.remove('open','qmode')}
-function onbGo(d){onbStep=Math.max(0,Math.min(4,onbStep+d));if(onbStep===2)qi=Math.min(S.qi||0,Math.max(0,visibleQs().length-1));renderOnb()}
+function onbGo(d){onbStep=Math.max(0,Math.min(4,onbStep+d));track('onb_step',{s:onbStep});if(onbStep===2)qi=Math.min(S.qi||0,Math.max(0,visibleQs().length-1));renderOnb()}
 function renderOnb(){
   if(onbStep===2){renderQ();return}
   $('onb').classList.remove('qmode');
@@ -42,7 +42,7 @@ function onbCvNext(){const t=$('onbCv');if(t)prof().cv=t.value;save();
   const h=$('onbCvHelp');if(h){h.textContent='בחר קובץ או הדבק לפחות כמה שורות מקורות החיים. אפשר גם להוסיף אחר כך.';h.style.color='var(--rose)'}}
 function onbNext(){commitOnb();if(onbSingle){closeOnb();curPg==='settings'?renderSettings():renderProfile();toast(prof().key?'הסוכנים מחוברים':'נשמר')}else onbGo(1)}
 function commitOnb(){const keep={cv:prof().cv,cvName:prof().cvName,ans:prof().ans||{}};S.profile=Object.assign({},onbDraft,keep);save();syncChrome()}
-function finishOnb(pg){commitOnb();const first=!S.onboarded;S.onboarded=true;save();closeOnb();goPage(pg);
+function finishOnb(pg){commitOnb();const first=!S.onboarded;if(first)track('onb_done',{domain:(prof().ans||{}).domain||''});S.onboarded=true;save();closeOnb();goPage(pg);
   if(first&&CLOUDM&&!Object.keys(JOBS||{}).length&&typeof prepNow==='function')setTimeout(()=>prepNow('scan'),2500);   // סריקה ראשונה מיד, לא מחכים לסריקה הקבועה
   if(curPg===pg&&pg==='main')renderHome();if(!S.tourDone&&pg==='main')setTimeout(tourStart,700)}
 
@@ -94,7 +94,7 @@ function openQuestions(at){if(typeof at==='string')at=visibleQs().findIndex(q=>q
   const v=visibleQs();qi=at!=null?at:Math.max(0,v.findIndex(q=>!answered(q)));if(qi<0)qi=0;
   onbSingle=S.onboarded;onbStep=2;onbDraft=JSON.parse(JSON.stringify(prof()));closeSheet();closeDrawer();$('onb').classList.add('open');renderOnb();
 }
-function renderQ(){
+function renderQ(){try{const q=visibleQs()[qi];if(q)track('onb_q',{q:q.id})}catch(e){}
   const v=visibleQs();
   if(qi>=v.length){qDone();return}
   $('onb').classList.add('qmode');
