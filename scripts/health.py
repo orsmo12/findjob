@@ -46,7 +46,9 @@ def main() -> None:
             check(f"מסד: {table}.{col}", rr.status_code == 200, "" if rr.status_code == 200 else rr.text[:80])
         rr = cx.post(SITE.replace(SITE, os.environ["SUPABASE_URL"].rstrip("/")) + "/rest/v1/rpc/delete_my_account", headers=H, json={})
         check("מסד: הפונקציה delete_my_account קיימת (ומסרבת בלי משתמש)", "not signed in" in rr.text, f"{rr.status_code} {rr.text[:80]}")
-        anon = cx.get(U("profiles"), headers={"apikey": re.search(r'"key":"([^"]+)"', r.text).group(1)}, params={"select": "user_id", "limit": "5"})
+        import json as _j
+        pub = _j.loads(re.search(r"const CLOUD=(\{.*?\});", r.text).group(1))["key"]
+        anon = cx.get(U("profiles"), headers={"apikey": pub, "Authorization": "Bearer " + pub}, params={"select": "user_id", "limit": "5"})
         check("אבטחה: מפתח ציבורי בלי התחברות לא רואה פרופילים", anon.status_code in (200, 401) and (anon.status_code == 401 or anon.json() == []),
               f"{anon.status_code}, {len(anon.json()) if anon.status_code == 200 else 0} שורות")
 
