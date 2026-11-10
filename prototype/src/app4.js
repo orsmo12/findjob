@@ -228,9 +228,15 @@ function tourShow(){
     let w=$('tour');if(!w){w=document.createElement('div');w.id='tour';document.body.appendChild(w);document.addEventListener('keydown',tourKey)}
     const last=tourI===tourSteps.length-1,ax=Math.max(28,Math.min(innerWidth-28,r.left+r.width/2));
     w.innerHTML=`<div class="tour-hole${rm?'':' pulse'}" style="top:${r.top-pad}px;left:${r.left-pad}px;width:${r.width+pad*2}px;height:${r.height+pad*2}px"></div>
-      <div class="tour-card ${below?'below':'above'}" role="dialog" aria-modal="true" aria-labelledby="tourT" aria-describedby="tourD" style="${below?`top:${Math.min(r.bottom+pad+16,vh-230)}px`:`bottom:${Math.max(vh-r.top+pad+16,12)}px`};--ax:${ax}px">
+      <div class="tour-card" role="dialog" aria-modal="true" aria-labelledby="tourT" aria-describedby="tourD" style="top:0;visibility:hidden;--ax:${ax}px">
         <div class="tour-top"><span class="tour-n">${tourI+1} מתוך ${tourSteps.length}</span><button class="tour-x" aria-label="לסגור את הסיור" onclick="tourEnd(false)">✕</button></div>
         <b id="tourT">${escB(tv(st.t))}</b><p id="tourD">${escB(tv(st.d))}</p>
         <div class="tour-foot"><span class="tour-dots" aria-hidden="true">${tourSteps.map((_,i)=>`<i${i===tourI?' class="on"':i<tourI?' class="done"':''}></i>`).join('')}</span>
           <span>${tourI>0?`<button class="btn btn-sm btn-ghost" onclick="tourI--;tourShow()">הקודם</button>`:`<button class="btn btn-sm btn-ghost" onclick="tourEnd(false)">דלג</button>`}<button class="btn btn-sm tour-go" id="tourNext" onclick="tourNext()">${last?'הבנתי':'הבא'}</button></span></div></div>`;
-    $('tourNext').focus()},rm?40:320)}
+    tourPlace(w.querySelector('.tour-card'),r,pad,below);$('tourNext').focus()},rm?40:320)}
+/* החלון תמיד כולו בתוך המסך: מתחת למטרה אם יש מקום, אחרת מעליה, ואם המטרה גדולה מדי (כרטיס משרה) — מעליה בתחתית המסך */
+function tourPlace(c,r,pad,below){const vh=innerHeight,m=12,gap=pad+14,h=Math.min(c.offsetHeight,vh-2*m);
+  const top0=parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--sat'))||0;
+  const fitB=vh-r.bottom-gap>=h+m,fitA=r.top-gap-top0>=h+m;let top,cls;
+  if(fitB&&(below||!fitA)){top=r.bottom+gap;cls='below'}else if(fitA){top=r.top-gap-h;cls='above'}else{top=vh-h-m;cls='over'}
+  c.style.top=Math.max(m+top0,Math.min(top,vh-h-m))+'px';c.className='tour-card '+cls;c.style.visibility=''}
