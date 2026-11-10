@@ -74,6 +74,7 @@ function score(d, answers, title) {
   let fit = Number(d.fit) || 3;
   if (skills.length) fit = 1 + 4 * skills.filter(c => yes(c.met)).reduce((a, c) => a + w(c), 0) / skills.reduce((a, c) => a + w(c), 0)
     - Math.min(0.3, 0.1 * Math.max(0, parseInt(d.nice_missing) || 0));
+  if (skills.length && skills.length < 3) fit = (fit * skills.length + (Number(d.fit) || 3) * (3 - skills.length)) / 3;   // מדגם קטן
   if (yes(d.wrong_field)) fit = Math.min(fit, 2);
   const mid = ['3–5 שנים', 'יותר מ-5 שנים'].includes(answers.exp);
   let have = HAVE[answers.exp];

@@ -358,6 +358,8 @@ def computed_fit(r: dict) -> float:
         except (TypeError, ValueError):
             nice = 0
         fit = 1 + 4 * sum(w(c) for c in core if _met(c)) / sum(w(c) for c in core) - min(0.3, 0.1 * nice)
+        if len(core) < 3:   # מעט דרישות כישורים = מדגם קטן ורועש (נמצא בכיול): משקללים עם ההערכה הכללית של המודל
+            fit = (fit * len(core) + float(r["fit"]) * (3 - len(core))) / 3
     if r.get("wrong_field"):
         fit = min(fit, 2.0)
     return round(max(1.0, min(5.0, fit)), 1)

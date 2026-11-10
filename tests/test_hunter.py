@@ -153,5 +153,15 @@ def test_calibration_experience_caps_score():
 
 
 def test_key_requirements_weigh_double():
-    r = _r([{"req": "Python", "kind": "skill", "key": True, "met": False}, {"req": "Git", "kind": "skill", "met": True}])
-    assert r["fit"] < 3.0   # חסרה דרישה מרכזית: לא חצי-חצי
+    r = _r([{"req": "Python", "kind": "skill", "key": True, "met": False}, {"req": "Git", "kind": "skill", "met": True},
+            {"req": "Docker", "kind": "skill", "met": True}])
+    assert r["fit"] == 3.0   # חסרה דרישה מרכזית: 2 מתוך 4 משקלות, לא 2 מתוך 3 (3.7)
+
+
+def test_few_skill_items_blend_with_model():
+    """מהכיול: משרה עם דרישת כישורים אחת שלא סומנה ירדה ל-1.0. עם מעט דרישות משקללים עם המודל."""
+    from agent_core.agents.hunter import level_cap
+    r = _r([{"req": "C++", "kind": "skill", "met": False}, {"req": "industry experience", "kind": "work", "met": False}], fit=4.7)
+    assert 3.0 < r["fit"] < 4.0
+    level_cap(r, {"levels": ["junior"], "max_years": 1, "have_years": 0}, "Software Engineer")
+    assert r["fit"] <= 3.6
