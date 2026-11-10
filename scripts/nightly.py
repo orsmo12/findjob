@@ -189,7 +189,11 @@ for u in users:
             act.log("hunter", "מכסת ה-AI נגמרה לפני הטלגרם. אקרא אותו בסריקה הבאה.")
         except Exception as e:  # noqa: BLE001
             RR.fail("טלגרם", u["user_id"], e)
-        feed = run(prof, plan, raw=collect(plan) + direct + named + tg, seen=db.seen_ids(u["user_id"]), persist=False, rate_top=fair_rate_top(u))
+        seen_ = db.seen_ids(u["user_id"])
+        rt = fair_rate_top(u)
+        if not seen_:   # סריקה ראשונה של משתמש חדש: הרושם הראשון. מדרגים יותר (נמצא בבדיקה: 15 מתוך 98 → רק 3 משרות)
+            rt = max(rt, 35 if user_key(u) else 25)
+        feed = run(prof, plan, raw=collect(plan) + direct + named + tg, seen=seen_, persist=False, rate_top=rt)
         feed["stats"]["direct_boards"] = len(ok)
         feed["stats"]["boards"] = boards
         if feed["jobs"]:

@@ -126,7 +126,12 @@ def years_required(desc: str) -> list[int]:
 
 def years_phrase(desc: str) -> str:
     for _, m in _year_hits(desc):
-        return " ".join(desc[max(0, m.start() - 25): m.end() + 35].split())
+        a, b = max(0, m.start() - 25), min(len(desc), m.end() + 35)
+        while a > 0 and desc[a - 1].isalnum():          # לא לחתוך באמצע מילה
+            a -= 1
+        while b < len(desc) and desc[b].isalnum():
+            b += 1
+        return " ".join(desc[a:b].split())
     return ""
 
 
