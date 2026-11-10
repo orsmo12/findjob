@@ -6,12 +6,29 @@ on:
     inputs:
       meeting: { description: "לכפות ישיבה שבועית (1)", required: false, default: "" }
       user: { description: "רק למשתמש אחד (user_id). ריק = כולם", required: false, default: "" }
+permissions:
+  contents: read
+  actions: read
 concurrency:
   group: findjob-agents-${{ github.event.inputs.user || 'all' }}   # ריצה אחת בכל פעם לכל משתמש (או לכולם). ריצה של משתמש אחד לא מחכה לסריקה של כולם
   cancel-in-progress: false
 jobs:
+  gate:   # GitHub schedule ו-Vercel cron עלולים לרוץ שניהם: ריצה מתוזמנת מדלגת אם סריקה כבר רצה ב-4 השעות האחרונות
+    if: github.repository == 'orsmo12/findjob'
+    runs-on: ubuntu-latest
+    outputs:
+      skip: ${{ steps.dup.outputs.skip }}
+    steps:
+      - id: dup
+        if: github.event_name == 'schedule'
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: |
+          since=$(date -u -d '-4 hours' +%Y-%m-%dT%H:%M:%SZ)
+          n=$(gh api "repos/${{ github.repository }}/actions/workflows/nightly.yml/runs?per_page=10" --jq "[.workflow_runs[] | select(.id != ${{ github.run_id }} and .created_at > \"$since\" and .event != \"schedule\" and (.conclusion == \"success\" or .status == \"in_progress\" or .status == \"queued\"))] | length")
+          echo "recent=$n"; [ "$n" = "0" ] || echo "skip=1" >> "$GITHUB_OUTPUT"
   hunt:
-    if: github.repository == 'orsmo12/findjob'   # בעותק ציבורי (אם יהיה) הסוכנים לא רצים
+    needs: gate
+    if: github.repository == 'orsmo12/findjob' && needs.gate.outputs.skip != '1'   # בעותק ציבורי הסוכנים לא רצים
     runs-on: ubuntu-latest
     timeout-minutes: 55
     steps:

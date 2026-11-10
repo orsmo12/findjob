@@ -52,7 +52,14 @@ def fair_rate_top(u: dict) -> int:
 
 # לו"ז: הסריקה רצה פעמיים ביום (בוקר ואחר הצהריים). בדיקת משרות פתוחות ודוח שימוש — רק בבוקר.
 # קובי מחפש פוסטים פעם בשבוע. FORCE_MEETING מריץ הכל.
-MORNING = datetime.now(timezone.utc).hour < 9 or bool(os.environ.get("FORCE_MEETING"))
+# "בוקר" = הסריקה הראשונה של היום בישראל, גם אם GitHub איחר בשעות. ריצה למשתמש אחד לא נחשבת
+from zoneinfo import ZoneInfo
+TODAY = datetime.now(ZoneInfo("Asia/Jerusalem")).date().isoformat()
+try:
+    _daily_done = db.system_memory("daily").get("day") == TODAY
+except Exception:  # noqa: BLE001
+    _daily_done = datetime.now(timezone.utc).hour >= 9
+MORNING = (not _daily_done and not (os.environ.get("ONLY_USER") or "").strip()) or bool(os.environ.get("FORCE_MEETING"))
 users = db.profiles_ready()
 print(f"{len(users)} משתמשים עם קורות חיים")
 for u in users:
@@ -313,5 +320,10 @@ except Exception as e:  # noqa: BLE001
     print(f"דוח שימוש נכשל: {type(e).__name__}: {e}")
     RR.fail("דוח שימוש", None, e)
 
+if MORNING and not (os.environ.get("ONLY_USER") or "").strip():
+    try:
+        db.save_system_memory("daily", {"day": TODAY})
+    except Exception as e:  # noqa: BLE001
+        RR.fail("סימון בוקר", None, e)
 budget_sync.push()
 RR.send("הסריקה")
