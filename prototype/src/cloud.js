@@ -16,9 +16,9 @@ function cloudLogin(msg){
   setTimeout(()=>$('splash').classList.add('hide'),400);
 }
 async function cloudGoogle(){
-  const b=$('googleBtn'),h=$('loginHelp');b.disabled=true;
+  const b=$('googleBtn'),h=$('loginHelp');btnBusy(b,true,'מעביר ל-Google…');
   const {error}=await SB.auth.signInWithOAuth({provider:'google',options:{redirectTo:location.origin+location.pathname,queryParams:{prompt:'select_account'}}});
-  if(error){b.disabled=false;h.textContent='הכניסה עם Google לא הצליחה: '+error.message;h.style.color='var(--rose)'}
+  if(error){btnBusy(b,false);h.textContent='הכניסה עם Google לא הצליחה: '+error.message;h.style.color='var(--rose)'}
 }
 function authErr(){const q=new URLSearchParams((location.hash||'').slice(1)+'&'+(location.search||'').slice(1));
   const e=q.get('error_description')||q.get('error');if(!e)return '';
@@ -72,10 +72,12 @@ async function cloudBoot(){
   const {data:{session}}=await SB.auth.getSession();
   if(!session){cloudLogin(authErr());SB.auth.onAuthStateChange((ev,s)=>{if(s&&!ME)location.reload()});return}
   ME=session.user;
+  const bt=setTimeout(()=>{const d=document.createElement('div');d.id='boot';d.innerHTML=`<div class="boot-msg">${LD()}<span>הצוות מעדכן את מה שהכין בשבילך…</span></div>`+skelHtml(3);document.body.appendChild(d)},300);
   try{await cloudLoad()}catch(e){console.warn(e);toast('אין חיבור לענן כרגע. מוצג מה ששמור במכשיר')}
   {const md=ME.user_metadata||{},p=prof(),full=(md.full_name||md.name||'').trim();
    if(full&&!p.name)p.name=full;if(full&&!p.first)p.first=full.split(/\s+/)[0];}
   closeOnb();init();
+  clearTimeout(bt);{const d=$('boot');if(d){d.classList.add('out');setTimeout(()=>d.remove(),260)}}
   if(S.onboarded&&!S.tourDone)setTimeout(()=>{if(curPg==='main')tourStart()},1200);   // סיור פעם אחת
 }
 function cloudLogout(){SB.auth.signOut().then(()=>{LS.clear();location.reload()})}
@@ -85,14 +87,14 @@ let chatFocus='';
 async function cloudChat(v){
   track('chat');
   S.chat=S.chat||[];S.chat.push({role:'user',content:v});
-  const typing=document.createElement('div');typing.className='msg bot typing';typing.innerHTML='<i></i><i></i><i></i>';$('chatMsgs').appendChild(typing);$('chatMsgs').scrollTop=1e6;
+  const typing=document.createElement('div');typing.className='msg bot typing ld-msg';typing.innerHTML=LD('ld-s');const tt=setTimeout(()=>{typing.insertAdjacentHTML('beforeend',`<span>${escB(N('assistant'))} בודק את הנתונים שלך…</span>`)},3000);$('chatMsgs').appendChild(typing);$('chatMsgs').scrollTop=1e6;
   let d={};
   try{const {data:{session}}=await SB.auth.getSession();
     const r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:S.chat.slice(-14),token:session&&session.access_token,focus:chatFocus})});
     d=await r.json().catch(()=>({}));
     if(!d.reply)d.reply=d.error==='no_key'?'הצ׳אט עוד לא מחובר לשרת.':r.status===401?'צריך להתחבר מחדש.':d.error==='limit'?`הגעת היום ל-${d.limit} הודעות על המפתח המשותף, כדי שיישאר גם לאחרים. מחר זה מתאפס. עם מפתח AI אישי וחינמי (בהגדרות) אין הגבלה.`:'יש עומס כרגע. נסה שוב בעוד דקה.';
   }catch(e){d={reply:'אין חיבור כרגע. נסה שוב.'}}
-  typing.remove();
+  clearTimeout(tt);typing.remove();
   S.chat.push({role:'assistant',content:d.reply,action:d.action||null});S.chat=S.chat.slice(-40);save();
   addBotMsg(d.reply,d.action,S.chat.length-1);chatSugs();
 }
@@ -172,12 +174,12 @@ function openAddJob(){
 async function submitAddJob(){track('add_job');
   const url=($('ajUrl').value||'').trim(),text=($('ajText').value||'').trim(),h=$('ajHelp'),btn=$('ajBtn');
   if(!/^https?:\/\//.test(url)&&text.length<200){h.textContent='צריך קישור שמתחיל ב-https://';h.style.color='var(--rose)';return}
-  btn.disabled=true;btn.textContent=`${N('hunter')} קורא את המשרה…`;h.textContent='';
+  btnBusy(btn,true);h.style.color='';const stop=stages(h,[`${N('hunter')} פותח את הקישור…`,'קורא את המודעה המלאה…','מדרג מול קורות החיים שלך: כישורים ורמת ניסיון…','עוד רגע, כותב למה זה מתאים ומה חסר…'],4000);
   let d={};
   try{const {data:{session}}=await SB.auth.getSession();
     const r=await fetch('/api/addjob',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url,text,token:session&&session.access_token})});
     d=await r.json().catch(()=>({}));if(!r.ok&&!d.error)d.error='http'}catch(e){d={error:'net'}}
-  btn.disabled=false;btn.textContent='הוספה';
+  stop();btnBusy(btn,false);
   if(d.need_text){$('ajTextWrap').hidden=false;h.style.color='var(--ink2)';h.textContent='האתר לא מאפשר לקרוא את המשרה ישירות. העתק לשדה את התיאור שלה, ולחץ שוב על "הוספה".';$('ajText').focus();return}
   if(d.not_job){h.style.color='var(--rose)';h.textContent='זה לא נראה כמו מודעת משרה. בדוק את הקישור.';return}
   if(!d.card){h.style.color='var(--rose)';h.textContent=d.error==='auth'?'צריך להתחבר מחדש.':'משהו השתבש. נסה שוב בעוד דקה.';return}
@@ -186,7 +188,7 @@ async function submitAddJob(){track('add_job');
   S.decisions[c.id]='save';_decSnap[c.id]='save';
   if(!S.apps.find(a=>a.jobId===c.id))S.apps.unshift({id:'a-'+c.id,jobId:c.id,status:'saved',date:new Date().toISOString(),letter:''});
   save();closeSheet();
-  toast(`${c.title} ב-${c.co}: התאמה ${c.fit} מתוך 5. נכנסה להגשות.${c.seniority_ok===false?' שים לב: היא דורשת יותר ניסיון.':''}`,{ms:5200});
+  toast(`${c.title} ב-${c.co}: התאמה ${c.fit} מתוך 5. נכנסה להגשות.${c.level_gap?' שים לב: '+c.level_gap+'.':''}`,{ms:5200});
   goPage('apps');setTimeout(()=>openApp('a-'+c.id,'details'),250);
 }
 
@@ -303,11 +305,11 @@ function akTyped(){const v=($('akIn').value||'').trim();const b=$('akBtn');if(b)
 async function akPaste(){try{const t=(await navigator.clipboard.readText()||'').trim();$('akIn').value=t;akTyped()}catch(e){toast('לא הצלחתי לקרוא מהלוח. אפשר להדביק ידנית')}}
 async function saveAiKey(next){const v=(($('akIn')||{}).value||'').trim();if(!v&&S.ai_key){if(next)onbGo(1);return}
   const h=$('akHelp');if(!/^gsk_\w{20,}$/.test(v)){h.textContent='זה לא נראה כמו מפתח של Groq. הוא מתחיל ב-gsk_';return}
-  h.textContent='בודק את המפתח…';
+  const kb=$('akBtn');btnBusy(kb,true);const stop=stages(h,['בודק את המפתח מול Groq…']);
   try{const {data:{session}}=await SB.auth.getSession();
     const r=await fetch('/api/checkkey',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:v,token:session&&session.access_token})});const d=await r.json();
-    if(!d.ok){h.textContent=d.why==='invalid'?'Groq לא מכיר את המפתח הזה. כדאי להעתיק אותו שוב':'לא הצלחתי לבדוק כרגע. נסה שוב בעוד רגע';return}}
-  catch(e){h.textContent='אין חיבור כרגע. נסה שוב';return}
+    stop();btnBusy(kb,false);if(!d.ok){h.textContent=d.why==='invalid'?'Groq לא מכיר את המפתח הזה. כדאי להעתיק אותו שוב':'לא הצלחתי לבדוק כרגע. נסה שוב בעוד רגע';return}}
+  catch(e){stop();btnBusy(kb,false);h.textContent='אין חיבור כרגע. נסה שוב';return}
   S.ai_key=v;track('ai_key');save();toast('המפתח נשמר. מעכשיו הסוכנים שלך עובדים במכסה משלך');
   if(next&&$('onb').classList.contains('open')){onbSingle?closeOnb():onbGo(1)}if(typeof renderSettings==='function')renderSettings()}
 function removeAiKey(){S.ai_key='';save();renderSettings();toast('המפתח הוסר. הסוכנים יעבדו במכסה המשותפת')}
@@ -330,8 +332,8 @@ async function prepNow(kind){kind=kind==='scan'?'scan':'prep';
 function prepBar(done){let b=$('prepBar');if(!b){b=document.createElement('div');b.id='prepBar';b.setAttribute('role','status');document.body.appendChild(b)}
   if(done){b.innerHTML=_prep&&_prep.scan?`<b>מוכן ✓</b><span>המשרות הראשונות מחכות לך במסך המשרות.</span>`:`<b>מוכן ✓</b><span>הכל עודכן. המכתבים, הסקירות וההכנה מחכים בהגשות.</span>`;b.classList.add('done');setTimeout(()=>b.remove(),6000);return}
   const p=Math.min(92,Math.round((Date.now()-_prep.t0)/(_prep.scan?9000:2400)));
-  b.innerHTML=_prep.scan?`<b>${escB(N('hunter'))} מחפש לך משרות ראשונות</b><span>בדרך כלל 8 עד 15 דקות. אפשר לסגור את האפליקציה, הכל יחכה כאן.</span><i><u style="width:${p}%"></u></i>`
-    :`<b>הסוכנים עובדים בשבילך</b><span>בדרך כלל 2 עד 4 דקות. בסיום הכל יופיע בהגשות ובמשרד.</span><i><u style="width:${p}%"></u></i>`}
+  b.innerHTML=_prep.scan?`<b>${LD('ld-s')} ${escB(N('hunter'))} מחפש לך משרות ראשונות</b><span>בדרך כלל 8 עד 15 דקות. אפשר לסגור את האפליקציה, הכל יחכה כאן.</span><i><u style="width:${p}%"></u></i>`
+    :`<b>${LD('ld-s')} הסוכנים עובדים בשבילך</b><span>בדרך כלל 2 עד 4 דקות. בסיום הכל יופיע בהגשות ובמשרד.</span><i><u style="width:${p}%"></u></i>`}
 async function prepPoll(){if(!_prep)return;prepBar();
   try{const {data}=await SB.from('runs').select('plan,created_at').eq('user_id',ME.id).eq('agent','assistant').gte('created_at',_prep.at).not('plan','is',null).limit(5);
     if((data||[]).some(x=>x.plan&&x.plan.prep_done)){clearInterval(_prep.timer);_prep=null;await cloudLoad();if(typeof refreshApps==='function')refreshApps();prepBar(true);return}}catch(e){}
@@ -349,11 +351,12 @@ async function pushToggle(){
     <ol class="how-ol"><li>בספארי לוחצים על כפתור השיתוף</li><li>בוחרים "הוסף למסך הבית"</li><li>פותחים את findjob מהמסך הבית ומפעילים כאן שוב</li></ol>`);return}
   if(!VAPID_PUB||!('PushManager' in window)){toast(VAPID_PUB?'הדפדפן הזה לא תומך בהתראות':'ההתראות עוד לא מחוברות. המפתח צריך להשלים הגדרה אחת');return}
   const perm=await Notification.requestPermission();if(perm!=='granted'){toast('צריך לאשר התראות בדפדפן');return}
+  const pb=document.querySelector('[onclick="pushToggle()"]');if(pb){pb.disabled=true;pb.setAttribute('aria-busy','true')}$('nb')&&$('nb').insertAdjacentHTML('beforeend',' '+LD('ld-s'));
   try{const r=await navigator.serviceWorker.ready,sub=await r.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64u(VAPID_PUB)});
-    S.push=sub.toJSON();track('push_on');save();renderSettings();toast(`מופעל. ${N('hunter')} ישלח הודעה כשיש משרות חדשות`)}catch(e){toast('לא הצלחתי להפעיל התראות בדפדפן הזה')}}
+    S.push=sub.toJSON();track('push_on');save();renderSettings();toast(`מופעל. ${N('hunter')} ישלח הודעה כשיש משרות חדשות`)}catch(e){toast('לא הצלחתי להפעיל התראות בדפדפן הזה')}if(pb)pb.disabled=false;renderSettings()}
 
 /* מחיקת החשבון: פונקציה במסד שמוחקת רק את המשתמש המחובר, וכל הנתונים שלו נמחקים איתו */
-async function deleteAccount(){
+async function deleteAccount(){btnBusy(document.querySelector('[onclick^="deleteAccount"]'),true,'מוחק…');
   const {error}=await SB.rpc('delete_my_account');
   if(error){   // אם הפונקציה עוד לא הותקנה: מוחקים לפחות את מה שמותר מהאפליקציה
     await SB.from('jobs').delete().eq('user_id',ME.id);await SB.from('profiles').delete().eq('user_id',ME.id);

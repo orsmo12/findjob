@@ -119,3 +119,39 @@ def test_computed_fit():
     assert H.computed_fit(r) == 3.7
     assert H.computed_fit({**r, "wrong_field": True}) == 2.0
     assert H.computed_fit({"fit": 3.3, "core": []}) == 3.3
+
+
+def _r(core, years=0, level="junior", fit=4.8):
+    from agent_core.agents.hunter import computed_fit
+    r = {"fit": fit, "core": core, "required_years": years, "level": level, "nice_missing": 0}
+    r["fit"] = computed_fit(r)
+    return r
+
+
+def test_calibration_experience_caps_score():
+    """כיול: משרות שדורשות ניסיון בעבודה לא מקבלות ציון גבוה רק בגלל שהכישורים מתאימים מפרויקטים."""
+    from agent_core.agents.hunter import level_cap
+    student = {"levels": ["student", "junior"], "max_years": 1, "have_years": 0}
+    S = lambda req, key=False: {"req": req, "kind": "skill", "key": key, "met": True}
+    skills = [S("Python", True), S("SQL"), S("REST APIs")]
+    # 1. משרת סטודנט, כל הכישורים: גבוה
+    r = _r(skills, level="student"); level_cap(r, student, "Software Engineer Student"); assert r["fit"] == 5.0 and r["dims"]["level"] == "ok"
+    # 2. אותם כישורים, "ניסיון מוכח כמפתח Backend" בלי מספר: תקרה
+    r = _r(skills + [{"req": "proven experience as backend developer", "kind": "work", "met": False}])
+    assert r["fit"] == 5.0   # ממד הכישורים לבד לא נפגע
+    level_cap(r, student, "Backend Developer"); assert r["fit"] == 3.6 and r["level_gap"] == "work"
+    # 3. דורשת שנה (יש 0): פער קל
+    r = _r(skills, years=1); level_cap(r, student, "Backend Developer"); assert r["fit"] == 3.8
+    # 4. דורשת 2 שנים: מתחת לסף ההצגה
+    r = _r(skills, years=2); level_cap(r, student, "Backend Developer"); assert r["fit"] < 3.5
+    # 5. נכתבה ל-mid, בלי מספר שנים
+    r = _r(skills, level="mid"); level_cap(r, student, "Software Engineer"); assert r["fit"] == 3.3
+    # 6. כותרת ג׳וניור עם דרישת "ניסיון בעבודה": לא נענשת על זה
+    r = _r(skills + [{"req": "industry experience", "kind": "work", "met": False}]); level_cap(r, student, "Junior Developer"); assert r["fit"] == 5.0
+    # 7. מפתח עם 3 שנים, משרה ל-mid: בלי תקרה
+    r = _r(skills, years=3, level="mid"); level_cap(r, {"levels": ["junior", "mid"], "max_years": 5, "have_years": 3}, "Backend Developer"); assert r["fit"] == 5.0
+
+
+def test_key_requirements_weigh_double():
+    r = _r([{"req": "Python", "kind": "skill", "key": True, "met": False}, {"req": "Git", "kind": "skill", "met": True}])
+    assert r["fit"] < 3.0   # חסרה דרישה מרכזית: לא חצי-חצי

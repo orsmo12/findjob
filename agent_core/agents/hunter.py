@@ -155,9 +155,12 @@ def ai_too_senior(r: dict, plan: dict, title: str = "") -> bool:
 
 def note_stretch(r: dict, plan: dict) -> None:
     """מתיחה: שנה מעל מה שיש לך. כותבים את זה בגלוי בחוסרים."""
-    req, mx = r.get("required_years") or 0, plan.get("max_years")
-    if mx and req > mx:
-        r["gaps"] = [f"במודעה נדרשות {req} שנות ניסיון. קצת יותר ממה שיש לך, אבל שווה לנסות"] + r["gaps"][:1]
+    req, have = r.get("required_years") or 0, plan.get("have_years")
+    if have is None:
+        have = plan.get("max_years")
+    if have is not None and req > have:
+        more = "קצת יותר ממה שיש לך, אבל שווה לנסות" if req - have == 1 else "יותר ממה שיש לך"
+        r["gaps"] = [f"במודעה נדרשות {req} שנות ניסיון. {more}"] + r["gaps"][:1]
 
 
 def years_too_many(req: int, plan: dict) -> bool:
@@ -294,9 +297,19 @@ How to judge:
 4. If the ad needs no prior job and asks for skills the CV shows (in projects too), the score should be high (4+).
 
 5. A tech stack the team "works with" or "our stack" is not a requirement unless the ad says the candidate must know it.
+6. Tag every CORE requirement with a "kind":
+   - "skill": knowing a technology, tool, method or subject (Python, CAD, SQL, statistics). Projects and courses CAN meet it.
+   - "work": professional work experience in a role, industry or setting ("experience as a backend developer",
+     "proven industry experience", "experience in a production environment", "X years in ..."). ONLY paid jobs written in the CV
+     can meet it. Personal, academic or side projects NEVER meet a "work" requirement.
+   - "degree": a degree, diploma or certification.
+   A skill the ad repeats or puts first is "key": true.
+7. "level": the seniority the job is written for: "student", "junior", "mid" or "senior".
 
 Return JSON only:
-{{"core": [every CORE requirement, short English, each {{"req": "...", "met": true/false}} — met if the CV shows it, in a job OR a project OR a course],
+{{"core": [every CORE requirement, short English, each {{"req": "...", "kind": "skill|work|degree", "key": true/false, "met": true/false}}
+   — a skill is met if the CV shows it in a job OR a project OR a course; a work requirement only by a paid job in the CV],
+  "level": "student|junior|mid|senior",
   "nice_missing": integer (how many NICE-TO-HAVE items the CV does not show),
   "wrong_field": true/false (true only if the job is in a different profession than the CV, e.g. sales, cyber research, hardware),
   "fit": number 1.0-5.0 with one decimal,
@@ -307,7 +320,7 @@ Return JSON only:
 Write reasons and gaps in natural, fluent Hebrew (as a native Israeli recruiter would), max 12 words each.
 Keep technology, project and company names in English, spelled exactly as they appear in the CV or ad.
 Do not use location as a reason.
-Scale: 5 = almost every core requirement is shown in the CV and the level fits; 3 = partial match; 1 = wrong field or level."""
+Scale: 5 = almost every core requirement is shown in the CV and the level fits; 3 = partial match or a level gap; 1 = wrong field."""
 
 
 def parse_rating(text: str) -> dict | None:
@@ -321,26 +334,66 @@ def parse_rating(text: str) -> dict | None:
         return {"fit": fit, "reasons": clip(d.get("reasons"), 3), "gaps": clip(d.get("gaps"), 2),
                 "seniority_ok": bool(d.get("seniority_ok", True)), "required_years": d.get("required_years", 0),
                 "core": [c for c in (d.get("core") or []) if isinstance(c, dict) and c.get("req")][:15],
-                "nice_missing": d.get("nice_missing", 0), "wrong_field": bool(d.get("wrong_field", False))}
+                "nice_missing": d.get("nice_missing", 0), "wrong_field": bool(d.get("wrong_field", False)),
+                "level": str(d.get("level") or "").lower()}
     except (ValueError, TypeError):
         return None
 
 
+def _met(c: dict) -> bool:
+    return c.get("met") is True or str(c.get("met")).lower() == "true"
+
+
 def computed_fit(r: dict) -> float:
-    """הציון מחושב בקוד מתוך רשימת הדרישות המרכזיות (עמד / לא עמד), כדי שיהיה עקבי בין ריצות ובין מודלים.
-    יתרונות חסרים מורידים עד 0.3. מקצוע אחר — לכל היותר 2.0."""
-    core = r.get("core") or []
+    """ציון הכישורים מחושב בקוד מרשימת הדרישות המרכזיות, כדי שיהיה עקבי בין ריצות ובין מודלים (ברוח Huntr/Jobright:
+    דרישות חובה שוקלות הכי הרבה, מילות מפתח מעט). דרישה מרכזית שחוזרת במודעה ("key") שוקלת כפול.
+    דרישות ניסיון תעסוקתי לא נכנסות כאן: הן ממד נפרד (level_cap). יתרונות חסרים מורידים עד 0.3. מקצוע אחר — לכל היותר 2.0."""
+    core = [c for c in r.get("core") or [] if (c.get("kind") or "skill") != "work"]
     if not core:
-        return r["fit"]
-    met = sum(1 for c in core if c.get("met") is True or str(c.get("met")).lower() == "true")
-    try:
-        nice = max(0, int(float(r.get("nice_missing") or 0)))
-    except (TypeError, ValueError):
-        nice = 0
-    fit = 1 + 4 * met / len(core) - min(0.3, 0.1 * nice)
+        fit = r["fit"]
+    else:
+        w = lambda c: 2 if c.get("key") is True or str(c.get("key")).lower() == "true" else 1
+        try:
+            nice = max(0, int(float(r.get("nice_missing") or 0)))
+        except (TypeError, ValueError):
+            nice = 0
+        fit = 1 + 4 * sum(w(c) for c in core if _met(c)) / sum(w(c) for c in core) - min(0.3, 0.1 * nice)
     if r.get("wrong_field"):
         fit = min(fit, 2.0)
     return round(max(1.0, min(5.0, fit)), 1)
+
+
+# ממד הניסיון: תקרות בקוד. כישורים מפרויקטים לא מכסים על דרישה לניסיון בעבודה.
+CAP_SHORT_1 = 3.8     # המודעה דורשת שנה אחת יותר ממה שיש לך (לפי Jobright: פער של שנה הוא קל)
+CAP_SHORT_2 = 3.3     # שנתיים ומעלה יותר ממה שיש לך: מתחת לסף ההצגה (3.5). משרה ששמרת נשארת, עם הציון האמיתי
+CAP_WORK_GAP = 3.6    # דרישה לניסיון תעסוקתי (בלי מספר שנים) שלא מופיעה בקורות החיים
+CAP_LEVEL = 3.3       # משרה שנכתבה ל-mid/senior, ואתה סטודנט או ג׳וניור
+LEVEL_HE = {"short": "דורשת יותר ניסיון", "work": "דורשת ניסיון בעבודה", "level": "רמה בכירה יותר"}
+
+
+def level_cap(r: dict, plan: dict, title: str = "") -> None:
+    """מחיל את תקרת הניסיון על r["fit"] ושומר r["level_gap"] (לתגית בכרטיס) ו-r["dims"] (פירוק הציון)."""
+    junior_title = bool(JUNIOR_TITLE.search(title or ""))
+    levels = set(plan.get("levels") or [])
+    early = bool(levels & {"student", "intern", "junior", "entry"}) and "mid" not in levels
+    req = r.get("required_years") or 0
+    have = plan.get("have_years")
+    if have is None:
+        have = plan.get("max_years")
+    work = [c for c in r.get("core") or [] if c.get("kind") == "work"]
+    gap, cap = "", 5.0
+    if have is not None and req > have:
+        gap, cap = "short", CAP_SHORT_1 if req - have == 1 else CAP_SHORT_2
+    if gap != "short" and work and not all(_met(c) for c in work) and not junior_title:
+        gap, cap = "work", CAP_WORK_GAP
+    if early and r.get("level") in ("mid", "senior") and not junior_title and cap > CAP_LEVEL:
+        gap, cap = "level", CAP_LEVEL
+    skills = [c for c in r.get("core") or [] if (c.get("kind") or "skill") != "work"]
+    r["dims"] = {"skills": f"{sum(1 for c in skills if _met(c))}/{len(skills)}", "level": gap or "ok"}
+    if gap:
+        r["level_gap"] = gap
+        if r["fit"] > cap:
+            r["fit"] = cap
 
 
 def rate(job: dict, cv: str, prefs: str) -> dict | None:
@@ -417,13 +470,14 @@ def to_card(j: dict, r: dict, cv: str = "") -> dict:
         pass
     return {"id": j["id"], "co": j["company"], "title": j["title"], "loc": j["location"],
             "fit": r["fit"], "reasons": r["reasons"], "gaps": r["gaps"], "partial": r["partial"],
+            "level_gap": LEVEL_HE.get(r.get("level_gap") or ""), "dims": r.get("dims"),
             "tags": tags_for(j.get("description", ""), cv),
             "src": {"indeed": "Indeed", "linkedin": "LinkedIn", "google": "Google Jobs", "greenhouse": "אתר החברה",
                     "lever": "אתר החברה", "ashby": "אתר החברה"}.get(j["source"], j["source"]),
             "posted_days": days, "salary": j.get("salary", ""), "desc": j.get("description", "")[:600], "ad": j.get("description", "")[:4000], "url": j["url"], "rv": RATING_V}
 
 
-RATING_V = 7  # גרסת שיטת הדירוג. משרות שדורגו בגרסה ישנה מדורגות מחדש
+RATING_V = 8  # גרסת שיטת הדירוג. משרות שדורגו בגרסה ישנה מדורגות מחדש
 
 
 def rerate(card: dict, profile: dict, plan: dict, min_fit: float = 3.5) -> tuple[str, dict | None, str]:
@@ -447,6 +501,7 @@ def rerate(card: dict, profile: dict, plan: dict, min_fit: float = 3.5) -> tuple
     if ai_too_senior(r, plan, j["title"]):
         return "filtered", None, f"נדרשות {r.get('required_years') or 'יותר'} שנות ניסיון"
     note_stretch(r, plan)
+    level_cap(r, plan, j["title"])
     if r["fit"] < min_fit:
         return "filtered", None, f"אחרי קריאת המודעה המלאה: {r['fit']:.1f}/5, מתחת לסף"
     new = to_card(j, r, cv)
@@ -503,6 +558,7 @@ def run(profile: dict, plan: dict, raw: list[dict] | None = None, rate_top: int 
             drop(j, "בכירה מדי", r["fit"])
             continue
         note_stretch(r, plan)
+        level_cap(r, plan, j["title"])
         stats.setdefault("fits", []).append(r["fit"])
         ok = r["fit"] >= min_fit
         act.log("hunter", f"{j['title']} ב-{j['company']}: {r['fit']:.1f}/5" + (f" (נדרשות {r['required_years']} שנים)" if r.get("required_years") else "") + f" {'✓ מתאימה' if ok else '· מתחת לסף'}")

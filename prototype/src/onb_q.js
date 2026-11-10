@@ -60,12 +60,13 @@ function domainOf(a){return a.domain||cvDomain(prof().cv)||'פיתוח תוכנ�
 function domKey(a){const d=domainOf(a);return d==='פיתוח תוכנה'?'software':d==='הנדסת מכונות'?'mechanical':'other'}
 function pack(a){const d=domainOf(a);return PACKS[d]||(a.pack&&a.pack.label===d?{field:a.pack.field&&a.pack.field.length?a.pack.field:['אחר'],roles:a.pack.roles.map(r=>r.label),work:'בתחום'}:PACKS['פיתוח תוכנה'])}
 async function buildPack(){const a=ans();if(!CLOUDM||!SB){toast('צריך חיבור לענן כדי לבנות ערכה לתחום שלך');return}
-  $('onbBody').querySelector('.q-card')?.insertAdjacentHTML('afterend',`<p class="help" id="packWait" style="margin-top:12px">${escB(N('strategist'))} קורא את קורות החיים ובונה את רשימת התפקידים בתחום שלך…</p>`);
+  $('onbBody').querySelector('.q-card')?.insertAdjacentHTML('afterend',`<p class="help" id="packWait" style="margin-top:12px"></p>`);
+  const stop=stages($('packWait'),[`${N('strategist')} קורא את קורות החיים שלך…`,'מזהה את התחום ואת רמת הניסיון…','בונה רשימת תפקידים וחיפושים בתחום שלך…','עוד רגע…'],4000);
   try{const {data:{session}}=await SB.auth.getSession();
     const r=await fetch('/api/domain',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({cv:prof().cv||'',token:session&&session.access_token})});
     const d=await r.json();if(!r.ok||!d.roles)throw new Error(d.error||'x');
-    a.pack=d;a.domain=d.label;a.roles=[];save();toast(`${N('strategist')}: התחום שלך הוא ${d.label}. בחר תפקידים בשאלה הבאה`);renderQ()}
-  catch(e){const w=$('packWait');if(w)w.textContent='לא הצלחתי לבנות ערכה כרגע. אפשר לבחור תחום קרוב ולנסות שוב אחר כך.'}}
+    stop();a.pack=d;a.domain=d.label;a.roles=[];save();toast(`${N('strategist')}: התחום שלך הוא ${d.label}. בחר תפקידים בשאלה הבאה`);renderQ()}
+  catch(e){stop();const w=$('packWait');if(w)w.textContent='לא הצלחתי לבנות ערכה כרגע. אפשר לבחור תחום קרוב ולנסות שוב אחר כך.'}}
 const QS=[
   {id:'status',t:'מה המצב שלך היום?',sub:'כך נדע אילו משרות להציג לך.',o:['סטודנט/ית','בוגר/ת טרי/ה, מחפש/ת עבודה ראשונה','ג׳וניור עם ניסיון של עד שנתיים','עובד/ת ומחפש/ת לעבור','משתחרר/ת משירות','לא עובד/ת כרגע']},
   {id:'year',when:isStudent,t:'באיזו שנה אתה בתואר?',o:['שנה א׳','שנה ב׳','שנה ג׳','שנה ד׳','תואר שני']},

@@ -81,6 +81,7 @@ REGIONS = {
     "חיפה והצפון":      ["Haifa", "Yokneam", "Migdal HaEmek", "Tefen", "Karmiel"],
     "באר שבע והדרום":   ["Beer Sheva"],
 }
+EXP_HAVE_YEARS = {"אין עדיין": 0, "פחות משנה": 0, "1–2 שנים": 1, "3–5 שנים": 3, "יותר מ-5 שנים": 5}   # כמה יש באמת
 EXP_MAX_YEARS = {"אין עדיין": 1, "פחות משנה": 1, "1–2 שנים": 2, "3–5 שנים": 5, "יותר מ-5 שנים": None}
 
 
@@ -98,6 +99,7 @@ class SearchPlan:
     min_salary_month: int | None      # מסנן רק משרות שפרסמו שכר נמוך ממנו
     exclude_reasons: dict = field(default_factory=dict)   # ממה שלמדנו מהדילוגים
     why: list[str] = field(default_factory=list)          # הסבר אנושי לכל החלטה
+    have_years: int | None = None     # שנות הניסיון שיש למשתמש (לתקרת הציון כשהמודעה דורשת יותר)
 
     extra_titles: list[str] = field(default_factory=list)  # תפקידים שיואב הציע ואישרת
     drop_queries: list[str] = field(default_factory=list)  # שאילתות שלא הביאו כלום (למידה)
@@ -213,6 +215,9 @@ def build_search_plan(profile: dict) -> SearchPlan:
         levels = ["junior", "entry"]; why.append("מחפש משרה מלאה אחרי התואר: בלי משרות סטודנט")
 
     max_years = EXP_MAX_YEARS.get(exp, 2 if "mid" not in levels else None)
+    have_years = EXP_HAVE_YEARS.get(exp)   # לא ענה על שנות ניסיון: לפי המצב התעסוקתי
+    if have_years is None and "mid" not in levels:
+        have_years = 1 if status == "ג׳וניור עם ניסיון של עד שנתיים" else 0
 
     domain = domain_of(profile)
     RT = role_titles(domain, a.get("pack"))
@@ -262,7 +267,7 @@ def build_search_plan(profile: dict) -> SearchPlan:
     return SearchPlan(titles=titles, levels=levels, max_years=max_years, locations=locations,
                       remote_only=remote_only, student_positions=student_positions,
                       prefer_size=prefer_size, prefer_sectors=prefer_sectors,
-                      min_salary_month=sal, exclude_reasons=counts, why=why,
+                      min_salary_month=sal, exclude_reasons=counts, why=why, have_years=have_years,
                       extra_titles=list(profile.get("extra_titles") or []), heads=heads, area_cities=area, domain=domain, he_queries=he_q, drop_queries=list(profile.get("drop_queries") or []), exclude_words=excl)
 
 

@@ -192,11 +192,14 @@ function renderJobs(){
   }).join('');
   bindSwipe(deck.querySelector('.jcard:not(.behind):not(.behind2)'));
 }
-function fitLbl(f){return f>=4.3?'התאמה חזקה':f>=4?'התאמה טובה':'שווה בדיקה'}
+function fitLbl(f,j){return j&&j.lvl?j.lvl:f>=4.3?'התאמה חזקה':f>=4?'התאמה טובה':'שווה בדיקה'}
+/* פירוק הציון לשני ממדים (ברוח Jobright): כישורים (מפרויקטים, קורסים ועבודה) ורמת ניסיון (רק עבודה בתשלום) */
+function dimsHtml(j){const d=j.dims;if(!d)return'';const [m,n]=String(d.skills||'0/0').split('/');
+  return`<div class="dims"><span><b>כישורים</b> ${m} מתוך ${n} דרישות</span><span class="${d.level==='ok'?'ok':'gap'}"><b>ניסיון</b> ${d.level==='ok'?'מתאים לרמה שלך':escB(j.lvl||'דורשת יותר ניסיון')}</span></div>`}
 function pills(f){const full=Math.floor(f),part=f-full;return`<div class="pills" aria-hidden="true">${[0,1,2,3,4].map(i=>`<i>${i<full?'<b></b>':i===full&&part>0?`<b style="right:${((1-part)*100).toFixed(0)}%"></b>`:''}</i>`).join('')}</div>`}
 function cardInner(j){
   return`<div class="jc-top">${logo(j)}<div style="flex:1;min-width:0"><div class="jc-title" dir="${dirOf(j.title)||'auto'}" style="text-align:right">${escB(j.title)}</div><div class="jc-co">${escB(j.co)} · ${escB(j.loc)}</div></div></div>
-    <div class="fit"><div class="fit-num num">${j.fit.toFixed(1)}<small>/5</small></div><div class="fit-right"><div class="fit-lbl">${fitLbl(j.fit)}</div>${pills(j.fit)}</div></div>
+    <div class="fit"><div class="fit-num num">${j.fit.toFixed(1)}<small>/5</small></div><div class="fit-right"><div class="fit-lbl">${fitLbl(j.fit,j)}</div>${pills(j.fit)}</div></div>
     <div class="jc-reasons">${j.reasons.slice(0,2).map(r=>`<div class="jc-r"><span class="ic ok" aria-hidden="true">✓</span><span>${escB(r)}</span></div>`).join('')}${j.gaps.slice(0,1).map(g=>`<div class="jc-r"><span class="ic gap" aria-hidden="true">!</span><span>חסר: ${escB(g)}</span></div>`).join('')}</div>
     <div class="jc-desc" dir="auto">${escB(j.desc)}</div>
     <div class="jc-tags">${j.tags.map(t=>`<span class="chip" lang="en">${escB(t)}</span>`).join('')}</div>
@@ -234,7 +237,7 @@ function undoLast(){
 function openJobInfo(id){
   id=id||queue()[0];if(!id)return;const j=JOBS[id];const inDeck=queue()[0]===id;
   openSheet(`<div style="display:flex;gap:13px;align-items:center">${logo(j)}<div style="min-width:0"><h3 id="sheetTitle" dir="${dirOf(j.title)||'auto'}" style="text-align:right">${escB(j.title)}</h3><div class="sheet-sub">${escB(j.co)} · ${escB(j.loc)}</div></div></div>
-    <div class="fit" style="margin:16px 0 0"><div class="fit-num num">${j.fit.toFixed(1)}<small>/5</small></div><div class="fit-right"><div class="fit-lbl">${fitLbl(j.fit)}</div>${pills(j.fit)}</div></div>
+    <div class="fit" style="margin:16px 0 0"><div class="fit-num num">${j.fit.toFixed(1)}<small>/5</small></div><div class="fit-right"><div class="fit-lbl">${fitLbl(j.fit,j)}</div>${pills(j.fit)}</div></div>${dimsHtml(j)}
     ${j.reasons.length?`<div class="s-sec"><h4>למה זה מתאים לך</h4>${j.reasons.map(r=>`<div class="jc-r" style="margin-bottom:7px"><span class="ic ok" aria-hidden="true">✓</span><span>${escB(r)}</span></div>`).join('')}</div>`:''}
     ${j.warn?`<div class="s-sec"><p style="font-size:13px;color:var(--warn,#b7791f)">⚠ דורון קרא שוב את המודעה המלאה: ${escB(j.warn)}. שמרת אותה, אז היא נשארת אצלך.</p></div>`:''}
     ${j.partial?`<div class="s-sec"><p style="font-size:13px;color:var(--ink3)">לא היה תיאור מלא של המשרה, אז הדירוג לפי הכותרת בלבד ולא נכתב מה חסר.</p></div>`:''}

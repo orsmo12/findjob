@@ -157,3 +157,20 @@ function openFeedback(){openSheet(`<h3 id="sheetTitle">משוב</h3><div class="
   <button class="btn btn-primary btn-block" onclick="sendFeedback()">שליחה</button>`)}
 function sendFeedback(){const t=($('fbTx').value||'').trim();if(!t){toast('המשוב ריק');return}S.feedback=S.feedback||[];
   S.feedback.push({t:t.slice(0,1000),at:new Date().toISOString(),page:(document.querySelector('.page.active')||{}).id||''});track('feedback');save();closeSheet();toast('תודה! המשוב נשמר')}
+
+/* ═════════ טעינה: "הצוות עובד" ═════════
+   שש נקודות, אחת לכל סוכן, נדלקות בתורן במנטה. שפה אחת לכל המתנה באפליקציה:
+   - עד 300ms: כלום (שלא יהבהב).  - המתנה קצרה: הנקודות בתוך הכפתור, והכפתור נעול.
+   - המתנה ארוכה (מעל 3 שניות): שלבים כתובים שמתחלפים, כדי שיהיה ברור שמשהו באמת קורה.
+   - טעינת תוכן: כרטיסי שלד עם קו סריקה.  הפחתת תנועה: נקודות סטטיות, בלי סריקה. */
+const LD=(cls='')=>`<span class="ld ${cls}" aria-hidden="true">${'<i></i>'.repeat(6)}</span>`;
+function btnBusy(btn,on,label){if(!btn)return;
+  if(on){if(btn._busy)return;btn._busy={html:btn.innerHTML,t:setTimeout(()=>{btn.innerHTML=LD('ld-s')+(label?`<span>${escB(label)}</span>`:'');btn.classList.add('is-busy')},300)};
+    btn.disabled=true;btn.setAttribute('aria-busy','true');return}
+  const b=btn._busy;if(!b)return;clearTimeout(b.t);btn.innerHTML=b.html;btn.classList.remove('is-busy');btn.disabled=false;btn.removeAttribute('aria-busy');btn._busy=null}
+/* שלבים: מציג את הראשון, ומתקדם כל כמה שניות. השלב האחרון נשאר עד הסוף. מחזיר פונקציה לעצירה */
+function stages(el,msgs,every=3500){if(!el)return()=>{};let i=0;el.setAttribute('role','status');
+  const show=()=>{el.innerHTML=`<span class="stage">${LD('ld-s')}<span>${escB(msgs[i])}</span></span>`};
+  const t0=setTimeout(()=>{show();el._st=setInterval(()=>{if(i<msgs.length-1){i++;show()}},every)},300);
+  return()=>{clearTimeout(t0);clearInterval(el._st);el.innerHTML=''}}
+const skelHtml=(n=3)=>`<div class="skel-wrap" role="status" aria-label="טוען">${'<div class="skel glass"><b></b><i></i><i></i></div>'.repeat(n)}</div>`;

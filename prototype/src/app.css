@@ -836,3 +836,36 @@ a.person>svg{flex:0 0 18px;width:18px;height:18px;fill:none;stroke:var(--ink3);s
 
 .dev-fun{display:grid;gap:6px;margin:6px 0 4px}.dev-fun>div{display:grid;grid-template-columns:110px 1fr 28px;align-items:center;gap:8px;font-size:13px}
 .dev-fun i{height:8px;border-radius:4px;background:var(--brand);min-width:2px}.dev-err{font-size:12.5px;padding-inline-start:16px;margin:4px 0}
+
+.dims{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;font-size:13px}.dims span{padding:4px 10px;border-radius:10px;background:var(--hi-lt,#E6F7EF);color:var(--hi-ink,#173B33)}
+.dims span.gap{background:#FBF1E1;color:#7A4E12}.dims b{font-weight:700;margin-inline-end:4px}
+
+/* ── טעינה: "הצוות עובד" ── */
+.ld{position:relative;display:inline-block;width:22px;height:22px;flex-shrink:0;vertical-align:middle}
+.ld i{position:absolute;left:50%;top:50%;width:5px;height:5px;margin:-2.5px;border-radius:50%;background:currentColor;opacity:.28;
+  animation:ldOn 1.2s ease-in-out infinite}
+.ld i:nth-child(1){transform:rotate(0deg) translateY(-8px)}.ld i:nth-child(2){transform:rotate(60deg) translateY(-8px);animation-delay:.2s}
+.ld i:nth-child(3){transform:rotate(120deg) translateY(-8px);animation-delay:.4s}.ld i:nth-child(4){transform:rotate(180deg) translateY(-8px);animation-delay:.6s}
+.ld i:nth-child(5){transform:rotate(240deg) translateY(-8px);animation-delay:.8s}.ld i:nth-child(6){transform:rotate(300deg) translateY(-8px);animation-delay:1s}
+@keyframes ldOn{0%,100%{opacity:.28;background:currentColor}30%{opacity:1;background:var(--hi)}}
+.ld-s{width:16px;height:16px}.ld-s i{width:4px;height:4px;margin:-2px}
+.ld-s i:nth-child(1){transform:rotate(0deg) translateY(-6px)}.ld-s i:nth-child(2){transform:rotate(60deg) translateY(-6px)}.ld-s i:nth-child(3){transform:rotate(120deg) translateY(-6px)}
+.ld-s i:nth-child(4){transform:rotate(180deg) translateY(-6px)}.ld-s i:nth-child(5){transform:rotate(240deg) translateY(-6px)}.ld-s i:nth-child(6){transform:rotate(300deg) translateY(-6px)}
+.ld-l{width:44px;height:44px}.ld-l i{width:8px;height:8px;margin:-4px}
+.ld-l i:nth-child(1){transform:rotate(0deg) translateY(-16px)}.ld-l i:nth-child(2){transform:rotate(60deg) translateY(-16px)}.ld-l i:nth-child(3){transform:rotate(120deg) translateY(-16px)}
+.ld-l i:nth-child(4){transform:rotate(180deg) translateY(-16px)}.ld-l i:nth-child(5){transform:rotate(240deg) translateY(-16px)}.ld-l i:nth-child(6){transform:rotate(300deg) translateY(-16px)}
+.btn.is-busy{display:inline-flex;align-items:center;justify-content:center;gap:8px;opacity:1;cursor:progress}
+.stage{display:inline-flex;align-items:center;gap:9px;color:var(--ink2);font-size:14px;animation:stIn .25s ease-out}
+@keyframes stIn{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:none}}
+.skel-wrap{display:grid;gap:12px}
+.skel{position:relative;overflow:hidden;border-radius:var(--rad-l,18px);padding:16px;display:grid;gap:9px;min-height:92px}
+.skel b,.skel i{display:block;height:12px;border-radius:6px;background:rgba(47,72,88,.10)}.skel b{width:45%;height:15px}.skel i:last-child{width:70%}
+.skel::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,transparent 0,rgba(123,224,181,.0) 40%,rgba(123,224,181,.55) 50%,rgba(123,224,181,0) 60%,transparent 100%);
+  background-size:100% 220%;animation:skScan 1.6s cubic-bezier(.4,0,.2,1) infinite}
+@keyframes skScan{from{background-position:0 120%}to{background-position:0 -120%}}
+#boot{position:fixed;inset:0;z-index:80;background:var(--canvas);padding:84px 16px 16px;transition:opacity .25s}
+#boot .boot-msg{display:flex;align-items:center;gap:10px;color:var(--brand);font-weight:600;margin:0 4px 16px}
+#boot.out{opacity:0;pointer-events:none}
+.msg.typing.ld-msg{display:flex;align-items:center;gap:9px;color:var(--ink3);font-size:13px}
+#prepBar .ld{color:var(--brand)}
+@media (prefers-reduced-motion:reduce){.ld i{animation:none;opacity:.6}.ld i:nth-child(1){opacity:1;background:var(--hi)}.skel::after{animation:none;display:none}.stage{animation:none}}

@@ -53,9 +53,39 @@ Return JSON only:
 {"is_job": true/false,
  "title": "job title as written", "company": "company name as written", "location": "location as written or \\"\\"",
  "salary": "salary ONLY if explicitly written, else \\"\\"",
+ "core": [every CORE requirement (not "advantage"/"nice to have"), short English, each {"req": "...", "kind": "skill|work|degree", "key": true/false, "met": true/false}],
+ "nice_missing": integer, "wrong_field": true/false, "level": "student|junior|mid|senior", "required_years": integer,
  "fit": 1.0-5.0, "reasons": [up to 3 short Hebrew reasons, each a concrete CV fact matching the ad],
  "gaps": [up to 2 short Hebrew items: requirements in the ad the CV does not show],
- "seniority_ok": true/false}`;
+ "seniority_ok": true/false}
+kind: "skill" = knowing a technology/tool/subject (projects and courses CAN meet it); "work" = professional work experience in a role,
+industry or setting, or N years (ONLY paid jobs in the CV meet it, never projects); "degree" = degree or certification.
+key = the ad repeats it or lists it first. required_years = minimum years of work experience as a core requirement, 0 if none.`;
+
+/* אותה שיטת ניקוד כמו של דורון (agent_core/agents/hunter.py: computed_fit + level_cap), כדי שהציון יהיה עקבי */
+const HAVE = { 'אין עדיין': 0, 'פחות משנה': 0, '1–2 שנים': 1, '3–5 שנים': 3, 'יותר מ-5 שנים': 5 };
+const LEVEL_HE = { short: 'דורשת יותר ניסיון', work: 'דורשת ניסיון בעבודה', level: 'רמה בכירה יותר' };
+const JUNIOR_T = /\b(junior|jr\.?|student|intern|internship|graduate|entry|new grad)\b|סטודנט|ג'וניור|ג׳וניור/i;
+const yes = v => v === true || String(v).toLowerCase() === 'true';
+function score(d, answers, title) {
+  const core = (Array.isArray(d.core) ? d.core : []).filter(c => c && c.req).slice(0, 15);
+  const skills = core.filter(c => (c.kind || 'skill') !== 'work'), work = core.filter(c => c.kind === 'work');
+  const w = c => (yes(c.key) ? 2 : 1);
+  let fit = Number(d.fit) || 3;
+  if (skills.length) fit = 1 + 4 * skills.filter(c => yes(c.met)).reduce((a, c) => a + w(c), 0) / skills.reduce((a, c) => a + w(c), 0)
+    - Math.min(0.3, 0.1 * Math.max(0, parseInt(d.nice_missing) || 0));
+  if (yes(d.wrong_field)) fit = Math.min(fit, 2);
+  const mid = ['3–5 שנים', 'יותר מ-5 שנים'].includes(answers.exp);
+  let have = HAVE[answers.exp];
+  if (have === undefined) have = mid ? null : answers.status === 'ג׳וניור עם ניסיון של עד שנתיים' ? 1 : 0;
+  const req = parseInt(d.required_years) || 0, jt = JUNIOR_T.test(title);
+  let gap = '', cap = 5;
+  if (have !== null && req > have) { gap = 'short'; cap = req - have === 1 ? 3.8 : 3.3; }
+  if (gap !== 'short' && work.length && !work.every(c => yes(c.met)) && !jt) { gap = 'work'; cap = 3.6; }
+  if (!mid && ['mid', 'senior'].includes(String(d.level || '').toLowerCase()) && !jt && cap > 3.3) { gap = 'level'; cap = 3.3; }
+  fit = Math.round(Math.max(1, Math.min(5, cap, fit)) * 10) / 10;
+  return { fit, level_gap: LEVEL_HE[gap] || '', dims: { skills: `${skills.filter(c => yes(c.met)).length}/${skills.length}`, level: gap || 'ok' } };
+}
 
 const LATIN = /[A-Za-z][A-Za-z0-9+#.\-]{2,}/g;
 const grounded = (t, src) => (String(t).match(LATIN) || []).every(w => src.toLowerCase().includes(w.toLowerCase().replace(/[.\-,]+$/, '')));
@@ -105,12 +135,12 @@ module.exports = async (req, res) => {
   const card = {
     id: 'j-' + crypto.createHash('sha1').update(`${norm(co)}|${norm(title)}`).digest('hex').slice(0, 10),
     co, title, loc: String(d.location || page.location || '').slice(0, 80),
-    fit: Math.round(Math.max(1, Math.min(5, Number(d.fit) || 3)) * 10) / 10,
+    ...score(d, prof.answers || {}, title),
     reasons: (d.reasons || []).filter(r => grounded(r, cv)).slice(0, 3).map(String),
     gaps: (d.gaps || []).filter(g => grounded(g, ad)).slice(0, 2).map(String),
     partial: false, tags: [], src: page.src || 'הוספת בעצמך', posted_days: 0,
     salary: d.salary && ad.includes(String(d.salary).replace(/[^\d]/g, '').slice(0, 3)) ? String(d.salary).slice(0, 40) : '',
-    desc: ad.slice(0, 600), ad: ad.slice(0, 4000), url: page.url || url, added: true, seniority_ok: d.seniority_ok !== false,
+    desc: ad.slice(0, 600), ad: ad.slice(0, 4000), url: page.url || url, added: true, seniority_ok: d.seniority_ok !== false, rv: 8,   // rv = RATING_V בדורון: כבר דורג בשיטה הנוכחית
   };
   const ins = await sb('/rest/v1/jobs', token, { method: 'POST', headers: { Prefer: 'resolution=merge-duplicates' },
     body: JSON.stringify([{ user_id: uid, id: card.id, card, fit: card.fit, decision: 'save' }]) });

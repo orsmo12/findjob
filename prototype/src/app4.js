@@ -90,7 +90,8 @@ function saveStory(id){const t=$('stT').value.trim(),b=$('stB').value;if(!t){$('
 function editCvText(){openSheet(`<h3 id="sheetTitle">קורות חיים כטקסט</h3><div class="sheet-sub">הסוכנים עובדים לפי הטקסט הזה</div><div class="field" style="margin-top:14px"><label for="cvEdit" class="vh">קורות חיים</label><textarea id="cvEdit" rows="12">${esc(prof().cv)}</textarea></div><button class="btn btn-primary btn-block" onclick="prof().cv=$('cvEdit').value;save();closeSheet();renderProfile();toast('קורות החיים נשמרו')">שמירה</button>`)}
 function onCvFile(inp){
   const f=inp.files[0];if(!f)return;prof().cvName=f.name;
-  readCv(f).then(t=>{if(t&&t.trim().length>30)prof().cv=t.slice(0,20000);else toast('לא הצלחתי לקרוא טקסט מהקובץ. אפשר להדביק אותו כטקסט',{ms:4200});save();afterCv()});
+  const tw=document.createElement('div');tw.className='cv-wait';inp.insertAdjacentElement('afterend',tw);const stop=stages(tw,['קורא את הקובץ…','מחלץ את הטקסט מקורות החיים…'],2500);
+  readCv(f).then(t=>{stop();tw.remove();if(t&&t.trim().length>30)prof().cv=t.slice(0,20000);else toast('לא הצלחתי לקרוא טקסט מהקובץ. אפשר להדביק אותו כטקסט',{ms:4200});save();afterCv()});
   inp.value='';
 }
 /* קריאת קורות חיים בדפדפן: PDF (pdf.js), Word (mammoth), טקסט. הקובץ לא נשלח לשום מקום */
