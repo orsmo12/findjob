@@ -869,3 +869,6 @@ a.person>svg{flex:0 0 18px;width:18px;height:18px;fill:none;stroke:var(--ink3);s
 .msg.typing.ld-msg{display:flex;align-items:center;gap:9px;color:var(--ink3);font-size:13px}
 #prepBar .ld{color:var(--brand)}
 @media (prefers-reduced-motion:reduce){.ld i{animation:none;opacity:.6}.ld i:nth-child(1){opacity:1;background:var(--hi)}.skel::after{animation:none;display:none}.stage{animation:none}}
+
+.ak-why{display:grid;gap:4px;background:var(--hi-lt,#E6F7EF);color:var(--hi-ink,#173B33);border-radius:14px;padding:11px 13px;margin:0 0 14px;font-size:13.5px;line-height:1.55}
+.ak-why b{font-size:14px}

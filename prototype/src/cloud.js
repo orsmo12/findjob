@@ -296,11 +296,12 @@ function openUsage(){const r=(RUNS||[]).find(x=>x.stats&&x.stats.usage_report);i
 
 /* מפתח AI אישי (Groq, חינם): כל משתמש מקבל מכסה משלו, והסוכנים שלו לא מחכים בתור */
 const maskKey=k=>k?k.slice(0,4)+'…'+k.slice(-4):'';
-function aiKeyStep(){return `<h1>מפתח AI אישי, חינם</h1><p class="lead">ככה הסוכנים שלך עובדים במכסה משלך ולא מחכים בתור. לוקח דקה.</p>
+function aiKeyStep(){return `<h1>מפתח AI אישי, חינם</h1><p class="lead">לוקח דקה, ועושה את ההבדל: הסוכנים שלך עובדים במכסה משלך ולא מחכים בתור.</p>
+  <div class="ak-why"><b>למה זה חשוב</b><span>בלי מפתח, כל המשתמשים חולקים מכסה יומית אחת. ביום עמוס הסריקה הראשונה שלך והמכתבים יכולים להתעכב עד מחר.</span><span>חינם לגמרי, בלי כרטיס אשראי.</span></div>
   <a class="btn btn-primary btn-block" href="https://console.groq.com/keys" target="_blank" rel="noopener" onclick="track('groq_open')">לפתוח את Groq וליצור מפתח</a>
   <ol class="ak-steps"><li>נכנסים עם חשבון Google</li><li>לוחצים <bdi dir="ltr">Create API Key</bdi>, נותנים שם (למשל findjob), ומעתיקים</li><li>חוזרים לכאן ומדביקים</li></ol>
   <div class="field"><label for="akIn">המפתח שלך</label><div style="display:flex;gap:8px"><input id="akIn" class="ltr" placeholder="gsk_..." value="${escB(S.ai_key||'')}" autocomplete="off" spellcheck="false" oninput="akTyped()"><button class="btn btn-sm btn-ghost" onclick="akPaste()">להדביק</button></div>
-  <div class="help" id="akHelp">${S.ai_key?'המפתח שמור ✓ '+escB(maskKey(S.ai_key)):'אפשר גם לדלג. הסוכנים יעבדו במכסה המשותפת, שמוגבלת.'}</div></div>`}
+  <div class="help" id="akHelp">${S.ai_key?'המפתח שמור ✓ '+escB(maskKey(S.ai_key)):'אפשר לדלג ולהוסיף אחר כך בהגדרות. עד אז הסוכנים יעבדו במכסה המשותפת.'}</div></div>`}
 function akTyped(){const v=($('akIn').value||'').trim();const b=$('akBtn');if(b)b.disabled=!/^gsk_\w{20,}$/.test(v)}
 async function akPaste(){try{const t=(await navigator.clipboard.readText()||'').trim();$('akIn').value=t;akTyped()}catch(e){toast('לא הצלחתי לקרוא מהלוח. אפשר להדביק ידנית')}}
 async function saveAiKey(next){const v=(($('akIn')||{}).value||'').trim();if(!v&&S.ai_key){if(next)onbGo(1);return}

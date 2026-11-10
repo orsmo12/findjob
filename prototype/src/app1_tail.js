@@ -144,7 +144,7 @@ async function copyText(t,msg){
 
 /* מעקב שימוש ללמידה: ספירות, אבני דרך (הפעם הראשונה שמשהו קרה), 200 האירועים האחרונים ושגיאות.
    בלי תוכן: לא קורות חיים, לא מכתבים, לא מה שנכתב בצ׳אט. רק מה נלחץ ומתי. נשמר בפרופיל (state.usage) */
-const MILES=['onb_done','jobs_seen','job_save','job_skip','kit_open','letter_copy','fill_help','applied','chat','prep_now','scan_first','push_on','tour_done','tour_skip','profile_kit','my_letters','feedback'];
+const MILES=['onb_done','ai_key','jobs_seen','job_save','job_skip','kit_open','letter_copy','fill_help','applied','chat','prep_now','scan_first','push_on','tour_done','tour_skip','profile_kit','my_letters','feedback'];
 function track(ev,p){try{const u=S.usage=S.usage||{c:{},days:[]},now=new Date().toISOString();u.c[ev]=(u.c[ev]||0)+1;const d=now.slice(0,10);
   if(!u.days.includes(d)){u.days.push(d);u.days=u.days.slice(-60)}u.last=now;if(!u.first)u.first=now;
   if(MILES.includes(ev)){u.m=u.m||{};if(!u.m[ev])u.m[ev]=now}

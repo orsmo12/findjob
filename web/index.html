@@ -1016,6 +1016,9 @@ a.person>svg{flex:0 0 18px;width:18px;height:18px;fill:none;stroke:var(--ink3);s
 #prepBar .ld{color:var(--brand)}
 @media (prefers-reduced-motion:reduce){.ld i{animation:none;opacity:.6}.ld i:nth-child(1){opacity:1;background:var(--hi)}.skel::after{animation:none;display:none}.stage{animation:none}}
 
+.ak-why{display:grid;gap:4px;background:var(--hi-lt,#E6F7EF);color:var(--hi-ink,#173B33);border-radius:14px;padding:11px 13px;margin:0 0 14px;font-size:13.5px;line-height:1.55}
+.ak-why b{font-size:14px}
+
 </style>
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" href="/icon.svg">
@@ -1488,7 +1491,7 @@ async function copyText(t,msg){
 
 /* מעקב שימוש ללמידה: ספירות, אבני דרך (הפעם הראשונה שמשהו קרה), 200 האירועים האחרונים ושגיאות.
    בלי תוכן: לא קורות חיים, לא מכתבים, לא מה שנכתב בצ׳אט. רק מה נלחץ ומתי. נשמר בפרופיל (state.usage) */
-const MILES=['onb_done','jobs_seen','job_save','job_skip','kit_open','letter_copy','fill_help','applied','chat','prep_now','scan_first','push_on','tour_done','tour_skip','profile_kit','my_letters','feedback'];
+const MILES=['onb_done','ai_key','jobs_seen','job_save','job_skip','kit_open','letter_copy','fill_help','applied','chat','prep_now','scan_first','push_on','tour_done','tour_skip','profile_kit','my_letters','feedback'];
 function track(ev,p){try{const u=S.usage=S.usage||{c:{},days:[]},now=new Date().toISOString();u.c[ev]=(u.c[ev]||0)+1;const d=now.slice(0,10);
   if(!u.days.includes(d)){u.days.push(d);u.days=u.days.slice(-60)}u.last=now;if(!u.first)u.first=now;
   if(MILES.includes(ev)){u.m=u.m||{};if(!u.m[ev])u.m[ev]=now}
@@ -2697,7 +2700,7 @@ function renderOnb(){
     foot=`<button class="btn btn-primary btn-block" id="onbNext" onclick="onbCvNext()">המשך</button><button class="link-btn" onclick="onbGo(1)">אוסיף אחר כך</button>`;
   }else if(onbStep===3&&CLOUDM){
     body=aiKeyStep();
-    foot=`<button class="btn btn-primary btn-block" id="akBtn" ${S.ai_key?'':'disabled'} onclick="saveAiKey(true)">${S.ai_key?'להמשיך':'לשמור ולהמשיך'}</button><button class="link-btn" onclick="${onbSingle?'closeOnb()':'onbGo(1)'}">${onbSingle?'ביטול':'אחר כך'}</button>`;
+    foot=`<button class="btn btn-primary btn-block" id="akBtn" ${S.ai_key?'':'disabled'} onclick="saveAiKey(true)">${S.ai_key?'להמשיך':'לשמור ולהמשיך'}</button><button class="link-btn" onclick="${onbSingle?'closeOnb()':"track('ai_key_skip');onbGo(1)"}">${onbSingle?'ביטול':'לדלג בינתיים (הסריקה עלולה להתעכב)'}</button>`;
   }else if(onbStep===3){
     body=`<h1>צעד אחרון: לחבר את הסוכנים</h1><p class="lead">הסוכנים צריכים מפתח אישי כדי לעבוד בשבילך. זה חינם ולוקח שתי דקות.</p>
       <div class="key-steps"><div><span>להיכנס ל-<a href="https://console.groq.com/keys" target="_blank" rel="noopener" lang="en">console.groq.com/keys</a> עם חשבון Google</span></div><div><span>ללחוץ <span lang="en">Create API Key</span> ולהעתיק את המפתח</span></div><div><span>להדביק אותו כאן</span></div></div>
@@ -3432,11 +3435,12 @@ function openUsage(){const r=(RUNS||[]).find(x=>x.stats&&x.stats.usage_report);i
 
 /* מפתח AI אישי (Groq, חינם): כל משתמש מקבל מכסה משלו, והסוכנים שלו לא מחכים בתור */
 const maskKey=k=>k?k.slice(0,4)+'…'+k.slice(-4):'';
-function aiKeyStep(){return `<h1>מפתח AI אישי, חינם</h1><p class="lead">ככה הסוכנים שלך עובדים במכסה משלך ולא מחכים בתור. לוקח דקה.</p>
+function aiKeyStep(){return `<h1>מפתח AI אישי, חינם</h1><p class="lead">לוקח דקה, ועושה את ההבדל: הסוכנים שלך עובדים במכסה משלך ולא מחכים בתור.</p>
+  <div class="ak-why"><b>למה זה חשוב</b><span>בלי מפתח, כל המשתמשים חולקים מכסה יומית אחת. ביום עמוס הסריקה הראשונה שלך והמכתבים יכולים להתעכב עד מחר.</span><span>חינם לגמרי, בלי כרטיס אשראי.</span></div>
   <a class="btn btn-primary btn-block" href="https://console.groq.com/keys" target="_blank" rel="noopener" onclick="track('groq_open')">לפתוח את Groq וליצור מפתח</a>
   <ol class="ak-steps"><li>נכנסים עם חשבון Google</li><li>לוחצים <bdi dir="ltr">Create API Key</bdi>, נותנים שם (למשל findjob), ומעתיקים</li><li>חוזרים לכאן ומדביקים</li></ol>
   <div class="field"><label for="akIn">המפתח שלך</label><div style="display:flex;gap:8px"><input id="akIn" class="ltr" placeholder="gsk_..." value="${escB(S.ai_key||'')}" autocomplete="off" spellcheck="false" oninput="akTyped()"><button class="btn btn-sm btn-ghost" onclick="akPaste()">להדביק</button></div>
-  <div class="help" id="akHelp">${S.ai_key?'המפתח שמור ✓ '+escB(maskKey(S.ai_key)):'אפשר גם לדלג. הסוכנים יעבדו במכסה המשותפת, שמוגבלת.'}</div></div>`}
+  <div class="help" id="akHelp">${S.ai_key?'המפתח שמור ✓ '+escB(maskKey(S.ai_key)):'אפשר לדלג ולהוסיף אחר כך בהגדרות. עד אז הסוכנים יעבדו במכסה המשותפת.'}</div></div>`}
 function akTyped(){const v=($('akIn').value||'').trim();const b=$('akBtn');if(b)b.disabled=!/^gsk_\w{20,}$/.test(v)}
 async function akPaste(){try{const t=(await navigator.clipboard.readText()||'').trim();$('akIn').value=t;akTyped()}catch(e){toast('לא הצלחתי לקרוא מהלוח. אפשר להדביק ידנית')}}
 async function saveAiKey(next){const v=(($('akIn')||{}).value||'').trim();if(!v&&S.ai_key){if(next)onbGo(1);return}

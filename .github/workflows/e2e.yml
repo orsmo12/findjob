@@ -1,0 +1,23 @@
+name: "dev: end-to-end test"   # כלי מפתח: משתמש בדיקה זמני (מהנדס מכונות בדיוני) עובר את כל האפליקציה האמיתית, ונמחק בסוף
+on: workflow_dispatch
+permissions:
+  contents: read
+jobs:
+  e2e:
+    if: github.repository == 'orsmo12/findjob'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - uses: actions/setup-node@v4
+        with: { node-version: "20" }
+      - run: pip install httpx && npm i --no-save playwright@1.48.2 && npx playwright install --with-deps chromium
+      - run: python -u scripts/e2e.py
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: e2e-screens, path: e2e_out, retention-days: 7 }
