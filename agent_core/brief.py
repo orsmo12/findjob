@@ -18,7 +18,8 @@ import httpx
 from agent_core import cloud_store as db
 
 IL = timezone(timedelta(hours=2))
-ORDER = {"act": 0, "new": 1, "update": 2, "wait": 3, "bg": 4}
+ORDER = {"new": 0, "update": 1, "wait": 2, "bg": 3}
+OLD = {"act": "update"}   # סיכומים ישנים: שי לא נותן הוראות, רק מעדכן. מה לעשות נמצא ב"הצעדים הבאים"
 GO = {"apps", "jobs", "linkedin", "prep", "profile", ""}
 
 
@@ -46,20 +47,14 @@ def facts(u: dict) -> list[dict]:
     closed = [r["card"] for r in saved if (r.get("card") or {}).get("closed_at", "") >= day]
     if closed:
         out.append({"k": "update", "t": "משרות ששמרת נסגרו למועמדים והועברו להיסטוריה: " + ", ".join(c.get("co", "") for c in closed[:4]), "go": ""})
-    ready = [r["card"].get("co", "") for r in saved if (r.get("letter") or {}).get("text") and not (r.get("card") or {}).get("closed_at")]
-    applied = {a.get("jobId") for a in st.get("apps") or [] if a.get("status") in ("applied", "interview", "offer")}
     waiting = [r for r in saved if not (r.get("letter") or {}).get("text") and not (r.get("card") or {}).get("closed_at")]
-    not_sent = [r["card"] for r in saved if (r.get("letter") or {}).get("text") and r["id"] not in applied and not (r.get("card") or {}).get("closed_at")]
-    if not_sent:
-        best = sorted(not_sent, key=lambda c: -float(c.get("fit") or 0))
-        out.append({"k": "act", "t": f"{len(not_sent)} משרות עם מכתב מוכן שעוד לא הגשת. הכי מתאימה: {best[0].get('co', '')} ({float(best[0].get('fit') or 0):.1f})", "go": "apps"})
     if waiting:
         out.append({"k": "wait", "t": f"{len(waiting)} משרות ששמרת עוד בהכנה (מכתב, סקירה)", "go": "apps"})
     cards = {r["id"]: r.get("card") or {} for r in saved}
     for a in st.get("apps") or []:
         if a.get("status") == "interview":
             c = cards.get(a.get("jobId")) or {}
-            out.append({"k": "act", "t": f"ראיון ב-{c.get('co') or 'משרה ששמרת'}" + (f": {a['iv']}" if a.get("iv") else ". כדאי להתכונן"), "go": "prep"})
+            out.append({"k": "update", "t": f"יש לך ראיון ב-{c.get('co') or 'משרה ששמרת'}" + (f": {a['iv']}" if a.get("iv") else ""), "go": "prep"})
     for x in _runs_24h(uid):
         m, ag = str(x["stats"]["msg"]), x.get("agent", "")
         if ag == "hunter" and ("משרות חדשות" in m or "נסגרה" in m):
@@ -79,11 +74,13 @@ def facts(u: dict) -> list[dict]:
 
 PROMPT = """You are Shai, the user's job-search assistant. Write today's short summary in Hebrew, first person, warm and concise.
 Use ONLY the facts below. Never invent a company, number, job or event. Copy company names and numbers exactly.
-Order by importance: things the user should do now first, then new jobs, then updates, then what is in progress.
+Report what happened that is relevant for the user to know. Do NOT tell the user what to do: no instructions, no advice,
+no imperatives ("submit", "prepare", "should"). Next steps are shown separately in the app.
+Order by importance: new jobs first, then updates, then what is in progress.
 Merge related facts. Skip routine background work unless it matters; you may sum it up in one short "bg" item.
 Return JSON only:
-{{"headline": "one sentence, max 12 words, the most important thing today",
-  "items": [{{"t": "max 22 words", "tone": "act|new|update|wait|bg", "go": "apps|jobs|linkedin|prep|profile|"}}]}}
+{{"headline": "one sentence, max 12 words, what happened today (a description, not an instruction)",
+  "items": [{{"t": "max 22 words", "tone": "new|update|wait|bg", "go": "apps|jobs|linkedin|prep|profile|"}}]}}
 Up to 8 items, only important and relevant ones.
 
 FACTS:
@@ -98,7 +95,7 @@ def ground(d: dict, fs: list[dict]) -> dict | None:
     """כל שם באנגלית וכל מספר חייבים להופיע בעובדות. נקודה שלא עוברת נמחקת."""
     src = _tokens(" ".join(f["t"] for f in fs))
     ok = lambda t: _tokens(t) <= src
-    items = [{"t": str(i.get("t") or "")[:220], "tone": i.get("tone") if i.get("tone") in ORDER else "update",
+    items = [{"t": str(i.get("t") or "")[:220], "tone": OLD.get(i.get("tone"), i.get("tone")) if OLD.get(i.get("tone"), i.get("tone")) in ORDER else "update",
               "go": i.get("go") if i.get("go") in GO else ""} for i in (d.get("items") or []) if i.get("t") and ok(str(i["t"]))][:8]
     if not items:
         return None
@@ -108,7 +105,8 @@ def ground(d: dict, fs: list[dict]) -> dict | None:
 
 def from_facts(fs: list[dict]) -> dict:
     """הגרסה בקוד: אם אין AI או שהבדיקה נכשלה."""
-    items = [{"t": f["t"], "tone": f["k"], "go": f["go"]} for f in fs if f["k"] != "bg"][:7]
+    items = sorted([{"t": f["t"], "tone": OLD.get(f["k"], f["k"]), "go": f["go"]} for f in fs if f["k"] != "bg"],
+                   key=lambda i: ORDER.get(i["tone"], 9))[:7]
     bg = [f for f in fs if f["k"] == "bg"]
     if bg:
         items.append({"t": f"ברקע: {len(bg)} עדכונים קטנים מהצוות", "tone": "bg", "go": ""})

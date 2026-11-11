@@ -110,7 +110,7 @@ function oldBrief(brief){return `<section class="brief" aria-labelledby="brH"><d
       ${brief.length>3?`<button class="br-toggle" onclick="const L=this.previousElementSibling,open=L.classList.toggle('all');L.querySelectorAll('.br-more').forEach(l=>l.hidden=!open);this.textContent=open?'פחות':'עוד ${brief.length-3}'">עוד ${brief.length-3}</button>`:''}`
       :`<p>אין חדש מאז הבוקר. הצעדים הבאים מחכים למטה.</p>`}</section>`}
 /* ═════════ "מה חדש": הסיכום היומי של שי (agent_core/brief.py, AI עם בדיקת אמת) + מה שקרה מאז, בקוד ═════════ */
-const BR_TONE={act:['לעשות','tn-act'],new:['חדש','tn-new'],update:['עדכון','tn-upd'],wait:['בדרך','tn-wait'],bg:['ברקע','tn-bg']};
+const BR_TONE={new:['חדש','tn-new'],update:['עדכון','tn-upd'],wait:['בדרך','tn-wait'],bg:['ברקע','tn-bg']};
 const BR_GO={apps:"goPage('apps')",jobs:"goPage('jobs')",linkedin:"goPage('linkedin')",prep:"goPage('prep')",profile:"goPage('profile')"};
 function shaiToday(){const r=(typeof RUNS!=='undefined'&&RUNS||[]).filter(x=>x.stats&&x.stats.brief_ai).sort((a,b)=>b.created_at.localeCompare(a.created_at))[0];
   return r&&Date.now()-new Date(r.created_at)<30*36e5?r:null}
@@ -119,12 +119,11 @@ function sinceBrief(t0){const out=[],seen=new Set();
   for(const r of (typeof RUNS!=='undefined'&&RUNS||[])){const m=(r.stats||{}).msg||'';if(!m||new Date(r.created_at)<=t0)continue;
     let it=null;
     if(r.agent==='hunter'&&/משרות חדשות/.test(m))it={t:m.replace(/^.*?:\s*/,''),tone:'new',go:'jobs'};
-    else if(r.agent==='assistant'&&/מכתב פנייה מוכן/.test(m))it={t:m.split('.')[0],tone:'act',go:'apps'};
+    else if(r.agent==='assistant'&&/מכתב פנייה מוכן/.test(m))it={t:m.split('.')[0],tone:'update',go:'apps'};
     else if(/נסגרה למועמדים/.test(m))it={t:m.split('.')[0],tone:'update',go:''};
     if(it&&!seen.has(it.t)){seen.add(it.t);it.at=r.created_at;out.push(it)}}
-  S.apps.filter(a=>typeof followDue==='function'&&followDue(a)).slice(0,1).forEach(a=>{const j=JOBS[a.jobId];if(j)out.push({t:`הגיע הזמן למעקב מול ${j.co}`,tone:'act',go:'apps'})});
   return out.slice(0,4)}
-function brLi(x,i,hide){const [lbl,cls]=BR_TONE[x.tone]||BR_TONE.update,go=BR_GO[x.go];
+function brLi(x,i,hide){const [lbl,cls]=BR_TONE[x.tone]||BR_TONE.update/* act ישן → עדכון */,go=BR_GO[x.go];
   return `<li class="b2-i ${cls}${hide?' b2-more':''}"${hide?' hidden':''}>${go?`<button onclick="${go}">`:'<div>'}<span class="b2-tag">${lbl}</span><span class="b2-t">${escB(x.t)}</span>${go?'<span class="b2-go" aria-hidden="true">‹</span></button>':'</div>'}</li>`}
 function shaiBrief(){const r=shaiToday();if(!r)return '';const b=r.stats.brief_ai,t0=new Date(r.created_at),since=sinceBrief(t0);
   const items=b.items||[],main=items.filter(x=>x.tone!=='bg'),bg=items.filter(x=>x.tone==='bg'),SHOW=5;
