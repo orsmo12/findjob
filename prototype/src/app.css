@@ -537,6 +537,8 @@ a.btn{text-decoration:none}
 .kv b{font-weight:500;text-align:left}
 .textbox{width:100%;border-radius:14px;border:1px solid var(--glass-edge);background:#fff;padding:12px 14px;font-size:14px;line-height:1.65;resize:vertical;direction:rtl;outline:none;color:var(--ink)}
 .textbox.ltr{direction:ltr;text-align:left}
+.letterbox{font-size:15px;line-height:1.75;padding:18px 18px 20px;white-space:pre-wrap;min-height:360px;font-family:Georgia,"Times New Roman",serif;letter-spacing:.1px}
+.letterbox:not(.ltr){font-family:inherit}
 .textbox:focus{border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-lt)}
 .duo{display:flex;gap:8px;margin-top:10px}
 .duo>*{flex:1}

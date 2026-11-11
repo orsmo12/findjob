@@ -19,7 +19,7 @@ from typing import TypedDict
 
 from agent_core.llm_router import chat
 from agent_core import activity as act
-from agent_core.agents.letters import ad_language, unsupported, _drop_bad_sentences, write_letter
+from agent_core.agents.letters import ad_language, unsupported, _drop_bad_sentences, write_letter, shape_letter
 
 MAX_ROUNDS = 2
 
@@ -28,6 +28,7 @@ SLOP = ["express my strong interest", "i am writing to", "i am excited to apply"
         "passionate", "dynamic", "solid foundation", "great fit", "thank you for your time and consideration",
         "leverage", "synergy", "cutting-edge", "fast-paced", "i am confident that", "delve", "tapestry", "testament to",
         "in today's", "game-changer", "seamlessly", "robust", "spearheaded", "hit the ground running", "extreme ownership",
+        "directly mirror", "mirroring", "mirrors the", "akin to", "just like",
         "בתשוקה", "אני כותב כדי", "אשמח להביע", "מתאים בדיוק"]
 
 QUALITY = """What an excellent letter does (the quality bar):
@@ -37,7 +38,12 @@ QUALITY = """What an excellent letter does (the quality bar):
 4. If an important requirement is missing from the CV, say so honestly in one short sentence, then show fast self-learning with a real example from the CV.
 5. Earlier experience (military, work, studies) only if linked to something the job asks for.
 6. Closing: the specific team and location. No generic thanks.
-7. 120-190 words, plain and specific. No clichés, no AI phrasing, no lists."""
+7. 120-190 words, plain and specific. No clichés, no AI phrasing, no lists.
+8. Honest links only: say a project is relevant to a requirement and why. Never claim it mirrors, equals or is
+   similar to something it is not (tests in a web app are not chip verification; a hobby robot is not hardware bring-up).
+9. Layout of a real letter: greeting line, then 3-4 short paragraphs separated by a blank line
+   (opening / main project / second project or honest gap + self-learning + earlier experience / closing),
+   then "Best regards," and the full name on its own line."""
 
 
 class S(TypedDict, total=False):
@@ -151,7 +157,7 @@ def rewrite(st: S) -> dict:
     fix = list(st.get("issues") or [])
     if st.get("bad"):
         fix.append(f"remove anything not in the CV or the ad: {', '.join(st['bad'])}")
-    text = chat("assistant", "letter_rewrite", [{"role": "user", "content": f"""Rewrite this cover letter, fixing exactly these points, keeping all true facts:
+    text = chat("assistant", "letter_rewrite", [{"role": "user", "content": f"""Rewrite this cover letter, fixing exactly these points, keeping all true facts, the greeting, the paragraph breaks and the sign-off:
 - {chr(10).join('- ' + f for f in fix)[2:]}
 {QUALITY}
 Use ONLY facts from the CV and CURRENT STATUS. Output only the letter.
@@ -179,6 +185,7 @@ def finalize(st: S) -> dict:
     if st.get("bad"):
         act.log("assistant", "עדיין היו פרטים לא מבוססים. מחקתי את המשפטים האלה.")
         text = _drop_bad_sentences(text, st["bad"])
+    text = shape_letter(text, st["job"]["co"], st.get("name") or "", st.get("lang") or "English")
     src_extra = " ".join([_ad(st), st["job"]["title"], st.get("status") or "", _brief_text(st.get("brief"))])
     return {"text": text, "checked": not unsupported(text, st["cv"], src_extra, st["job"]["co"], st.get("name") or "")}
 
@@ -221,5 +228,5 @@ def write_letter_v4(cv: str, job: dict, name: str, brief: dict | None = None, st
     act.log("assistant", f"כותב מכתב ל-{job['co']}: מה החברה צריכה, אילו פרויקטים מתאימים, טיוטה, ביקורת ובדיקת אמת")
     out = _graph.invoke({"cv": cv, "job": job, "name": name, "brief": brief or {}, "status": status,
                          "own_letters": own_letters or [], "may_reuse": may_reuse}, {"recursion_limit": 25})
-    return {"text": out["text"], "lang": out.get("lang") or "English", "v": 4, "checked": bool(out.get("checked")),
+    return {"text": out["text"], "lang": out.get("lang") or "English", "v": 5, "checked": bool(out.get("checked")),
             "rounds": out.get("rounds") or 0, "projects": (out.get("need") or {}).get("projects") or []}

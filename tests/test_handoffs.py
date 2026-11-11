@@ -5,7 +5,7 @@ from agent_core.agents.growth import tailor_edits
 
 def test_missing_for_saved_order():
     assert H.missing_for_saved({}) == ["brief", "tailor", "prep", "letter"]
-    full = {"brief": {"found": True}, "tailor": {"edits": []}, "prep": {"tasks": []}, "letter": {"v": 4}}
+    full = {"brief": {"found": True}, "tailor": {"edits": []}, "prep": {"tasks": []}, "letter": {"v": H.LETTER_V}}
     assert H.missing_for_saved(full) == []
     assert H.missing_for_saved({**full, "letter": {"v": 2}}) == ["letter"]          # מכתב בגרסה ישנה נכתב מחדש
     assert H.missing_for_saved({**full, "prep": {"tasks": [], "more_tasks": True}}) == ["prep"]
@@ -47,7 +47,7 @@ def test_tailor_keeps_only_true_edits():
 
 def test_letter_upgrade_to_v4_is_gradual():
     full = {"brief": {"x": 1}, "tailor": {"x": 1}, "prep": {"tasks": []}}
-    assert H.missing_for_saved({**full, "letter": {"v": 4, "text": "x"}}) == []
+    assert H.missing_for_saved({**full, "letter": {"v": H.LETTER_V, "text": "x"}}) == []
     assert H.missing_for_saved({**full, "letter": {"v": 3, "text": "x"}}) == ["letter"]   # v3 משודרג ל-v4
     old = [({**full, "letter": {"v": 3, "text": "x"}}, ["letter"]) for _ in range(5)]
     new = [({**full}, ["letter"])]   # בלי מכתב בכלל: תמיד נכתב, לא נספר בתקרה

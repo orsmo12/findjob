@@ -26,7 +26,7 @@ def test_loop_fixes_slop_and_grounding():
     })
     assert calls[:3] == ["letter_need", "letter_draft", "letter_critique"]
     assert calls.count("letter_rewrite") == 2                 # פעם בגלל הביקורת, פעם בגלל בדיקת האמת
-    assert out["v"] == 4 and out["checked"] and "Kubernetes" not in out["text"] and out["projects"] == ["findjob"]
+    assert out["v"] == 5 and out["checked"] and "Kubernetes" not in out["text"] and out["projects"] == ["findjob"]
 
 
 def test_gives_up_after_two_rounds_and_drops_bad_sentence():
@@ -39,3 +39,34 @@ def test_gives_up_after_two_rounds_and_drops_bad_sentence():
 
 def test_slop_detected_in_code():
     assert LG.slop_in("I am passionate and want to leverage synergy") == ["passionate", "leverage", "synergy"]
+
+
+def test_dropping_a_bad_first_sentence_keeps_greeting_and_signature():
+    """הבאג מ-11.11: משפט ראשון לא מבוסס מחק גם את ה-Dear, והכל הפך לגוש אחד."""
+    out, _ = run_with({
+        "letter_need": '{"requirements": [], "projects": ["findjob"]}',
+        "letter_draft": "Dear Acme team, I know Rust deeply. findjob is in Python.\n\nI learn fast.\n\nBest regards,\nDana Levi",
+        "letter_critique": '{"issues": []}', "letter_rewrite": "Dear Acme team, I know Rust deeply. findjob is in Python.\n\nI learn fast.\n\nBest regards,\nDana Levi"})
+    t = out["text"]
+    assert t.startswith("Dear Acme team,\n\n") and t.endswith("Best regards,\nDana Levi") and "Rust" not in t
+    assert "findjob is in Python.\n\nI learn fast." in t
+
+
+def test_flat_letter_gets_real_layout():
+    flat = ("Hi Acme team, I'm applying for the AI Engineer role in Tel Aviv while finishing my B.Sc. at HIT this semester. "
+            "findjob is my multi-agent system in Python. It turns messy ads into structured data. "
+            "Home Poker is a React PWA I built and shipped. I learn new tools quickly on my own. "
+            "I'd welcome the chance to join the team in Tel Aviv. Best regards, Dana Levi")
+    t = LG.shape_letter(flat, "Acme", "Dana Levi")
+    assert t.startswith("Hi Acme team,\n\n") and t.endswith("\n\nBest regards,\nDana Levi")
+    body = t.split("\n\n")[1:-1]
+    assert len(body) >= 3 and body[-1].startswith("I'd welcome")
+
+
+def test_missing_greeting_added_and_hebrew_signoff():
+    assert LG.shape_letter("My findjob project helps.", "Acme", "Dana").startswith("Dear Acme team,\n\nMy findjob")
+    assert LG.shape_letter("פרויקט findjob.", "אקמה", "דנה", "Hebrew").endswith("בברכה,\nדנה")
+
+
+def test_inflated_analogy_is_slop():
+    assert "directly mirror" in LG.slop_in("tests directly mirroring the regression automation")

@@ -380,7 +380,7 @@ function kitTabHtml(a,j,id){track('kit_open');
   const letter=a.letter||(j.letter&&j.letter.text)||(REAL?'':letterFor(j)),tl=j.tailor&&j.tailor.edits&&j.tailor.edits.length;
   return `<div class="s-sec" style="margin-top:12px"><h4>קורות חיים</h4>
       <p class="card-sub">${escB(p.cvName||'קורות החיים מהפרופיל')}${tl?`. ${escB(N('linkedin'))} הציע ${j.tailor.edits.length} התאמות למשרה הזו <button class="link" style="color:var(--brand);font-weight:600" onclick="appTab='details';paintAppTab('${id}')">בלשונית פרטים</button>`:''}</p></div>
-    <div class="s-sec"><h4>מכתב פנייה</h4><label for="letterBox" class="vh">מכתב פנייה</label><textarea class="textbox" id="letterBox" rows="11" oninput="appOf('${id}').letter=this.value;save()">${esc(letter)}</textarea>
+    <div class="s-sec"><h4>מכתב פנייה</h4><label for="letterBox" class="vh">מכתב פנייה</label><textarea class="textbox letterbox${/[\u0590-\u05FF]/.test(letter.slice(0,300))?'':' ltr'}" id="letterBox" rows="16" spellcheck="false" oninput="appOf('${id}').letter=this.value;save()">${esc(letter)}</textarea>
       ${REAL&&!a.letter&&!j.letter?`<div class="hint-line">${N('assistant')} מכין את המכתב. הוא יופיע כאן תוך שעתיים בערך.</div>`:j.letter&&!j.letter.checked?`<div class="hint-line">חלק מהמשפטים הוסרו כי לא נמצאו בקורות החיים. כדאי לקרוא לפני ששולחים.</div>`:`<div class="hint-line ok">✓ כל שם, טכנולוגיה ומספר במכתב נבדקו מול קורות החיים והמודעה</div>`}
       <button class="btn btn-ghost btn-sm" onclick="copyText($('letterBox').value,'המכתב הועתק');track('letter_copy')">${ICO.copy}להעתיק את המכתב</button></div>
     <div class="s-sec"><h4>הפרטים שלך לטופס</h4>
