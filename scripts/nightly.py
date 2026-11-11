@@ -220,7 +220,7 @@ for u in users:
                 H.request_for_job(u["user_id"], "hunter", j, ["brief", "tailor"], f"מצאתי משרה בציון {j['fit']:.1f}", existing)
             act.flush()
         s = feed["stats"]
-        print(f"{u['user_id'][:8]}: נאספו {s['collected']}, בכירות מדי {s['too_senior']}, כבר נראו {s['already_seen']}, "
+        print(f"{u['user_id'][:8]}: נאספו {s['collected']}, בכירות מדי {s['too_senior']}, מתחום אחר {s.get('off_field', 0)}, כבר נראו {s['already_seen']}, "
               f"דורגו {s['rated']} (מתוכם {s.get('ai_senior', 0)} בכירות לפי הדירוג), ציונים {sorted(s.get('fits', []), reverse=True)}, מוצגות {s['shown']}")
     except Exception as e:  # משתמש אחד שנכשל לא עוצר את האחרים
         import traceback; traceback.print_exc()

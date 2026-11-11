@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#F2F4F3">
+<meta name="color-scheme" content="only light"><!-- בלי "מצב כהה אוטומטי" של הדפדפן: הוא הופך צבעים באלגוריתם ושובר חלונות (נמצא אצל גלעד, סמסונג) -->
 <title>findjob</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

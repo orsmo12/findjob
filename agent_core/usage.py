@@ -66,7 +66,7 @@ def search_status(hunter_runs: list[dict], other_runs: list[dict]) -> dict:
             for r in other_runs if (r.get("stats") or {}).get("msg")][:4]
     fails = sum(len((r.get("stats") or {}).get("failures") or []) for r in other_runs + hunter_runs if r.get("created_at", "") >= day)
     return {"last_scan": (last or {}).get("created_at", "")[:16], "scans_24h": sum(1 for r in scans if r["created_at"] >= day),
-            "collected": s.get("collected", 0), "too_senior": s.get("too_senior", 0), "rated": s.get("rated", 0), "shown": s.get("shown", 0),
+            "collected": s.get("collected", 0), "too_senior": s.get("too_senior", 0), "off_field": s.get("off_field", 0), "rated": s.get("rated", 0), "shown": s.get("shown", 0),
             "fails_24h": fails, "recent": msgs}
 
 

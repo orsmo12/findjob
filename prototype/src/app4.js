@@ -36,7 +36,7 @@ function renderProfile(){
       <div class="card-sub">${done<total?`ענית על ${done} מתוך ${total} שאלות. כל תשובה עוזרת לסוכנים לדייק.`:'ענית על כל השאלות. אפשר לעדכן בכל רגע.'}</div>
       <div class="quota-bar" style="margin-bottom:6px" aria-hidden="true"><div class="quota-fill" style="width:${Math.round(done/total*100)}%;background:linear-gradient(90deg,var(--brand2),var(--brand-hi))"></div></div>
       <button class="row" onclick="openQuestions('study')"><span class="ri">${ROW_IC.target}</span><span class="rl"><b>${escB([a.study===OTHER?a.study_other:a.study,a.year].filter(Boolean).join(', ')||'לימודים ועבודה')}</b><span>${escB([a.work===OTHER?a.work_other:a.work,(a.scope||[]).join(' + '),a.exp&&('ניסיון: '+a.exp)].filter(Boolean).join(' · ')||'עוד לא ענית')}</span></span><span class="chev" aria-hidden="true"></span></button>
-      <button class="row" onclick="openQuestions('roles')"><span class="ri">${ROW_IC.doc}</span><span class="rl"><b lang="en">${escB((a.roles||[]).filter(r=>r!==OTHER).join(', ')||'תפקידים')}</b><span>${escB([domainsOf(a).join(', '),a.field===OTHER?a.field_other:a.field].filter(Boolean).join(' · ')||'רקע מקצועי: עוד לא ענית')}</span></span><span class="chev" aria-hidden="true"></span></button>
+      <button class="row" onclick="openQuestions('roles')"><span class="ri">${ROW_IC.doc}</span><span class="rl"><b lang="en">${escB((a.roles||[]).filter(r=>r!==OTHER).join(', ')||'תפקידים')}</b><span>${escB([domainsOf(a).join(', '),[].concat(a.field||[]).map(x=>x===OTHER?a.field_other:x).filter(Boolean).join(', ')].filter(Boolean).join(' · ')||'רקע מקצועי: עוד לא ענית')}</span></span><span class="chev" aria-hidden="true"></span></button>
       <button class="row" onclick="openQuestions('locs')"><span class="ri">${ROW_IC.pin}</span><span class="rl"><b>${escB((a.locs||[]).join(', ')||'אזור עבודה')}</b><span>${escB([a.mode,a.start&&('התחלה: '+a.start)].filter(Boolean).join(' · ')||'עוד לא ענית')}</span></span><span class="chev" aria-hidden="true"></span></button>
       <button class="btn btn-sm ${done<total?'btn-primary':'btn-ghost'} btn-block" style="margin-top:8px" onclick="openQuestions()">${done<total?'להמשיך את השאלון':'לעבור על כל התשובות'}</button></section>
 
@@ -231,8 +231,12 @@ const PAGE_TIPS={
 };
 let tourSteps=[],tourI=-1,tourKind='';
 function tourStart(kind){kind=kind||'main';if(kind==='main'){if(curPg!=='main')goPage('main');closeDrawer&&closeDrawer()}
-  tourSteps=(kind==='main'?tourMain():PAGE_TIPS[kind]||[]).filter(st=>document.querySelector(st.sel));if(!tourSteps.length)return;
+  /* רק אלמנטים שבאמת נראים עכשיו: מסכים אחרים קיימים בדף אבל מוסתרים (טיפ של "הגשות" הופיע מעל LinkedIn) */
+  tourSteps=(kind==='main'?tourMain():PAGE_TIPS[kind]||[]).filter(st=>tourVisible(document.querySelector(st.sel)));if(!tourSteps.length)return;
   tourKind=kind;tourI=0;track('tour_start',{k:kind});setTimeout(tourShow,kind==='main'?150:450)}
+const tourVisible=el=>{if(!el||el.offsetParent===null)return false;const r=el.getBoundingClientRect();return r.width>0&&r.height>0};
+/* עברו למסך אחר באמצע טיפ של מסך: סוגרים בלי לסמן שנראה, כדי שיופיע בפעם הבאה במקום הנכון */
+function tourAbortFor(pg){if(tourI<0||tourKind==='main'||tourKind===pg)return;const k=tourKind;tourI=-1;S.tips=S.tips||{};S.tips[k]=0;save();$('tour')&&$('tour').remove();document.removeEventListener('keydown',tourKey)}
 function pageTip(pg){if(!PAGE_TIPS[pg]||tourI>=0)return;S.tips=S.tips||{};if(S.tips[pg])return;
   setTimeout(()=>{if(curPg===pg&&tourI<0&&!document.querySelector('.sheet.on, #onb.on')){S.tips[pg]=1;save();tourStart(pg)}},700)}
 function tourEnd(done){const k=tourKind;track(done?'tour_done':'tour_skip',{k,at:tourI,of:tourSteps.length});
@@ -240,7 +244,8 @@ function tourEnd(done){const k=tourKind;track(done?'tour_done':'tour_skip',{k,at
 function tourKey(e){if(e.key==='Escape')tourEnd(false);if(e.key==='ArrowLeft'||e.key==='Enter'){e.preventDefault();tourNext()}if(e.key==='ArrowRight'&&tourI>0){tourI--;tourShow()}}
 function tourNext(){tourI++;tourI>=tourSteps.length?tourEnd(true):tourShow()}
 function tourShow(){
-  const st=tourSteps[tourI],el=document.querySelector(st.sel);if(!el){tourNext();return}
+  if(tourKind!=='main'&&curPg!==tourKind){tourAbortFor(curPg);return}
+  const st=tourSteps[tourI],el=document.querySelector(st.sel);if(!tourVisible(el)){tourNext();return}
   const rm=matchMedia('(prefers-reduced-motion:reduce)').matches;
   el.scrollIntoView({block:'center',behavior:rm?'auto':'smooth'});
   setTimeout(()=>{const r=el.getBoundingClientRect(),pad=8,vh=innerHeight,below=r.top+r.height/2<vh/2;
@@ -255,7 +260,7 @@ function tourShow(){
     tourPlace(w.querySelector('.tour-card'),r,pad,below);$('tourNext').focus()},rm?40:320)}
 /* החלון תמיד כולו בתוך המסך: מתחת למטרה אם יש מקום, אחרת מעליה, ואם המטרה גדולה מדי (כרטיס משרה) — מעליה בתחתית המסך */
 function tourPlace(c,r,pad,below){const vh=innerHeight,m=12,gap=pad+14,h=Math.min(c.offsetHeight,vh-2*m);
-  const top0=parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--sat'))||0;
+  const tb=$('topbar'),top0=tb&&tb.offsetParent!==null?Math.max(0,tb.getBoundingClientRect().bottom-m+6):0;   // לא מתחת לסרגל העליון
   const fitB=vh-r.bottom-gap>=h+m,fitA=r.top-gap-top0>=h+m;let top,cls;
   if(fitB&&(below||!fitA)){top=r.bottom+gap;cls='below'}else if(fitA){top=r.top-gap-h;cls='above'}else{top=vh-h-m;cls='over'}
   c.style.top=Math.max(m+top0,Math.min(top,vh-h-m))+'px';c.className='tour-card '+cls;c.style.visibility=''}

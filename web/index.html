@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#F2F4F3">
+<meta name="color-scheme" content="only light"><!-- בלי "מצב כהה אוטומטי" של הדפדפן: הוא הופך צבעים באלגוריתם ושובר חלונות (נמצא אצל גלעד, סמסונג) -->
 <title>findjob</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -177,7 +178,7 @@
   --rad-xl:26px;--rad-l:20px;--rad-m:14px;--rad-s:10px;
   --topbar:58px;
   --font:'Rubik',system-ui,-apple-system,'Segoe UI',sans-serif;
-  color-scheme:light;
+  color-scheme:only light;
 }
 @media (prefers-color-scheme:dark){
   :root:not([data-theme="light"]){--brand:#4A7084;--brand2:#3B5A6C;--brand-lt:rgba(74,112,132,.18);--canvas:#121719;--glass:rgba(28,36,42,.6);--glass-strong:rgba(28,36,42,.85);--solid:rgba(28,36,42,.95);--glass-brd:rgba(255,255,255,.10);--ink:#E7EDF0;--ink2:#A9B7BF;--ink3:#7F8E97;}
@@ -613,8 +614,8 @@ body.pg-jobs #toasts{bottom:calc(120px + env(safe-area-inset-bottom,0px))}
 .q-top{display:grid;grid-template-columns:40px 1fr auto;gap:14px;align-items:center}
 .q-back{width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.75);border:1px solid var(--glass-brd);box-shadow:var(--g-shadow);display:grid;place-items:center}
 .q-back svg{width:18px;height:18px;stroke:var(--brand);fill:none;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
-.q-prog{height:5px;border-radius:3px;background:rgba(18,40,32,.08);overflow:hidden}
-.q-prog i{display:block;height:100%;border-radius:3px;background:linear-gradient(90deg,var(--brand2),var(--brand));transition:width .4s cubic-bezier(.2,.9,.3,1)}
+.q-prog{height:5px;border-radius:3px;background:var(--q-track,rgba(18,40,32,.08));overflow:hidden}
+.q-prog i{display:block;height:100%;border-radius:3px;background:var(--q-fill,linear-gradient(90deg,var(--brand2),var(--brand)));transition:width .4s cubic-bezier(.2,.9,.3,1)}
 .q-later{font-size:13.5px;font-weight:500;color:var(--brand);padding:8px 2px;white-space:nowrap}
 .q-count{font-size:13px;color:var(--ink3);margin:30px 0 8px}
 .q-title{font-size:30px!important;font-weight:700;letter-spacing:-.025em;line-height:1.15!important;margin-bottom:8px!important}
@@ -961,17 +962,17 @@ a.person>svg{flex:0 0 18px;width:18px;height:18px;fill:none;stroke:var(--ink3);s
 .tour-hole{position:fixed;border-radius:16px;box-shadow:0 0 0 3px var(--hi),0 0 0 200vmax rgba(12,20,26,.72);pointer-events:none;transition:all .3s cubic-bezier(.2,.8,.2,1)}
 .tour-hole.pulse::after{content:'';position:absolute;inset:-3px;border-radius:18px;border:3px solid var(--hi);animation:tourPulse 1.8s ease-out 2}
 @keyframes tourPulse{from{opacity:.9;transform:scale(1)}to{opacity:0;transform:scale(1.12)}}
-.tour-card{position:fixed;left:14px;right:14px;max-width:380px;margin:auto;background:#fff;color:#1F2A30;border-radius:20px;padding:14px 16px 14px;
+.tour-card{position:fixed;left:14px;right:14px;max-width:380px;margin:auto;background:var(--tour-bg,#fff);color:var(--tour-ink,#1F2A30);border-radius:20px;padding:14px 16px 14px;
   box-shadow:0 24px 60px -12px rgba(0,0,0,.55);border-top:5px solid var(--hi)}
-.tour-card::before{content:'';position:fixed;left:calc(var(--ax) - 9px);width:18px;height:18px;background:#fff;transform:rotate(45deg);margin-top:-14px}
+.tour-card::before{content:'';position:fixed;left:calc(var(--ax) - 9px);width:18px;height:18px;background:var(--tour-bg,#fff);transform:rotate(45deg);margin-top:-14px}
 .tour-card.above::before,.tour-card.over::before{display:none}
 .tour-card{max-height:calc(100vh - 24px);overflow:auto}
 :root{--sat:env(safe-area-inset-top)}
 .tour-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
 .tour-n{font-size:12px;font-weight:700;color:#173B33;background:var(--hi-lt);padding:2px 9px;border-radius:9px}
 .tour-x{width:30px;height:30px;border-radius:50%;color:#5E6B73;font-size:14px}
-.tour-card b{font-size:18px;color:#2F4858;display:block;line-height:1.3}
-.tour-card p{font-size:14.5px;color:#4F5D66;margin:6px 0 14px;line-height:1.6}
+.tour-card b{font-size:18px;color:var(--tour-title,#2F4858);display:block;line-height:1.3}
+.tour-card p{font-size:14.5px;color:var(--tour-sub,#4F5D66);margin:6px 0 14px;line-height:1.6}
 .tour-foot{display:flex;justify-content:space-between;align-items:center;gap:10px}.tour-foot>span:last-child{display:flex;gap:6px}
 .tour-go{background:#2F4858;color:#fff}
 .tour-dots{display:flex;gap:5px}.tour-dots i{width:7px;height:7px;border-radius:50%;background:#D5DDE1}.tour-dots i.done{background:#7FA3B5}.tour-dots i.on{background:#2F4858;width:20px;border-radius:4px}
@@ -1046,6 +1047,14 @@ a.person>svg{flex:0 0 18px;width:18px;height:18px;fill:none;stroke:var(--ink3);s
 .taste-chip.dis{background:#F3EEE8;color:#6B4E2E}.taste-chip button{width:22px;height:22px;border-radius:50%;font-size:11px;color:inherit;opacity:.7}
 
 .us-search{margin-top:6px;padding:8px 10px;border-radius:10px;background:var(--hi-lt,#E6F7EF);display:grid;gap:3px;font-size:12.5px;line-height:1.5}.us-search ul{margin:2px 0 0;padding-inline-start:16px;color:var(--ink2)}
+
+/* חלון הסיור במצב כהה: צבעים מכוונים (גם החץ), לא לבן קשיח שהדפדפן הופך */
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--tour-bg:#1F2B32;--tour-ink:#E6ECEF;--tour-title:#F2F6F7;--tour-sub:#B7C4CB}}
+:root[data-theme="dark"]{--tour-bg:#1F2B32;--tour-ink:#E6ECEF;--tour-title:#F2F6F7;--tour-sub:#B7C4CB}
+:root[data-theme="dark"] .tour-go{background:var(--hi);color:#173B33}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .tour-go{background:var(--hi);color:#173B33}:root:not([data-theme="light"]) .tour-x{color:#B7C4CB}}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--q-track:rgba(255,255,255,.12);--q-fill:var(--hi)}}
+:root[data-theme="dark"]{--q-track:rgba(255,255,255,.12);--q-fill:var(--hi)}
 
 </style>
 <link rel="manifest" href="/manifest.webmanifest">
@@ -2018,6 +2027,7 @@ function goPage(id,anchor){
   if(id==='office'){setTimeout(()=>{sizeOff();drawOff();},80);renderOffice();renderOfficeMsgs();}
   if(anchor) setTimeout(()=>$(anchor)?.scrollIntoView({behavior:'smooth',block:'start'}),60);
   syncChrome();
+  if(typeof tourAbortFor==='function')tourAbortFor(id);
   if(typeof pageTip==='function'&&S.tourDone)pageTip(id);
 }
 /* הסריקה הקבועה הבאה (Vercel Schedules: 06:40 ו-14:40 שעון ישראל) */
@@ -2788,6 +2798,7 @@ function normAns(a){
     if(m[0])a.study=m[0];if(m[1])a.work=m[1]}
   if(a.track&&!a.scope)a.scope={'משרת סטודנט חלקית':['משרה חלקית / משרת סטודנט'],'משרה מלאה אחרי התואר':['משרה מלאה'],'את שתיהן':['משרה מלאה','משרה חלקית / משרת סטודנט']}[a.track];
   if(a.domain&&!a.domains)a.domains=[a.domain];
+  for(const k of ['field','army'])if(typeof a[k]==='string'&&a[k])a[k]=[a[k]==='שירות אחר'?OTHER:a[k]];
   if(a.pack&&!a.packs)a.packs={[a.pack.label]:a.pack};
   // שדות ישנים שנגזרים (השרת והמסכים האחרים קוראים אותם)
   const exp=a.exp,senior=['3–5 שנים','יותר מ-5 שנים','יותר מ-10 שנים'].includes(exp);
@@ -2837,18 +2848,18 @@ const QS=[
     o:a=>[...new Set(['פיתוח תוכנה','הנדסת מכונות',...Object.keys(a.packs||{}),...(a.domains||[])])].filter(x=>x&&x!=='תחום אחר').concat([OTHER]),
     other:'איזה תחום? למשל: הנדסה כימית, שיווק דיגיטלי',build:'domain',
     note:a=>(a.domains||[]).length>=4?'טיפ: חיפוש ממוקד בכמה תחומים מוצא משרות מדויקות יותר.':''},
-  {id:'field',t:'מה הרקע המקצועי שלך?',o:a=>[...pack(a).field,OTHER],other:'מה הרקע שלך?'},
+  {id:'field',multi:true,t:'מה הרקע המקצועי שלך?',sub:'אפשר לבחור כמה.',o:a=>[...pack(a).field,OTHER],other:'מה עוד ברקע שלך?'},
   {id:'roles',multi:true,t:'אילו תפקידים מעניינים אותך?',sub:'אפשר לבחור כמה ולהוסיף תפקיד משלך.',o:a=>[...pack(a).roles,OTHER],other:'איזה תפקיד? אפשר כמה, מופרדים בפסיק',build:'roles'},
   {id:'exp',t:a=>`כמה ניסיון מעשי יש לך ${pack(a).work}?`,sub:'בתחום שבו אתה מחפש. כולל עבודה, התמחות או פרויקטים בתשלום, גם בזמן הלימודים.',o:['אין עדיין','פחות משנה','1–2 שנים','3–5 שנים','יותר מ-5 שנים','יותר מ-10 שנים']},
   {id:'age',t:'מה הגיל שלך?',sub:'עוזר להתאים לך משרות. לא מופיע במכתבים ולא נשלח למעסיקים.',o:['18–21','22–25','26–29','30–34','35 ומעלה','מעדיף/ה לא לציין']},
-  {id:'army',t:'מה עשית בשירות?',sub:'בישראל זה חלק חשוב מקורות החיים, במיוחד בתחילת הדרך.',o:['שירות טכנולוגי (8200, ממר״ם וכד׳)','קרבי','קצונה או תפקיד פיקודי','שירות אחר','שירות לאומי','לא שירתתי'],other:false},
+  {id:'army',multi:true,t:'מה עשית בשירות?',sub:'אפשר לבחור כמה. בישראל זה חלק חשוב מקורות החיים, במיוחד בתחילת הדרך.',o:['שירות טכנולוגי (8200, ממר״ם וכד׳)','קרבי','קצונה או תפקיד פיקודי','תפקיד הנדסי או טכני','שירות לאומי','מילואים פעילים','לא שירתתי',OTHER],other:'מה עשית בשירות?',none:'לא שירתתי'},
   {id:'locs',multi:true,t:'איפה נוח לך לעבוד?',sub:'אפשר לבחור כמה.',o:['תל אביב','גוש דן והמרכז','השרון','ירושלים','חיפה והצפון','באר שבע והדרום',OTHER],other:'איזו עיר או אזור?'},
   {id:'mode',t:'איך אתה מעדיף לעבוד?',o:['מהמשרד','היברידי','מהבית','לא משנה לי']},
   {id:'start',t:'מתי אתה יכול להתחיל?',o:a=>['מיד','תוך חודש','בעוד 2–3 חודשים',...(isStudent(a)?['אחרי התואר']:[])]},
   {id:'salaryH',when:wantsPart,t:'כמה שכר לשעה אתה מצפה במשרה חלקית?',o:['עד ₪45','₪45–55','₪55–65','₪65 ומעלה','עוד לא יודע']},
   {id:'salary',when:wantsFull,t:'מה ציפיות השכר שלך במשרה מלאה?',sub:'ברוטו לחודש.',o:['עד ₪12K','₪12–16K','₪16–20K','₪20–25K','₪25K ומעלה','עוד לא יודע']},
   {id:'english',t:'מה רמת האנגלית שלך?',o:['שפת אם','שוטפת','טובה','בסיסית']},
-  {id:'prio',multi:true,max:2,t:'מה הכי חשוב לך בעבודה הבאה?',sub:'עד 2 דברים.',o:['למידה וחניכה','שכר','טכנולוגיות מעניינות','סטארט-אפ קטן','חברה גדולה ויציבה','קרוב לבית','גמישות בשעות',OTHER],other:'מה עוד חשוב לך?'},
+  {id:'prio',multi:true,max:3,t:'מה הכי חשוב לך בעבודה הבאה?',sub:'עד 3 דברים.',o:['למידה וחניכה','שכר','טכנולוגיות מעניינות','סטארט-אפ קטן','חברה גדולה ויציבה','קרוב לבית','גמישות בשעות',OTHER],other:'מה עוד חשוב לך?'},
 ];
 let qi=0;
 const ans=()=>normAns(prof().ans=prof().ans||{});
@@ -2883,7 +2894,7 @@ function renderQ(){try{const q=visibleQs()[qi];if(q)track('onb_q',{q:q.id})}catc
   const needBuild=oth&&q.build;
   $('onbFoot').innerHTML=q.multi||oth
     ?`<button class="btn btn-primary btn-block" id="qGo" ${answered(q)&&(!oth||ov.trim())?'':'disabled'} onclick="qOtherGo()">${needBuild?`${escB(N('strategist'))}, תוסיף את זה`:'המשך'}</button><button class="link-btn" onclick="qNext()">${needBuild?'המשך בלי זה':'דלג על השאלה'}</button>`
-    :`<button class="link-btn" onclick="qNext()">${cur?'המשך':'דלג על השאלה'}</button>`;
+    :cur?`<button class="btn btn-primary btn-block" onclick="qNext()">המשך</button>`:`<button class="link-btn" onclick="qNext()">דלג על השאלה</button>`;
   $('onbBody').scrollTop=0;if(oth&&!ov)setTimeout(()=>$('qOther')&&$('qOther').focus(),60);
 }
 function qOtherBtn(){const q=visibleQs()[qi],b=$('qGo');if(!b)return;const oth=otherOn(q,ans());b.disabled=!answered(q)||(oth&&!(ans()[q.id+'_other']||'').trim())}
@@ -2897,7 +2908,7 @@ function qPick(i){
   if(qLock)return;
   const q=visibleQs()[qi],o=q.o[i],a=ans();
   if(q.multi){let arr=Array.isArray(a[q.id])?a[q.id]:[];
-    if(arr.includes(o))arr=arr.filter(x=>x!==o);else{if(q.max&&arr.length>=q.max)arr=arr.slice(1);arr=[...arr,o]}
+    if(arr.includes(o))arr=arr.filter(x=>x!==o);else{if(q.max&&arr.length>=q.max)arr=arr.slice(1);arr=q.none&&o===q.none?[o]:[...arr.filter(x=>x!==q.none),o]}
     a[q.id]=arr;if(q.id==='domains'){const keep=pack(a).roles;a.roles=(a.roles||[]).filter(r=>keep.includes(r)||r===OTHER)}
     normAns(a);save();renderQ();return}
   a[q.id]=o;normAns(a);save();
@@ -3039,7 +3050,7 @@ function renderProfile(){
       <div class="card-sub">${done<total?`ענית על ${done} מתוך ${total} שאלות. כל תשובה עוזרת לסוכנים לדייק.`:'ענית על כל השאלות. אפשר לעדכן בכל רגע.'}</div>
       <div class="quota-bar" style="margin-bottom:6px" aria-hidden="true"><div class="quota-fill" style="width:${Math.round(done/total*100)}%;background:linear-gradient(90deg,var(--brand2),var(--brand-hi))"></div></div>
       <button class="row" onclick="openQuestions('study')"><span class="ri">${ROW_IC.target}</span><span class="rl"><b>${escB([a.study===OTHER?a.study_other:a.study,a.year].filter(Boolean).join(', ')||'לימודים ועבודה')}</b><span>${escB([a.work===OTHER?a.work_other:a.work,(a.scope||[]).join(' + '),a.exp&&('ניסיון: '+a.exp)].filter(Boolean).join(' · ')||'עוד לא ענית')}</span></span><span class="chev" aria-hidden="true"></span></button>
-      <button class="row" onclick="openQuestions('roles')"><span class="ri">${ROW_IC.doc}</span><span class="rl"><b lang="en">${escB((a.roles||[]).filter(r=>r!==OTHER).join(', ')||'תפקידים')}</b><span>${escB([domainsOf(a).join(', '),a.field===OTHER?a.field_other:a.field].filter(Boolean).join(' · ')||'רקע מקצועי: עוד לא ענית')}</span></span><span class="chev" aria-hidden="true"></span></button>
+      <button class="row" onclick="openQuestions('roles')"><span class="ri">${ROW_IC.doc}</span><span class="rl"><b lang="en">${escB((a.roles||[]).filter(r=>r!==OTHER).join(', ')||'תפקידים')}</b><span>${escB([domainsOf(a).join(', '),[].concat(a.field||[]).map(x=>x===OTHER?a.field_other:x).filter(Boolean).join(', ')].filter(Boolean).join(' · ')||'רקע מקצועי: עוד לא ענית')}</span></span><span class="chev" aria-hidden="true"></span></button>
       <button class="row" onclick="openQuestions('locs')"><span class="ri">${ROW_IC.pin}</span><span class="rl"><b>${escB((a.locs||[]).join(', ')||'אזור עבודה')}</b><span>${escB([a.mode,a.start&&('התחלה: '+a.start)].filter(Boolean).join(' · ')||'עוד לא ענית')}</span></span><span class="chev" aria-hidden="true"></span></button>
       <button class="btn btn-sm ${done<total?'btn-primary':'btn-ghost'} btn-block" style="margin-top:8px" onclick="openQuestions()">${done<total?'להמשיך את השאלון':'לעבור על כל התשובות'}</button></section>
 
@@ -3234,8 +3245,12 @@ const PAGE_TIPS={
 };
 let tourSteps=[],tourI=-1,tourKind='';
 function tourStart(kind){kind=kind||'main';if(kind==='main'){if(curPg!=='main')goPage('main');closeDrawer&&closeDrawer()}
-  tourSteps=(kind==='main'?tourMain():PAGE_TIPS[kind]||[]).filter(st=>document.querySelector(st.sel));if(!tourSteps.length)return;
+  /* רק אלמנטים שבאמת נראים עכשיו: מסכים אחרים קיימים בדף אבל מוסתרים (טיפ של "הגשות" הופיע מעל LinkedIn) */
+  tourSteps=(kind==='main'?tourMain():PAGE_TIPS[kind]||[]).filter(st=>tourVisible(document.querySelector(st.sel)));if(!tourSteps.length)return;
   tourKind=kind;tourI=0;track('tour_start',{k:kind});setTimeout(tourShow,kind==='main'?150:450)}
+const tourVisible=el=>{if(!el||el.offsetParent===null)return false;const r=el.getBoundingClientRect();return r.width>0&&r.height>0};
+/* עברו למסך אחר באמצע טיפ של מסך: סוגרים בלי לסמן שנראה, כדי שיופיע בפעם הבאה במקום הנכון */
+function tourAbortFor(pg){if(tourI<0||tourKind==='main'||tourKind===pg)return;const k=tourKind;tourI=-1;S.tips=S.tips||{};S.tips[k]=0;save();$('tour')&&$('tour').remove();document.removeEventListener('keydown',tourKey)}
 function pageTip(pg){if(!PAGE_TIPS[pg]||tourI>=0)return;S.tips=S.tips||{};if(S.tips[pg])return;
   setTimeout(()=>{if(curPg===pg&&tourI<0&&!document.querySelector('.sheet.on, #onb.on')){S.tips[pg]=1;save();tourStart(pg)}},700)}
 function tourEnd(done){const k=tourKind;track(done?'tour_done':'tour_skip',{k,at:tourI,of:tourSteps.length});
@@ -3243,7 +3258,8 @@ function tourEnd(done){const k=tourKind;track(done?'tour_done':'tour_skip',{k,at
 function tourKey(e){if(e.key==='Escape')tourEnd(false);if(e.key==='ArrowLeft'||e.key==='Enter'){e.preventDefault();tourNext()}if(e.key==='ArrowRight'&&tourI>0){tourI--;tourShow()}}
 function tourNext(){tourI++;tourI>=tourSteps.length?tourEnd(true):tourShow()}
 function tourShow(){
-  const st=tourSteps[tourI],el=document.querySelector(st.sel);if(!el){tourNext();return}
+  if(tourKind!=='main'&&curPg!==tourKind){tourAbortFor(curPg);return}
+  const st=tourSteps[tourI],el=document.querySelector(st.sel);if(!tourVisible(el)){tourNext();return}
   const rm=matchMedia('(prefers-reduced-motion:reduce)').matches;
   el.scrollIntoView({block:'center',behavior:rm?'auto':'smooth'});
   setTimeout(()=>{const r=el.getBoundingClientRect(),pad=8,vh=innerHeight,below=r.top+r.height/2<vh/2;
@@ -3258,7 +3274,7 @@ function tourShow(){
     tourPlace(w.querySelector('.tour-card'),r,pad,below);$('tourNext').focus()},rm?40:320)}
 /* החלון תמיד כולו בתוך המסך: מתחת למטרה אם יש מקום, אחרת מעליה, ואם המטרה גדולה מדי (כרטיס משרה) — מעליה בתחתית המסך */
 function tourPlace(c,r,pad,below){const vh=innerHeight,m=12,gap=pad+14,h=Math.min(c.offsetHeight,vh-2*m);
-  const top0=parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--sat'))||0;
+  const tb=$('topbar'),top0=tb&&tb.offsetParent!==null?Math.max(0,tb.getBoundingClientRect().bottom-m+6):0;   // לא מתחת לסרגל העליון
   const fitB=vh-r.bottom-gap>=h+m,fitA=r.top-gap-top0>=h+m;let top,cls;
   if(fitB&&(below||!fitA)){top=r.bottom+gap;cls='below'}else if(fitA){top=r.top-gap-h;cls='above'}else{top=vh-h-m;cls='over'}
   c.style.top=Math.max(m+top0,Math.min(top,vh-h-m))+'px';c.className='tour-card '+cls;c.style.visibility=''}

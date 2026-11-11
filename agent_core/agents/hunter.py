@@ -180,8 +180,38 @@ def excluded(job: dict, plan: dict) -> bool:
     return any(f" {w.lower()} " in t for w in plan.get("exclude_words") or [])
 
 
+# מילים שמזהות תחום בכותרת. משרה שהכותרת שלה בבירור מתחום אחר (ובלי אף מילה מהתחום של המשתמש)
+# לא נשלחת לדירוג AI: נמצא אצל גלעד — 40 דורגו, רובן 1.0–2.0, כלומר "לא התחום" ושרפו את תקציב הדירוג.
+FIELD_WORDS = {
+    "software": r"\b(software|developer|frontend|front[- ]end|backend|back[- ]end|full[- ]?stack|devops|sre|data scientist|data engineer|"
+                r"machine learning|ml engineer|ai engineer|qa|automation engineer|android|ios|react|java|python|\.net|node|web|cloud|cyber|security engineer|"
+                r"מפתח|מפתחת|פיתוח תוכנה|בודק תוכנה|אוטומציה)\b",
+    "mechanical": r"\b(mechanical|mechanic|cad|solidworks|hvac|mechatronics|manufacturing|production engineer|tooling|thermal|structural|"
+                  r"מכונות|מכני|מכנית|ייצור|תיכון|שרטט|הנדסאי)\b",
+    "electrical": r"\b(electrical|electronics|hardware|asic|fpga|rf|pcb|vlsi|analog|chip|board design|חשמל|אלקטרוניקה|חומרה)\b",
+    "business": r"\b(sales|account executive|account manager|business development|marketing|recruiter|talent|hr|human resources|finance|"
+                r"accountant|controller|bookkeeper|customer success|customer support|legal|lawyer|paralegal|procurement|buyer|office manager|"
+                r"secretary|receptionist|מכירות|שיווק|גיוס|משאבי אנוש|הנהלת חשבונות|רואה חשבון|מזכיר|מזכירה|שירות לקוחות|נציג)\b",
+}
+DOMAIN_FIELD = {"פיתוח תוכנה": "software", "הנדסת מכונות": "mechanical"}
+
+
+def off_field(job: dict, plan: dict) -> bool:
+    """כותרת שבבירור מתחום אחר. פועל רק כשכל התחומים של המשתמש מוכרים (תחום מותאם אישית: לא מסננים, כדי לא לפספס)."""
+    doms = plan.get("domains") or [plan.get("domain") or "פיתוח תוכנה"]
+    mine = {DOMAIN_FIELD.get(d) for d in doms}
+    if None in mine:
+        return False
+    t = (job.get("title") or "").lower()
+    if any(re.search(FIELD_WORDS[f], t) for f in mine):
+        return False
+    if any(w for w in (plan.get("titles") or []) if w.lower() in t):
+        return False
+    return any(re.search(rx, t) for f, rx in FIELD_WORDS.items() if f not in mine)
+
+
 def prefilter(jobs: list[dict], plan: dict, seen_ids: set[str]) -> tuple[list[dict], dict]:
-    stats = {"collected": len(jobs), "too_senior": 0, "already_seen": 0, "excluded": 0}
+    stats = {"collected": len(jobs), "too_senior": 0, "already_seen": 0, "excluded": 0, "off_field": 0}
     keep = []
     for j in jobs:
         if excluded(j, plan):
@@ -190,6 +220,8 @@ def prefilter(jobs: list[dict], plan: dict, seen_ids: set[str]) -> tuple[list[di
             stats["already_seen"] += 1; continue
         if too_senior(j, plan):
             stats["too_senior"] += 1; continue
+        if off_field(j, plan):
+            stats["off_field"] += 1; continue
         keep.append(j)
     return keep, stats
 

@@ -17,6 +17,7 @@ function goPage(id,anchor){
   if(id==='office'){setTimeout(()=>{sizeOff();drawOff();},80);renderOffice();renderOfficeMsgs();}
   if(anchor) setTimeout(()=>$(anchor)?.scrollIntoView({behavior:'smooth',block:'start'}),60);
   syncChrome();
+  if(typeof tourAbortFor==='function')tourAbortFor(id);
   if(typeof pageTip==='function'&&S.tourDone)pageTip(id);
 }
 /* הסריקה הקבועה הבאה (Vercel Schedules: 06:40 ו-14:40 שעון ישראל) */

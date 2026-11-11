@@ -68,6 +68,7 @@ function normAns(a){
     if(m[0])a.study=m[0];if(m[1])a.work=m[1]}
   if(a.track&&!a.scope)a.scope={'משרת סטודנט חלקית':['משרה חלקית / משרת סטודנט'],'משרה מלאה אחרי התואר':['משרה מלאה'],'את שתיהן':['משרה מלאה','משרה חלקית / משרת סטודנט']}[a.track];
   if(a.domain&&!a.domains)a.domains=[a.domain];
+  for(const k of ['field','army'])if(typeof a[k]==='string'&&a[k])a[k]=[a[k]==='שירות אחר'?OTHER:a[k]];
   if(a.pack&&!a.packs)a.packs={[a.pack.label]:a.pack};
   // שדות ישנים שנגזרים (השרת והמסכים האחרים קוראים אותם)
   const exp=a.exp,senior=['3–5 שנים','יותר מ-5 שנים','יותר מ-10 שנים'].includes(exp);
@@ -117,18 +118,18 @@ const QS=[
     o:a=>[...new Set(['פיתוח תוכנה','הנדסת מכונות',...Object.keys(a.packs||{}),...(a.domains||[])])].filter(x=>x&&x!=='תחום אחר').concat([OTHER]),
     other:'איזה תחום? למשל: הנדסה כימית, שיווק דיגיטלי',build:'domain',
     note:a=>(a.domains||[]).length>=4?'טיפ: חיפוש ממוקד בכמה תחומים מוצא משרות מדויקות יותר.':''},
-  {id:'field',t:'מה הרקע המקצועי שלך?',o:a=>[...pack(a).field,OTHER],other:'מה הרקע שלך?'},
+  {id:'field',multi:true,t:'מה הרקע המקצועי שלך?',sub:'אפשר לבחור כמה.',o:a=>[...pack(a).field,OTHER],other:'מה עוד ברקע שלך?'},
   {id:'roles',multi:true,t:'אילו תפקידים מעניינים אותך?',sub:'אפשר לבחור כמה ולהוסיף תפקיד משלך.',o:a=>[...pack(a).roles,OTHER],other:'איזה תפקיד? אפשר כמה, מופרדים בפסיק',build:'roles'},
   {id:'exp',t:a=>`כמה ניסיון מעשי יש לך ${pack(a).work}?`,sub:'בתחום שבו אתה מחפש. כולל עבודה, התמחות או פרויקטים בתשלום, גם בזמן הלימודים.',o:['אין עדיין','פחות משנה','1–2 שנים','3–5 שנים','יותר מ-5 שנים','יותר מ-10 שנים']},
   {id:'age',t:'מה הגיל שלך?',sub:'עוזר להתאים לך משרות. לא מופיע במכתבים ולא נשלח למעסיקים.',o:['18–21','22–25','26–29','30–34','35 ומעלה','מעדיף/ה לא לציין']},
-  {id:'army',t:'מה עשית בשירות?',sub:'בישראל זה חלק חשוב מקורות החיים, במיוחד בתחילת הדרך.',o:['שירות טכנולוגי (8200, ממר״ם וכד׳)','קרבי','קצונה או תפקיד פיקודי','שירות אחר','שירות לאומי','לא שירתתי'],other:false},
+  {id:'army',multi:true,t:'מה עשית בשירות?',sub:'אפשר לבחור כמה. בישראל זה חלק חשוב מקורות החיים, במיוחד בתחילת הדרך.',o:['שירות טכנולוגי (8200, ממר״ם וכד׳)','קרבי','קצונה או תפקיד פיקודי','תפקיד הנדסי או טכני','שירות לאומי','מילואים פעילים','לא שירתתי',OTHER],other:'מה עשית בשירות?',none:'לא שירתתי'},
   {id:'locs',multi:true,t:'איפה נוח לך לעבוד?',sub:'אפשר לבחור כמה.',o:['תל אביב','גוש דן והמרכז','השרון','ירושלים','חיפה והצפון','באר שבע והדרום',OTHER],other:'איזו עיר או אזור?'},
   {id:'mode',t:'איך אתה מעדיף לעבוד?',o:['מהמשרד','היברידי','מהבית','לא משנה לי']},
   {id:'start',t:'מתי אתה יכול להתחיל?',o:a=>['מיד','תוך חודש','בעוד 2–3 חודשים',...(isStudent(a)?['אחרי התואר']:[])]},
   {id:'salaryH',when:wantsPart,t:'כמה שכר לשעה אתה מצפה במשרה חלקית?',o:['עד ₪45','₪45–55','₪55–65','₪65 ומעלה','עוד לא יודע']},
   {id:'salary',when:wantsFull,t:'מה ציפיות השכר שלך במשרה מלאה?',sub:'ברוטו לחודש.',o:['עד ₪12K','₪12–16K','₪16–20K','₪20–25K','₪25K ומעלה','עוד לא יודע']},
   {id:'english',t:'מה רמת האנגלית שלך?',o:['שפת אם','שוטפת','טובה','בסיסית']},
-  {id:'prio',multi:true,max:2,t:'מה הכי חשוב לך בעבודה הבאה?',sub:'עד 2 דברים.',o:['למידה וחניכה','שכר','טכנולוגיות מעניינות','סטארט-אפ קטן','חברה גדולה ויציבה','קרוב לבית','גמישות בשעות',OTHER],other:'מה עוד חשוב לך?'},
+  {id:'prio',multi:true,max:3,t:'מה הכי חשוב לך בעבודה הבאה?',sub:'עד 3 דברים.',o:['למידה וחניכה','שכר','טכנולוגיות מעניינות','סטארט-אפ קטן','חברה גדולה ויציבה','קרוב לבית','גמישות בשעות',OTHER],other:'מה עוד חשוב לך?'},
 ];
 let qi=0;
 const ans=()=>normAns(prof().ans=prof().ans||{});
@@ -163,7 +164,7 @@ function renderQ(){try{const q=visibleQs()[qi];if(q)track('onb_q',{q:q.id})}catc
   const needBuild=oth&&q.build;
   $('onbFoot').innerHTML=q.multi||oth
     ?`<button class="btn btn-primary btn-block" id="qGo" ${answered(q)&&(!oth||ov.trim())?'':'disabled'} onclick="qOtherGo()">${needBuild?`${escB(N('strategist'))}, תוסיף את זה`:'המשך'}</button><button class="link-btn" onclick="qNext()">${needBuild?'המשך בלי זה':'דלג על השאלה'}</button>`
-    :`<button class="link-btn" onclick="qNext()">${cur?'המשך':'דלג על השאלה'}</button>`;
+    :cur?`<button class="btn btn-primary btn-block" onclick="qNext()">המשך</button>`:`<button class="link-btn" onclick="qNext()">דלג על השאלה</button>`;
   $('onbBody').scrollTop=0;if(oth&&!ov)setTimeout(()=>$('qOther')&&$('qOther').focus(),60);
 }
 function qOtherBtn(){const q=visibleQs()[qi],b=$('qGo');if(!b)return;const oth=otherOn(q,ans());b.disabled=!answered(q)||(oth&&!(ans()[q.id+'_other']||'').trim())}
@@ -177,7 +178,7 @@ function qPick(i){
   if(qLock)return;
   const q=visibleQs()[qi],o=q.o[i],a=ans();
   if(q.multi){let arr=Array.isArray(a[q.id])?a[q.id]:[];
-    if(arr.includes(o))arr=arr.filter(x=>x!==o);else{if(q.max&&arr.length>=q.max)arr=arr.slice(1);arr=[...arr,o]}
+    if(arr.includes(o))arr=arr.filter(x=>x!==o);else{if(q.max&&arr.length>=q.max)arr=arr.slice(1);arr=q.none&&o===q.none?[o]:[...arr.filter(x=>x!==q.none),o]}
     a[q.id]=arr;if(q.id==='domains'){const keep=pack(a).roles;a.roles=(a.roles||[]).filter(r=>keep.includes(r)||r===OTHER)}
     normAns(a);save();renderQ();return}
   a[q.id]=o;normAns(a);save();

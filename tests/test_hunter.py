@@ -180,10 +180,22 @@ def test_thin_results_topped_up_with_near_misses():
     jobs = [{"id": f"j{i}", "title": f"Mechanical Engineer {i}", "company": f"Co{i}", "location": "TA", "url": f"https://x/{i}",
              "description": "x" * 900, "source": "linkedin", "posted": "", "salary": ""} for i in range(5)]
     try:
-        feed = H.run({"cv_text": "solidworks"}, {"titles": [], "levels": ["junior"], "max_years": 1}, raw=jobs, seen=set(), persist=False)
+        feed = H.run({"cv_text": "solidworks"}, {"titles": [], "levels": ["junior"], "max_years": 1, "domains": ["הנדסת מכונות"]}, raw=jobs, seen=set(), persist=False)
     finally:
         H.enrich, H.rate, H.act.log, H.has_full_ad, H.to_card = oe, orr, ol, ofa, otc
     got = {c["fit"]: c for c in feed["jobs"]}
     assert set(got) == {4.4, 3.4, 3.2, 3.1}          # 4.4 עברה, 3.4/3.2/3.1 השלמה, 2.5 לא
     assert got[3.4].get("near") and "התאמה חלקית" in got[3.4]["tags"] and not got[4.4].get("near")
     assert [x["fit"] for x in feed["rejected"]] == [2.5]
+
+
+def test_off_field_titles_skip_rating():
+    """מגלעד: 40 דורגו, רובן 1.0–2.0 (תחום אחר). כותרת שבבירור מתחום אחר לא נשלחת לדירוג. תחום מותאם: לא מסננים."""
+    from agent_core.agents.hunter import off_field
+    mech = {"domains": ["הנדסת מכונות"], "titles": ["Mechanical Engineer"]}
+    sw = {"domains": ["פיתוח תוכנה"], "titles": ["Backend Developer"]}
+    assert off_field({"title": "Frontend Developer"}, mech) and off_field({"title": "Account Executive"}, sw)
+    assert not off_field({"title": "Junior Mechanical Planning Engineer"}, mech)
+    assert not off_field({"title": "Process Engineer"}, mech) and not off_field({"title": "R&D Engineer"}, sw)
+    assert not off_field({"title": "Frontend Developer"}, {"domains": ["הנדסת מכונות", "פיתוח תוכנה"]})
+    assert not off_field({"title": "Sales Engineer"}, {"domains": ["שיווק דיגיטלי"]})
