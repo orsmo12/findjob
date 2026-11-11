@@ -49,11 +49,31 @@ def band(f):
 users = sorted(db.auth_users(), key=lambda u: u.get("created_at") or "")
 alias = {u["id"]: ("אור" if i == 0 else f"משתמש {i}") for i, u in enumerate(users)}
 profs = {p["user_id"]: p for p in get("profiles", select="user_id,answers,state")}
+db_cv = {p["user_id"]: p.get("cv_text") or "" for p in get("profiles", select="user_id,cv_text")}
 runs = get("runs", select="user_id,stats,created_at", agent="eq.hunter", created_at=f"gte.{since}", order="created_at.asc")
 scans = [r for r in runs if isinstance(r.get("stats"), dict) and "collected" in r["stats"]]
 jobs = get("jobs", select="user_id,card,fit,decision,created_at", created_at=f"gte.{since}")
 
 print(f"תובנות על החיפוש — {DAYS} הימים האחרונים. {len(users)} משתמשים, {len(scans)} סריקות, {len(jobs)} משרות במסד.\n")
+
+# ── 0. מצב כל משתמש: האם הוא בכלל מגיע לסריקה ──
+print("0) מצב כל משתמש")
+allruns = get("runs", select="user_id,agent,stats,created_at", created_at=f"gte.{since}", order="created_at.asc")
+for u in users:
+    uid = u["id"]
+    p = profs.get(uid) or {}
+    st = p.get("state") or {}
+    mine = [r for r in allruns if r["user_id"] == uid]
+    ag = Counter(r["agent"] for r in mine)
+    fails = [f for r in mine for f in ((r.get("stats") or {}).get("failures") or [])]
+    mem = [r for r in mine if (r.get("stats") or {}).get("memory")]
+    print(f"   {alias[uid]}: נרשם {str(u.get('created_at'))[:16]} | קו״ח {len(str((db_cv.get(uid) or '')))} תווים | onboarded={st.get('onboarded')} | "
+          f"תשובות {len((p.get('answers') or {}))} | ריצות לפי סוכן {dict(ag)} | זיכרונות {len(mem)} | תקלות {len(fails)}"
+          + (f" | תקלה אחרונה: {fails[-1].get('where')} {str(fails[-1].get('error'))[:120]}" if fails else ""))
+    last = [r for r in mine if (r.get("stats") or {}).get("msg")][-3:]
+    for r in last:
+        print(f"      {r['created_at'][5:16]} {r['agent']}: {str(r['stats']['msg'])[:130]}")
+print()
 
 # ── 1. לכל משתמש ──
 print("1) לכל משתמש: סריקות ותוצאות")
