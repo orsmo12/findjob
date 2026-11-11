@@ -80,3 +80,23 @@ def test_experience_decides_level_not_studies():
     assert not too_senior({"title": "Senior Mechanical Engineer", "description": ""}, p2)
     p3 = plan({**base, "exp": "אין עדיין", "scope": ["משרה מלאה"]})
     assert "mid" not in p3["levels"] and too_senior({"title": "Senior Mechanical Engineer", "description": ""}, p3)
+
+
+def test_taste_learned_from_saves_and_skips():
+    """הטעם האישי: מה המשתמש שומר ועל מה מדלג, כולל סיבות דילוג. משפיע על הסדר, לא על הציון."""
+    from agent_core.taste import learn, boost
+    rows = [{"id": f"s{i}", "card": {"id": f"s{i}", "title": t, "co": "Acme"}, "decision": "save"}
+            for i, t in enumerate(["AI Engineer", "Junior AI Developer", "LLM Engineer", "AI Agents Developer"])]
+    rows += [{"id": f"k{i}", "card": {"id": f"k{i}", "title": t, "co": co}, "decision": "skip"}
+             for i, (t, co) in enumerate([("QA Automation Engineer", "Foo"), ("QA Engineer", "Foo"), ("Manual QA", "Bar"), ("Frontend Developer", "Baz")])]
+    skips = {"k0": {"r": "לא התחום שלי"}, "k1": {"r": "החברה", "co": "Foo"}, "k3": {"r": "מיקום", "loc": "Haifa"},
+             "x": {"r": "מיקום", "loc": "Haifa, Israel"}}
+    t = learn(rows, skips)
+    assert "ai" in t["likes"] and "qa" in t["dislikes"] and t["avoid_cos"] == ["Foo"] and t["avoid_locs"] == ["Haifa"]
+    assert boost({"title": "AI Engineer", "company": "X", "location": "TA"}, t) > 0
+    assert boost({"title": "QA Engineer", "company": "Foo", "location": "Haifa"}, t) < -20
+    t2 = learn(rows, skips, off=["qa", "Foo"])   # המשתמש ביטל: לא נלמד יותר
+    assert "qa" not in t2["dislikes"] and "Foo" not in t2["avoid_cos"]
+    # "בכירה מדי" פעמיים מחמיר את הסינון
+    p = build_search_plan({"cv_text": "", "answers": {"exp": "1–2 שנים"}, "skip_reasons": {"a": "בכירה מדי", "b": "בכירה מדי"}})
+    assert p.max_years == 1

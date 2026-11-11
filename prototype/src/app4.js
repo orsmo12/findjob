@@ -46,6 +46,7 @@ function renderProfile(){
       <summary><span><h2 class="card-h" id="plH">מה מחפשים בשבילך</h2><span class="plan-tags">${planTags().map(t=>`<i>${escB(t)}</i>`).join('')}</span>${planAlert()}</span><span class="chev" aria-hidden="true"></span></summary>
       <div class="card-sub">${escB(N('strategist'))} בנה את זה מקורות החיים ומהתשובות שלך, ומעדכן בכל שינוי.</div>
       <ul class="plan-list">${planWhy().map(w=>`<li>${escB(w)}</li>`).join('')}</ul>
+      ${tasteHtml()}
       ${typeof lastMeeting==='function'&&lastMeeting()?`<button class="link" style="font-size:13px;color:var(--brand);margin:6px 0" onclick="openMeeting()">לדוח של הישיבה השבועית</button>`:''}
       <h3 class="sub-h">ערוצי טלגרם</h3>
       <div class="card-sub">${escB(N('hunter'))} קורא ערוצים ציבוריים של משרות, בלי חשבון.${(p.ans||{}).telegram&&p.ans.telegram.length?'':(domainOf(ans())==='פיתוח תוכנה'?' כרגע: hitechjobsjunior (ברירת מחדל).':'')}</div>
@@ -192,6 +193,18 @@ function init(){
 function saveLinkedin(){const v=($('liUrl').value||'').trim();const p=prof();p.ans=p.ans||{};
   if(v&&!/^https?:\/\/([a-z]+\.)?linkedin\.com\/in\//i.test(v)){toast('זה לא נראה כמו קישור לפרופיל LinkedIn');return}
   p.ans.linkedin=v;save();toast(v?'הקישור נשמר':'הקישור נמחק')}
+
+/* ═════════ מה דורון למד ממך: מהמשרות ששמרת, מהדילוגים ומסיבות הדילוג (agent_core/taste.py) ═════════
+   מוצג בשקיפות, וכל פריט אפשר לבטל (state.taste_off). משפיע רק על אילו משרות מגיעות לדירוג, לא על הציון. */
+function tasteNow(){const r=(typeof RUNS!=='undefined'&&RUNS||[]).find(x=>x.agent==='hunter'&&x.plan&&x.plan.taste);return r?r.plan.taste:null}
+function tasteHtml(){const t=tasteNow(),off=new Set((S.taste_off||[]).map(x=>String(x).toLowerCase()));if(!t)return'';
+  const chip=(w,cls)=>off.has(String(w).toLowerCase())?'':`<span class="taste-chip ${cls}">${escB(w)}<button aria-label="לבטל את ${escB(w)}" onclick="tasteOff('${escB(w).replace(/'/g,"\\'")}')">✕</button></span>`;
+  const rows=[[t.likes,'like','עולות בעדיפות: משרות עם'],[t.dislikes,'dis','יורדות בעדיפות: משרות עם'],[t.avoid_cos,'dis','חברות שדילגת עליהן'],[t.avoid_locs,'dis','מקומות שדילגת עליהם']]
+    .filter(([xs])=>(xs||[]).some(w=>!off.has(String(w).toLowerCase())));
+  if(!rows.length)return`<h3 class="sub-h">מה ${escB(N('hunter'))} למד ממך</h3><p class="help">עוד מעט: אחרי עוד כמה שמירות ודילוגים ${escB(N('hunter'))} יתחיל להתאים לך את הסדר.</p>`;
+  return`<h3 class="sub-h">מה ${escB(N('hunter'))} למד ממך</h3><p class="help">מהמשרות ששמרת ומהדילוגים. משנה רק את הסדר שבו משרות נבדקות, לא את הציון. אפשר לבטל כל פריט.</p>
+    ${rows.map(([xs,cls,l])=>`<div class="taste-row"><span>${l}</span><div>${xs.map(w=>chip(w,cls)).join('')}</div></div>`).join('')}`}
+function tasteOff(w){S.taste_off=[...new Set([...(S.taste_off||[]),w])];save();renderProfile();toast(`${N('hunter')} לא ישתמש יותר ב"${w}" מהסריקה הבאה`)}
 
 /* ═════════ סיור באפליקציה (בסגנון TipKit) ═════════
    מצביע על הכפתורים האמיתיים, ומותאם למצב של המשתמש: משרות שמחכות, סריקה ראשונה שרצה, קורות חיים חסרים, התחום.

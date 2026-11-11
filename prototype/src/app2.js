@@ -237,10 +237,14 @@ function decide(kind){
   save();lastAct={id,kind};
   setTimeout(()=>{busy=false;renderJobs();syncChrome()},340);
   if(kind==='save') toast(`${j.co} נשמרה בהגשות`,{undo:undoLast});
-  else toast('למה זה לא מתאים?',{undo:undoLast,ms:5200,chips:['בכירה מדי','מיקום','טכנולוגיה','לא מעניין אותי'].map(t=>({t,fn:()=>{S.skipReasons[id]=t;save();toast('הבנתי. אציג פחות משרות כאלה')}}))});
+  else toast('למה זה לא מתאים?',{undo:undoLast,ms:5600,chips:['בכירה מדי','לא התחום שלי','מיקום','החברה','לא מעניין'].map(t=>({t,fn:()=>{S.skipReasons[id]=t;
+    /* נשמר בענן: דורון לומד מזה בסריקה הבאה (agent_core/taste.py) */
+    S.skip=S.skip||{};S.skip[id]={r:t,t:(j&&j.title||'').slice(0,90),co:j&&j.co||'',loc:(j&&j.loc||'').slice(0,40),at:new Date().toISOString().slice(0,10)};
+    const ks=Object.keys(S.skip);if(ks.length>150)ks.sort((a,b)=>(S.skip[a].at||'').localeCompare(S.skip[b].at||'')).slice(0,ks.length-150).forEach(k=>delete S.skip[k]);
+    track('skip_why',{r:t});save();toast('הבנתי. אציג פחות משרות כאלה')}}))});
 }
 function undoLast(){
-  if(!lastAct)return;const{id,kind}=lastAct;delete S.decisions[id];delete S.skipReasons[id];
+  if(!lastAct)return;const{id,kind}=lastAct;delete S.decisions[id];delete S.skipReasons[id];if(S.skip)delete S.skip[id];
   if(kind==='save') S.apps=S.apps.filter(a=>!(a.jobId===id&&a.status==='saved'));
   save();lastAct=null;renderJobs();syncChrome();
 }

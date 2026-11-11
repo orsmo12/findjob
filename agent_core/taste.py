@@ -1,0 +1,70 @@
+"""
+taste.py — דורון לומד את הטעם של כל משתמש מהשימוש באפליקציה (לא מניחושים):
+  • מילים בכותרות של משרות ששמר (+) ושדילג עליהן (−). דילוג עם "לא התחום שלי" שוקל כפול.
+  • חברות שדילג עליהן עם "החברה" (או 3 דילוגים בלי אף שמירה) → בעדיפות נמוכה.
+  • ערים שדילג עליהן עם "מיקום" פעמיים → בעדיפות נמוכה.
+  • "בכירה מדי" פעמיים → הסינון לפי שנות ניסיון מחמיר (profile.build_search_plan, skip_reasons).
+הטעם משפיע על אילו משרות מגיעות לדירוג (cheap_rank) ומוסבר לסוכן המדרג בשורה אחת. הציון עצמו נשאר מול קורות החיים.
+כל מה שנלמד מוצג למשתמש ב"מה מחפשים בשבילך", ואפשר לבטל כל פריט (state.taste_off).
+"""
+from __future__ import annotations
+import re
+from collections import Counter
+
+STOP = {"and", "the", "for", "with", "of", "in", "to", "at", "a", "an", "&", "-", "–", "il", "israel", "tel", "aviv", "hybrid", "remote",
+        "junior", "jr", "senior", "sr", "student", "intern", "internship", "graduate", "entry", "level", "lead", "principal", "staff", "ii", "iii",
+        "engineer", "engineering", "developer", "development", "software", "position", "team", "group", "role", "new", "grad", "מהנדס", "מהנדסת",
+        "דרוש", "דרושה", "דרושים", "משרת", "סטודנט", "סטודנטית", "ג׳וניור", "גוניור"}
+SKIP_FIELD = "לא התחום שלי"
+SKIP_CO = "החברה"
+SKIP_LOC = "מיקום"
+
+
+def words(title: str) -> set[str]:
+    return {w for w in re.findall(r"[a-z][a-z+#.]{1,}|[א-ת׳']{2,}", (title or "").lower()) if w not in STOP}
+
+
+def learn(rows: list[dict], skips: dict | None = None, off: list[str] | None = None) -> dict:
+    """rows: שורות מטבלת jobs (card, decision). skips: {job_id: {"r": סיבה, "t": כותרת, "co": חברה, "loc": מיקום}}."""
+    skips = skips or {}
+    off_l = {str(x).lower() for x in off or []}
+    plus, minus = Counter(), Counter()
+    saved_cos, skip_cos = Counter(), Counter()
+    for r in rows:
+        c, d = r.get("card") or {}, r.get("decision")
+        if d in ("save", "applied"):
+            plus.update(words(c.get("title", "")))
+            saved_cos[c.get("co", "")] += 1
+        elif d == "skip":
+            why = (skips.get(c.get("id") or r.get("id")) or {}).get("r", "")
+            for w in words(c.get("title", "")):
+                minus[w] += 2 if why == SKIP_FIELD else 1
+            skip_cos[c.get("co", "")] += 1
+    score = {w: plus[w] - minus[w] for w in set(plus) | set(minus) if w not in off_l}
+    likes = sorted([w for w, s in score.items() if s >= 2], key=lambda w: -score[w])[:8]
+    dislikes = sorted([w for w, s in score.items() if s <= -2], key=lambda w: score[w])[:8]
+    by_reason = Counter(v.get("r") for v in skips.values() if isinstance(v, dict))
+    avoid_cos = sorted({v.get("co") for v in skips.values() if isinstance(v, dict) and v.get("r") == SKIP_CO and v.get("co")}
+                       | {co for co, k in skip_cos.items() if co and k >= 3 and not saved_cos.get(co)})
+    avoid_cos = [c for c in avoid_cos if c.lower() not in off_l]
+    locs = Counter(re.split(r"[,·|-]", v.get("loc") or "")[0].strip() for v in skips.values()
+                   if isinstance(v, dict) and v.get("r") == SKIP_LOC and v.get("loc"))
+    avoid_locs = [l for l, k in locs.items() if l and k >= 2 and l.lower() not in off_l and l.lower() not in ("israel", "ישראל")]
+    note = "; ".join(x for x in ((f"tends to save: {', '.join(likes)}" if likes else ""),
+                                 (f"tends to skip: {', '.join(dislikes)}" if dislikes else "")) if x)
+    return {"likes": likes, "dislikes": dislikes, "score": {w: score[w] for w in likes + dislikes}, "avoid_cos": avoid_cos,
+            "avoid_locs": avoid_locs, "reasons": dict(by_reason), "note": note,
+            "n": sum(1 for r in rows if r.get("decision") in ("save", "applied", "skip"))}
+
+
+def boost(job: dict, taste: dict | None) -> int:
+    """תוספת לדירוג הראשוני (cheap_rank). חסום ל-±15, כדי שהטעם יכוון ולא ישתלט."""
+    if not taste:
+        return 0
+    s = sum(3 * taste["score"].get(w, 0) for w in words(job.get("title", "")))
+    if any(job.get("company", "").lower() == c.lower() for c in taste.get("avoid_cos") or []):
+        s -= 20
+    loc = (job.get("location") or "").lower()
+    if any(l.lower() in loc for l in taste.get("avoid_locs") or []):
+        s -= 10
+    return max(-25, min(15, s))

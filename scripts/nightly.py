@@ -68,8 +68,14 @@ for u in users:
     learned = db.latest_plan(u["user_id"], "meeting")          # מה יואב והצוות למדו בישיבה האחרונה
     prof = {"first": u.get("first", ""), "name": u.get("name", ""), "cv_text": u["cv_text"], "answers": u.get("answers") or {},
             "extra_titles": [x["value"] for x in ustate.get("accepted") or [] if x.get("type") == "role"],  # תפקידים שאישרת
-            "drop_queries": learned.get("drop_queries") or [], "learned_queries": learned.get("add_queries") or []}
+            "drop_queries": learned.get("drop_queries") or [], "learned_queries": learned.get("add_queries") or [],
+            "skip_reasons": {k: v.get("r") for k, v in (ustate.get("skip") or {}).items() if isinstance(v, dict)}}
     plan = build_search_plan(prof).to_dict()
+    try:   # הטעם האישי מהשימוש באפליקציה: שמירות, דילוגים וסיבות דילוג (agent_core/taste.py)
+        from agent_core.taste import learn as learn_taste
+        plan["taste"] = learn_taste(db.all_jobs(u["user_id"], days=60), ustate.get("skip") or {}, ustate.get("taste_off") or [])
+    except Exception as e:  # noqa: BLE001
+        print(f"טעם אישי: {e}")
     act.start(u["user_id"])
     try:  # דורון: דירוג מחדש של משרות בפיד שדורגו בלי מודעה מלאה או בשיטה ישנה
         todo = db.to_rerate(u["user_id"], RATING_V)[:12]

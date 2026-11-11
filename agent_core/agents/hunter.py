@@ -201,7 +201,8 @@ def cheap_rank(j: dict, plan: dict, cv: str) -> int:
     s = sum(1 for w in words if w in text)
     if any(t.lower() in j["title"].lower() for t in plan.get("titles", [])):
         s += 5
-    return s
+    from agent_core.taste import boost   # הטעם האישי: מה המשתמש שומר ועל מה מדלג
+    return s + boost(j, plan.get("taste"))
 
 
 # ── השלמת תיאור מהעמוד הציבורי של המשרה ──────────────────────────────────────
@@ -453,7 +454,8 @@ def grounded(items: list[str], source: str) -> list[str]:
 
 
 def prefs_text(plan: dict) -> str:
-    return "; ".join(plan.get("why", [])) or "none given"
+    note = (plan.get("taste") or {}).get("note")   # מהשימוש באפליקציה. רק הסבר: הדרישות עדיין נבדקות מול קורות החיים
+    return "; ".join(plan.get("why", []) + ([f"From how they use the app, the candidate {note}"] if note else [])) or "none given"
 
 
 # ── ריצה ───────────────────────────────────────────────────────────────────────
@@ -600,7 +602,7 @@ def run(profile: dict, plan: dict, raw: list[dict] | None = None, rate_top: int 
     cards.sort(key=lambda c: -c["fit"])
     stats.update(rated=min(len(jobs), rate_top) - deferred, deferred=deferred, shown=len(cards), queries=qy)
     feed = {"generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"), "stats": stats,
-            "plan": {k: plan.get(k) for k in ("queries", "locations", "levels", "why")}, "jobs": cards, "rejected": rejected}
+            "plan": {k: plan.get(k) for k in ("queries", "locations", "levels", "why", "taste")}, "jobs": cards, "rejected": rejected}
     if not persist:
         return feed
     FEED.parent.mkdir(parents=True, exist_ok=True)

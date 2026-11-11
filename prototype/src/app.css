@@ -892,3 +892,7 @@ a.person>svg{flex:0 0 18px;width:18px;height:18px;fill:none;stroke:var(--ink3);s
 .cv-err{margin-top:10px;background:#FBEDED;color:#8A2B2B;border-radius:12px;padding:10px 12px;font-size:13.5px;line-height:1.5}
 
 .dev-ins{white-space:pre-wrap;font-size:11.5px;line-height:1.55;direction:rtl;text-align:right;background:var(--glass,#fff);border-radius:12px;padding:12px;max-height:65vh;overflow:auto;font-family:inherit}
+
+.taste-row{display:grid;gap:5px;margin:8px 0}.taste-row>span{font-size:12.5px;color:var(--ink3)}.taste-row>div{display:flex;flex-wrap:wrap;gap:6px}
+.taste-chip{display:inline-flex;align-items:center;gap:4px;padding:3px 4px 3px 10px;border-radius:999px;font-size:13px;background:var(--hi-lt,#E6F7EF);color:var(--hi-ink,#173B33)}
+.taste-chip.dis{background:#F3EEE8;color:#6B4E2E}.taste-chip button{width:22px;height:22px;border-radius:50%;font-size:11px;color:inherit;opacity:.7}
