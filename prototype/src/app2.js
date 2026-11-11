@@ -104,6 +104,40 @@ function nextSteps(){
 }
 /* הבריף של שי: רק מה שחדש או השתנה. לא חוזר על "הצעדים הבאים" */
 const BR_IC={hunter:'jobs',researcher:'spark',assistant:'mail',coach:'cal',linkedin:'li',strategist:'spark'};
+/* הבריף הישן (רשימת הודעות): רק אם עוד אין סיכום יומי של שי */
+function oldBrief(brief){return `<section class="brief" aria-labelledby="brH"><div class="brief-top"><h2 id="brH">מה חדש</h2><span>${escB(N('assistant'))} · ב-24 השעות האחרונות</span></div>
+      ${brief.length?`<ul class="br-list">${brief.map((x,i)=>`<li${i>2?' class="br-more" hidden':''}${x.go?` class="br-go" onclick="${x.go}"`:''}><span class="br-ic" aria-hidden="true">${x.ic}</span><span class="br-t">${escB(x.t)}</span></li>`).join('')}</ul>
+      ${brief.length>3?`<button class="br-toggle" onclick="const L=this.previousElementSibling,open=L.classList.toggle('all');L.querySelectorAll('.br-more').forEach(l=>l.hidden=!open);this.textContent=open?'פחות':'עוד ${brief.length-3}'">עוד ${brief.length-3}</button>`:''}`
+      :`<p>אין חדש מאז הבוקר. הצעדים הבאים מחכים למטה.</p>`}</section>`}
+/* ═════════ "מה חדש": הסיכום היומי של שי (agent_core/brief.py, AI עם בדיקת אמת) + מה שקרה מאז, בקוד ═════════ */
+const BR_TONE={act:['לעשות','tn-act'],new:['חדש','tn-new'],update:['עדכון','tn-upd'],wait:['בדרך','tn-wait'],bg:['ברקע','tn-bg']};
+const BR_GO={apps:"goPage('apps')",jobs:"goPage('jobs')",linkedin:"goPage('linkedin')",prep:"goPage('prep')",profile:"goPage('profile')"};
+function shaiToday(){const r=(typeof RUNS!=='undefined'&&RUNS||[]).filter(x=>x.stats&&x.stats.brief_ai).sort((a,b)=>b.created_at.localeCompare(a.created_at))[0];
+  return r&&Date.now()-new Date(r.created_at)<30*36e5?r:null}
+/* מאז הסיכום: רק דברים קריטיים, בקוד (בלי עוד קריאת AI) */
+function sinceBrief(t0){const out=[],seen=new Set();
+  for(const r of (typeof RUNS!=='undefined'&&RUNS||[])){const m=(r.stats||{}).msg||'';if(!m||new Date(r.created_at)<=t0)continue;
+    let it=null;
+    if(r.agent==='hunter'&&/משרות חדשות/.test(m))it={t:m.replace(/^.*?:\s*/,''),tone:'new',go:'jobs'};
+    else if(r.agent==='assistant'&&/מכתב פנייה מוכן/.test(m))it={t:m.split('.')[0],tone:'act',go:'apps'};
+    else if(/נסגרה למועמדים/.test(m))it={t:m.split('.')[0],tone:'update',go:''};
+    if(it&&!seen.has(it.t)){seen.add(it.t);it.at=r.created_at;out.push(it)}}
+  S.apps.filter(a=>typeof followDue==='function'&&followDue(a)).slice(0,1).forEach(a=>{const j=JOBS[a.jobId];if(j)out.push({t:`הגיע הזמן למעקב מול ${j.co}`,tone:'act',go:'apps'})});
+  return out.slice(0,4)}
+function brLi(x,i,hide){const [lbl,cls]=BR_TONE[x.tone]||BR_TONE.update,go=BR_GO[x.go];
+  return `<li class="b2-i ${cls}${hide?' b2-more':''}"${hide?' hidden':''}>${go?`<button onclick="${go}">`:'<div>'}<span class="b2-tag">${lbl}</span><span class="b2-t">${escB(x.t)}</span>${go?'<span class="b2-go" aria-hidden="true">‹</span></button>':'</div>'}</li>`}
+function shaiBrief(){const r=shaiToday();if(!r)return '';const b=r.stats.brief_ai,t0=new Date(r.created_at),since=sinceBrief(t0);
+  const items=b.items||[],main=items.filter(x=>x.tone!=='bg'),bg=items.filter(x=>x.tone==='bg'),SHOW=5;
+  const when=t0.toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'});
+  return `<section class="brief b2" aria-labelledby="brH">
+    <div class="b2-head"><span class="b2-av" aria-hidden="true">${escB((N('assistant')||'ש').slice(0,1))}</span><div><h2 id="brH">${escB(N('assistant'))} מעדכן אותך</h2><span>הסיכום של היום · ${escB(when)}</span></div></div>
+    ${b.headline?`<p class="b2-hl">${escB(b.headline)}</p>`:''}
+    ${since.length?`<div class="b2-sec">מאז הבוקר</div><ul class="b2-list">${since.map((x,i)=>brLi(x,i,false)).join('')}</ul>`:''}
+    ${main.length?`${since.length?'<div class="b2-sec">הסיכום</div>':''}<ul class="b2-list">${main.map((x,i)=>brLi(x,i,i>=SHOW)).join('')}</ul>
+      ${main.length>SHOW?`<button class="br-toggle" onclick="const L=this.previousElementSibling,o=L.classList.toggle('all');L.querySelectorAll('.b2-more').forEach(l=>l.hidden=!o);this.textContent=o?'פחות':'עוד ${main.length-SHOW}'">עוד ${main.length-SHOW}</button>`:''}`
+      :(!since.length?'<p class="b2-quiet">יום שקט. אין משהו שדורש ממך פעולה.</p>':'')}
+    ${bg.length?`<p class="b2-bg">${bg.map(x=>escB(x.t)).join(' · ')}</p>`:''}
+  </section>`}
 function briefItems(closed,sug){
   const out=[],day=Date.now()-864e5,seen=new Set();
   ((typeof RUNS!=='undefined'&&RUNS)||[]).forEach(r=>{const st=r.stats||{};
@@ -129,10 +163,7 @@ function renderHome(){
   $('homeScroll').innerHTML=`
     <div class="greet"><h2 class="greet-h">${hi}, ${escB(prof().first)}</h2><p>${escB(date)}</p></div>
     ${REAL?(FEEDD&&FEEDD.generated_at&&CLOUDM?'':`<div class="notice">${FEEDD&&FEEDD.generated_at?`המשרות אמיתיות, מהחיפוש של ${N('hunter')} ${escB(feedWhen())}.`:prof().cv?`${N('hunter')} יחפש לך משרות בסריקה הקרובה (07:00 או 15:00).`:`כדי ש${N('hunter')} יתחיל לחפש, צריך קורות חיים. <button class="link" style="color:var(--brand);font-weight:600" onclick="goPage('profile')">להעלאה</button>`} ${CLOUDM?'':'מסכי LinkedIn וההכנה לראיונות עוד מציגים דוגמאות.'}</div>`):prof().key?'':`<div class="notice">מוצגות דוגמאות עד שתחבר את הסוכנים. <button class="link" style="color:var(--brand);font-weight:600" onclick="goPage('settings')">לחיבור</button></div>`}
-    <section class="brief" aria-labelledby="brH"><div class="brief-top"><h2 id="brH">מה חדש</h2><span>${escB(N('assistant'))} · ב-24 השעות האחרונות</span></div>
-      ${brief.length?`<ul class="br-list">${brief.map((x,i)=>`<li${i>2?' class="br-more" hidden':''}${x.go?` class="br-go" onclick="${x.go}"`:''}><span class="br-ic" aria-hidden="true">${x.ic}</span><span class="br-t">${escB(x.t)}</span></li>`).join('')}</ul>
-      ${brief.length>3?`<button class="br-toggle" onclick="const L=this.previousElementSibling,open=L.classList.toggle('all');L.querySelectorAll('.br-more').forEach(l=>l.hidden=!open);this.textContent=open?'פחות':'עוד ${brief.length-3}'">עוד ${brief.length-3}</button>`:''}`
-      :`<p>אין חדש מאז הבוקר. הצעדים הבאים מחכים למטה.</p>`}</section>
+    ${shaiBrief()||oldBrief(brief)}
     <section class="next glass" aria-labelledby="nxH"><div class="next-h"><h2 id="nxH">הצעדים הבאים</h2>${steps.length>5?`<span>5 מתוך ${steps.length}</span>`:''}</div>
       ${shown.length?shown.map(x=>`<button class="nx" onclick="${x.go}"><span class="ic ${x.c}" aria-hidden="true">${x.ic}</span><span class="tx"><b>${escB(x.b)}</b><span>${escB(x.s)}</span></span>${x.w?`<span class="when ${x.w[1]}">${x.w[0]}</span>`:''}<span class="chev" aria-hidden="true"></span></button>`).join('')
         :'<p style="padding:6px 16px 14px;color:var(--ink2);font-size:14px">אין צעדים פתוחים כרגע. הסוכנים ממשיכים לעבוד ויעדכנו אותך.</p>'}

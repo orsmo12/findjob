@@ -921,3 +921,27 @@ a.person>svg{flex:0 0 18px;width:18px;height:18px;fill:none;stroke:var(--ink3);s
 .usc-scan{display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px;font-size:12.5px;color:var(--ink2)}.usc-flow i{font-style:normal;color:var(--ink3);margin:0 2px}
 .usc-act summary{font-size:12.5px;color:var(--brand);cursor:pointer}.usc-act ul{list-style:none;margin:6px 0 0;padding:0;display:grid;gap:6px}
 .usc-act li{display:grid;grid-template-columns:auto 1fr;gap:8px;font-size:12.5px;line-height:1.45;color:var(--ink2)}.usc-act time{color:var(--ink3);white-space:nowrap}
+
+/* ── "מה חדש" של שי: כותרת אחת, נקודות לפי חשיבות עם תגית סוג ── */
+.b2{cursor:default;padding:16px 16px 14px}
+.b2-head{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.b2-av{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;background:var(--hi);color:#173B33;font-weight:700;font-size:16px;flex-shrink:0;
+  box-shadow:0 0 0 3px rgba(123,224,181,.22)}
+.b2-head h2{font-size:15px;font-weight:700;color:#fff;margin:0;line-height:1.2}.b2-head span{font-size:12px;color:rgba(255,255,255,.62)}
+.b2-hl{font-size:19px;font-weight:700;line-height:1.35;color:#fff;margin:2px 0 12px;text-wrap:balance}
+.b2-sec{font-size:11.5px;font-weight:600;color:var(--hi);margin:10px 2px 6px}
+.b2-list{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.b2-i>button,.b2-i>div{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:10px;width:100%;text-align:right;
+  background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:10px 12px;color:#fff;font-size:14px;line-height:1.45}
+.b2-i>div{grid-template-columns:auto 1fr}
+.b2-i>button:active{background:rgba(255,255,255,.13)}
+.b2-tag{font-size:11px;font-weight:700;padding:3px 8px;border-radius:8px;white-space:nowrap;align-self:start;margin-top:1px}
+.b2-i.tn-act .b2-tag{background:var(--hi);color:#173B33}
+.b2-i.tn-new .b2-tag{background:rgba(160,205,255,.22);color:#D7E9FF}
+.b2-i.tn-upd .b2-tag{background:rgba(255,255,255,.16);color:#fff}
+.b2-i.tn-wait .b2-tag{background:rgba(255,200,120,.2);color:#FFE2B8}
+.b2-i.tn-act>button,.b2-i.tn-act>div{border-color:rgba(123,224,181,.35);background:rgba(123,224,181,.1)}
+.b2-go{font-size:18px;color:rgba(255,255,255,.55)}
+.b2-quiet{color:rgba(255,255,255,.75);font-size:14px;margin:4px 2px}
+.b2-bg{margin:10px 2px 0;font-size:12px;color:rgba(255,255,255,.55);line-height:1.5}
+.b2 .br-toggle{margin-top:8px}

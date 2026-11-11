@@ -203,6 +203,14 @@ for u in db.profiles_ready():
     except Exception as e:  # noqa: BLE001
         print(f"קורות חיים מ-GitHub נכשל: {type(e).__name__}: {e}"); act.flush(); RR.fail("קורות חיים מ-GitHub", u["user_id"], e)
 
+    # ── שי: הסיכום היומי של "מה חדש" (פעם ביום, אחרי 06:00; agent_core/brief.py) ──
+    try:
+        from agent_core import brief as BR
+        if BR.daily(u):
+            print("סיכום יומי של שי נשמר")
+    except Exception as e:  # noqa: BLE001
+        print(f"סיכום יומי נכשל: {type(e).__name__}: {e}"); RR.fail("סיכום יומי", u["user_id"], e)
+
 # "להכין עכשיו": ריצה למשתמש אחד. בודקים גם שהמשרות השמורות עדיין פתוחות, ומסמנים לאפליקציה שסיימנו
 import os as _os
 if (_os.environ.get("ONLY_USER") or "").strip():

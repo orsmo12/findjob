@@ -48,7 +48,7 @@ async function cloudLoad(){
   prof().key='cloud';
   RUNS=runs||[];
   /* דוחות של בעל המערכת נטענים בנפרד: ביום עמוס הם נדחקים מעבר ל-150 הרשומות האחרונות, וכלי המפתח נעלמו מהתפריט */
-  try{const own=await Promise.all(['usage_report','insights'].map(k=>SB.from('runs').select('agent,stats,plan,created_at').eq('user_id',uid).not('stats->'+k,'is',null).order('created_at',{ascending:false}).limit(1)));
+  try{const own=await Promise.all(['usage_report','insights','brief_ai'].map(k=>SB.from('runs').select('agent,stats,plan,created_at').eq('user_id',uid).not('stats->'+k,'is',null).order('created_at',{ascending:false}).limit(1)));
     for(const {data} of own)for(const r of data||[])if(!RUNS.some(x=>x.created_at===r.created_at&&x.agent===r.agent))RUNS.push(r)}catch(e){}
   const hr=RUNS.filter(r=>(r.agent||'hunter')==='hunter');
   if(hr.length||(jobs&&jobs.length)){
