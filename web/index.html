@@ -3307,7 +3307,11 @@ async function cloudLoad(){
   if(pr){const p=prof();p.first=pr.first||p.first;p.name=pr.name||p.name;p.cv=pr.cv_text||p.cv;p.ans=Object.assign({},pr.answers||{},p.ans||{});
     if(pr.team&&Object.keys(pr.team).length)S.team=pr.team;const st=pr.state||{};if(st.skip&&typeof st.skip==='object')S.skip=st.skip;if(Array.isArray(st.taste_off))S.taste_off=st.taste_off;['apps','todos','stories'].forEach(k=>{if(Array.isArray(st[k]))S[k]=st[k]});if(st.targets)S.targets=st.targets;if(Array.isArray(st.history))S.history=st.history;if(Array.isArray(st.chat))S.chat=st.chat;if(Array.isArray(st.accepted))S.accepted=st.accepted;if(Array.isArray(st.dismissed))S.dismissed=st.dismissed;if(Array.isArray(st.cvDone))S.cvDone=st.cvDone;if(st.usage)S.usage=st.usage;if(st.ai_key)S.ai_key=st.ai_key;if(Array.isArray(st.feedback))S.feedback=st.feedback;if(Array.isArray(st.my_letters))S.my_letters=st.my_letters;if(st.push)S.push=st.push;if(st.tourDone)S.tourDone=true;if(st.fb_status)S.fb_status=st.fb_status;p.li_text=pr.li_text||'';LI=Object.assign({},pr.li||{},{fixes:((pr.li_fixes||{}).fixes)||[]});if(pr.cv_text)S.onboarded=true}
   prof().key='cloud';
-  RUNS=runs||[];const hr=RUNS.filter(r=>(r.agent||'hunter')==='hunter');
+  RUNS=runs||[];
+  /* דוחות של בעל המערכת נטענים בנפרד: ביום עמוס הם נדחקים מעבר ל-150 הרשומות האחרונות, וכלי המפתח נעלמו מהתפריט */
+  try{const own=await Promise.all(['usage_report','insights'].map(k=>SB.from('runs').select('agent,stats,plan,created_at').eq('user_id',uid).not('stats->'+k,'is',null).order('created_at',{ascending:false}).limit(1)));
+    for(const {data} of own)for(const r of data||[])if(!RUNS.some(x=>x.created_at===r.created_at&&x.agent===r.agent))RUNS.push(r)}catch(e){}
+  const hr=RUNS.filter(r=>(r.agent||'hunter')==='hunter');
   if(hr.length||(jobs&&jobs.length)){
     const live=(jobs||[]).filter(r=>r.decision!=='filtered'&&(r.decision!=='skip'||S.decisions[r.id]));
     setFeed({generated_at:hr.length?hr[0].created_at:null,stats:hr.length?(hr[0].stats||{}):{},jobs:live.map(r=>Object.assign({},r.card,{letter:r.letter||null,brief:r.brief||null,prep:r.prep||null,tailor:r.tailor||null,closed_at:(r.card&&r.card.closed_at)||null})).sort((a,b)=>b.fit-a.fit)});
