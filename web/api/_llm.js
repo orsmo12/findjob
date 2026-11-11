@@ -31,7 +31,7 @@ async function checkKey(key) {
   const k = clean(key), prov = providerOf(k);
   if (!prov || k.length < 30) return { ok: false, provider: '', why: 'format' };
   const r = await fetch(P[prov].base + '/models', { headers: headers(prov, k) });
-  return { ok: r.ok, provider: prov, name: P[prov].name, why: r.ok ? '' : ([401, 403].includes(r.status) ? 'invalid' : prov + '_' + r.status) };
+  return { ok: r.ok, provider: prov, name: P[prov].name, why: r.ok ? '' : ([400, 401, 403].includes(r.status) ? 'invalid' : prov + '_' + r.status) };   // Google מחזיר 400 למפתח לא תקין
 }
 
 async function models(prov, key) {

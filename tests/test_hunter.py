@@ -165,3 +165,25 @@ def test_few_skill_items_blend_with_model():
     assert 3.0 < r["fit"] < 4.0
     level_cap(r, {"levels": ["junior"], "max_years": 1, "have_years": 0}, "Software Engineer")
     assert r["fit"] <= 3.6
+
+
+def test_thin_results_topped_up_with_near_misses():
+    """מהבדיקה מקצה לקצה: מכונות, 25 דורגו → 4 הוצגו. פחות מ-6 עוברות → משלימים מהקרובות לסף (3.0+), עם תגית."""
+    from agent_core.agents import hunter as H
+    fits = iter([4.4, 3.4, 3.2, 2.5, 3.1])
+    oe, orr, ol, ofa, otc = H.enrich, H.rate, H.act.log, H.has_full_ad, H.to_card
+    H.enrich = lambda j, *a, **k: j
+    H.has_full_ad = lambda j: True
+    H.rate = lambda *a, **k: {"fit": next(fits), "core": [], "required_years": 0, "reasons": [], "gaps": [], "partial": False}
+    H.to_card = lambda j, r, cv: {"id": j["id"], "fit": r["fit"], "tags": []}
+    H.act.log = lambda *a, **k: None
+    jobs = [{"id": f"j{i}", "title": f"Mechanical Engineer {i}", "company": f"Co{i}", "location": "TA", "url": f"https://x/{i}",
+             "description": "x" * 900, "source": "linkedin", "posted": "", "salary": ""} for i in range(5)]
+    try:
+        feed = H.run({"cv_text": "solidworks"}, {"titles": [], "levels": ["junior"], "max_years": 1}, raw=jobs, seen=set(), persist=False)
+    finally:
+        H.enrich, H.rate, H.act.log, H.has_full_ad, H.to_card = oe, orr, ol, ofa, otc
+    got = {c["fit"]: c for c in feed["jobs"]}
+    assert set(got) == {4.4, 3.4, 3.2, 3.1}          # 4.4 עברה, 3.4/3.2/3.1 השלמה, 2.5 לא
+    assert got[3.4].get("near") and "התאמה חלקית" in got[3.4]["tags"] and not got[4.4].get("near")
+    assert [x["fit"] for x in feed["rejected"]] == [2.5]

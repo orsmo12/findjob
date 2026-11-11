@@ -484,6 +484,8 @@ def to_card(j: dict, r: dict, cv: str = "") -> dict:
             "posted_days": days, "salary": j.get("salary", ""), "desc": j.get("description", "")[:600], "ad": j.get("description", "")[:4000], "url": j["url"], "rv": RATING_V}
 
 
+MIN_SHOWN = 6     # אם פחות משרות עברו את הסף, משלימים מהקרובות לו
+NEAR_FIT = 3.0    # "קרובה לסף": מוצגת רק כהשלמה, עם תגית
 RATING_V = 8  # גרסת שיטת הדירוג. משרות שדורגו בגרסה ישנה מדורגות מחדש
 
 
@@ -535,7 +537,7 @@ def run(profile: dict, plan: dict, raw: list[dict] | None = None, rate_top: int 
     jobs.sort(key=lambda j: -cheap_rank(j, plan, cv))
     if jobs:
         act.log("hunter", f"מדרג את {min(len(jobs), rate_top)} המבטיחות מול קורות החיים שלך")
-    cards, deferred, rejected = [], 0, []
+    cards, deferred, rejected, near = [], 0, [], []
     # משרה שנבדקה ונפסלה נשמרת (decision=filtered), כדי שלא נבזבז עליה את מכסת ה-AI בכל סריקה מחדש
     drop = lambda j, why, fit=None: rejected.append({"id": j["id"], "co": j["company"], "title": j["title"], "url": j["url"],
                                                     "fit": fit or 0, "filtered_why": why, "rv": RATING_V})
@@ -571,9 +573,24 @@ def run(profile: dict, plan: dict, raw: list[dict] | None = None, rate_top: int 
         act.log("hunter", f"{j['title']} ב-{j['company']}: {r['fit']:.1f}/5" + (f" (נדרשות {r['required_years']} שנים)" if r.get("required_years") else "") + f" {'✓ מתאימה' if ok else '· מתחת לסף'}")
         if not ok:
             drop(j, f"ציון {r['fit']:.1f}", r["fit"])
+            if r["fit"] >= NEAR_FIT:
+                near.append((j, r))
         if ok:
             cards.append(to_card(j, r, cv))
             qy.setdefault(j.get("query") or j.get("source", "?"), {"got": 0, "new": 0, "fit": 0})["fit"] += 1
+    # תחום עם מעט משרות (נמצא בבדיקה: מכונות, 25 דורגו → 4 הוצגו): משלימים עד MIN_SHOWN מהקרובות לסף,
+    # עם תגית "התאמה חלקית", במקום להשאיר את המשתמש עם מסך כמעט ריק
+    if len(cards) < MIN_SHOWN and near:
+        near.sort(key=lambda x: -x[1]["fit"])
+        add = near[:MIN_SHOWN - len(cards)]
+        ids = {j["id"] for j, _ in add}
+        rejected[:] = [x for x in rejected if x["id"] not in ids]
+        for j, r in add:
+            c = to_card(j, r, cv)
+            c["near"] = True
+            c["tags"] = (c.get("tags") or []) + ["התאמה חלקית"]
+            cards.append(c)
+        act.log("hunter", f"מעט משרות עברו את הסף, אז הוספתי {len(add)} קרובות (ציון {add[-1][1]['fit']:.1f} ומעלה) עם תגית התאמה חלקית")
     cards.sort(key=lambda c: -c["fit"])
     stats.update(rated=min(len(jobs), rate_top) - deferred, deferred=deferred, shown=len(cards), queries=qy)
     feed = {"generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"), "stats": stats,
