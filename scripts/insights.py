@@ -71,6 +71,10 @@ def main(DAYS: int = 14) -> None:
         print(f"   {alias[uid]}: נרשם {str(u.get('created_at'))[:16]} | קו״ח {len(str((db_cv.get(uid) or '')))} תווים | onboarded={st.get('onboarded')} | "
               f"תשובות {len((p.get('answers') or {}))} | ריצות לפי סוכן {dict(ag)} | זיכרונות {len(mem)} | תקלות {len(fails)}"
               + (f" | תקלה אחרונה: {fails[-1].get('where')} {str(fails[-1].get('error'))[:120]}" if fails else ""))
+        br = [r["stats"]["brief_ai"] for r in mine if (r.get("stats") or {}).get("brief_ai")]
+        if br:
+            b = br[-1]
+            print(f"      סיכום יומי ({b.get('how')}): {b.get('headline')} | {len(b.get('items') or [])} נקודות")
         last = [r for r in mine if (r.get("stats") or {}).get("msg")][-3:]
         for r in last:
             print(f"      {r['created_at'][5:16]} {r['agent']}: {str(r['stats']['msg'])[:130]}")
