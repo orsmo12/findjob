@@ -152,6 +152,7 @@ class SearchPlan:
     domain: str = "פיתוח תוכנה"
     he_queries: list[str] = field(default_factory=list)   # חיפושים בעברית (בתחומים שמפרסמים הרבה בעברית)
     exclude_words: list[str] = field(default_factory=list)  # כללי סינון שאישרת ("בלי .NET"): משרה שהמילה בכותרת שלה לא מוצגת
+    learned_queries: list[str] = field(default_factory=list)  # חיפושים שיואב הוסיף מהמשרות ששמרת (ישיבה שבועית)
 
     def queries(self, limit: int = 12) -> list[str]:
         """שילוב של כותרות ורמות: Junior / Student / Graduate / Entry level. אותו מבנה לכל תחום.
@@ -169,9 +170,9 @@ class SearchPlan:
                     out += [f"Entry Level {t}"] if jr else []
                 else:
                     out += ([f"Student {t}"] if st else []) + ([f"Junior {t}"] if jr else []) + ([t] if "mid" in self.levels else [])
-        if self.he_queries:  # אחרי הכותרות הראשיות, לפני השאר
+        if self.he_queries or self.learned_queries:  # אחרי הכותרות הראשיות, לפני השאר
             k = len(heads) * (1 + st)
-            out = out[:k] + list(self.he_queries) + out[k:]
+            out = out[:k] + list(self.learned_queries) + list(self.he_queries) + out[k:]
         drop = {q.lower() for q in self.drop_queries}
         seen, uniq = set(), []
         for q in out:
@@ -335,6 +336,7 @@ def build_search_plan(profile: dict) -> SearchPlan:
                       prefer_size=prefer_size, prefer_sectors=prefer_sectors,
                       min_salary_month=sal, exclude_reasons=counts, why=why, have_years=have_years,
                       extra_titles=list(profile.get("extra_titles") or []), heads=heads, area_cities=area, domain=domain, he_queries=he_q, drop_queries=list(profile.get("drop_queries") or []), exclude_words=excl,
+                      learned_queries=list(profile.get("learned_queries") or []),
                       domains=domains, part_time=part_time)
 
 

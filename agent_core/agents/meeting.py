@@ -86,6 +86,36 @@ def hold(plan: dict, hunter_runs: list[dict], jobs: list[dict], last: dict, acce
             drop.add(q)
             report["actions"].append(f"הורדתי את החיפוש '{q}': בשלוש סריקות הוא לא הביא אף משרה חדשה ברמה שלך.")
             act.log("strategist", f"'{q}' לא הביא כלום שלוש פעמים. מוריד אותו ומפנה את המקום לחיפוש אחר.", to="hunter")
+    # חיפוש "ריק": מביא משרות חדשות אבל אף אחת לא מתאימה, לאורך עד 10 סריקות. שורף דירוגים בלי תועלת (נמצא בדוח התובנות)
+    q10: dict[str, list[dict]] = defaultdict(list)
+    for s in S[:10]:
+        for q, v in (s.get("queries") or {}).items():
+            q10[q].append(v)
+    keep_min = 4   # תמיד נשארים לפחות 4 חיפושים פעילים
+    for q, vs in sorted(q10.items(), key=lambda x: -sum(v.get("new", 0) for v in x[1])):
+        if len(plan_q - drop) <= keep_min:
+            break
+        if q in plan_q and q not in drop and len(vs) >= 6 and sum(v.get("new", 0) for v in vs) >= 10 and not sum(v.get("fit", 0) for v in vs):
+            drop.add(q)
+            report["actions"].append(f"הורדתי את החיפוש '{q}': ב-{len(vs)} סריקות הוא הביא {sum(v.get('new', 0) for v in vs)} משרות חדשות ואף אחת לא התאימה.")
+            act.log("strategist", f"'{q}' מביא משרות אבל אף אחת לא מתאימה. מוריד אותו כדי שהדירוגים ילכו לחיפושים טובים יותר.", to="hunter")
+    # וריאציות מהצלחות: תפקידים של משרות ששמרת, שעוד לא מחפשים אותם ישירות (עד 2 בשבוע, עד 6 בסך הכל)
+    added = list(last.get("add_queries") or [])
+    prefix = next((p for p in ("Student", "Junior", "Graduate") if any(q.startswith(p + " ") for q, vs in qy.items() if sum(v.get("fit", 0) for v in vs))), "")
+    if not prefix and "mid" in (plan.get("levels") or []):
+        prefix = ""
+    elif not prefix:
+        prefix = "Junior"
+    taken = {q.lower() for q in plan_q | drop | set(added)}
+    new_now = 0
+    saved_titles = Counter(core_title((j.get("card") or {}).get("title", "")) for j in jobs if j.get("decision") in ("save", "applied"))
+    for t, k in saved_titles.most_common():
+        q = f"{prefix} {t}".strip()
+        if not t or len(t) < 4 or new_now >= 2 or len(added) >= 6 or q.lower() in taken:
+            continue
+        added.append(q); taken.add(q.lower()); new_now += 1
+        report["actions"].append(f"הוספתי את החיפוש '{q}': שמרת משרות כאלה, אז כדאי לחפש אותן ישירות.")
+        act.log("strategist", f"שמרת {k} משרות של {t}. מוסיף חיפוש ישיר: '{q}'.", to="hunter")
     best = sorted(((q, sum(v.get("fit", 0) for v in vs)) for q, vs in qy.items()), key=lambda x: -x[1])
     if best and best[0][1]:
         act.log("hunter", f"החיפוש שהביא הכי הרבה משרות מתאימות: '{best[0][0]}' ({best[0][1]}).", to="strategist")
@@ -160,6 +190,6 @@ def hold(plan: dict, hunter_runs: list[dict], jobs: list[dict], last: dict, acce
         parts.append("יש לי הצעה: " + "; ".join(s["value"] for s in report["suggestions"]) + ". אפשר לאשר בפרופיל › מה מחפשים בשבילך.")
     if report["issues"]:
         parts.append("שמתי לב: " + " ".join(report["issues"][:2]))
-    new_plan = {"at": datetime.now(timezone.utc).isoformat(), "drop_queries": sorted(drop), "auto_targets": auto,
+    new_plan = {"at": datetime.now(timezone.utc).isoformat(), "drop_queries": sorted(drop), "add_queries": added, "auto_targets": auto,
                 "suggestions": report["suggestions"], "skill_gaps": skill_gaps}
     return {"report": report, "plan": new_plan, "msg": " ".join(parts)}

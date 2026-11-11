@@ -29,3 +29,23 @@ def test_core_title():
     assert M.core_title("Junior AI Engineer - Agents (Hybrid)") == "AI Engineer"
     assert M.core_title("Software Engineer III, Cloud") == "Software Engineer"
     assert M.core_title("Outstanding Graduate Algorithm Developer - Vision Localization Group") == "Algorithm Developer"
+
+
+def test_meeting_learns_queries():
+    """מדוח התובנות: חיפוש שמביא משרות חדשות אבל אף אחת לא מתאימה יורד; חיפוש ישיר מתפקידים של משרות ששמרת נוסף."""
+    M.act.log = lambda *a, **k: None
+    q = {"Graduate Backend Developer": {"got": 40, "new": 3, "fit": 0}, "Junior Backend Developer": {"got": 40, "new": 10, "fit": 2},
+         "Junior Frontend Developer": {"got": 40, "new": 2, "fit": 1}, "Junior QA Engineer": {"got": 30, "new": 2, "fit": 1},
+         "Junior Data Engineer": {"got": 30, "new": 1, "fit": 1}, "Junior Python Developer": {"got": 30, "new": 1, "fit": 1}}
+    runs = [{"stats": {"collected": 100, "too_senior": 10, "rated": 20, "shown": 2, "fits": [4.0], "queries": q}}] * 8
+    jobs = [{"card": {"id": "a", "title": "AI Engineer - Agents", "co": "Skai", "fit": 4.3}, "decision": "save"},
+            {"card": {"id": "b", "title": "Junior Backend Developer", "co": "Acme", "fit": 4.0}, "decision": "save"}]
+    plan = {"queries": list(q), "titles": ["Backend Developer"], "levels": ["junior"]}
+    out = M.hold(plan, runs, jobs, {}, [], [], [])
+    assert "Graduate Backend Developer" in out["plan"]["drop_queries"] and "Junior Backend Developer" not in out["plan"]["drop_queries"]
+    assert out["plan"]["add_queries"] == ["Junior AI Engineer"]   # Backend כבר בחיפוש
+    # הלמידה נכנסת לתוכנית החיפוש
+    from agent_core.profile import build_search_plan
+    p = build_search_plan({"cv_text": "", "answers": {"roles": ["Backend"]}, "learned_queries": out["plan"]["add_queries"],
+                           "drop_queries": out["plan"]["drop_queries"]})
+    assert "Junior AI Engineer" in p.queries() and "Graduate Backend Developer" not in p.queries()

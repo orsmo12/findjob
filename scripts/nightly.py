@@ -68,7 +68,7 @@ for u in users:
     learned = db.latest_plan(u["user_id"], "meeting")          # מה יואב והצוות למדו בישיבה האחרונה
     prof = {"first": u.get("first", ""), "name": u.get("name", ""), "cv_text": u["cv_text"], "answers": u.get("answers") or {},
             "extra_titles": [x["value"] for x in ustate.get("accepted") or [] if x.get("type") == "role"],  # תפקידים שאישרת
-            "drop_queries": learned.get("drop_queries") or []}
+            "drop_queries": learned.get("drop_queries") or [], "learned_queries": learned.get("add_queries") or []}
     plan = build_search_plan(prof).to_dict()
     act.start(u["user_id"])
     try:  # דורון: דירוג מחדש של משרות בפיד שדורגו בלי מודעה מלאה או בשיטה ישנה
@@ -282,7 +282,7 @@ for u in users:
         st = u.get("state") or {}
         prof = {"cv_text": u["cv_text"], "answers": u.get("answers") or {},
                 "extra_titles": [x["value"] for x in st.get("accepted") or [] if x.get("type") == "role"],
-                "drop_queries": last.get("drop_queries") or []}
+                "drop_queries": last.get("drop_queries") or [], "learned_queries": last.get("add_queries") or []}
         plan = build_search_plan(prof).to_dict()
         tc = st.get("targets") or {}
         names = [t["name"] for t in select_targets(build_search_plan(prof), {"target_companies": tc}, load_catalog())]
@@ -312,6 +312,16 @@ try:
         if admin and rep:
             db.add_run(admin, "strategist", rep["msg"], {"usage_report": rep})
             print(f"דוח שימוש: {len(rep['rows'])} משתמשים")
+        il_day = datetime.now(timezone.utc).astimezone(timezone(timedelta(hours=2))).weekday()   # ראשון = 6
+        if admin and (il_day == 6 or os.environ.get("FORCE_INSIGHTS")):   # תובנות על החיפוש: פעם בשבוע, לכלי המפתח
+            import contextlib, io
+            sys.path.insert(0, str(Path(__file__).resolve().parent))
+            import insights as INS
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf):
+                INS.main(7)
+            db.add_run(admin, "strategist", "דוח תובנות שבועי על החיפוש מוכן בכלי המפתח.", {"insights": buf.getvalue()[:20000]})
+            print("דוח תובנות שבועי נשמר")
         if admin:   # סטטוס לבקשות ולמשובים: המפתח מסמן בכלי המפתח, המשתמש מקבל הודעה פעם אחת לכל שינוי
             allp = httpx.get(db._url("profiles"), headers=db._h(), params={"select": "user_id,state"}, timeout=30).json()
             owner = next((p for p in allp if p["user_id"] == admin), {})

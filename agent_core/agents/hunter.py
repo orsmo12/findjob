@@ -535,6 +535,12 @@ def run(profile: dict, plan: dict, raw: list[dict] | None = None, rate_top: int 
     for j in jobs:
         qy.setdefault(j.get("query") or j.get("source", "?"), {"got": 0, "new": 0, "fit": 0})["new"] += 1
     jobs.sort(key=lambda j: -cheap_rank(j, plan, cv))
+    from agent_core.llm_router import using_own_key
+    if using_own_key() and len(jobs) > rate_top * 2:   # מפתח אישי ויש הרבה משרות שמחכות: מדרגים יותר עכשיו, לא בסריקה הבאה
+        extra = min(15, 50 - rate_top)
+        if extra > 0:
+            rate_top += extra
+            act.log("hunter", f"יש {len(jobs)} משרות שמחכות לדירוג, ויש לך מפתח אישי, אז אדרג הפעם {rate_top} במקום {rate_top - extra}.")
     if jobs:
         act.log("hunter", f"מדרג את {min(len(jobs), rate_top)} המבטיחות מול קורות החיים שלך")
     cards, deferred, rejected, near = [], 0, [], []

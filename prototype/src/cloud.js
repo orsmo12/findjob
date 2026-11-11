@@ -412,12 +412,17 @@ function setPref(x){const p=prof();p.ans=p.ans||{};const a=p.ans,clean=v=>String
 /* ═════════ כלי מפתח: רק לבעלים (מי שמקבל את דוח השימוש) ═════════ */
 const isOwner=()=>!!((typeof RUNS!=='undefined'&&RUNS)||[]).find(x=>x.stats&&x.stats.usage_report);
 const FB_ST={'':'חדש',got:'התקבלה',doing:'בעבודה',done:'נוספה',no:'לא כרגע'};
+/* תובנות שבועיות על החיפוש (scripts/insights.py, נשמר בסריקת הבוקר של יום ראשון) */
+function openInsights(){const r=(RUNS||[]).find(x=>x.stats&&x.stats.insights);if(!r)return;
+  openSheet(`<h3 id="sheetTitle">תובנות על החיפוש</h3><div class="sheet-sub">מ-${new Date(r.created_at).toLocaleDateString('he-IL')}, 7 הימים האחרונים. אנונימי.</div>
+    <pre class="dev-ins">${esc(r.stats.insights)}</pre>`)}
 function openDev(){const ur=(RUNS||[]).find(x=>x.stats&&x.stats.usage_report),u=ur?ur.stats.usage_report:{rows:[],feedback:[]};
   const fails=(RUNS||[]).filter(r=>r.stats&&Array.isArray(r.stats.failures)&&Date.now()-new Date(r.created_at)<14*864e5);
   const fb=u.feedback||[],st=S.fb_status||{};
   openSheet(`<h3 id="sheetTitle">כלי מפתח <span class="dev-tag">מפתח</span></h3><div class="sheet-sub">רק אתה רואה את זה. ${ur?'הדוח מ-'+new Date(ur.created_at).toLocaleDateString('he-IL'):'הדוח הראשון יגיע בסריקת הבוקר'}.</div>
     <div class="dev-sum"><span><b class="num">${u.rows.length}</b> משתמשים</span><span><b class="num">${u.rows.filter(r=>r.days_week).length}</b> פעילים השבוע</span><span><b class="num">${fb.filter(f=>!st[f.key]).length}</b> משובים חדשים</span><span class="${fails.length?'bad':''}"><b class="num">${fails.length}</b> ריצות עם תקלות</span></div>
     <button class="btn btn-sm btn-ghost btn-block" onclick="openUsage()">דוח שימוש מלא</button>
+    ${(RUNS||[]).find(x=>x.stats&&x.stats.insights)?`<button class="btn btn-sm btn-ghost btn-block" onclick="openInsights()">תובנות שבועיות על החיפוש</button>`:''}
     ${(u.funnel||[]).length?`<h4 class="sub-h">משפך: כמה משתמשים הגיעו לכל שלב</h4><div class="dev-fun">${u.funnel.map(([l,n])=>`<div><span>${escB(l)}</span><i style="width:${u.rows.length?Math.round(100*n/u.rows.length):0}%"></i><b class="num">${n}</b></div>`).join('')}</div>`:''}
     ${(u.errors||[]).length?`<h4 class="sub-h">שגיאות באפליקציה אצל משתמשים</h4><ul class="dev-err">${u.errors.map(([m,n])=>`<li><b class="num">${n}×</b> <span dir="ltr">${escB(m)}</span></li>`).join('')}</ul>`:''}
     <h4 class="sub-h">משובים ובקשות</h4>

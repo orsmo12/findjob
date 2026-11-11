@@ -325,12 +325,33 @@ def board_label(b: dict) -> str:
             "comeet": "Comeet", "workday": "Workday", "site": "אתר החברה"}.get(b.get("board"), b.get("board", ""))
 
 
+GENERIC = {"software", "developer", "engineer", "engineering", "student", "junior", "intern", "graduate", "senior", "lead", "entry", "level",
+           "and", "the", "for", "full", "stack"}
+SENIOR_T = re.compile(r"\b(senior|sr\.?|lead|principal|staff|head|manager|director|architect|vp)\b", re.I)
+
+
+def relevant_title(title: str, specific: set[str], words: set[str], early: bool) -> bool:
+    """דפי קריירה של חברות גדולות מחזירים מאות משרות. לפני שקוראים מודעה מלאה ומדרגים (זמן ומכסה):
+    הכותרת צריכה מילה של התפקיד עצמו (לא רק "Engineer"), ולמי שבתחילת הדרך — בלי Senior/Lead/Manager בכותרת.
+    נמצא בדוח התובנות: 1,709 משרות מ-Greenhouse הביאו משרה מתאימה אחת."""
+    t = title.lower()
+    if early and SENIOR_T.search(title):
+        return False
+    if specific:
+        return any(re.search(r"\b" + re.escape(w) + (r"\b" if len(w) <= 3 else ""), t) for w in specific)
+    return any(w in t for w in words)
+
+
 def collect_targets(targets: list[dict], plan: dict, cache: dict | None = None, discover_max: int = 30,
                     timeout: float = 12.0) -> tuple[list[dict], list[dict], dict]:
     """מחזיר (משרות, סטטוס לכל חברה, מטמון גילוי מעודכן).
     חברה בלי לוח מסומנת by_name — דורון יחפש אותה לפי השם ב-LinkedIn וב-Indeed."""
     words = {w.lower() for t in plan.get("titles", []) + plan.get("extra_titles", []) for w in re.findall(r"[A-Za-z]+", t)} - {"developer", "engineer"}
+    specific = {w for w in words if len(w) >= 2} - GENERIC   # מילים של התפקיד עצמו (backend, mechanical, ai, qa...)
+    if "פיתוח תוכנה" in (plan.get("domains") or [plan.get("domain") or "פיתוח תוכנה"]):
+        specific.add("software engineer"); specific.add("software developer")   # כותרת ג׳וניור נפוצה בתוכנה
     words |= {"software", "developer", "engineer", "student", "junior", "intern", "graduate"}
+    early = bool(set(plan.get("levels") or []) & {"student", "intern", "junior", "entry"}) and "mid" not in (plan.get("levels") or [])
     cache = dict(cache or {})
     now = datetime.now(timezone.utc)
     jobs, status, discovered = [], [], 0
@@ -370,9 +391,9 @@ def collect_targets(targets: list[dict], plan: dict, cache: dict | None = None, 
                 cache.pop(key, None)
                 status.append({"name": name, "status": "by_name", "board": board_label(b), "why": c.get("why", []), "auto": c.get("auto", False)})
                 continue
-            rel = [j for j in items if any(w in j["title"].lower() for w in words)]
+            rel = [j for j in items if relevant_title(j["title"], specific, words, early)]
             jobs += rel
-            act.log("hunter", f"דף הקריירה של {name} ({board_label(b)}): {len(items)} משרות בישראל, {len(rel)} בתחום שלך")
+            act.log("hunter", f"דף הקריירה של {name} ({board_label(b)}): {len(items)} משרות בישראל, {len(rel)} בתחום וברמה שלך")
             status.append({"name": name, "status": "board", "board": board_label(b), "il": len(items), "rel": len(rel),
                            "why": c.get("why", []), "auto": c.get("auto", False)})
     return jobs, status, cache
