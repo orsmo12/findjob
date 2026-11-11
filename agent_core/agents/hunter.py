@@ -137,7 +137,7 @@ def years_phrase(desc: str) -> str:
 
 def too_senior(job: dict, plan: dict) -> bool:
     levels = set(plan.get("levels", []))
-    if levels & {"student", "intern", "junior", "entry"} and SENIOR_WORDS.search(job.get("title", "")):
+    if levels & {"student", "intern", "junior", "entry"} and "mid" not in levels and SENIOR_WORDS.search(job.get("title", "")):
         return True
     mx = plan.get("max_years")
     if mx:

@@ -64,7 +64,7 @@ industry or setting, or N years (ONLY paid jobs in the CV meet it, never project
 key = the ad repeats it or lists it first. required_years = minimum years of work experience as a core requirement, 0 if none.`;
 
 /* אותה שיטת ניקוד כמו של דורון (agent_core/agents/hunter.py: computed_fit + level_cap), כדי שהציון יהיה עקבי */
-const HAVE = { 'אין עדיין': 0, 'פחות משנה': 0, '1–2 שנים': 1, '3–5 שנים': 3, 'יותר מ-5 שנים': 5 };
+const HAVE = { 'אין עדיין': 0, 'פחות משנה': 0, '1–2 שנים': 1, '3–5 שנים': 3, 'יותר מ-5 שנים': 5, 'יותר מ-10 שנים': 10 };
 const LEVEL_HE = { short: 'דורשת יותר ניסיון', work: 'דורשת ניסיון בעבודה', level: 'רמה בכירה יותר' };
 const JUNIOR_T = /\b(junior|jr\.?|student|intern|internship|graduate|entry|new grad)\b|סטודנט|ג'וניור|ג׳וניור/i;
 const yes = v => v === true || String(v).toLowerCase() === 'true';
@@ -77,7 +77,7 @@ function score(d, answers, title) {
     - Math.min(0.3, 0.1 * Math.max(0, parseInt(d.nice_missing) || 0));
   if (skills.length && skills.length < 3) fit = (fit * skills.length + (Number(d.fit) || 3) * (3 - skills.length)) / 3;   // מדגם קטן
   if (yes(d.wrong_field)) fit = Math.min(fit, 2);
-  const mid = ['3–5 שנים', 'יותר מ-5 שנים'].includes(answers.exp);
+  const mid = ['3–5 שנים', 'יותר מ-5 שנים', 'יותר מ-10 שנים'].includes(answers.exp);
   let have = HAVE[answers.exp];
   if (have === undefined) have = mid ? null : answers.status === 'ג׳וניור עם ניסיון של עד שנתיים' ? 1 : 0;
   const req = parseInt(d.required_years) || 0, jt = JUNIOR_T.test(title);

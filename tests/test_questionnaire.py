@@ -63,3 +63,20 @@ def test_provider_model_picking_prefers_newest():
     L._live = ["claude-haiku-4-5", "claude-sonnet-5-5", "claude-haiku-5-5"]
     assert L._compat_models("light")[0] == "claude-haiku-5-5" and L._compat_models("judge")[0] == "claude-sonnet-5-5"
     L.use_key(None)
+
+
+def test_experience_decides_level_not_studies():
+    """סטודנט עם ניסיון רב (כמו גלעד) לא מקבל רק משרות ג׳וניור."""
+    from agent_core.agents.hunter import too_senior, level_cap
+    base = {"study": "סטודנט/ית לתואר", "work": "עובד/ת בתחום", "domains": ["הנדסת מכונות"], "roles": ["תכנון מכני"]}
+    p = plan({**base, "exp": "יותר מ-5 שנים", "scope": ["משרה מלאה"]})
+    assert "mid" in p["levels"] and not p["student_positions"] and p["have_years"] == 5
+    assert not too_senior({"title": "Senior Mechanical Engineer", "description": ""}, p)
+    r = {"fit": 4.6, "core": [], "required_years": 4, "level": "senior"}
+    level_cap(r, p, "Senior Mechanical Engineer")
+    assert r["fit"] == 4.6
+    p2 = plan({**base, "exp": "3–5 שנים", "scope": ["משרה מלאה", PART]})
+    assert {"mid", "student"} <= set(p2["levels"]) and p2["student_positions"]
+    assert not too_senior({"title": "Senior Mechanical Engineer", "description": ""}, p2)
+    p3 = plan({**base, "exp": "אין עדיין", "scope": ["משרה מלאה"]})
+    assert "mid" not in p3["levels"] and too_senior({"title": "Senior Mechanical Engineer", "description": ""}, p3)

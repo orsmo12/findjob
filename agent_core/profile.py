@@ -73,7 +73,7 @@ def normalize_answers(a: dict) -> dict:
     if a.get("pack") and not a.get("packs"):
         a["packs"] = {a["pack"].get("label", ""): a["pack"]}
     student = a.get("study") == STUDY_DEG or (not a.get("study") and a.get("status") == "סטודנט/ית")
-    senior = a.get("exp") in ("3–5 שנים", "יותר מ-5 שנים")
+    senior = a.get("exp") in ("3–5 שנים", "יותר מ-5 שנים", "יותר מ-10 שנים")
     if student:
         a["status"] = "סטודנט/ית"
     elif a.get("work") == "משתחרר/ת משירות":
@@ -120,8 +120,10 @@ REGIONS = {
     "חיפה והצפון":      ["Haifa", "Yokneam", "Migdal HaEmek", "Tefen", "Karmiel"],
     "באר שבע והדרום":   ["Beer Sheva"],
 }
-EXP_HAVE_YEARS = {"אין עדיין": 0, "פחות משנה": 0, "1–2 שנים": 1, "3–5 שנים": 3, "יותר מ-5 שנים": 5}   # כמה יש באמת
-EXP_MAX_YEARS = {"אין עדיין": 1, "פחות משנה": 1, "1–2 שנים": 2, "3–5 שנים": 5, "יותר מ-5 שנים": None}
+EXP_HAVE_YEARS = {"אין עדיין": 0, "פחות משנה": 0, "1–2 שנים": 1, "3–5 שנים": 3, "יותר מ-5 שנים": 5, "יותר מ-10 שנים": 10}   # כמה יש באמת
+EXP_MAX_YEARS = {"אין עדיין": 1, "פחות משנה": 1, "1–2 שנים": 2, "3–5 שנים": 5, "יותר מ-5 שנים": None, "יותר מ-10 שנים": None}
+# הניסיון קובע את הרמה, לא הלימודים: סטודנט עם 5 שנות ניסיון בתחום לא מחפש משרת ג׳וניור
+EXP_LEVELS = {"3–5 שנים": ["mid"], "יותר מ-5 שנים": ["mid", "senior"], "יותר מ-10 שנים": ["mid", "senior"]}
 
 
 @dataclass
@@ -256,7 +258,10 @@ def build_search_plan(profile: dict) -> SearchPlan:
     if part_time and status != "סטודנט/ית":
         why.append("מחפש גם משרה חלקית")
     if status == "סטודנט/ית" and track == "משרה מלאה אחרי התואר":
-        levels = ["junior", "entry"]; why.append("מחפש משרה מלאה אחרי התואר: בלי משרות סטודנט")
+        levels = ["junior", "entry"]; why.append("מחפש משרה מלאה: בלי משרות סטודנט")
+    if exp in EXP_LEVELS:   # ניסיון רב גובר על "סטודנט" / "עבודה ראשונה"
+        levels = list(EXP_LEVELS[exp]) + (["student"] if student_positions else [])
+        why.append(f"ניסיון של {exp} בתחום: " + ("משרות ביניים ובכירות" if "senior" in levels else "משרות ביניים, בלי תווית ג׳וניור"))
 
     max_years = EXP_MAX_YEARS.get(exp, 2 if "mid" not in levels else None)
     have_years = EXP_HAVE_YEARS.get(exp)   # לא ענה על שנות ניסיון: לפי המצב התעסוקתי
