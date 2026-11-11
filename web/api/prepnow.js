@@ -21,8 +21,9 @@ module.exports = async (req, res) => {
   const uid = u.data.id;
   const gh = String(process.env.GH_DISPATCH_TOKEN || '').trim();
   if (!gh) return res.status(500).json({ error: 'no_token' });
-  const p = await sb(`/rest/v1/profiles?select=chat_use&user_id=eq.${uid}`, token);
+  const p = await sb(`/rest/v1/profiles?select=chat_use,cv_text&user_id=eq.${uid}`, token);
   const use = (p.ok && p.data && p.data[0] && p.data[0].chat_use) || {};
+  if (p.ok && p.data && p.data[0] && String(p.data[0].cv_text || '').trim().length < 80) return res.status(400).json({ error: 'no_cv' });   // בלי קורות חיים הסוכנים לא רצים
   const last = use.prep_at ? Date.parse(use.prep_at) : 0;
   const wait = Math.ceil((last + GAP_MIN * 60e3 - Date.now()) / 60e3);
   if (wait > 0) return res.status(429).json({ error: 'wait', minutes: wait, since: use.prep_at });

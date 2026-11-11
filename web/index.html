@@ -1035,6 +1035,8 @@ a.person>svg{flex:0 0 18px;width:18px;height:18px;fill:none;stroke:var(--ink3);s
 
 .lead .link{color:var(--brand);font-weight:600;text-decoration:underline;text-underline-offset:3px}
 
+.cv-err{margin-top:10px;background:#FBEDED;color:#8A2B2B;border-radius:12px;padding:10px 12px;font-size:13.5px;line-height:1.5}
+
 </style>
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" href="/icon.svg">
@@ -2175,6 +2177,8 @@ function renderJobs(){
     $('deckActions').style.display='none';
     const sv=S.apps.filter(a=>a.status==='saved').length,scanning=typeof _prep!=='undefined'&&_prep&&_prep.scan;
     /* שלושה מצבים שונים: הסריקה הראשונה רצה / עוד לא היו משרות / באמת עברת על הכל */
+    if(!DECK.length&&CLOUDM&&(prof().cv||'').trim().length<CV_MIN){deck.innerHTML=`<div class="empty"><div class="empty-ic">📄</div><h3>חסרים קורות חיים</h3>
+      <p>בלעדיהם ${escB(N('hunter'))} לא יכול לחפש ולדרג משרות בשבילך. לוקח דקה.</p><button class="btn btn-primary" onclick="goPage('profile')">להעלות קורות חיים</button></div>`;return}
     if(scanning&&!DECK.length){deck.innerHTML=`<div class="empty" role="status"><div class="empty-ld">${LD('ld-l')}</div><h3>${escB(N('hunter'))} מחפש לך משרות ראשונות</h3>
       <p>בדרך כלל 10–15 דקות. אפשר להמשיך להסתובב באפליקציה, המשרות יופיעו כאן לבד.</p>${skelHtml(2)}</div>`;return}
     if(!DECK.length){deck.innerHTML=`<div class="empty"><div class="empty-ic">🔍</div><h3>עוד אין כאן משרות</h3>
@@ -2719,9 +2723,9 @@ function renderOnb(){
   }else if(onbStep===1){
     body=`<h1>נעים להכיר</h1><p class="lead">מקורות החיים הסוכנים לומדים מה אתה יודע לעשות. הקובץ נשאר שלך ואפשר למחוק אותו בכל רגע.</p>
       <div class="field"><label for="onbFirst">איך לקרוא לך?</label><input id="onbFirst" value="${escB(prof().first)}" maxlength="20" autocomplete="given-name" oninput="prof().first=this.value.trim()||prof().first;save()"></div>
-      <label for="cvFile" class="drop${p.cvName?' has':''}" role="button" tabindex="0"><span style="font-size:30px">${p.cvName?'✓':'📄'}</span><b>${p.cvName?escB(p.cvName):'בחר קובץ'}</b><span>${p.cvName?'לחץ להחלפה':'PDF, Word או טקסט'}</span></label>
+      <label for="cvFile" class="drop${p.cvName?' has':''}" role="button" tabindex="0"><span style="font-size:30px">${p.cvName?'✓':'📄'}</span><b>${p.cvName?escB(p.cvName):'בחר קובץ'}</b><span>${p.cvName?'לחץ להחלפה':'PDF, Word או טקסט'}</span></label>${S.cv_err?`<div class="cv-err" role="alert">${escB(S.cv_err)}</div>`:''}
       <div class="field" style="margin-top:18px"><label for="onbCv">או הדבק את הטקסט</label><textarea id="onbCv" rows="6" placeholder="סטודנט שנה ג׳ למדעי המחשב…" oninput="onbCvTyped(this)" onchange="onbCvTyped(this)" onkeyup="onbCvTyped(this)" onpaste="setTimeout(()=>onbCvTyped(this),0)">${escB(p.cv)}</textarea><div class="help" id="onbCvHelp"></div></div>`;
-    foot=`<button class="btn btn-primary btn-block" id="onbNext" onclick="onbCvNext()">המשך</button><button class="link-btn" onclick="onbGo(1)">אוסיף אחר כך</button>`;
+    foot=`<button class="btn btn-primary btn-block" id="onbNext" onclick="onbCvNext()">המשך</button><button class="link-btn" onclick="onbCvLater()">אוסיף אחר כך</button>`;
   }else if(onbStep===3&&CLOUDM){
     body=aiKeyStep();
     foot=`<button class="btn btn-primary btn-block" id="akBtn" ${S.ai_key?'':'disabled'} onclick="saveAiKey(true)">${S.ai_key?'להמשיך':'לשמור ולהמשיך'}</button><button class="link-btn" onclick="${onbSingle?'closeOnb()':"track('ai_key_skip');S.ak_pending=0;onbGo(1)"}">${onbSingle?'ביטול':'לדלג בינתיים'}</button>`;
@@ -2740,12 +2744,16 @@ function renderOnb(){
 }
 function onbCvTyped(t){prof().cv=t.value;save();const h=$('onbCvHelp');if(h)h.textContent=''}
 function onbCvNext(){const t=$('onbCv');if(t)prof().cv=t.value;save();
-  if(prof().cvName||prof().cv.trim().length>=15){onbGo(1);return}
-  const h=$('onbCvHelp');if(h){h.textContent='בחר קובץ או הדבק לפחות כמה שורות מקורות החיים. אפשר גם להוסיף אחר כך.';h.style.color='var(--rose)'}}
+  if(prof().cv.trim().length>=CV_MIN){S.cv_err='';onbGo(1);return}
+  const h=$('onbCvHelp');if(h){h.textContent='צריך את קורות החיים כדי שהסוכנים יוכלו לחפש. בחר קובץ או הדבק את הטקסט.';h.style.color='var(--rose)'}}
+/* דילוג על קורות החיים: מותר, אבל ברור שבלעדיהם אין חיפוש. לחיצה ראשונה מזהירה, שנייה ממשיכה */
+let cvLaterWarned=false;
+function onbCvLater(){if(prof().cv.trim().length>=CV_MIN||cvLaterWarned){onbGo(1);return}cvLaterWarned=true;track('cv_later');
+  const h=$('onbCvHelp');if(h){h.textContent=`בלי קורות חיים ${N('hunter')} לא יכול לחפש ולדרג משרות. אפשר להוסיף אחר כך מהפרופיל. ללחוץ שוב כדי להמשיך בלי.`;h.style.color='var(--rose)'}}
 function onbNext(){commitOnb();if(onbSingle){closeOnb();curPg==='settings'?renderSettings():renderProfile();toast(prof().key?'הסוכנים מחוברים':'נשמר')}else onbGo(1)}
 function commitOnb(){const keep={cv:prof().cv,cvName:prof().cvName,ans:prof().ans||{}};S.profile=Object.assign({},onbDraft,keep);save();syncChrome()}
 function finishOnb(pg){commitOnb();const first=!S.onboarded;if(first)track('onb_done',{domain:(prof().ans||{}).domain||''});S.onboarded=true;save();closeOnb();goPage(pg);
-  if(first&&CLOUDM&&!Object.keys(JOBS||{}).length&&typeof prepNow==='function')setTimeout(()=>prepNow('scan'),2500);   // סריקה ראשונה מיד, לא מחכים לסריקה הקבועה
+  if(first&&CLOUDM&&!Object.keys(JOBS||{}).length&&typeof prepNow==='function'&&prof().cv.trim().length>=CV_MIN)setTimeout(()=>prepNow('scan'),2500);   // בלי קורות חיים אין סריקה, ולא מעמידים פנים   // סריקה ראשונה מיד, לא מחכים לסריקה הקבועה
   if(curPg===pg&&pg==='main')renderHome();if(!S.tourDone&&pg==='main')setTimeout(tourStart,700)}
 
 /* ═════════ QUESTIONNAIRE — one question per screen ═════════
@@ -3070,9 +3078,14 @@ function saveStory(id){const t=$('stT').value.trim(),b=$('stB').value;if(!t){$('
   if(id){Object.assign(S.stories.find(x=>x.id===id),{t,b})}else S.stories.push({id:'s'+Date.now(),t,b});save();closeSheet();curPg==='prep'?renderPrep():renderProfile();toast('הסיפור נשמר')}
 function editCvText(){openSheet(`<h3 id="sheetTitle">קורות חיים כטקסט</h3><div class="sheet-sub">הסוכנים עובדים לפי הטקסט הזה</div><div class="field" style="margin-top:14px"><label for="cvEdit" class="vh">קורות חיים</label><textarea id="cvEdit" rows="12">${esc(prof().cv)}</textarea></div><button class="btn btn-primary btn-block" onclick="prof().cv=$('cvEdit').value;save();closeSheet();renderProfile();toast('קורות החיים נשמרו')">שמירה</button>`)}
 function onCvFile(inp){
-  const f=inp.files[0];if(!f)return;prof().cvName=f.name;
+  const f=inp.files[0];if(!f)return;
   const tw=document.createElement('div');tw.className='cv-wait';inp.insertAdjacentElement('afterend',tw);const stop=stages(tw,['קורא את הקובץ…','מחלץ את הטקסט מקורות החיים…'],2500);
-  readCv(f).then(t=>{stop();tw.remove();if(t&&t.trim().length>30)prof().cv=t.slice(0,20000);else toast('לא הצלחתי לקרוא טקסט מהקובץ. אפשר להדביק אותו כטקסט',{ms:4200});save();afterCv()});
+  readCv(f).then(t=>{stop();tw.remove();
+    if(t&&t.trim().length>=CV_MIN){prof().cv=t.slice(0,20000);prof().cvName=f.name;S.cv_err='';track('cv_ok')}
+    else{S.cv_err=/\.doc$/i.test(f.name)?'קובץ Word ישן (.doc) לא נקרא כאן. שמור אותו כ-PDF או כ-.docx והעלה שוב, או הדבק את הטקסט למטה.'
+      :/\.(jpe?g|png|heic|webp)$/i.test(f.name)?'זו תמונה, ואי אפשר לקרוא ממנה טקסט. העלה PDF או Word, או הדבק את הטקסט למטה.'
+      :'לא הצלחתי לקרוא טקסט מהקובץ (אולי זה PDF סרוק). שמור מ-Word כ-PDF, או הדבק את הטקסט למטה.';track('cv_fail',{ext:(f.name.split('.').pop()||'').slice(0,5)})}
+    save();afterCv()});
   inp.value='';
 }
 /* קריאת קורות חיים בדפדפן: PDF (pdf.js), Word (mammoth), טקסט. הקובץ לא נשלח לשום מקום */
@@ -3109,7 +3122,8 @@ function liHow(){openSheet(`<h3 id="sheetTitle">איך ${escB(N('linkedin'))} ק
   <ol class="how-ol"><li>בפרופיל שלך ב-LinkedIn לוחצים More (או "עוד")</li><li>בוחרים Save to PDF</li><li>כאן לוחצים ${prof().li_text?'"עדכנתי את הפרופיל"':'"להעלות את הפרופיל"'} ובוחרים את הקובץ</li></ol>
   <p class="card-sub">כל פעם שאתה משנה משהו בפרופיל, מעלים עותק חדש, ו${escB(N('linkedin'))} בודק שוב.</p>`)}
 function onLiFile(inp){const f=inp.files[0];if(!f)return;readCv(f).then(t=>{if(t&&t.trim().length>80){prof().li_text=t.slice(0,15000);save();renderProfile();toast(`${N('linkedin')} יעבור על הפרופיל בשעתיים הקרובות`)}else toast('לא הצלחתי לקרוא את הקובץ. ודא שזה ה-PDF ש-LinkedIn מייצר',{ms:4200})});inp.value=''}
-function afterCv(){if($('onb').classList.contains('open'))renderOnb();else{renderProfile();toast('קורות החיים עודכנו')}}
+function afterCv(){if($('onb').classList.contains('open'))renderOnb();else{renderProfile();toast(S.cv_err||'קורות החיים עודכנו',{ms:S.cv_err?6000:2400})}}
+const CV_MIN=80;   // פחות מזה זה לא קורות חיים שאפשר לעבוד איתם
 
 /* ═════════ הגדרות ═════════ */
 function renderSettings(){
@@ -3579,7 +3593,7 @@ async function prepNow(kind){kind=kind==='scan'?'scan':'prep';
   closeSheet();let d={},r;
   try{const {data:{session}}=await SB.auth.getSession();
     r=await fetch('/api/prepnow',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:session&&session.access_token,kind})});d=await r.json()}catch(e){}
-  if(!r||!d.ok){toast(d.error==='wait'?`אפשר להפעיל פעם ב-10 דקות. עוד ${d.minutes} דק׳`:d.error==='no_token'?'הכפתור עוד לא מחובר. המפתח צריך להשלים הגדרה אחת':d.error==='auth'?'צריך להתחבר מחדש':'לא הצלחתי להפעיל. נסה שוב בעוד דקה');return}
+  if(!r||!d.ok){if(d.error==='no_cv'){toast(`צריך קודם קורות חיים. בלעדיהם ${N('hunter')} לא יכול לחפש`);goPage('profile');return}toast(d.error==='wait'?`אפשר להפעיל פעם ב-10 דקות. עוד ${d.minutes} דק׳`:d.error==='no_token'?'הכפתור עוד לא מחובר. המפתח צריך להשלים הגדרה אחת':d.error==='auth'?'צריך להתחבר מחדש':'לא הצלחתי להפעיל. נסה שוב בעוד דקה');return}
   track(kind==='scan'?'scan_first':'prep_now');_prep={at:d.at,t0:Date.now(),scan:kind==='scan'};prepBar();if(curPg==='jobs')renderJobs();_prep.timer=setInterval(prepPoll,15000);
 }
 function prepBar(done){let b=$('prepBar');if(!b){b=document.createElement('div');b.id='prepBar';b.setAttribute('role','status');document.body.appendChild(b)}

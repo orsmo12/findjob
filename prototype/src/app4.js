@@ -89,9 +89,14 @@ function saveStory(id){const t=$('stT').value.trim(),b=$('stB').value;if(!t){$('
   if(id){Object.assign(S.stories.find(x=>x.id===id),{t,b})}else S.stories.push({id:'s'+Date.now(),t,b});save();closeSheet();curPg==='prep'?renderPrep():renderProfile();toast('הסיפור נשמר')}
 function editCvText(){openSheet(`<h3 id="sheetTitle">קורות חיים כטקסט</h3><div class="sheet-sub">הסוכנים עובדים לפי הטקסט הזה</div><div class="field" style="margin-top:14px"><label for="cvEdit" class="vh">קורות חיים</label><textarea id="cvEdit" rows="12">${esc(prof().cv)}</textarea></div><button class="btn btn-primary btn-block" onclick="prof().cv=$('cvEdit').value;save();closeSheet();renderProfile();toast('קורות החיים נשמרו')">שמירה</button>`)}
 function onCvFile(inp){
-  const f=inp.files[0];if(!f)return;prof().cvName=f.name;
+  const f=inp.files[0];if(!f)return;
   const tw=document.createElement('div');tw.className='cv-wait';inp.insertAdjacentElement('afterend',tw);const stop=stages(tw,['קורא את הקובץ…','מחלץ את הטקסט מקורות החיים…'],2500);
-  readCv(f).then(t=>{stop();tw.remove();if(t&&t.trim().length>30)prof().cv=t.slice(0,20000);else toast('לא הצלחתי לקרוא טקסט מהקובץ. אפשר להדביק אותו כטקסט',{ms:4200});save();afterCv()});
+  readCv(f).then(t=>{stop();tw.remove();
+    if(t&&t.trim().length>=CV_MIN){prof().cv=t.slice(0,20000);prof().cvName=f.name;S.cv_err='';track('cv_ok')}
+    else{S.cv_err=/\.doc$/i.test(f.name)?'קובץ Word ישן (.doc) לא נקרא כאן. שמור אותו כ-PDF או כ-.docx והעלה שוב, או הדבק את הטקסט למטה.'
+      :/\.(jpe?g|png|heic|webp)$/i.test(f.name)?'זו תמונה, ואי אפשר לקרוא ממנה טקסט. העלה PDF או Word, או הדבק את הטקסט למטה.'
+      :'לא הצלחתי לקרוא טקסט מהקובץ (אולי זה PDF סרוק). שמור מ-Word כ-PDF, או הדבק את הטקסט למטה.';track('cv_fail',{ext:(f.name.split('.').pop()||'').slice(0,5)})}
+    save();afterCv()});
   inp.value='';
 }
 /* קריאת קורות חיים בדפדפן: PDF (pdf.js), Word (mammoth), טקסט. הקובץ לא נשלח לשום מקום */
@@ -128,7 +133,8 @@ function liHow(){openSheet(`<h3 id="sheetTitle">איך ${escB(N('linkedin'))} ק
   <ol class="how-ol"><li>בפרופיל שלך ב-LinkedIn לוחצים More (או "עוד")</li><li>בוחרים Save to PDF</li><li>כאן לוחצים ${prof().li_text?'"עדכנתי את הפרופיל"':'"להעלות את הפרופיל"'} ובוחרים את הקובץ</li></ol>
   <p class="card-sub">כל פעם שאתה משנה משהו בפרופיל, מעלים עותק חדש, ו${escB(N('linkedin'))} בודק שוב.</p>`)}
 function onLiFile(inp){const f=inp.files[0];if(!f)return;readCv(f).then(t=>{if(t&&t.trim().length>80){prof().li_text=t.slice(0,15000);save();renderProfile();toast(`${N('linkedin')} יעבור על הפרופיל בשעתיים הקרובות`)}else toast('לא הצלחתי לקרוא את הקובץ. ודא שזה ה-PDF ש-LinkedIn מייצר',{ms:4200})});inp.value=''}
-function afterCv(){if($('onb').classList.contains('open'))renderOnb();else{renderProfile();toast('קורות החיים עודכנו')}}
+function afterCv(){if($('onb').classList.contains('open'))renderOnb();else{renderProfile();toast(S.cv_err||'קורות החיים עודכנו',{ms:S.cv_err?6000:2400})}}
+const CV_MIN=80;   // פחות מזה זה לא קורות חיים שאפשר לעבוד איתם
 
 /* ═════════ הגדרות ═════════ */
 function renderSettings(){

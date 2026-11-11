@@ -186,6 +186,8 @@ function renderJobs(){
     $('deckActions').style.display='none';
     const sv=S.apps.filter(a=>a.status==='saved').length,scanning=typeof _prep!=='undefined'&&_prep&&_prep.scan;
     /* שלושה מצבים שונים: הסריקה הראשונה רצה / עוד לא היו משרות / באמת עברת על הכל */
+    if(!DECK.length&&CLOUDM&&(prof().cv||'').trim().length<CV_MIN){deck.innerHTML=`<div class="empty"><div class="empty-ic">📄</div><h3>חסרים קורות חיים</h3>
+      <p>בלעדיהם ${escB(N('hunter'))} לא יכול לחפש ולדרג משרות בשבילך. לוקח דקה.</p><button class="btn btn-primary" onclick="goPage('profile')">להעלות קורות חיים</button></div>`;return}
     if(scanning&&!DECK.length){deck.innerHTML=`<div class="empty" role="status"><div class="empty-ld">${LD('ld-l')}</div><h3>${escB(N('hunter'))} מחפש לך משרות ראשונות</h3>
       <p>בדרך כלל 10–15 דקות. אפשר להמשיך להסתובב באפליקציה, המשרות יופיעו כאן לבד.</p>${skelHtml(2)}</div>`;return}
     if(!DECK.length){deck.innerHTML=`<div class="empty"><div class="empty-ic">🔍</div><h3>עוד אין כאן משרות</h3>

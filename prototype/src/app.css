@@ -888,3 +888,5 @@ a.person>svg{flex:0 0 18px;width:18px;height:18px;fill:none;stroke:var(--ink3);s
 .empty-ld{color:var(--brand);margin:6px auto 14px;display:flex;justify-content:center}.empty .skel-wrap{margin-top:16px;text-align:start}
 
 .lead .link{color:var(--brand);font-weight:600;text-decoration:underline;text-underline-offset:3px}
+
+.cv-err{margin-top:10px;background:#FBEDED;color:#8A2B2B;border-radius:12px;padding:10px 12px;font-size:13.5px;line-height:1.5}

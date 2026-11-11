@@ -33,7 +33,7 @@ def report(users: list[dict], profiles: list[dict], jobs_by_user: dict[str, list
                      "saved": dec("save"), "skipped": dec("skip"), "waiting": dec(None),
                      "applied": sum(1 for a in st.get("apps") or [] if a.get("status") not in (None, "saved")),
                      "chat": c.get("chat", 0), "add_job": c.get("add_job", 0), "pages": pages,
-                     "m": sorted((us.get("m") or {}).keys()), "stuck": stuck(us), "tour": tour_of(us)})
+                     "m": sorted((us.get("m") or {}).keys()), "stuck": stuck({**us, "no_cv": len(str(p.get("cv_text") or "").strip()) < 80}), "tour": tour_of(us)})
         for e in us.get("err") or []:
             k = str(e.get("m") or "")[:90]
             errs[k] = errs.get(k, 0) + 1
@@ -66,6 +66,8 @@ def stuck(us: dict) -> str:
         q = next((e.get("p", {}).get("q") or e.get("p", {}).get("s") for e in reversed(us.get("ev") or [])
                   if e.get("e") in ("onb_q", "onb_step")), None)
         return f"בהרשמה ({q})" if q is not None else "בהרשמה"
+    if us.get("no_cv"):   # סיים הרשמה בלי קורות חיים: הסוכנים לא רצים בשבילו (נמצא אצל גלעד)
+        return "אין קורות חיים: הסוכנים לא רצים בשבילו"
     for ev, lbl in FUNNEL[1:6]:
         if ev not in m:
             return f"לפני: {lbl}"

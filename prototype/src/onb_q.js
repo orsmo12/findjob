@@ -17,9 +17,9 @@ function renderOnb(){
   }else if(onbStep===1){
     body=`<h1>נעים להכיר</h1><p class="lead">מקורות החיים הסוכנים לומדים מה אתה יודע לעשות. הקובץ נשאר שלך ואפשר למחוק אותו בכל רגע.</p>
       <div class="field"><label for="onbFirst">איך לקרוא לך?</label><input id="onbFirst" value="${escB(prof().first)}" maxlength="20" autocomplete="given-name" oninput="prof().first=this.value.trim()||prof().first;save()"></div>
-      <label for="cvFile" class="drop${p.cvName?' has':''}" role="button" tabindex="0"><span style="font-size:30px">${p.cvName?'✓':'📄'}</span><b>${p.cvName?escB(p.cvName):'בחר קובץ'}</b><span>${p.cvName?'לחץ להחלפה':'PDF, Word או טקסט'}</span></label>
+      <label for="cvFile" class="drop${p.cvName?' has':''}" role="button" tabindex="0"><span style="font-size:30px">${p.cvName?'✓':'📄'}</span><b>${p.cvName?escB(p.cvName):'בחר קובץ'}</b><span>${p.cvName?'לחץ להחלפה':'PDF, Word או טקסט'}</span></label>${S.cv_err?`<div class="cv-err" role="alert">${escB(S.cv_err)}</div>`:''}
       <div class="field" style="margin-top:18px"><label for="onbCv">או הדבק את הטקסט</label><textarea id="onbCv" rows="6" placeholder="סטודנט שנה ג׳ למדעי המחשב…" oninput="onbCvTyped(this)" onchange="onbCvTyped(this)" onkeyup="onbCvTyped(this)" onpaste="setTimeout(()=>onbCvTyped(this),0)">${escB(p.cv)}</textarea><div class="help" id="onbCvHelp"></div></div>`;
-    foot=`<button class="btn btn-primary btn-block" id="onbNext" onclick="onbCvNext()">המשך</button><button class="link-btn" onclick="onbGo(1)">אוסיף אחר כך</button>`;
+    foot=`<button class="btn btn-primary btn-block" id="onbNext" onclick="onbCvNext()">המשך</button><button class="link-btn" onclick="onbCvLater()">אוסיף אחר כך</button>`;
   }else if(onbStep===3&&CLOUDM){
     body=aiKeyStep();
     foot=`<button class="btn btn-primary btn-block" id="akBtn" ${S.ai_key?'':'disabled'} onclick="saveAiKey(true)">${S.ai_key?'להמשיך':'לשמור ולהמשיך'}</button><button class="link-btn" onclick="${onbSingle?'closeOnb()':"track('ai_key_skip');S.ak_pending=0;onbGo(1)"}">${onbSingle?'ביטול':'לדלג בינתיים'}</button>`;
@@ -38,12 +38,16 @@ function renderOnb(){
 }
 function onbCvTyped(t){prof().cv=t.value;save();const h=$('onbCvHelp');if(h)h.textContent=''}
 function onbCvNext(){const t=$('onbCv');if(t)prof().cv=t.value;save();
-  if(prof().cvName||prof().cv.trim().length>=15){onbGo(1);return}
-  const h=$('onbCvHelp');if(h){h.textContent='בחר קובץ או הדבק לפחות כמה שורות מקורות החיים. אפשר גם להוסיף אחר כך.';h.style.color='var(--rose)'}}
+  if(prof().cv.trim().length>=CV_MIN){S.cv_err='';onbGo(1);return}
+  const h=$('onbCvHelp');if(h){h.textContent='צריך את קורות החיים כדי שהסוכנים יוכלו לחפש. בחר קובץ או הדבק את הטקסט.';h.style.color='var(--rose)'}}
+/* דילוג על קורות החיים: מותר, אבל ברור שבלעדיהם אין חיפוש. לחיצה ראשונה מזהירה, שנייה ממשיכה */
+let cvLaterWarned=false;
+function onbCvLater(){if(prof().cv.trim().length>=CV_MIN||cvLaterWarned){onbGo(1);return}cvLaterWarned=true;track('cv_later');
+  const h=$('onbCvHelp');if(h){h.textContent=`בלי קורות חיים ${N('hunter')} לא יכול לחפש ולדרג משרות. אפשר להוסיף אחר כך מהפרופיל. ללחוץ שוב כדי להמשיך בלי.`;h.style.color='var(--rose)'}}
 function onbNext(){commitOnb();if(onbSingle){closeOnb();curPg==='settings'?renderSettings():renderProfile();toast(prof().key?'הסוכנים מחוברים':'נשמר')}else onbGo(1)}
 function commitOnb(){const keep={cv:prof().cv,cvName:prof().cvName,ans:prof().ans||{}};S.profile=Object.assign({},onbDraft,keep);save();syncChrome()}
 function finishOnb(pg){commitOnb();const first=!S.onboarded;if(first)track('onb_done',{domain:(prof().ans||{}).domain||''});S.onboarded=true;save();closeOnb();goPage(pg);
-  if(first&&CLOUDM&&!Object.keys(JOBS||{}).length&&typeof prepNow==='function')setTimeout(()=>prepNow('scan'),2500);   // סריקה ראשונה מיד, לא מחכים לסריקה הקבועה
+  if(first&&CLOUDM&&!Object.keys(JOBS||{}).length&&typeof prepNow==='function'&&prof().cv.trim().length>=CV_MIN)setTimeout(()=>prepNow('scan'),2500);   // בלי קורות חיים אין סריקה, ולא מעמידים פנים   // סריקה ראשונה מיד, לא מחכים לסריקה הקבועה
   if(curPg===pg&&pg==='main')renderHome();if(!S.tourDone&&pg==='main')setTimeout(tourStart,700)}
 
 /* ═════════ QUESTIONNAIRE — one question per screen ═════════

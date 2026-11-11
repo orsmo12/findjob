@@ -59,7 +59,7 @@ def test_letter_upgrade_to_v4_is_gradual():
 def test_usage_funnel_and_dropoff():
     from agent_core import usage as U
     users = [{"id": "a" * 36, "created_at": "2026-11-01"}, {"id": "b" * 36, "created_at": "2026-11-02"}]
-    profs = [{"user_id": "a" * 36, "first": "אור", "state": {"usage": {"m": {"onb_done": 1, "jobs_seen": 1, "job_save": 1},
+    profs = [{"user_id": "a" * 36, "first": "אור", "cv_text": "x" * 100, "state": {"usage": {"m": {"onb_done": 1, "jobs_seen": 1, "job_save": 1},
               "ev": [{"e": "tour_skip", "p": {"k": "main", "at": 1, "of": 6}}], "err": [{"m": "TypeError: x"}, {"m": "TypeError: x"}]}}},
              {"user_id": "b" * 36, "first": "גלעד", "state": {"usage": {"m": {}, "ev": [{"e": "onb_q", "p": {"q": "domain"}}]}}}]
     _, rep = U.report(users, profs, {})
@@ -68,3 +68,6 @@ def test_usage_funnel_and_dropoff():
     assert rep["rows"][0]["stuck"] == "לפני: פתח ערכת הגשה" and rep["rows"][0]["tour"] == "דילג בצעד 2 מתוך 6"
     assert rep["rows"][1]["stuck"] == "בהרשמה (domain)"
     assert rep["errors"] == [("TypeError: x", 2)]
+    profs[1]["state"]["usage"]["m"] = {"onb_done": 1}
+    _, rep = U.report(users, profs, {})
+    assert rep["rows"][1]["stuck"].startswith("אין קורות חיים")
