@@ -71,3 +71,12 @@ def test_usage_funnel_and_dropoff():
     profs[1]["state"]["usage"]["m"] = {"onb_done": 1}
     _, rep = U.report(users, profs, {})
     assert rep["rows"][1]["stuck"].startswith("אין קורות חיים")
+
+
+def test_search_status_for_owner_report():
+    from datetime import datetime, timezone
+    from agent_core.usage import search_status
+    now = datetime.now(timezone.utc).isoformat()
+    s = search_status([{"created_at": now, "stats": {"collected": 200, "too_senior": 13, "rated": 50, "shown": 6}}],
+                      [{"created_at": now, "agent": "strategist", "stats": {"msg": "ישיבה שבועית", "failures": [{"x": 1}]}}])
+    assert s["collected"] == 200 and s["shown"] == 6 and s["scans_24h"] == 1 and s["fails_24h"] == 1 and s["recent"][0]["a"] == "strategist"

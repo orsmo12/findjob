@@ -292,12 +292,20 @@ function skillsHtml(){const r=lastSkills();if(!r)return'';const {cards,project}=
 
 
 /* דוח שימוש (רק לבעל המערכת) */
+/* מצב החיפוש של כל משתמש: מתעדכן אחרי כל סריקה (usage.search_status) */
+const agName=k=>{try{return N(k)||k}catch(e){return k}};
+function searchLine(x){const s=x.search||{};if(!s.last_scan&&!x.cv_len)return '';
+  const t=s.last_scan?new Date(s.last_scan+'Z').toLocaleString('he-IL',{day:'numeric',month:'numeric',hour:'2-digit',minute:'2-digit'}):'';
+  return `<div class="us-search">${s.last_scan?`<span><b>סריקה אחרונה ${escB(t)}</b> · ${s.scans_24h} ב-24 שעות · נאספו ${s.collected} · בכירות מדי ${s.too_senior} · דורגו ${s.rated} · הוצגו ${s.shown} · ממתינות להחלטה ${x.waiting}</span>`:'<span><b>עוד לא הייתה סריקה</b></span>'}
+    <span>קורות חיים: ${x.cv_len?x.cv_len.toLocaleString()+' תווים':'אין'} · מפתח אישי: ${x.own_key?'כן':'לא'}${s.fails_24h?` · <b style="color:var(--rose)">${s.fails_24h} תקלות ב-24 שעות</b>`:''}</span>
+    ${(s.recent||[]).length?`<ul>${s.recent.map(m=>`<li><bdi>${escB(m.at.slice(5,10).split('-').reverse().join('.'))} ${escB(m.at.slice(11))}</bdi> ${escB(agName(m.a))}: ${escB(m.m)}</li>`).join('')}</ul>`:''}</div>`}
 function openUsage(){const r=(RUNS||[]).find(x=>x.stats&&x.stats.usage_report);if(!r)return;const u=r.stats.usage_report;
-  openSheet(`<h3 id="sheetTitle">דוח שימוש</h3><div class="sheet-sub">${new Date(r.created_at).toLocaleDateString('he-IL')} · ספירות בלבד, בלי תוכן</div>
+  openSheet(`<h3 id="sheetTitle">דוח שימוש</h3><div class="sheet-sub">עודכן ${new Date(r.created_at).toLocaleString('he-IL',{day:'numeric',month:'numeric',hour:'2-digit',minute:'2-digit'})} (אחרי כל סריקה) · ספירות בלבד, בלי תוכן</div>
   <div class="us-list">${u.rows.map(x=>`<div class="us-row"><b>${escB(x.name)}</b><span>${x.days_week} ימים השבוע · ${x.days} בסך הכל · אחרון ${escB(x.last||'—')}</span>
    <span>${x.cv?'קורות חיים ✓':'בלי קורות חיים'}${x.domain?' · '+escB(x.domain):''} · ${x.saved} שמורות · ${x.skipped} דילוגים · ${x.applied} הגשות · ${x.chat} שאלות בצ׳אט${x.add_job?' · '+x.add_job+' משרות מקישור':''}</span>
    ${(x.pages||[]).length?`<span>מסכים: ${x.pages.map(p=>escB(p[0])+' ('+p[1]+')').join(', ')}</span>`:''}
-   ${x.stuck||x.tour?`<span>${x.stuck?'נעצר: '+escB(x.stuck):'עבר את כל השלבים'}${x.tour?' · סיור: '+escB(x.tour):''}</span>`:''}</div>`).join('')}</div>
+   ${x.stuck||x.tour?`<span>${x.stuck?'נעצר: '+escB(x.stuck):'עבר את כל השלבים'}${x.tour?' · סיור: '+escB(x.tour):''}</span>`:''}
+   ${searchLine(x)}</div>`).join('')}</div>
   ${(u.feedback||[]).length?`<div class="s-sec"><h4>משוב</h4>${u.feedback.map(f=>`<p class="us-fb"><b>${escB(f.name)}</b> · ${escB(f.at)}<br>${escB(f.t)}</p>`).join('')}</div>`:''}`)}
 
 /* מפתח AI אישי (Groq, חינם): כל משתמש מקבל מכסה משלו, והסוכנים שלו לא מחכים בתור */

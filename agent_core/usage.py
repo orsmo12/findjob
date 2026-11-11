@@ -9,8 +9,9 @@ from __future__ import annotations
 from datetime import datetime, timedelta, timezone
 
 
-def report(users: list[dict], profiles: list[dict], jobs_by_user: dict[str, list[dict]]) -> tuple[str | None, dict]:
-    """מחזיר (user_id של בעל המערכת, הדוח)."""
+def report(users: list[dict], profiles: list[dict], jobs_by_user: dict[str, list[dict]],
+           search: dict[str, dict] | None = None) -> tuple[str | None, dict]:
+    """מחזיר (user_id של בעל המערכת, הדוח). search: מצב החיפוש לכל משתמש (search_status), מתעדכן אחרי כל סריקה."""
     if not users:
         return None, {}
     admin = sorted(users, key=lambda u: u.get("created_at") or "")[0]["id"]
@@ -33,6 +34,7 @@ def report(users: list[dict], profiles: list[dict], jobs_by_user: dict[str, list
                      "saved": dec("save"), "skipped": dec("skip"), "waiting": dec(None),
                      "applied": sum(1 for a in st.get("apps") or [] if a.get("status") not in (None, "saved")),
                      "chat": c.get("chat", 0), "add_job": c.get("add_job", 0), "pages": pages,
+                     "search": (search or {}).get(u["id"]) or {}, "cv_len": len(str(p.get("cv_text") or "").strip()),
                      "m": sorted((us.get("m") or {}).keys()), "stuck": stuck({**us, "no_cv": len(str(p.get("cv_text") or "").strip()) < 80}), "tour": tour_of(us)})
         for e in us.get("err") or []:
             k = str(e.get("m") or "")[:90]
@@ -51,6 +53,21 @@ def report(users: list[dict], profiles: list[dict], jobs_by_user: dict[str, list
     if top_err:
         msg += f" {sum(errs.values())} שגיאות באפליקציה אצל משתמשים."
     return admin, {"rows": rows, "feedback": feedback, "msg": msg, "funnel": fun, "errors": top_err}
+
+
+def search_status(hunter_runs: list[dict], other_runs: list[dict]) -> dict:
+    """מצב החיפוש של משתמש: הסריקה האחרונה (נאספו / בכירות / דורגו / הוצגו), כמה סריקות ב-24 שעות,
+    ומה הסוכנים עשו לאחרונה. רק מספרים והודעות הסוכנים, בלי קורות חיים ובלי מכתבים."""
+    day = (datetime.now(timezone.utc) - timedelta(days=1)).isoformat()
+    scans = [r for r in hunter_runs if isinstance(r.get("stats"), dict) and "collected" in r["stats"]]
+    last = scans[0] if scans else None
+    s = (last or {}).get("stats") or {}
+    msgs = [{"at": r["created_at"][:16], "a": r.get("agent", ""), "m": str((r.get("stats") or {}).get("msg") or "")[:160]}
+            for r in other_runs if (r.get("stats") or {}).get("msg")][:4]
+    fails = sum(len((r.get("stats") or {}).get("failures") or []) for r in other_runs + hunter_runs if r.get("created_at", "") >= day)
+    return {"last_scan": (last or {}).get("created_at", "")[:16], "scans_24h": sum(1 for r in scans if r["created_at"] >= day),
+            "collected": s.get("collected", 0), "too_senior": s.get("too_senior", 0), "rated": s.get("rated", 0), "shown": s.get("shown", 0),
+            "fails_24h": fails, "recent": msgs}
 
 
 # המשפך: מהרשמה ועד הגשה. כל שלב נרשם פעם אחת למשתמש (usage.m) עם הזמן הראשון שקרה.

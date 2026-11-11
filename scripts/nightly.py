@@ -310,14 +310,24 @@ for u in users:
 # ── דוח שימוש לבעל המערכת: פעם ביום, בסריקת הבוקר ─────────────────────────
 try:
     from agent_core import usage as U
+    # הדוח מתעדכן אחרי כל סריקה (גם סריקה ראשונה של משתמש חדש), כדי שבעל המערכת יראה מצב עדכני של כל משתמש
+    allp = httpx.get(db._url("profiles"), headers=db._h(), params={"select": "user_id,first,cv_text,answers,state"}, timeout=30).json()
+    users_auth = db.auth_users()
+    jb = {u["id"]: db.all_jobs(u["id"], days=30) for u in users_auth}
+    srch = {}
+    for u_ in users_auth:
+        try:
+            oth = httpx.get(db._url("runs"), headers=db._h(), timeout=30, params={
+                "select": "agent,stats,created_at", "user_id": f"eq.{u_['id']}", "agent": "neq.hunter",
+                "order": "created_at.desc", "limit": "40"}).json()
+            srch[u_["id"]] = U.search_status(db.recent_runs(u_["id"], "hunter", days=3), oth)
+        except Exception:  # noqa: BLE001
+            pass
+    admin, rep = U.report(users_auth, allp, jb, srch)
+    if admin and rep:
+        db.add_run(admin, "strategist", rep["msg"] if MORNING else "", {"usage_report": rep})
+        print(f"דוח שימוש: {len(rep['rows'])} משתמשים")
     if MORNING:
-        allp = httpx.get(db._url("profiles"), headers=db._h(), params={"select": "user_id,first,cv_text,answers,state"}, timeout=30).json()
-        users_auth = db.auth_users()
-        jb = {u["id"]: db.all_jobs(u["id"], days=30) for u in users_auth}
-        admin, rep = U.report(users_auth, allp, jb)
-        if admin and rep:
-            db.add_run(admin, "strategist", rep["msg"], {"usage_report": rep})
-            print(f"דוח שימוש: {len(rep['rows'])} משתמשים")
         il_day = datetime.now(timezone.utc).astimezone(timezone(timedelta(hours=2))).weekday()   # ראשון = 6
         if admin and (il_day == 6 or os.environ.get("FORCE_INSIGHTS")):   # תובנות על החיפוש: פעם בשבוע, לכלי המפתח
             import contextlib, io
