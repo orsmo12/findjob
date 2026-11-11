@@ -1056,6 +1056,19 @@ a.person>svg{flex:0 0 18px;width:18px;height:18px;fill:none;stroke:var(--ink3);s
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--q-track:rgba(255,255,255,.12);--q-fill:var(--hi)}}
 :root[data-theme="dark"]{--q-track:rgba(255,255,255,.12);--q-fill:var(--hi)}
 
+/* דוח משתמשים (כלי מפתח) */
+.usc-list{display:grid;gap:10px;margin-top:12px}
+.usc{background:var(--glass-strong,rgba(255,255,255,.75));border-radius:16px;padding:12px 14px;display:grid;gap:8px}
+.usc header{display:flex;justify-content:space-between;align-items:center;gap:8px}.usc header b{font-size:16px;color:var(--ink)}
+.usc-st{font-size:12px;font-weight:600;padding:3px 10px;border-radius:999px}.usc-st.ok{background:var(--hi-lt,#E6F7EF);color:#173B33}
+.usc-st.warn{background:#FBEDED;color:#8A2B2B}.usc-st.wait{background:#F3EEE8;color:#6B4E2E}
+.usc-meta{font-size:12.5px;color:var(--ink3)}
+.usc-nums{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;text-align:center}
+.usc-nums div{background:rgba(47,72,88,.05);border-radius:10px;padding:6px 2px}.usc-nums b{display:block;font-size:17px;color:var(--brand)}.usc-nums span{font-size:11px;color:var(--ink3)}
+.usc-scan{display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px;font-size:12.5px;color:var(--ink2)}.usc-flow i{font-style:normal;color:var(--ink3);margin:0 2px}
+.usc-act summary{font-size:12.5px;color:var(--brand);cursor:pointer}.usc-act ul{list-style:none;margin:6px 0 0;padding:0;display:grid;gap:6px}
+.usc-act li{display:grid;grid-template-columns:auto 1fr;gap:8px;font-size:12.5px;line-height:1.45;color:var(--ink2)}.usc-act time{color:var(--ink3);white-space:nowrap}
+
 </style>
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" href="/icon.svg">
@@ -3573,21 +3586,28 @@ function skillsHtml(){const r=lastSkills();if(!r)return'';const {cards,project}=
 
 
 /* דוח שימוש (רק לבעל המערכת) */
-/* מצב החיפוש של כל משתמש: מתעדכן אחרי כל סריקה (usage.search_status) */
+/* דוח משתמשים לבעל המערכת: כרטיס אחד לכל משתמש, רק מה שעוזר להחליט.
+   מצב (תקין / צריך תשומת לב ולמה), 4 מספרים, שורת חיפוש אחת, והפעילות של הסוכנים מקופלת. */
 const agName=k=>{try{return N(k)||k}catch(e){return k}};
-function searchLine(x){const s=x.search||{};if(!s.last_scan&&!x.cv_len)return '';
-  const t=s.last_scan?new Date(s.last_scan+'Z').toLocaleString('he-IL',{day:'numeric',month:'numeric',hour:'2-digit',minute:'2-digit'}):'';
-  return `<div class="us-search">${s.last_scan?`<span><b>סריקה אחרונה ${escB(t)}</b> · ${s.scans_24h} ב-24 שעות · נאספו ${s.collected} · בכירות מדי ${s.too_senior} · דורגו ${s.rated} · הוצגו ${s.shown} · ממתינות להחלטה ${x.waiting}</span>`:'<span><b>עוד לא הייתה סריקה</b></span>'}
-    <span>קורות חיים: ${x.cv_len?x.cv_len.toLocaleString()+' תווים':'אין'} · מפתח אישי: ${x.own_key?'כן':'לא'}${s.fails_24h?` · <b style="color:var(--rose)">${s.fails_24h} תקלות ב-24 שעות</b>`:''}</span>
-    ${(s.recent||[]).length?`<ul>${s.recent.map(m=>`<li><bdi>${escB(m.at.slice(5,10).split('-').reverse().join('.'))} ${escB(m.at.slice(11))}</bdi> ${escB(agName(m.a))}: ${escB(m.m)}</li>`).join('')}</ul>`:''}</div>`}
+const fmtT=t=>t?new Date(t.length<=16?t+'Z':t).toLocaleString('he-IL',{day:'numeric',month:'numeric',hour:'2-digit',minute:'2-digit'}):'—';
+function usState(x){const s=x.search||{};
+  if(!x.cv_len)return['warn','אין קורות חיים'];
+  if(s.fails_24h)return['warn',`${s.fails_24h} תקלות ב-24 שעות`];
+  if(!s.last_scan)return['wait','עוד לא הייתה סריקה'];
+  if(x.stuck&&!/^לפני: (ראה משרות|שמר משרה)$/.test(x.stuck)&&!x.stuck.startsWith('אין קורות'))return['wait',x.stuck.replace(/^לפני: /,'עוד לא: ')];
+  return['ok','תקין']}
+function usCard(x){const s=x.search||{},[st,stl]=usState(x),d=(x.domain||'').trim();
+  return `<article class="usc">
+    <header><b>${escB(x.name)}</b><span class="usc-st ${st}">${escB(stl)}</span></header>
+    <div class="usc-meta">${[d,x.own_key?'מפתח אישי':'מכסה משותפת','נכנס לאחרונה '+escB(x.last?x.last.split('-').reverse().slice(0,2).join('.'):'—')].filter(Boolean).map(escB).join(' · ')}</div>
+    <div class="usc-nums"><div><b class="num">${x.waiting}</b><span>ממתינות</span></div><div><b class="num">${x.saved}</b><span>שמורות</span></div><div><b class="num">${x.applied}</b><span>הגשות</span></div><div><b class="num">${x.days_week}</b><span>ימים השבוע</span></div></div>
+    ${s.last_scan?`<div class="usc-scan"><span>סריקה אחרונה ${escB(fmtT(s.last_scan))}</span><span class="usc-flow num">${s.collected} נאספו <i>‹</i> ${s.rated} נבדקו <i>‹</i> <b>${s.shown} הוצגו</b></span></div>`:''}
+    ${(s.recent||[]).length?`<details class="usc-act"><summary>פעילות הסוכנים</summary><ul>${s.recent.map(m=>`<li><time>${escB(fmtT(m.at))}</time><span><b>${escB(agName(m.a))}</b> ${escB(m.m)}</span></li>`).join('')}</ul></details>`:''}
+  </article>`}
 function openUsage(){const r=(RUNS||[]).find(x=>x.stats&&x.stats.usage_report);if(!r)return;const u=r.stats.usage_report;
-  openSheet(`<h3 id="sheetTitle">דוח שימוש</h3><div class="sheet-sub">עודכן ${new Date(r.created_at).toLocaleString('he-IL',{day:'numeric',month:'numeric',hour:'2-digit',minute:'2-digit'})} (אחרי כל סריקה) · ספירות בלבד, בלי תוכן</div>
-  <div class="us-list">${u.rows.map(x=>`<div class="us-row"><b>${escB(x.name)}</b><span>${x.days_week} ימים השבוע · ${x.days} בסך הכל · אחרון ${escB(x.last||'—')}</span>
-   <span>${x.cv?'קורות חיים ✓':'בלי קורות חיים'}${x.domain?' · '+escB(x.domain):''} · ${x.saved} שמורות · ${x.skipped} דילוגים · ${x.applied} הגשות · ${x.chat} שאלות בצ׳אט${x.add_job?' · '+x.add_job+' משרות מקישור':''}</span>
-   ${(x.pages||[]).length?`<span>מסכים: ${x.pages.map(p=>escB(p[0])+' ('+p[1]+')').join(', ')}</span>`:''}
-   ${x.stuck||x.tour?`<span>${x.stuck?'נעצר: '+escB(x.stuck):'עבר את כל השלבים'}${x.tour?' · סיור: '+escB(x.tour):''}</span>`:''}
-   ${searchLine(x)}</div>`).join('')}</div>
-  ${(u.feedback||[]).length?`<div class="s-sec"><h4>משוב</h4>${u.feedback.map(f=>`<p class="us-fb"><b>${escB(f.name)}</b> · ${escB(f.at)}<br>${escB(f.t)}</p>`).join('')}</div>`:''}`)}
+  openSheet(`<h3 id="sheetTitle">משתמשים</h3><div class="sheet-sub">עודכן ${escB(fmtT(r.created_at))}, אחרי כל סריקה. ספירות בלבד, בלי תוכן.</div>
+  <div class="usc-list">${u.rows.map(usCard).join('')}</div>
+  ${(u.feedback||[]).length?`<h4 class="sub-h">משוב</h4>${u.feedback.map(f=>`<p class="us-fb"><b>${escB(f.name)}</b> · ${escB(f.at)}<br>${escB(f.t)}</p>`).join('')}`:''}`)}
 
 /* מפתח AI אישי (Groq, חינם): כל משתמש מקבל מכסה משלו, והסוכנים שלו לא מחכים בתור */
 const maskKey=k=>k?k.slice(0,4)+'…'+k.slice(-4):'';

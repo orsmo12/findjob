@@ -908,3 +908,16 @@ a.person>svg{flex:0 0 18px;width:18px;height:18px;fill:none;stroke:var(--ink3);s
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .tour-go{background:var(--hi);color:#173B33}:root:not([data-theme="light"]) .tour-x{color:#B7C4CB}}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--q-track:rgba(255,255,255,.12);--q-fill:var(--hi)}}
 :root[data-theme="dark"]{--q-track:rgba(255,255,255,.12);--q-fill:var(--hi)}
+
+/* דוח משתמשים (כלי מפתח) */
+.usc-list{display:grid;gap:10px;margin-top:12px}
+.usc{background:var(--glass-strong,rgba(255,255,255,.75));border-radius:16px;padding:12px 14px;display:grid;gap:8px}
+.usc header{display:flex;justify-content:space-between;align-items:center;gap:8px}.usc header b{font-size:16px;color:var(--ink)}
+.usc-st{font-size:12px;font-weight:600;padding:3px 10px;border-radius:999px}.usc-st.ok{background:var(--hi-lt,#E6F7EF);color:#173B33}
+.usc-st.warn{background:#FBEDED;color:#8A2B2B}.usc-st.wait{background:#F3EEE8;color:#6B4E2E}
+.usc-meta{font-size:12.5px;color:var(--ink3)}
+.usc-nums{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;text-align:center}
+.usc-nums div{background:rgba(47,72,88,.05);border-radius:10px;padding:6px 2px}.usc-nums b{display:block;font-size:17px;color:var(--brand)}.usc-nums span{font-size:11px;color:var(--ink3)}
+.usc-scan{display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px;font-size:12.5px;color:var(--ink2)}.usc-flow i{font-style:normal;color:var(--ink3);margin:0 2px}
+.usc-act summary{font-size:12.5px;color:var(--brand);cursor:pointer}.usc-act ul{list-style:none;margin:6px 0 0;padding:0;display:grid;gap:6px}
+.usc-act li{display:grid;grid-template-columns:auto 1fr;gap:8px;font-size:12.5px;line-height:1.45;color:var(--ink2)}.usc-act time{color:var(--ink3);white-space:nowrap}
