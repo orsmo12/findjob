@@ -21,7 +21,7 @@ from agent_core.agents.tasks import build_tasks
 from agent_core.budget_guard import BudgetDeferred
 from agent_core import activity as act
 from agent_core.agents import linkedin_coach as K
-from agent_core.profile import build_search_plan, domain_of
+from agent_core.profile import build_search_plan, domain_of, normalize_answers
 from agent_core.agents import growth as G
 import hashlib, json as _json
 from datetime import datetime, timedelta, timezone
@@ -47,7 +47,7 @@ def do_kind(kind: str, row: dict, u: dict, cv: str, name: str) -> dict:
         if prep.get("tasks") is None or prep.get("more_tasks"):
             used = {t["url"] for t in prep.get("tasks") or []} | set(prep.get("used_tasks") or [])
             # מטלות בית מ-GitHub מתאימות לתחומי תוכנה. בתחום אחר — לא ממציאים, נשאר ריק
-            fresh = build_tasks(job, need=4, exclude=used) if domain_of(u) == "פיתוח תוכנה" else []
+            fresh = build_tasks(job, need=4, exclude=used) if "פיתוח תוכנה" in (normalize_answers(u.get("answers") or {}).get("domains") or [domain_of(u)]) else []
             prep = {**prep, "tasks": (prep.get("tasks") or []) + fresh, "more_tasks": False}
             if not fresh and (row.get("prep") or {}).get("more_tasks"):
                 prep["no_more_tasks"] = True
@@ -125,8 +125,8 @@ def work_legacy(u: dict, cv: str, name: str, done: dict) -> None:
 
 from agent_core.llm_router import use_key
 for u in db.profiles_ready():
-    _k = ((u.get("state") or {}).get("ai_key") or "").strip()
-    use_key(_k if _k.startswith("gsk_") and len(_k) > 30 else None)   # מפתח אישי אם יש, אחרת המשותף
+    from agent_core.llm_router import valid_key
+    use_key(valid_key((u.get("state") or {}).get("ai_key")))   # מפתח אישי (כל ספק) אם יש, אחרת המשותף
     cv, name = u["cv_text"], u.get("name") or u.get("first") or ""
     done: dict = {}
     act.start(u["user_id"])

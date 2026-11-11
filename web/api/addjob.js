@@ -4,6 +4,7 @@
 const crypto = require('crypto');
 const SB = 'https://cavfthbkwosnwqdqkmap.supabase.co';
 const PK = 'sb_publishable_kTXa--U7akPkHozrbkw0Xg_w4_u5iOH';
+const LLM = require('./_llm');
 const MODELS = ['openai/gpt-oss-120b', 'qwen/qwen3.8-27b', 'openai/gpt-oss-20b', 'llama-3.1-8b-instant'];
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124 Safari/537.36';
 
@@ -124,9 +125,11 @@ module.exports = async (req, res) => {
 
   const prof = ((await sb(`/rest/v1/profiles?select=cv_text,answers,state&user_id=eq.${uid}`, token)).data || [])[0] || {};
   const own = String((prof.state || {}).ai_key || '').trim();
-  const k2 = /^gsk_\w{20,}/.test(own) ? own : key;
+  
   const cv = prof.cv_text || '';
-  const d = await groq(k2, PROMPT(cv, JSON.stringify(prof.answers || {}), page));
+  const raw = await LLM.complete(own, key, [{ role: 'user', content: PROMPT(cv, JSON.stringify(prof.answers || {}), page) }], { temperature: 0.2, max_tokens: 1600 });
+  let d = null;
+  try { const m = raw.match(/\{[\s\S]*\}/); d = m ? JSON.parse(m[0]) : null; } catch (e) { d = null; }
   if (!d) return res.status(503).json({ error: 'busy' });
   if (d.is_job === false) return res.status(200).json({ not_job: true });
 

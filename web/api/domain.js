@@ -17,17 +17,44 @@ Return JSON only:
  "tools": ["up to 10 tools/skills typical for this field that employers list"]}
 Roles must be realistic entry-level paths for this CV. No seniority words in titles.`;
 
+// טקסט חופשי מהשאלון ("אחר"): המשתמש תיאר תחום או תפקידים במילים שלו. יואב בונה מזה ערכה אמיתית לחיפוש.
+const HINT = (cv, hint, kind) => kind === 'roles'
+  ? `A job seeker in Israel wrote, in their own words, roles they want: "${hint}".
+CV (for context only):
+${cv.slice(0, 3000)}
+
+Return JSON only:
+{"label": "the field in Hebrew, 2-4 words",
+ "field": [],
+ "roles": [one item per role they wrote (max 6): {"label": "the role in Hebrew, short, as they meant it", "titles": ["1-3 English job titles exactly as Israeli job ads write them"]}],
+ "he_queries": ["1-3 Hebrew search phrases as written in Israeli job ads for these roles"],
+ "tools": []}
+Only roles they actually wrote. No seniority words in titles.`
+  : `A job seeker in Israel wants to work in this field, described in their own words: "${hint}".
+Build a job-search kit for THAT field. Use the CV only to pick realistic entry points.
+CV:
+${cv.slice(0, 4000)}
+
+Return JSON only:
+{"label": "the field in Hebrew, 2-4 words, matching what they wrote",
+ "field": ["4-6 Hebrew answers to 'what is your professional background' in this field"],
+ "roles": [5-8 items: {"label": "role family in Hebrew, short", "titles": ["1-3 English job titles exactly as Israeli job ads write them"]}],
+ "he_queries": ["2-3 Hebrew search phrases as written in Israeli job ads"],
+ "tools": ["up to 10 tools/skills typical for this field"]}
+No seniority words in titles.`;
+
 module.exports = async (req, res) => {
   if (req.method !== 'POST') return res.status(405).json({ error: 'method' });
-  const { cv = '', token = '' } = req.body || {};
+  const { cv = '', token = '', hint = '', kind = 'domain' } = req.body || {};
+  const h = String(hint).replace(/["\n]/g, ' ').trim().slice(0, 160);
   const key = clean(process.env.GROQ_API_KEY);
   if (!key) return res.status(500).json({ error: 'no_key' });
   const u = await fetch(SB + '/auth/v1/user', { headers: { apikey: PK, Authorization: 'Bearer ' + token } });
   if (!u.ok) return res.status(401).json({ error: 'auth' });
-  if (cv.trim().length < 80) return res.status(400).json({ error: 'no_cv' });
+  if (!h && cv.trim().length < 80) return res.status(400).json({ error: 'no_cv' });
   for (const model of MODELS) {
     try {
-      const body = { model, messages: [{ role: 'user', content: PROMPT(cv) }], temperature: 0.2, max_tokens: 1800 };
+      const body = { model, messages: [{ role: 'user', content: h ? HINT(cv, h, kind) : PROMPT(cv) }], temperature: 0.2, max_tokens: 1800 };
       if (model.includes('gpt-oss')) body.reasoning_effort = 'low';
       const r = await fetch('https://api.groq.com/openai/v1/chat/completions', { method: 'POST', headers: { Authorization: 'Bearer ' + key, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
       if (!r.ok) continue;
@@ -39,7 +66,7 @@ module.exports = async (req, res) => {
       const roles = (p.roles || []).filter(x => x && x.label && (x.titles || []).length).slice(0, 8)
         .map(x => ({ label: String(x.label).slice(0, 40), titles: x.titles.map(String).filter(t => /^[A-Za-z][A-Za-z0-9 &/+.-]{2,50}$/.test(t)).slice(0, 3) }))
         .filter(x => x.titles.length);
-      if (roles.length < 3) continue;
+      if (roles.length < (h && kind === 'roles' ? 1 : 3)) continue;
       return res.json({ label: String(p.label || 'תחום אחר').slice(0, 40), field: (p.field || []).map(String).slice(0, 6),
         roles, he_queries: (p.he_queries || []).map(String).filter(q => /[א-ת]/.test(q)).slice(0, 3), tools: (p.tools || []).map(String).slice(0, 10) });
     } catch (e) { /* המודל הבא */ }

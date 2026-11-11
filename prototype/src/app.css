@@ -872,5 +872,19 @@ a.person>svg{flex:0 0 18px;width:18px;height:18px;fill:none;stroke:var(--ink3);s
 #prepBar .ld{color:var(--brand)}
 @media (prefers-reduced-motion:reduce){.ld i{animation:none;opacity:.6}.ld i:nth-child(1){opacity:1;background:var(--hi)}.skel::after{animation:none;display:none}.stage{animation:none}}
 
-.ak-why{display:grid;gap:4px;background:var(--hi-lt,#E6F7EF);color:var(--hi-ink,#173B33);border-radius:14px;padding:11px 13px;margin:0 0 14px;font-size:13.5px;line-height:1.55}
+.ak-why-old{display:grid;gap:4px;background:var(--hi-lt,#E6F7EF);color:var(--hi-ink,#173B33);border-radius:14px;padding:11px 13px;margin:0 0 14px;font-size:13.5px;line-height:1.55}
 .ak-why b{font-size:14px}
+
+.q-other{margin-top:14px}.q-other input{width:100%}
+.q-note{margin-top:12px;font-size:13.5px;color:var(--ink2);background:var(--hi-lt,#E6F7EF);border-radius:12px;padding:9px 12px}
+
+.ak-prov{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:4px 0 14px}
+.ak-prov button{display:grid;gap:2px;justify-items:center;padding:9px 4px;border-radius:12px;background:var(--glass,#fff);border:1.5px solid var(--line,#DDE3E6);font-size:13.5px}
+.ak-prov button.on{border-color:var(--brand);background:var(--hi-lt,#E6F7EF)}
+.ak-prov span{font-size:11.5px;color:var(--ink3)}.ak-prov span.free{color:var(--hi-ink,#173B33);font-weight:600}
+.ak-back{background:var(--hi-lt,#E6F7EF);color:var(--hi-ink,#173B33);border-radius:12px;padding:10px 13px;margin-bottom:10px;font-weight:600;font-size:14px}
+.ak-why-full p{margin:0 0 10px;line-height:1.6;font-size:14.5px}
+
+.empty-ld{color:var(--brand);margin:6px auto 14px;display:flex;justify-content:center}.empty .skel-wrap{margin-top:16px;text-align:start}
+
+.lead .link{color:var(--brand);font-weight:600;text-decoration:underline;text-underline-offset:3px}

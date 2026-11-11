@@ -36,8 +36,8 @@ k = clean_key(os.environ.get("GROQ_API_KEY"), "GROQ_API_KEY")
 raw = os.environ.get("GROQ_API_KEY") or ""
 print(f"מפתח Groq: {'תקין' if k.startswith('gsk_') and len(k) > 40 else 'לא תקין'} (אורך {len(k)}, נוקה: {'כן' if raw != k else 'לא'})")
 def user_key(u: dict) -> str | None:
-    k = ((u.get("state") or {}).get("ai_key") or "").strip()
-    return k if k.startswith("gsk_") and len(k) > 30 else None
+    from agent_core.llm_router import valid_key   # Groq, Gemini, Claude או OpenAI
+    return valid_key((u.get("state") or {}).get("ai_key"))
 
 
 def fair_rate_top(u: dict) -> int:
@@ -183,7 +183,7 @@ for u in users:
         try:   # ערוצי טלגרם ציבוריים: מה שהוספת, או ברירת המחדל לתוכנה
             from agent_core.agents import telegram as TG
             chans = [c for c in (TG.channel_name(x) for x in (prof["answers"].get("telegram") or [])) if c] \
-                or (TG.DEFAULT_CHANNELS if plan.get("domain", "פיתוח תוכנה") == "פיתוח תוכנה" else [])
+                or (TG.DEFAULT_CHANNELS if "פיתוח תוכנה" in (plan.get("domains") or [plan.get("domain", "פיתוח תוכנה")]) else [])
             tg = TG.collect(chans) if chans else []
         except BudgetDeferred:
             act.log("hunter", "מכסת ה-AI נגמרה לפני הטלגרם. אקרא אותו בסריקה הבאה.")
@@ -193,6 +193,8 @@ for u in users:
         rt = fair_rate_top(u)
         if not seen_:   # סריקה ראשונה של משתמש חדש: הרושם הראשון. מדרגים יותר (נמצא בבדיקה: 15 מתוך 98 → רק 3 משרות)
             rt = max(rt, 35 if user_key(u) else 25)
+        if user_key(u) and len(plan.get("domains") or []) > 1:   # מפתח אישי: כל תחום נוסף מקבל עוד דירוגים, עד 50
+            rt = min(50, rt + 10 * (len(plan["domains"]) - 1))
         feed = run(prof, plan, raw=collect(plan) + direct + named + tg, seen=seen_, persist=False, rate_top=rt)
         feed["stats"]["direct_boards"] = len(ok)
         feed["stats"]["boards"] = boards

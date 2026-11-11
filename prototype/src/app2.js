@@ -19,6 +19,9 @@ function goPage(id,anchor){
   syncChrome();
   if(typeof pageTip==='function'&&S.tourDone)pageTip(id);
 }
+/* הסריקה הקבועה הבאה (Vercel Schedules: 06:40 ו-14:40 שעון ישראל) */
+function nextScan(){const il=new Date(new Date().toLocaleString('en-US',{timeZone:'Asia/Jerusalem'})),m=il.getHours()*60+il.getMinutes();
+  return m<6*60+40?'היום בבוקר (06:40)':m<14*60+40?'היום אחר הצהריים (14:40)':'מחר בבוקר (06:40)'}
 function syncChrome(){
   const q=queue().length, ap=S.apps.filter(appNeedsMe).length, li=hotPosts().length+fixesLeft().length;
   [['bdJobs',q],['bdApps',ap],['bdLi',li]].forEach(([i,n])=>{$(i).hidden=!n;$(i).textContent=n;$(i).setAttribute('aria-label',`${n} מחכים לך`)});
@@ -174,15 +177,20 @@ function renderJobs(){
   $('addJobBtn').hidden=!CLOUDM;
   const q=queue(),done=DECK.length-q.length,saved=DECK.filter(id=>S.decisions[id]==='save').length;
   const skipped=DECK.filter(id=>S.decisions[id]&&S.decisions[id]!=='save').length;
-  $('jobsCount').innerHTML=q.length?`<b>${q.length===1?'נשארה משרה אחת':`נשארו ${q.length} משרות`}</b><span>מתוך ${DECK.length}</span>`:`<b>עברת על כל ${DECK.length} המשרות</b>`;
-  $('jobsFiltered').textContent=[saved&&`${saved} נשמרו`,skipped&&`${skipped} דילגת`,FILTERED_OUT&&`${FILTERED_OUT} סוננו כבכירות`].filter(Boolean).join(' · ');
+  $('jobsCount').innerHTML=q.length?`<b>${q.length===1?'נשארה משרה אחת':`נשארו ${q.length} משרות`}</b><span>מתוך ${DECK.length}</span>`:DECK.length?`<b>עברת על כל ${DECK.length} המשרות</b>`:'';
+  $('jobsFiltered').textContent=!DECK.length?'':[saved&&`${saved} נשמרו`,skipped&&`${skipped} דילגת`,FILTERED_OUT&&`${FILTERED_OUT} סוננו כבכירות`].filter(Boolean).join(' · ');
   $('deckProg').innerHTML=`<span class="dp-fill" style="width:${DECK.length?Math.round(done/DECK.length*100):0}%"></span>`;
   $('deckProg').setAttribute('aria-hidden','true');
   const deck=$('deck');
   if(!q.length){
     $('deckActions').style.display='none';
-    const sv=S.apps.filter(a=>a.status==='saved').length;
-    deck.innerHTML=`<div class="empty"><div class="empty-ic">✓</div><h3>סיימת את המשרות של היום</h3><p>${escB(N('hunter'))} יחפש שוב בסריקה הבאה (07:00 או 15:00).${sv?(sv===1?' בינתיים משרה אחת ששמרת מחכה להגשה.':` בינתיים ${sv} משרות ששמרת מחכות להגשה.`):''}</p>${sv?`<button class="btn btn-primary" onclick="goPage('apps')">להגשות</button>`:`<button class="btn btn-ghost" onclick="goPage('main')">ללוח הבקרה</button>`}</div>`;
+    const sv=S.apps.filter(a=>a.status==='saved').length,scanning=typeof _prep!=='undefined'&&_prep&&_prep.scan;
+    /* שלושה מצבים שונים: הסריקה הראשונה רצה / עוד לא היו משרות / באמת עברת על הכל */
+    if(scanning&&!DECK.length){deck.innerHTML=`<div class="empty" role="status"><div class="empty-ld">${LD('ld-l')}</div><h3>${escB(N('hunter'))} מחפש לך משרות ראשונות</h3>
+      <p>בדרך כלל 10–15 דקות. אפשר להמשיך להסתובב באפליקציה, המשרות יופיעו כאן לבד.</p>${skelHtml(2)}</div>`;return}
+    if(!DECK.length){deck.innerHTML=`<div class="empty"><div class="empty-ic">🔍</div><h3>עוד אין כאן משרות</h3>
+      <p>${escB(N('hunter'))} מחפש פעמיים ביום. הסריקה הבאה: ${escB(nextScan())}.</p>${CLOUDM?`<button class="btn btn-primary" onclick="prepNow('scan')">לחפש עכשיו</button>`:''}</div>`;return}
+    deck.innerHTML=`<div class="empty"><div class="empty-ic">✓</div><h3>עברת על כל המשרות החדשות</h3><p>${escB(N('hunter'))} יחפש שוב ${escB(nextScan())}.${scanning?' הוא כבר מחפש עכשיו.':''}${sv?(sv===1?' בינתיים משרה אחת ששמרת מחכה להגשה.':` בינתיים ${sv} משרות ששמרת מחכות להגשה.`):''}</p>${sv?`<button class="btn btn-primary" onclick="goPage('apps')">להגשות</button>`:`<button class="btn btn-ghost" onclick="goPage('main')">ללוח הבקרה</button>`}</div>`;
     return;
   }
   $('deckActions').style.display='';

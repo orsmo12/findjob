@@ -45,9 +45,10 @@ PROJECTS
 EXPERIENCE
 - Student lab assistant, materials lab (2025): ran tensile tests, wrote test reports.
 """
-ANSWERS = {"status": "בוגר/ת טרי/ה, מחפש/ת עבודה ראשונה", "domain": "הנדסת מכונות", "exp": "אין עדיין",
+ANSWERS = {"study": "סטודנט/ית לתואר", "year": "שנה ה׳ ומעלה", "work": "עובד/ת בתחום", "scope": ["משרה מלאה", "משרה חלקית / משרת סטודנט"],
+           "domains": ["הנדסת מכונות"], "exp": "פחות משנה",
            "roles": ["תכנון מכני", "R&D ופיתוח מוצר", "ייצור ותהליכים"], "locs": ["תל אביב", "גוש דן והמרכז", "השרון"],
-           "mode": "היברידי", "english": "טובה מאוד"}
+           "mode": "היברידי", "english": "טובה מאוד"}   # השאלון החדש: סטודנט שנה ה׳ שעובד בתחום, משרה מלאה וחלקית
 
 
 def check(name, cond, note=""):
@@ -107,6 +108,14 @@ def run(uid, email):
     check("   אין שגיאות JavaScript", not res.get("errors"), "; ".join(res.get("errors", [])[:3]))
     check("   הסריקה הראשונה הופעלה מהאפליקציה (prepnow)", res.get("prep_ok"), res.get("prep_note", ""))
     token = res.get("token") or ""
+
+    # ── "אחר" בשאלון: יואב הופך טקסט חופשי לתפקידים אמיתיים, ובדיקת מפתח של ספק אחר ──
+    if token:
+        d = httpx.post(SITE + "/api/domain", json={"token": token, "cv": CV, "hint": "מהנדס מיזוג אוויר ותכנון HVAC", "kind": "roles"}, timeout=60)
+        dj = d.json() if d.status_code == 200 else {}
+        check("   'אחר' בשאלון: יואב תרגם טקסט חופשי לתפקידים", bool(dj.get("roles")), "; ".join(f"{r['label']} → {', '.join(r['titles'])}" for r in dj.get("roles", [])[:3]) or d.text[:80])
+        k = httpx.post(SITE + "/api/checkkey", json={"token": token, "key": "AIzaSy" + "x" * 33}, timeout=30).json()
+        check("   בדיקת מפתח Gemini: מזהה את הספק ודוחה מפתח מזויף", k.get("provider") == "gemini" and not k.get("ok"), str(k))
 
     # ── שלב ב: דורון סורק. מחכים לסיום ──
     done = res.get("prep_ok") and wait_prep_done(uid, since, 32)

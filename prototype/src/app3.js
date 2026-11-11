@@ -28,7 +28,7 @@ function appliedBox(a,wide){const on=a.status!=='saved';
   return `<button class="chk-btn${on?' on':''}${wide?' wide':''}" role="checkbox" aria-checked="${on}" onclick="${on?`unmarkApplied('${a.id}')`:`markApplied('${a.id}')`};${wide?'paintAppTab(\''+a.id+'\')':''}"><span class="box" aria-hidden="true">${on?'✓':''}</span>הגשתי</button>`}
 function unmarkApplied(id){const a=appOf(id);if(!a||a.status!=='applied')return;a.status='saved';save();refreshApps();toast('ביטלתי את הסימון. המשרה חזרה ל"שמור"')}
 function markApplied(id){track('applied');const a=appOf(id);a.status='applied';a.date=new Date().toISOString();save();refreshApps();toast('סימנתי שהגשת. אזכיר לך לשלוח הודעת המשך בעוד שבוע')}
-function refreshApps(){if(curPg==='apps')renderApps();if(curPg==='main')renderHome();syncChrome()}
+function refreshApps(){if(curPg==='apps')renderApps();if(curPg==='main')renderHome();if(curPg==='jobs')renderJobs();syncChrome()}
 
 /* application sheet: details · letter · referrals · prep */
 let appTab='details';

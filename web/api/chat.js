@@ -4,6 +4,7 @@
 // שי לא פועל בשום חשבון חיצוני ולא שולח שום דבר בשם המשתמש.
 const SB = 'https://cavfthbkwosnwqdqkmap.supabase.co';
 const PK = 'sb_publishable_kTXa--U7akPkHozrbkw0Xg_w4_u5iOH';
+const LLM = require('./_llm');
 const MODELS = ['openai/gpt-oss-120b', 'qwen/qwen3.8-27b', 'openai/gpt-oss-20b', 'llama-3.1-8b-instant'];
 const STATUS = { saved: 'שמור', applied: 'הוגש', screening: 'סינון', interview: 'ראיון', offer: 'הצעה', rejected: 'נדחה', ghosted: 'אין מענה', withdrew: 'ויתרתי' };
 const PRIO = { interview: 0, screening: 1, offer: 2, saved: 3, applied: 4 };
@@ -116,8 +117,9 @@ const SYSTEM = `אתה שי, העוזר האישי באפליקציית findjob,
 - **הכנה לראיון:** שאלות לפי המשרה, סיפורי STAR, ותרגול איתי בצ׳אט.
 - **LinkedIn:** קובי מציע שיפורים לפרופיל ותגובות לפוסטים. הוא לא מפרסם ולא נכנס לחשבון: מעתיקים ומדביקים בעצמך.
 - **המשרד:** רואים מה כל סוכן עושה עכשיו.
+- **השאלון:** לימודים ועבודה בנפרד (כל שילוב), היקף משרה (מלאה/חלקית), כמה תחומים, ו"אחר" עם טקסט חופשי שיואב הופך לחיפושים. מתעדכן מהפרופיל › עליי.
 - **פרופיל:** קורות חיים, "מה מחפשים בשבילך" (תפקידים, אזורים, חברות יעד, ערוצי טלגרם, כללי סינון), פרטים לטפסי הגשה, "המצב שלי והמכתבים שלי" (מכתבים שכתבת, כדי שהמכתבים יישמעו כמוך), תיק עבודות או GitHub. חברת יעד שלא בטוחים לגביה: דורון שואל "זו החברה?" ומאשרים.
-- **הגדרות:** "משרות חדשות בטלפון" = התראות. **לא צריך אימייל**: ההתראה נשלחת ישר לדפדפן או לטלפון שאישרת בו. באייפון צריך קודם להוסיף את האתר למסך הבית. שם גם: מפתח AI אישי (Groq, חינם, נותן מכסה משלך ומהיר יותר), מדיניות פרטיות, סיור, ומחיקת חשבון (מוחק הכל לצמיתות).
+- **הגדרות:** "משרות חדשות בטלפון" = התראות. **לא צריך אימייל**: ההתראה נשלחת ישר לדפדפן או לטלפון שאישרת בו. באייפון צריך קודם להוסיף את האתר למסך הבית. שם גם: מפתח AI אישי (Groq או Gemini חינם; Claude או OpenAI בתשלום לפי שימוש. מנוי כמו Claude Pro או ChatGPT Plus לא כולל מפתח, המפתח נוצר באתר המפתחים. נותן מכסה משלך ומהיר יותר), מדיניות פרטיות, סיור, ומחיקת חשבון (מוחק הכל לצמיתות).
 - **משוב:** בתפריט › משוב, או לבקש ממני. המפתח מסמן סטטוס, ותקבל עדכון כשמשהו משתנה.
 - **פרטיות:** הנתונים שלך נראים רק לך. בעל המערכת רואה רק ספירות שימוש (לא קורות חיים, מכתבים או שיחות) ואת המשוב.
 - **אף סוכן לא מגיש, לא שולח ולא פועל בחשבון שלך.** הם מכינים, ואתה מחליט ולוחץ.
@@ -136,8 +138,7 @@ module.exports = async (req, res) => {
   if (!user || !user.id) return res.status(401).json({ error: 'auth' });
   const [prof] = (await sb(`/rest/v1/profiles?select=first,cv_text,answers,state,li,li_fixes&user_id=eq.${user.id}`, token)) || [];
   const own = String(((prof && prof.state) || {}).ai_key || '').trim();
-  const shared = !/^gsk_\w{20,}/.test(own);
-  if (!shared) key = own;   // מפתח אישי של המשתמש, אם הכניס
+  const shared = !LLM.validKey(own);   // מפתח אישי (Groq / Gemini / Claude / OpenAI) = בלי מגבלת הודעות
   const today = new Date().toISOString().slice(0, 10);
   let used = null, chatUse = null;   // null = אין עמודת chat_use (לא הורץ ה-SQL), ואז לא מגבילים
   if (shared) {
@@ -150,16 +151,9 @@ module.exports = async (req, res) => {
   const lastUser = [...messages].reverse().find(m => m.role === 'user');
   const msgs = [{ role: 'system', content: SYSTEM + '\n\n# הנתונים של המשתמש\n' + context(prof, jobs, lastUser && lastUser.content, focus) },
     ...messages.slice(-14).map(m => ({ role: m.role === 'user' ? 'user' : 'assistant', content: String(m.content || '').slice(0, 2500) }))];
-  for (const model of MODELS) {
-    try {
-      const body = { model, messages: msgs, temperature: 0.4, max_tokens: 1400 };
-      if (model.includes('gpt-oss')) body.reasoning_effort = 'low';
-      const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-        method: 'POST', headers: { Authorization: 'Bearer ' + key, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-      if (!r.ok) continue;
-      const d = await r.json();
-      let t = ((d.choices && d.choices[0] && d.choices[0].message.content) || '').split('</think>').pop().trim();
-      if (!t) continue;
+  let t = await LLM.complete(shared ? '' : own, key, msgs, { temperature: 0.4, max_tokens: 1400 });
+  if (t) {
+    {
       let action = null;
       const m = t.match(/<<ACTION\s*(\{[\s\S]*?\})\s*>>/);
       if (m) {
@@ -176,7 +170,7 @@ module.exports = async (req, res) => {
           body: JSON.stringify({ chat_use: { ...(chatUse || {}), day: today, n: used + 1 } }) }).catch(() => {});
       }
       return res.status(200).json({ reply: t, action, left: used !== null ? SHARED_DAILY - used - 1 : null });
-    } catch (e) { /* המודל הבא */ }
+    }
   }
   return res.status(503).json({ error: 'busy' });
 };

@@ -78,6 +78,8 @@ async function cloudBoot(){
    if(full&&!p.name)p.name=full;if(full&&!p.first)p.first=full.split(/\s+/)[0];}
   closeOnb();init();
   clearTimeout(bt);{const d=$('boot');if(d){d.classList.add('out');setTimeout(()=>d.remove(),260)}}
+  if(S.ak_pending&&!S.ai_key&&Date.now()-S.ak_pending<3600e3){   // חזר מיצירת מפתח והאפליקציה נטענה מחדש: ישר לשדה ההדבקה
+    setTimeout(()=>{onbStep=3;onbSingle=!!S.onboarded;onbDraft=JSON.parse(JSON.stringify(prof()));$('onb').classList.add('open');renderOnb()},300);return}
   if(S.onboarded&&!S.tourDone)setTimeout(()=>{if(curPg==='main')tourStart()},1200);   // סיור פעם אחת
 }
 function cloudLogout(){SB.auth.signOut().then(()=>{LS.clear();location.reload()})}
@@ -296,29 +298,55 @@ function openUsage(){const r=(RUNS||[]).find(x=>x.stats&&x.stats.usage_report);i
 
 /* מפתח AI אישי (Groq, חינם): כל משתמש מקבל מכסה משלו, והסוכנים שלו לא מחכים בתור */
 const maskKey=k=>k?k.slice(0,4)+'…'+k.slice(-4):'';
-function aiKeyStep(){return `<h1>מפתח AI אישי, חינם</h1><p class="lead">לוקח דקה, ועושה את ההבדל: הסוכנים שלך עובדים במכסה משלך ולא מחכים בתור.</p>
-  <div class="ak-why"><b>למה זה חשוב</b><span>בלי מפתח, כל המשתמשים חולקים מכסה יומית אחת. ביום עמוס הסריקה הראשונה שלך והמכתבים יכולים להתעכב עד מחר.</span><span>חינם לגמרי, בלי כרטיס אשראי.</span></div>
-  <a class="btn btn-primary btn-block" href="https://console.groq.com/keys" target="_blank" rel="noopener" onclick="track('groq_open')">לפתוח את Groq וליצור מפתח</a>
-  <ol class="ak-steps"><li>נכנסים עם חשבון Google</li><li>לוחצים <bdi dir="ltr">Create API Key</bdi>, נותנים שם (למשל findjob), ומעתיקים</li><li>חוזרים לכאן ומדביקים</li></ol>
-  <div class="field"><label for="akIn">המפתח שלך</label><div style="display:flex;gap:8px"><input id="akIn" class="ltr" placeholder="gsk_..." value="${escB(S.ai_key||'')}" autocomplete="off" spellcheck="false" oninput="akTyped()"><button class="btn btn-sm btn-ghost" onclick="akPaste()">להדביק</button></div>
-  <div class="help" id="akHelp">${S.ai_key?'המפתח שמור ✓ '+escB(maskKey(S.ai_key)):'אפשר לדלג ולהוסיף אחר כך בהגדרות. עד אז הסוכנים יעבדו במכסה המשותפת.'}</div></div>`}
-function akTyped(){const v=($('akIn').value||'').trim();const b=$('akBtn');if(b)b.disabled=!/^gsk_\w{20,}$/.test(v)}
+/* ═════════ מפתח AI אישי: Groq / Gemini (חינם) או Claude / OpenAI (בתשלום) ═════════
+   מסך קצר. ההסבר המלא בחלון "למה זה חשוב?". יצירת המפתח נפתחת בחלון נפרד, וכשחוזרים
+   (גם אם האפליקציה נטענה מחדש) נוחתים ישר על שדה ההדבקה. הספק מזוהה לבד מתחילת המפתח. */
+const AK={groq:{n:'Groq',tag:'חינם',url:'https://console.groq.com/keys',ph:'gsk_...',re:/^gsk_\w{20,}$/,steps:['נכנסים עם חשבון Google','לוחצים <bdi dir="ltr">Create API Key</bdi> ומעתיקים']},
+  gemini:{n:'Gemini',tag:'חינם',url:'https://aistudio.google.com/apikey',ph:'AIza...',re:/^AIza[\w-]{30,}$/,steps:['נכנסים עם חשבון Google','לוחצים <bdi dir="ltr">Create API key</bdi> ומעתיקים']},
+  anthropic:{n:'Claude',tag:'בתשלום',url:'https://console.anthropic.com/settings/keys',ph:'sk-ant-...',re:/^sk-ant-[\w-]{20,}$/,steps:['נכנסים לחשבון המפתחים (נפרד מהמנוי)','טוענים קרדיט, לוחצים <bdi dir="ltr">Create Key</bdi> ומעתיקים']},
+  openai:{n:'OpenAI',tag:'בתשלום',url:'https://platform.openai.com/api-keys',ph:'sk-...',re:/^sk-(?!ant-)[\w-]{20,}$/,steps:['נכנסים לחשבון המפתחים (נפרד מ-ChatGPT Plus)','טוענים קרדיט, לוחצים <bdi dir="ltr">Create new secret key</bdi> ומעתיקים']}};
+const akProvOf=k=>{k=(k||'').trim();return k.startsWith('gsk_')?'groq':k.startsWith('AIza')?'gemini':k.startsWith('sk-ant-')?'anthropic':k.startsWith('sk-')?'openai':''};
+const akValid=k=>{const p=akProvOf(k);return !!p&&AK[p].re.test((k||'').trim())};
+let akProv=null;
+function aiKeyStep(){const p=akProv||akProvOf(S.ai_key)||'groq',c=AK[p],back=S.ak_pending&&!S.ai_key;
+  return `<h1>מפתח AI אישי</h1><p class="lead">לוקח דקה, והסוכנים שלך עובדים מהר יותר. <button class="link" onclick="akWhy()">למה זה חשוב?</button></p>
+  <div class="ak-prov" role="radiogroup" aria-label="ספק">${Object.entries(AK).map(([k,v])=>`<button role="radio" aria-checked="${k===p}" class="${k===p?'on':''}" onclick="akProv='${k}';renderOnb()"><b>${v.n}</b><span class="${v.tag==='חינם'?'free':''}">${v.tag}</span></button>`).join('')}</div>
+  ${back?`<div class="ak-back">חזרת? מדביקים את המפתח כאן למטה.</div>`:`<button class="btn btn-primary btn-block" onclick="akOpen('${p}')">לפתוח את ${c.n} וליצור מפתח</button>
+  <ol class="ak-steps">${c.steps.map(x=>`<li>${x}</li>`).join('')}<li>סוגרים את החלון שנפתח (✕) ומדביקים כאן</li></ol>`}
+  <div class="field"><label for="akIn">המפתח שלך</label><div style="display:flex;gap:8px"><input id="akIn" class="ltr" placeholder="${c.ph}" value="${escB(S.ai_key||'')}" autocomplete="off" spellcheck="false" oninput="akTyped()"><button class="btn btn-sm btn-ghost" onclick="akPaste()">להדביק</button></div>
+  <div class="help" id="akHelp">${S.ai_key?'המפתח שמור ✓ '+escB(maskKey(S.ai_key)):''}</div></div>
+  ${back?`<button class="link-btn" onclick="S.ak_pending=0;save();renderOnb()">לפתוח שוב את ${c.n}</button>`:''}`}
+function akOpen(p){S.ak_pending=Date.now();save();track('key_open',{p});
+  const w=window.open(AK[p].url,'_blank','noopener');if(!w)location.href=AK[p].url;setTimeout(()=>{if($('onb').classList.contains('open'))renderOnb()},400)}
+/* חזרה מהחלון: מרעננים את המסך כך שיופיע שדה ההדבקה בראש */
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&S.ak_pending&&!S.ai_key&&$('onb')&&$('onb').classList.contains('open')&&onbStep===3){renderOnb();setTimeout(()=>$('akIn')&&$('akIn').focus(),150)}});
+function akWhy(){openSheet(`<h2 class="sheet-h">למה מפתח אישי?</h2>
+  <div class="ak-why-full">
+    <p><b>בלי מפתח</b> כל המשתמשים חולקים מכסה יומית אחת. ביום עמוס הסריקות והמכתבים שלך יכולים להתעכב.</p>
+    <p><b>עם מפתח</b> יש לך מכסה משלך: יותר משרות מדורגות בכל סריקה, צ׳אט בלי הגבלה יומית, ומכתבים מהר יותר.</p>
+    <p><b>Groq ו-Gemini</b> חינמיים, בלי כרטיס אשראי. Gemini נוח אם כבר יש לך חשבון Google.</p>
+    <p><b>Claude ו-OpenAI</b> בתשלום לפי שימוש (בערך כמה דולרים בחודש). חשוב: מנוי כמו Claude Pro, Gemini Advanced או ChatGPT Plus הוא לצ׳אט באתר שלהם, ולא כולל מפתח. המפתח נוצר בנפרד, באתר המפתחים.</p>
+    <p><b>פרטיות:</b> המפתח נשמר בחשבון שלך ומשמש רק את הסוכנים שלך. אפשר להחליף או להסיר בהגדרות בכל רגע.</p>
+    <p>אם המפתח מפסיק לעבוד (למשל נגמר הקרדיט), הסוכנים עוברים לבד למכסה המשותפת ולא נעצרים.</p>
+  </div><button class="btn btn-primary btn-block" onclick="closeSheet()">הבנתי</button>`)}
+function akTyped(){const v=($('akIn').value||'').trim(),b=$('akBtn'),p=akProvOf(v);if(b)b.disabled=!akValid(v);
+  if(p&&p!==(akProv||'groq')&&v.length>8){akProv=p;document.querySelectorAll('.ak-prov button').forEach(x=>{const on=x.textContent.startsWith(AK[p].n);x.classList.toggle('on',on);x.setAttribute('aria-checked',on)})}}
 async function akPaste(){try{const t=(await navigator.clipboard.readText()||'').trim();$('akIn').value=t;akTyped()}catch(e){toast('לא הצלחתי לקרוא מהלוח. אפשר להדביק ידנית')}}
 async function saveAiKey(next){const v=(($('akIn')||{}).value||'').trim();if(!v&&S.ai_key){if(next)onbGo(1);return}
-  const h=$('akHelp');if(!/^gsk_\w{20,}$/.test(v)){h.textContent='זה לא נראה כמו מפתח של Groq. הוא מתחיל ב-gsk_';return}
-  const kb=$('akBtn');btnBusy(kb,true);const stop=stages(h,['בודק את המפתח מול Groq…']);
+  const h=$('akHelp');if(!akValid(v)){h.textContent='זה לא נראה כמו מפתח. מפתח של Groq מתחיל ב-gsk_, של Gemini ב-AIza, של Claude ב-sk-ant- ושל OpenAI ב-sk-';return}
+  const c=AK[akProvOf(v)],kb=$('akBtn');btnBusy(kb,true);const stop=stages(h,[`בודק את המפתח מול ${c.n}…`]);
   try{const {data:{session}}=await SB.auth.getSession();
     const r=await fetch('/api/checkkey',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:v,token:session&&session.access_token})});const d=await r.json();
-    stop();btnBusy(kb,false);if(!d.ok){h.textContent=d.why==='invalid'?'Groq לא מכיר את המפתח הזה. כדאי להעתיק אותו שוב':'לא הצלחתי לבדוק כרגע. נסה שוב בעוד רגע';return}}
+    stop();btnBusy(kb,false);if(!d.ok){h.textContent=d.why==='invalid'?`${c.n} לא מכיר את המפתח הזה. כדאי להעתיק אותו שוב`:d.why==='format'?'זה לא נראה כמו מפתח':'לא הצלחתי לבדוק כרגע. נסה שוב בעוד רגע';return}}
   catch(e){stop();btnBusy(kb,false);h.textContent='אין חיבור כרגע. נסה שוב';return}
-  S.ai_key=v;track('ai_key');save();toast('המפתח נשמר. מעכשיו הסוכנים שלך עובדים במכסה משלך');
+  S.ai_key=v;S.ak_pending=0;track('ai_key',{p:akProvOf(v)});save();toast(`המפתח נשמר. מעכשיו הסוכנים שלך עובדים במכסה משלך ב-${c.n}`);
   if(next&&$('onb').classList.contains('open')){onbSingle?closeOnb():onbGo(1)}if(typeof renderSettings==='function')renderSettings()}
 function removeAiKey(){S.ai_key='';save();renderSettings();toast('המפתח הוסר. הסוכנים יעבדו במכסה המשותפת')}
 function aiKeyCard(){return `<section class="card glass" aria-labelledby="akH"><h2 class="card-h" id="akH">מפתח AI אישי</h2>
-  ${S.ai_key?`<div class="row"><span class="rl"><b dir="ltr" style="text-align:right">${escB(maskKey(S.ai_key))}</b><span>הסוכנים שלך עובדים במכסה משלך ב-Groq</span></span><span class="pill-ok">פעיל</span></div>
+  ${S.ai_key?`<div class="row"><span class="rl"><b dir="ltr" style="text-align:right">${escB(maskKey(S.ai_key))}</b><span>הסוכנים שלך עובדים במכסה משלך ב-${escB((AK[akProvOf(S.ai_key)]||AK.groq).n)}</span></span><span class="pill-ok">פעיל</span></div>
     <div class="duo"><button class="btn btn-sm btn-ghost" onclick="openOnb(3)">להחליף</button><button class="btn btn-sm btn-ghost" onclick="removeAiKey()">להסיר</button></div>`
-  :`<div class="card-sub">בלי מפתח אישי, הסוכנים עובדים במכסה משותפת ומוגבלת. מפתח חינמי לוקח דקה.</div>
-    <button class="btn btn-sm btn-primary btn-block" onclick="openOnb(3)">ליצור מפתח חינמי</button>`}</section>`}
+  :`<div class="card-sub">בלי מפתח אישי, הסוכנים עובדים במכסה משותפת ומוגבלת. מפתח חינמי (Groq או Gemini) לוקח דקה, ואפשר גם Claude או OpenAI.</div>
+    <button class="btn btn-sm btn-primary btn-block" onclick="openOnb(3)">להוסיף מפתח</button>`}</section>`}
 
 /* "להכין עכשיו": ריצה של הסוכנים רק בשבילך (מכתב, סקירה, הכנה, התאמת קורות חיים, בדיקה שהמשרות פתוחות) */
 let _prep=null;
@@ -328,7 +356,7 @@ async function prepNow(kind){kind=kind==='scan'?'scan':'prep';
   try{const {data:{session}}=await SB.auth.getSession();
     r=await fetch('/api/prepnow',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:session&&session.access_token,kind})});d=await r.json()}catch(e){}
   if(!r||!d.ok){toast(d.error==='wait'?`אפשר להפעיל פעם ב-10 דקות. עוד ${d.minutes} דק׳`:d.error==='no_token'?'הכפתור עוד לא מחובר. המפתח צריך להשלים הגדרה אחת':d.error==='auth'?'צריך להתחבר מחדש':'לא הצלחתי להפעיל. נסה שוב בעוד דקה');return}
-  track(kind==='scan'?'scan_first':'prep_now');_prep={at:d.at,t0:Date.now(),scan:kind==='scan'};prepBar();_prep.timer=setInterval(prepPoll,15000);
+  track(kind==='scan'?'scan_first':'prep_now');_prep={at:d.at,t0:Date.now(),scan:kind==='scan'};prepBar();if(curPg==='jobs')renderJobs();_prep.timer=setInterval(prepPoll,15000);
 }
 function prepBar(done){let b=$('prepBar');if(!b){b=document.createElement('div');b.id='prepBar';b.setAttribute('role','status');document.body.appendChild(b)}
   if(done){b.innerHTML=_prep&&_prep.scan?`<b>מוכן ✓</b><span>המשרות הראשונות מחכות לך במסך המשרות.</span>`:`<b>מוכן ✓</b><span>הכל עודכן. המכתבים, הסקירות וההכנה מחכים בהגשות.</span>`;b.classList.add('done');setTimeout(()=>b.remove(),6000);return}

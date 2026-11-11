@@ -20,7 +20,8 @@ users = db.profiles_ready()
 admin = sorted(db.auth_users(), key=lambda u: u.get("created_at") or "")[0]["id"]
 u = next(x for x in users if x["user_id"] == admin)
 k = ((u.get("state") or {}).get("ai_key") or "").strip()
-use_key(k if k.startswith("gsk_") and len(k) > 30 else None)
+from agent_core.llm_router import valid_key
+use_key(valid_key(k))
 prof = {"cv_text": u["cv_text"], "answers": u.get("answers") or {}}
 plan = build_search_plan(prof).to_dict()
 print(f"רמות: {plan['levels']} | ניסיון שיש: {plan.get('have_years')} | מקסימום להצגה: {plan.get('max_years')}\n")

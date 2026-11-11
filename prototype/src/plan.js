@@ -27,7 +27,7 @@ function targetCompanies(){
   const cities=new Set((a.locs||[]).flatMap(r=>REGION_CITIES[r]||[])),junior=a.status!=='עובד/ת ומחפש/ת לעבור';
   const size=(a.prio||[]).includes('סטארט-אפ קטן')?['startup','scaleup']:(a.prio||[]).includes('חברה גדולה ויציבה')?['enterprise']:[];
   const added=new Set(tc.added.map(x=>x.toLowerCase()));
-  const dk=domKey(a);const out=CATALOG.filter(c=>(c.domains||['software']).includes(dk)&&!tc.removed.includes(c.name)&&!added.has(c.name.toLowerCase())).map(c=>{let s=0;const why=[];
+  const dks=domainsOf(a).map(d=>d==='פיתוח תוכנה'?'software':d==='הנדסת מכונות'?'mechanical':'other');const out=CATALOG.filter(c=>(c.domains||['software']).some(k=>dks.includes(k))&&!tc.removed.includes(c.name)&&!added.has(c.name.toLowerCase())).map(c=>{let s=0;const why=[];
     if(c.sectors.some(x=>sectors.has(x))){s+=3;why.push('בתחום שבחרת')}
     if(size.includes(c.size)){s+=2;why.push({startup:'סטארט-אפ',scaleup:'חברה צומחת',enterprise:'חברה גדולה'}[c.size])}
     if(!cities.size||cities.has(c.city)||a.mode==='מהבית')s+=1;else s-=2;

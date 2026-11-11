@@ -52,9 +52,48 @@ MECH_WORDS = ("solidworks", "autocad", "ansys", "catia", "creo", "inventor", "gd
 SOFT_WORDS = ("python", "javascript", "react", "java", "sql", "developer", "node", "typescript", "git", "backend", "frontend")
 
 
+STUDY_DEG = "סטודנט/ית לתואר"
+PART = "משרה חלקית / משרת סטודנט"
+OLD_STATUS = {"סטודנט/ית": (STUDY_DEG, ""), "בוגר/ת טרי/ה, מחפש/ת עבודה ראשונה": ("סיימתי תואר", "לא עובד/ת כרגע"),
+              "ג׳וניור עם ניסיון של עד שנתיים": ("", "עובד/ת בתחום"), "עובד/ת ומחפש/ת לעבור": ("", "עובד/ת בתחום"),
+              "משתחרר/ת משירות": ("", "משתחרר/ת משירות"), "לא עובד/ת כרגע": ("", "לא עובד/ת כרגע")}
+
+
+def normalize_answers(a: dict) -> dict:
+    """מראה של normAns ב-onb_q.js. השאלון החדש: לימודים + עבודה (כל שילוב), היקף משרה, כמה תחומים.
+    גוזר את השדות הישנים (status, track, domain) כדי שכל השאר ימשיך לעבוד, ומתרגם משתמשים ותיקים."""
+    a = dict(a or {})
+    if a.get("status") and not a.get("study") and not a.get("work"):
+        st, wk = OLD_STATUS.get(a["status"], ("", ""))
+        a.update({k: v for k, v in (("study", st), ("work", wk)) if v})
+    if a.get("track") and not a.get("scope"):
+        a["scope"] = {"משרת סטודנט חלקית": [PART], "משרה מלאה אחרי התואר": ["משרה מלאה"], "את שתיהן": ["משרה מלאה", PART]}.get(a["track"], [])
+    if a.get("domain") and not a.get("domains"):
+        a["domains"] = [a["domain"]]
+    if a.get("pack") and not a.get("packs"):
+        a["packs"] = {a["pack"].get("label", ""): a["pack"]}
+    student = a.get("study") == STUDY_DEG or (not a.get("study") and a.get("status") == "סטודנט/ית")
+    senior = a.get("exp") in ("3–5 שנים", "יותר מ-5 שנים")
+    if student:
+        a["status"] = "סטודנט/ית"
+    elif a.get("work") == "משתחרר/ת משירות":
+        a["status"] = "משתחרר/ת משירות"
+    elif a.get("work") == "עובד/ת בתחום":
+        a["status"] = "עובד/ת ומחפש/ת לעבור" if senior else "ג׳וניור עם ניסיון של עד שנתיים"
+    elif a.get("study") in ("סיימתי תואר", "לימודי הנדסאות או תעודה", "קורס או בוטקאמפ") or a.get("work") == "עובד/ת בתחום אחר":
+        a["status"] = "בוגר/ת טרי/ה, מחפש/ת עבודה ראשונה"
+    elif a.get("work") == "לא עובד/ת כרגע":
+        a["status"] = "לא עובד/ת כרגע"
+    sc = a.get("scope") or []
+    a["track"] = "את שתיהן" if len(sc) == 2 else "משרת סטודנט חלקית" if PART in sc else "משרה מלאה אחרי התואר" if sc else ""
+    a["domains"] = [d for d in a.get("domains") or [] if d and d not in ("תחום אחר", "אחר")]
+    a["domain"] = a["domains"][0] if a["domains"] else ""
+    return a
+
+
 def domain_of(profile: dict) -> str:
-    """התחום: מה שבחרת בשאלון, אחרת מקורות החיים. ברירת מחדל: פיתוח תוכנה."""
-    a = profile.get("answers") or {}
+    """התחום הראשון: מה שבחרת בשאלון, אחרת מקורות החיים. ברירת מחדל: פיתוח תוכנה."""
+    a = normalize_answers(profile.get("answers") or {})
     if a.get("domain"):
         return a["domain"]
     t = (profile.get("cv_text") or "").lower()
@@ -100,6 +139,8 @@ class SearchPlan:
     exclude_reasons: dict = field(default_factory=dict)   # ממה שלמדנו מהדילוגים
     why: list[str] = field(default_factory=list)          # הסבר אנושי לכל החלטה
     have_years: int | None = None     # שנות הניסיון שיש למשתמש (לתקרת הציון כשהמודעה דורשת יותר)
+    domains: list = field(default_factory=list)   # כל התחומים שבחר
+    part_time: bool = False
 
     extra_titles: list[str] = field(default_factory=list)  # תפקידים שיואב הציע ואישרת
     drop_queries: list[str] = field(default_factory=list)  # שאילתות שלא הביאו כלום (למידה)
@@ -191,7 +232,7 @@ def cv_signals(cv: str) -> dict:
 
 def build_search_plan(profile: dict) -> SearchPlan:
     """יואב: מתרגם את השאלון לתוכנית חיפוש. דטרמיניסטי, בלי AI, וניתן להסבר."""
-    asked = profile.get("answers", {}) or {}
+    asked = normalize_answers(profile.get("answers", {}) or {})
     from_cv = cv_signals(profile.get("cv_text", ""))
     a = {**from_cv, **{k: v for k, v in asked.items() if v}}     # השאלון גובר על קורות החיים
     why: list[str] = []
@@ -210,7 +251,10 @@ def build_search_plan(profile: dict) -> SearchPlan:
     else:
         levels = ["junior", "entry"]; why.append("ברירת מחדל עד שתענה על המצב התעסוקתי: ג׳וניור")
 
-    student_positions = status == "סטודנט/ית" and track in (None, "משרת סטודנט חלקית", "את שתיהן")
+    student_positions = status == "סטודנט/ית" and track in (None, "", "משרת סטודנט חלקית", "את שתיהן")
+    part_time = PART in (a.get("scope") or [])
+    if part_time and status != "סטודנט/ית":
+        why.append("מחפש גם משרה חלקית")
     if status == "סטודנט/ית" and track == "משרה מלאה אחרי התואר":
         levels = ["junior", "entry"]; why.append("מחפש משרה מלאה אחרי התואר: בלי משרות סטודנט")
 
@@ -219,14 +263,28 @@ def build_search_plan(profile: dict) -> SearchPlan:
     if have_years is None and "mid" not in levels:
         have_years = 1 if status == "ג׳וניור עם ניסיון של עד שנתיים" else 0
 
-    domain = domain_of(profile)
-    RT = role_titles(domain, a.get("pack"))
-    roles = [r for r in (a.get("roles") or []) if r in RT] or (a.get("roles") or [] if RT is ROLE_TITLES else [])
-    titles = [t for r in roles for t in RT.get(r, [])]
+    domains = a.get("domains") or [domain_of(profile)]
+    domain = domains[0]
+    packs = a.get("packs") or {}
+    RT: dict = {}
+    he_q: list = []
+    for d in domains:   # כמה תחומים: איחוד התפקידים והחיפושים בעברית
+        for k, v in role_titles(d, packs.get(d)).items():
+            RT.setdefault(k, v)
+        he_q += list((DOMAINS.get(d) or {}).get("he_queries") or (packs.get(d) or {}).get("he_queries") or [])
+    for r in a.get("custom_roles") or []:   # תפקידים שהמשתמש כתב בעצמו ("אחר"), אחרי שיואב תרגם לשמות במודעות
+        if r.get("label") and r.get("titles"):
+            RT[r["label"]] = [t for t in r["titles"] if t][:3]
+    he_q = list(dict.fromkeys(he_q + list(a.get("custom_he") or [])))
+    if domains == ["פיתוח תוכנה"] and not a.get("custom_roles"):
+        RT = ROLE_TITLES
+    roles = [r for r in (a.get("roles") or []) if r in RT]
+    titles = list(dict.fromkeys(t for r in roles for t in RT.get(r, [])))
     heads = [RT[r][0] for r in roles if RT.get(r)]
-    he_q = list((DOMAINS.get(domain) or {}).get("he_queries") or (a.get("pack") or {}).get("he_queries") or [])
-    if domain != "פיתוח תוכנה":
-        why.append(f"תחום: {domain}")
+    if part_time and status != "סטודנט/ית" and he_q:
+        he_q.append(he_q[0] + " משרה חלקית")
+    if domains != ["פיתוח תוכנה"]:
+        why.append("תחומים: " + ", ".join(domains) if len(domains) > 1 else f"תחום: {domain}")
     if not titles:
         first = next(iter(RT.values()), ["Software Engineer"])
         titles = first[:2] if RT is not ROLE_TITLES else ["Software Engineer", "Software Developer"]
@@ -240,6 +298,9 @@ def build_search_plan(profile: dict) -> SearchPlan:
     HUB = {"תל אביב": "Tel Aviv", "גוש דן והמרכז": "Tel Aviv", "השרון": "Tel Aviv"}
     locs = list(dict.fromkeys(HUB.get(r) or REGIONS[r][0] for r in (a.get("locs") or []) if REGIONS.get(r)))
     area = list(dict.fromkeys(c for r in (a.get("locs") or []) for c in REGIONS.get(r, [])))
+    other_loc = str(a.get("locs_other") or "").strip() if "אחר" in (a.get("locs") or []) else ""
+    if other_loc:   # עיר או אזור שהמשתמש כתב בעצמו
+        locs.append(other_loc[:40])
     locations = list(dict.fromkeys(locs)) or ["Israel"]
     remote_only = a.get("mode") == "מהבית"
     if profile.get("extra_titles"):
@@ -268,7 +329,8 @@ def build_search_plan(profile: dict) -> SearchPlan:
                       remote_only=remote_only, student_positions=student_positions,
                       prefer_size=prefer_size, prefer_sectors=prefer_sectors,
                       min_salary_month=sal, exclude_reasons=counts, why=why, have_years=have_years,
-                      extra_titles=list(profile.get("extra_titles") or []), heads=heads, area_cities=area, domain=domain, he_queries=he_q, drop_queries=list(profile.get("drop_queries") or []), exclude_words=excl)
+                      extra_titles=list(profile.get("extra_titles") or []), heads=heads, area_cities=area, domain=domain, he_queries=he_q, drop_queries=list(profile.get("drop_queries") or []), exclude_words=excl,
+                      domains=domains, part_time=part_time)
 
 
 # ── חברות יעד ──────────────────────────────────────────────────────────────────
@@ -286,9 +348,9 @@ def select_targets(plan: SearchPlan, profile: dict, catalog: list[dict] | None =
     removed = {c.lower() for c in tc.get("removed", [])}
     region_cities = {c.lower() for c in (plan.area_cities or plan.locations)}
     scored = []
-    dkey = (DOMAINS.get(plan.domain) or {}).get("key", "other")
+    dkeys = {(DOMAINS.get(d) or {}).get("key", "other") for d in (plan.domains or [plan.domain])}   # כל התחומים שבחר
     for c in catalog:
-        if c["name"].lower() in removed or dkey not in c.get("domains", ["software"]):
+        if c["name"].lower() in removed or not dkeys & set(c.get("domains", ["software"])):
             continue
         s, why = 0, []
         if plan.prefer_sectors and set(c.get("sectors", [])) & set(plan.prefer_sectors):
