@@ -33,6 +33,9 @@ def main(idx=None, days=10):
     for k in ("study", "year", "work", "exp", "scope", "domains", "field", "roles", "custom_roles", "locs", "mode", "track", "status"):
         if a.get(k):
             print(f"   {k}: {a.get(k)}")
+    us = st.get("usage") or {}
+    print(f"   שימוש: אבני דרך {us.get('m')} | ימים {us.get('days')} | שגיאות {us.get('err')}")
+    print(f"   אירועים אחרונים: {(us.get('ev') or [])[-15:]}")
     print(f"   טלגרם: {st.get('telegram') or st.get('tg_channels') or '-'} | דילוגים עם סיבה: {Counter(v.get('r') for v in (st.get('skip') or {}).values() if isinstance(v, dict))}")
     try:
         plan = build_search_plan({"cv_text": p.get("cv_text") or "", "answers": p.get("answers") or {}}).to_dict()
