@@ -342,12 +342,15 @@ How to judge:
      can meet it. Personal, academic or side projects NEVER meet a "work" requirement.
    - "degree": a degree, diploma or certification.
    A skill the ad repeats or puts first is "key": true.
+   Tag every CORE requirement with a "src": "ad" if the ad writes it as a requirement (under Requirements / Must / You have,
+   or says required / must, or it is in the job title); "guess" if the ad does not write it and you only assume it is needed.
 7. "level": the seniority the job is written for: "student", "junior", "mid" or "senior".
 
 Return JSON only:
-{{"core": [every CORE requirement, short English, each {{"req": "...", "kind": "skill|work|degree", "key": true/false, "met": true/false}}
+{{"core": [every CORE requirement, short English, each {{"req": "...", "kind": "skill|work|degree", "key": true/false, "src": "ad|guess", "met": true/false}}
    — a skill is met if the CV shows it in a job OR a project OR a course; a work requirement only by a paid job in the CV],
   "level": "student|junior|mid|senior",
+  "nice": [every NICE-TO-HAVE item, 1-3 words English, each {{"req": "...", "met": true/false}}],
   "nice_missing": integer (how many NICE-TO-HAVE items the CV does not show),
   "wrong_field": true/false (true only if the job is in a different profession than the CV, e.g. sales, cyber research, hardware),
   "fit": number 1.0-5.0 with one decimal,
@@ -372,6 +375,7 @@ def parse_rating(text: str) -> dict | None:
         return {"fit": fit, "reasons": clip(d.get("reasons"), 3), "gaps": clip(d.get("gaps"), 2),
                 "seniority_ok": bool(d.get("seniority_ok", True)), "required_years": d.get("required_years", 0),
                 "core": [c for c in (d.get("core") or []) if isinstance(c, dict) and c.get("req")][:15],
+                "nice": [c for c in (d.get("nice") or []) if isinstance(c, dict) and c.get("req")][:8],
                 "nice_missing": d.get("nice_missing", 0), "wrong_field": bool(d.get("wrong_field", False)),
                 "level": str(d.get("level") or "").lower()}
     except (ValueError, TypeError):
@@ -382,11 +386,19 @@ def _met(c: dict) -> bool:
     return c.get("met") is True or str(c.get("met")).lower() == "true"
 
 
+def _counted(c: dict) -> bool:
+    """דרישה שהמודעה לא כותבת והמודל רק הניח ("guess") לא נכנסת לציון ולא לתקרת הניסיון (ברוח career-ops):
+    ניחוש לא יכול להוריד משרה טובה. דירוגים ישנים בלי src נספרים כמו קודם."""
+    return str(c.get("src") or "ad").lower() != "guess"
+
+
 def computed_fit(r: dict) -> float:
     """ציון הכישורים מחושב בקוד מרשימת הדרישות המרכזיות, כדי שיהיה עקבי בין ריצות ובין מודלים (ברוח Huntr/Jobright:
     דרישות חובה שוקלות הכי הרבה, מילות מפתח מעט). דרישה מרכזית שחוזרת במודעה ("key") שוקלת כפול.
     דרישות ניסיון תעסוקתי לא נכנסות כאן: הן ממד נפרד (level_cap). יתרונות חסרים מורידים עד 0.3. מקצוע אחר — לכל היותר 2.0."""
-    core = [c for c in r.get("core") or [] if (c.get("kind") or "skill") != "work"]
+    core = [c for c in r.get("core") or [] if (c.get("kind") or "skill") != "work" and _counted(c)]
+    if r.get("nice"):
+        r["nice_missing"] = sum(1 for c in r["nice"] if not _met(c))
     if not core:
         fit = r["fit"]
     else:
@@ -420,7 +432,7 @@ def level_cap(r: dict, plan: dict, title: str = "") -> None:
     have = plan.get("have_years")
     if have is None:
         have = plan.get("max_years")
-    work = [c for c in r.get("core") or [] if c.get("kind") == "work"]
+    work = [c for c in r.get("core") or [] if c.get("kind") == "work" and _counted(c)]
     gap, cap = "", 5.0
     if have is not None and req > have:
         gap, cap = "short", CAP_SHORT_1 if req - have == 1 else CAP_SHORT_2
@@ -428,12 +440,21 @@ def level_cap(r: dict, plan: dict, title: str = "") -> None:
         gap, cap = "work", CAP_WORK_GAP
     if early and r.get("level") in ("mid", "senior") and not junior_title and cap > CAP_LEVEL:
         gap, cap = "level", CAP_LEVEL
-    skills = [c for c in r.get("core") or [] if (c.get("kind") or "skill") != "work"]
-    r["dims"] = {"skills": f"{sum(1 for c in skills if _met(c))}/{len(skills)}", "level": gap or "ok"}
+    skills = [c for c in r.get("core") or [] if (c.get("kind") or "skill") != "work" and _counted(c)]
+    r["dims"] = {"skills": f"{sum(1 for c in skills if _met(c))}/{len(skills)}", "level": gap or "ok", **req_view(r)}
     if gap:
         r["level_gap"] = gap
         if r["fit"] > cap:
             r["fit"] = cap
+
+
+def req_view(r: dict) -> dict:
+    """לפירוט המשרה: דרישות החובה מהמודעה והיתרונות, שם קצר וסימון אם יש. gn = כל דרישות החובה מתקיימות,
+    אז מה ש"חסר" בכרטיס הוא רק יתרון."""
+    core = [c for c in r.get("core") or [] if _counted(c)]
+    row = lambda c: [str(c["req"]).strip()[:40], 1 if _met(c) else 0]
+    return {"req": [row(c) for c in core][:10], "nice": [row(c) for c in r.get("nice") or []][:8],
+            "gn": bool(core) and all(_met(c) for c in core)}
 
 
 def rate(job: dict, cv: str, prefs: str) -> dict | None:

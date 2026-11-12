@@ -843,6 +843,9 @@ a.person>svg{flex:0 0 18px;width:18px;height:18px;fill:none;stroke:var(--ink3);s
 
 .dims{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;font-size:13px}.dims span{padding:4px 10px;border-radius:10px;background:var(--hi-lt,#E6F7EF);color:var(--hi-ink,#173B33)}
 .dims span.gap{background:#FBF1E1;color:#7A4E12}.dims b{font-weight:700;margin-inline-end:4px}
+.rq{margin-top:12px}.rq-h{font-size:12px;font-weight:700;color:var(--muted,#5B6B66);margin:8px 0 5px}
+.rq-l{display:flex;flex-wrap:wrap;gap:6px}.rq-c{display:inline-flex;align-items:center;gap:4px;font-size:13px;padding:3px 9px;border-radius:8px;background:#EEF3F1;color:#1F3A33}
+.rq-c i{font-style:normal;font-weight:700;font-size:12px}.rq-c.ok i{color:#1E8A5A}.rq-c.no{background:#FBF1E1;color:#7A4E12}.rq-c.no i{color:#B36B12}
 
 /* ── טעינה: "הצוות עובד" ── */
 .ld{position:relative;display:inline-block;width:22px;height:22px;flex-shrink:0;vertical-align:middle}

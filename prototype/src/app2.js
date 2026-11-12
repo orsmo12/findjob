@@ -235,13 +235,15 @@ function renderJobs(){
 }
 function fitLbl(f,j){return j&&j.lvl?j.lvl:f>=4.3?'התאמה חזקה':f>=4?'התאמה טובה':'שווה בדיקה'}
 /* פירוק הציון לשני ממדים (ברוח Jobright): כישורים (מפרויקטים, קורסים ועבודה) ורמת ניסיון (רק עבודה בתשלום) */
-function dimsHtml(j){const d=j.dims;if(!d)return'';const [m,n]=String(d.skills||'0/0').split('/');
-  return`<div class="dims"><span><b>כישורים</b> ${m} מתוך ${n} דרישות</span><span class="${d.level==='ok'?'ok':'gap'}"><b>ניסיון</b> ${d.level==='ok'?'מתאים לרמה שלך':escB(j.lvl||'דורשת יותר ניסיון')}</span></div>`}
+/* דרישות המודעה (רק מה שהמודעה כותבת, לא ניחושים): חסר קודם. משרות שדורגו לפני השינוי: כמו קודם, "X מתוך Y" */
+function rqList(xs){return[...xs].sort((a,b)=>a[1]-b[1]).map(([t,m])=>`<span class="rq-c ${m?'ok':'no'}" lang="en" dir="ltr"><i aria-hidden="true">${m?'✓':'✗'}</i>${escB(t)}</span>`).join('')}
+function dimsHtml(j){const d=j.dims;if(!d)return'';const [m,n]=String(d.skills||'0/0').split('/'),rq=Array.isArray(d.req)&&d.req.length;
+  return`${rq?`<div class="rq"><div class="rq-h">דרישות חובה</div><div class="rq-l">${rqList(d.req)}</div>${(d.nice||[]).length?`<div class="rq-h">יתרון</div><div class="rq-l">${rqList(d.nice)}</div>`:''}</div>`:''}<div class="dims">${rq?'':`<span><b>כישורים</b> ${m} מתוך ${n} דרישות</span>`}<span class="${d.level==='ok'?'ok':'gap'}"><b>ניסיון</b> ${d.level==='ok'?'מתאים לרמה שלך':escB(j.lvl||'דורשת יותר ניסיון')}</span></div>`}
 function pills(f){const full=Math.floor(f),part=f-full;return`<div class="pills" aria-hidden="true">${[0,1,2,3,4].map(i=>`<i>${i<full?'<b></b>':i===full&&part>0?`<b style="right:${((1-part)*100).toFixed(0)}%"></b>`:''}</i>`).join('')}</div>`}
 function cardInner(j){
   return`<div class="jc-top">${logo(j)}<div style="flex:1;min-width:0"><div class="jc-title" dir="${dirOf(j.title)||'auto'}" style="text-align:right">${escB(j.title)}</div><div class="jc-co">${escB(j.co)} · ${escB(j.loc)}</div></div></div>
     <div class="fit"><div class="fit-num num">${j.fit.toFixed(1)}<small>/5</small></div><div class="fit-right"><div class="fit-lbl">${fitLbl(j.fit,j)}</div>${pills(j.fit)}</div></div>
-    <div class="jc-reasons">${j.reasons.slice(0,2).map(r=>`<div class="jc-r"><span class="ic ok" aria-hidden="true">✓</span><span>${escB(r)}</span></div>`).join('')}${j.gaps.slice(0,1).map(g=>`<div class="jc-r"><span class="ic gap" aria-hidden="true">!</span><span>חסר: ${escB(g)}</span></div>`).join('')}</div>
+    <div class="jc-reasons">${j.reasons.slice(0,2).map(r=>`<div class="jc-r"><span class="ic ok" aria-hidden="true">✓</span><span>${escB(r)}</span></div>`).join('')}${j.gaps.slice(0,1).map(g=>`<div class="jc-r"><span class="ic gap" aria-hidden="true">!</span><span>חסר${j.dims&&j.dims.gn?' (יתרון)':''}: ${escB(g)}</span></div>`).join('')}</div>
     <div class="jc-desc" dir="auto">${escB(j.desc)}</div>
     <div class="jc-tags">${j.tags.map(t=>`<span class="chip" lang="en">${escB(t)}</span>`).join('')}</div>
     <div class="jc-foot"><span>${escB(j.src)} · ${agoTxt(j.posted)}</span>${j.salary?`<span>${escB(j.salary)}</span>`:''}</div>`;

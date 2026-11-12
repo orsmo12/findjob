@@ -199,3 +199,20 @@ def test_off_field_titles_skip_rating():
     assert not off_field({"title": "Process Engineer"}, mech) and not off_field({"title": "R&D Engineer"}, sw)
     assert not off_field({"title": "Frontend Developer"}, {"domains": ["הנדסת מכונות", "פיתוח תוכנה"]})
     assert not off_field({"title": "Sales Engineer"}, {"domains": ["שיווק דיגיטלי"]})
+
+
+def test_guessed_requirements_do_not_lower_score():
+    """ברוח career-ops: דרישה שהמודעה לא כותבת (src=guess) לא מורידה ציון ולא מפעילה תקרת ניסיון. דירוג ישן בלי src — כמו קודם."""
+    base = [{"req": "Python", "kind": "skill", "key": True, "met": True}, {"req": "REST", "kind": "skill", "met": True},
+            {"req": "SQL", "kind": "skill", "met": True}]
+    old = {"fit": 4.5, "core": base}
+    guess = {"fit": 4.5, "core": base + [{"req": "Kubernetes", "kind": "skill", "src": "guess", "met": False},
+                                         {"req": "industry experience", "kind": "work", "src": "guess", "met": False}]}
+    stated = {"fit": 4.5, "core": base + [{"req": "Kubernetes", "kind": "skill", "src": "ad", "met": False}]}
+    assert h.computed_fit(guess) == h.computed_fit(old) == 5.0
+    assert h.computed_fit(stated) < 5.0
+    r = {**guess, "fit": h.computed_fit(guess), "nice": [{"req": "Docker", "met": False}, {"req": "FastAPI", "met": True}]}
+    h.level_cap(r, {"levels": ["student", "junior"], "have_years": 0}, "Junior Developer")
+    d = r["dims"]
+    assert r["fit"] == 5.0 and d["level"] == "ok" and d["skills"] == "3/3" and d["gn"] is True
+    assert [x[0] for x in d["req"]] == ["Python", "REST", "SQL"] and d["nice"] == [["Docker", 0], ["FastAPI", 1]]
