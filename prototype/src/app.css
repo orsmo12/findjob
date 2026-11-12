@@ -948,3 +948,24 @@ a.person>svg{flex:0 0 18px;width:18px;height:18px;fill:none;stroke:var(--ink3);s
 .b2-quiet{color:rgba(255,255,255,.75);font-size:14px;margin:4px 2px}
 .b2-bg{margin:10px 2px 0;font-size:12px;color:rgba(255,255,255,.55);line-height:1.5}
 .b2 .br-toggle{margin-top:8px}
+
+/* ── מחשב (1024px ומעלה). בטלפון ובטאבלט שום דבר מכאן לא חל ──
+   תפריט צד קבוע ולחיץ משמאל + אזור תוכן של 720px, הכל ממורכז. W = 272 (תפריט) + 16 (רווח) + 720 (תוכן) */
+@media (min-width:1024px){
+  :root{--dk-l:max(0px,calc(50% - 504px));--dk-r:max(0px,calc(50% - 504px))}
+  #drawerOverlay,#drawerOverlay.open{position:fixed;inset:0 auto 0 var(--dk-l);width:272px;z-index:290;background:none;pointer-events:auto}
+  #drawer,#drawerOverlay.open #drawer{position:absolute;inset:0;left:0;width:100%;transform:none;transition:none;box-shadow:none;border-right:1px solid var(--glass-brd);overflow-y:auto}
+  #drawer .dr-x{display:none}
+  #menuBtn{visibility:hidden}
+  #app{max-width:720px;margin:0 0 0 calc(var(--dk-l) + 288px)}
+  #topbar{left:calc(var(--dk-l) + 288px);transform:none;max-width:720px}
+  #chatBtn{right:calc(var(--dk-r) + 16px)}
+  #chatPop{right:calc(var(--dk-r) + 12px)}
+  .scroll{padding-left:24px;padding-right:24px}
+  .jobs-wrap{width:100%;max-width:560px;margin:0 auto}
+  #pg-office{width:100%;max-width:430px;margin:0 auto}
+  .sheet{align-items:center}
+  .sheet-panel{max-width:600px;border-radius:24px;border-bottom:1px solid var(--glass-brd);transform:translateY(24px);opacity:0;visibility:hidden;transition:transform .25s,opacity .2s,visibility .2s}
+  .sheet.open .sheet-panel{opacity:1;visibility:visible}
+  .dr-item{cursor:pointer}
+}
