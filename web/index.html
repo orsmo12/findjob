@@ -605,6 +605,7 @@ body.pg-jobs #toasts{bottom:calc(120px + env(safe-area-inset-bottom,0px))}
 .toast button.undo{color:#8EE6C1;font-weight:600;font-size:14px;padding:2px 4px}
 .toast-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
 .toast-chips button{font-size:12.5px;padding:6px 11px;border-radius:12px;background:rgba(255,255,255,.12);color:#fff}
+.toast-other{display:flex;gap:6px;width:100%}.toast-other input{flex:1;min-width:0;font:inherit;font-size:14px;padding:7px 10px;border-radius:10px;border:0;background:rgba(255,255,255,.95);color:#1F2A30}.toast-other button{background:var(--hi,#7BE0B5);color:var(--hi-ink,#173B33);font-weight:600}
 
 /* layering: Office sheet above top bar */
 #agSheet{z-index:450!important}
@@ -2146,8 +2147,14 @@ function toast(msg,{undo,chips,ms=3600}={}){
   el.innerHTML=`<div class="toast-row"><span>${escB(msg)}</span>${undo?'<button class="undo">ביטול</button>':''}</div>${chips?`<div class="toast-chips">${chips.map((c,i)=>`<button data-i="${i}">${escB(c.t)}</button>`).join('')}</div>`:''}`;
   const kill=()=>{el.classList.add('out');setTimeout(()=>el.remove(),220)};
   if(undo) el.querySelector('.undo').onclick=()=>{undo();kill()};
-  if(chips) el.querySelectorAll('.toast-chips button').forEach(b=>b.onclick=()=>{chips[b.dataset.i].fn();kill()});
-  $('toasts').appendChild(el); setTimeout(kill,ms);
+  let tm;
+  if(chips) el.querySelectorAll('.toast-chips button').forEach(b=>b.onclick=()=>{const c=chips[b.dataset.i];
+    if(!c.other){c.fn();kill();return}
+    clearTimeout(tm);const box=el.querySelector('.toast-chips');
+    box.innerHTML='<form class="toast-other"><input maxlength="60" placeholder="במילה או שתיים..." aria-label="סיבה אחרת"><button>שמירה</button></form>';
+    const f=box.querySelector('form'),i=f.querySelector('input');i.focus();
+    f.onsubmit=e=>{e.preventDefault();const v=i.value.trim();if(!v){i.focus();return}c.fn(v);kill()}});
+  $('toasts').appendChild(el); tm=setTimeout(kill,ms);
 }
 function face(cv,idx,state){if(cv) drawFace(cv,idx,state||CAREER.agents[idx].state)}
 function logo(j){return`<span class="logo-tile" aria-hidden="true" style="background:linear-gradient(140deg,${j.c[0]},${j.c[1]})">${escB(j.ini)}</span>`}
@@ -2343,12 +2350,17 @@ function decide(kind){
   save();lastAct={id,kind};
   setTimeout(()=>{busy=false;renderJobs();syncChrome()},340);
   if(kind==='save') toast(`${j.co} נשמרה בהגשות`,{undo:undoLast});
-  else toast('למה זה לא מתאים?',{undo:undoLast,ms:5600,chips:['בכירה מדי','לא התחום שלי','מיקום','החברה','לא מעניין'].map(t=>({t,fn:()=>{S.skipReasons[id]=t;
-    /* נשמר בענן: דורון לומד מזה בסריקה הבאה (agent_core/taste.py) */
-    S.skip=S.skip||{};S.skip[id]={r:t,t:(j&&j.title||'').slice(0,90),co:j&&j.co||'',loc:(j&&j.loc||'').slice(0,40),at:new Date().toISOString().slice(0,10)};
-    const ks=Object.keys(S.skip);if(ks.length>150)ks.sort((a,b)=>(S.skip[a].at||'').localeCompare(S.skip[b].at||'')).slice(0,ks.length-150).forEach(k=>delete S.skip[k]);
-    track('skip_why',{r:t});save();toast('הבנתי. אציג פחות משרות כאלה')}}))});
+  else toast('למה זה לא מתאים?',{undo:undoLast,ms:6500,chips:whyChips(id,j,'',()=>toast('הבנתי. אציג פחות משרות כאלה'))});
 }
+/* סיבות לדילוג ולהסרה מההגשות (אותה רשימה). "אחר…" = טקסט חופשי קצר. נשמר בענן: דורון לומד מזה (agent_core/taste.py) */
+const WHY=['לא עומד בדרישות','בכירה מדי','לא התחום שלי','מיקום','החברה','לא מעניין'];
+function skipWhy(id,j,t,x,from){S.skipReasons[id]=t;S.skip=S.skip||{};
+  S.skip[id]={r:t,t:(j&&j.title||'').slice(0,90),co:j&&j.co||'',loc:(j&&j.loc||'').slice(0,40),at:new Date().toISOString().slice(0,10)};
+  if(x)S.skip[id].x=x.slice(0,60);if(from)S.skip[id].from=from;
+  const ks=Object.keys(S.skip);if(ks.length>150)ks.sort((a,b)=>(S.skip[a].at||'').localeCompare(S.skip[b].at||'')).slice(0,ks.length-150).forEach(k=>delete S.skip[k]);
+  track(from?'remove_reason':'skip_why',{r:t});save()}
+function whyChips(id,j,from,done){return[...WHY.map(t=>({t,fn:()=>{skipWhy(id,j,t,'',from);done(t)}})),
+  {t:'אחר…',other:true,fn:x=>{skipWhy(id,j,'אחר',x,from);done('אחר')}}]}
 function undoLast(){
   if(!lastAct)return;const{id,kind}=lastAct;delete S.decisions[id];delete S.skipReasons[id];if(S.skip)delete S.skip[id];
   if(kind==='save') S.apps=S.apps.filter(a=>!(a.jobId===id&&a.status==='saved'));
@@ -2453,8 +2465,7 @@ function paintAppTab(id){
           <div class="note-row"><span class="hint-line note-kb">Enter לשמירה · Shift+Enter לשורה חדשה</span><button class="btn btn-sm btn-primary" id="edNoteBtn" disabled onclick="saveNote('${id}')">שמירה</button></div></div></div>
       <div class="s-sec"><a class="btn btn-ghost btn-block ext" href="${j.url||LI_URL+'jobs/'}" target="_blank" rel="noopener">פתח את המשרה${ICO.open}</a>
         ${CLOUDM?`<button class="btn btn-ghost btn-block" style="margin-top:8px" onclick="askAboutJob('${a.jobId}')">לשאול את ${escB(N('assistant'))} על המשרה</button>`:''}
-        ${CLOUDM&&a.status==='saved'?`<button class="btn btn-ghost btn-block" style="margin-top:8px" onclick="prepNow()">${ICO.spark||''}להכין עכשיו</button><button class="btn btn-ghost btn-block" style="margin-top:8px" onclick="markClosed('${id}')">המשרה נסגרה</button>`:''}
-        <button class="btn btn-ghost btn-block" style="margin-top:8px;color:var(--rose)" onclick="closeSheet();removeApp('${id}')">להסיר מההגשות</button></div>`;
+                <button class="btn btn-ghost btn-block" style="margin-top:8px;color:var(--rose)" onclick="closeSheet();removeApp('${id}')">להסיר מההגשות</button></div>`;
   }else if(appTab==='letter'){
     el.innerHTML=kitTabHtml(a,j,id);
   }else if(appTab==='ref'&&REAL){
@@ -2707,9 +2718,10 @@ function openTxt(j){const c=j.check;if(!c)return`${escB(N('hunter'))} יבדוק
   const d=agoTxt(daysSince(c.at));
   return c.st==='open'?`כן, נבדק ${escB(d)}`:c.st==='unknown'?`לא הצלחתי לבדוק (האתר לא ענה${c.n>1?` ${c.n} פעמים`:''}). כדאי לפתוח ולבדוק`:'נסגרה'}
 async function markClosed(id){track('job_closed_btn');const a=appOf(id);if(!a)return;const j=JOBS[a.jobId],now=new Date().toISOString();
-  j.closed_at=now;closedToHistory();save();closeSheet();refreshApps();
-  if(CLOUDM&&ME){try{const {data}=await SB.from('jobs').select('card').eq('user_id',ME.id).eq('id',a.jobId).maybeSingle();
-    if(data)await SB.from('jobs').update({card:Object.assign({},data.card,{closed_at:now,closed_by:'user'})}).eq('user_id',ME.id).eq('id',a.jobId)}catch(e){console.warn(e)}}}
+  j.closed_at=now;closedToHistory();save();closeSheet();refreshApps();closeInCloud(a.jobId,now)}
+async function closeInCloud(jobId,now){   // דורון לא בודק אותה שוב, והסוכנים מפסיקים לעבוד עליה
+  if(CLOUDM&&ME){try{const {data}=await SB.from('jobs').select('card').eq('user_id',ME.id).eq('id',jobId).maybeSingle();
+    if(data)await SB.from('jobs').update({card:Object.assign({},data.card,{closed_at:now,closed_by:'user'})}).eq('user_id',ME.id).eq('id',jobId)}catch(e){console.warn(e)}}}
 function removeApp(id){
   const a=appOf(id);if(!a)return;const j=JOBS[a.jobId];
   S.apps=S.apps.filter(x=>x.id!==id);S.history=S.history||[];
@@ -2718,12 +2730,9 @@ function removeApp(id){
   lastRemoved=a.jobId;save();refreshApps();
   /* למה הוסרה: דורון לומד מזה כמו מדילוג (agent_core/taste.py). "נסגרה" = לא סיבה של טעם */
   const h=S.history[0];
-  toast(`הוסרה מההגשות. למה?`,{undo:()=>restoreApp(lastRemoved),ms:9000,chips:['נסגרה','בכירה מדי','לא התחום שלי','מיקום','החברה','לא מעניין'].map(t=>({t,fn:()=>{
-    track('remove_reason',{r:t});h.why=t;
-    if(t==='נסגרה'){h.reason='closed';j.closed_at=j.closed_at||new Date().toISOString()}
-    else{S.decisions[a.jobId]='skip';S.skipReasons[a.jobId]=t;S.skip=S.skip||{};
-      S.skip[a.jobId]={r:t,t:(j.title||'').slice(0,90),co:j.co||'',loc:(j.loc||'').slice(0,40),at:new Date().toISOString().slice(0,10),from:'apps'}}
-    save();refreshApps();toast(t==='נסגרה'?'עודכן: המשרה נסגרה':`תודה, ${N('hunter')} ילמד מזה`)}}))});
+  toast(`הוסרה מההגשות. למה?`,{undo:()=>restoreApp(lastRemoved),ms:9000,chips:[{t:'נסגרה',fn:()=>{
+      track('remove_reason',{r:'נסגרה'});h.why='נסגרה';h.reason='closed';j.closed_at=j.closed_at||new Date().toISOString();save();refreshApps();closeInCloud(a.jobId,j.closed_at);toast('עודכן: המשרה נסגרה')}},
+    ...whyChips(a.jobId,j,'apps',t=>{h.why=(S.skip[a.jobId]||{}).x||t;S.decisions[a.jobId]='skip';save();refreshApps();toast(`תודה, ${N('hunter')} ילמד מזה`)})]});
 }
 function restoreApp(jobId){
   const h=(S.history||[]).find(x=>x.jobId===jobId);if(!h)return;

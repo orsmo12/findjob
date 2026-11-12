@@ -3,6 +3,7 @@ taste.py — דורון לומד את הטעם של כל משתמש מהשימו
   • מילים בכותרות של משרות ששמר (+) ושדילג עליהן (−). דילוג עם "לא התחום שלי" שוקל כפול.
   • חברות שדילג עליהן עם "החברה" (או 3 דילוגים בלי אף שמירה) → בעדיפות נמוכה.
   • ערים שדילג עליהן עם "מיקום" פעמיים → בעדיפות נמוכה.
+  • "אחר" עם טקסט חופשי → 5 הניסוחים האחרונים עוברים לסוכן המדרג בשורה אחת (בלי לשנות את הציון מול קורות החיים).
   • "בכירה מדי" פעמיים → הסינון לפי שנות ניסיון מחמיר (profile.build_search_plan, skip_reasons).
 הטעם משפיע על אילו משרות מגיעות לדירוג (cheap_rank) ומוסבר לסוכן המדרג בשורה אחת. הציון עצמו נשאר מול קורות החיים.
 כל מה שנלמד מוצג למשתמש ב"מה מחפשים בשבילך", ואפשר לבטל כל פריט (state.taste_off).
@@ -50,10 +51,17 @@ def learn(rows: list[dict], skips: dict | None = None, off: list[str] | None = N
     locs = Counter(re.split(r"[,·|-]", v.get("loc") or "")[0].strip() for v in skips.values()
                    if isinstance(v, dict) and v.get("r") == SKIP_LOC and v.get("loc"))
     avoid_locs = [l for l, k in locs.items() if l and k >= 2 and l.lower() not in off_l and l.lower() not in ("israel", "ישראל")]
+    own = []   # "אחר" בדילוג או בהסרה: המשתמש כתב במילים שלו. 5 האחרונים, בלי כפילויות, עד 60 תווים
+    for v in sorted((v for v in skips.values() if isinstance(v, dict) and str(v.get("x") or "").strip()), key=lambda v: v.get("at") or "", reverse=True):
+        x = re.sub(r"\s+", " ", str(v["x"])).strip()[:60]
+        if x.lower() not in {o.lower() for o in own} and x.lower() not in off_l:
+            own.append(x)
+    own = own[:5]
     note = "; ".join(x for x in ((f"tends to save: {', '.join(likes)}" if likes else ""),
-                                 (f"tends to skip: {', '.join(dislikes)}" if dislikes else "")) if x)
+                                 (f"tends to skip: {', '.join(dislikes)}" if dislikes else ""),
+                                 (f"said in their own words when skipping jobs: {' | '.join(own)}" if own else "")) if x)
     return {"likes": likes, "dislikes": dislikes, "score": {w: score[w] for w in likes + dislikes}, "avoid_cos": avoid_cos,
-            "avoid_locs": avoid_locs, "reasons": dict(by_reason), "note": note,
+            "avoid_locs": avoid_locs, "reasons": dict(by_reason), "own": own, "note": note,
             "n": sum(1 for r in rows if r.get("decision") in ("save", "applied", "skip"))}
 
 

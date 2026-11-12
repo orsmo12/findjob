@@ -73,8 +73,14 @@ function toast(msg,{undo,chips,ms=3600}={}){
   el.innerHTML=`<div class="toast-row"><span>${escB(msg)}</span>${undo?'<button class="undo">ביטול</button>':''}</div>${chips?`<div class="toast-chips">${chips.map((c,i)=>`<button data-i="${i}">${escB(c.t)}</button>`).join('')}</div>`:''}`;
   const kill=()=>{el.classList.add('out');setTimeout(()=>el.remove(),220)};
   if(undo) el.querySelector('.undo').onclick=()=>{undo();kill()};
-  if(chips) el.querySelectorAll('.toast-chips button').forEach(b=>b.onclick=()=>{chips[b.dataset.i].fn();kill()});
-  $('toasts').appendChild(el); setTimeout(kill,ms);
+  let tm;
+  if(chips) el.querySelectorAll('.toast-chips button').forEach(b=>b.onclick=()=>{const c=chips[b.dataset.i];
+    if(!c.other){c.fn();kill();return}
+    clearTimeout(tm);const box=el.querySelector('.toast-chips');
+    box.innerHTML='<form class="toast-other"><input maxlength="60" placeholder="במילה או שתיים..." aria-label="סיבה אחרת"><button>שמירה</button></form>';
+    const f=box.querySelector('form'),i=f.querySelector('input');i.focus();
+    f.onsubmit=e=>{e.preventDefault();const v=i.value.trim();if(!v){i.focus();return}c.fn(v);kill()}});
+  $('toasts').appendChild(el); tm=setTimeout(kill,ms);
 }
 function face(cv,idx,state){if(cv) drawFace(cv,idx,state||CAREER.agents[idx].state)}
 function logo(j){return`<span class="logo-tile" aria-hidden="true" style="background:linear-gradient(140deg,${j.c[0]},${j.c[1]})">${escB(j.ini)}</span>`}
@@ -270,12 +276,17 @@ function decide(kind){
   save();lastAct={id,kind};
   setTimeout(()=>{busy=false;renderJobs();syncChrome()},340);
   if(kind==='save') toast(`${j.co} נשמרה בהגשות`,{undo:undoLast});
-  else toast('למה זה לא מתאים?',{undo:undoLast,ms:5600,chips:['בכירה מדי','לא התחום שלי','מיקום','החברה','לא מעניין'].map(t=>({t,fn:()=>{S.skipReasons[id]=t;
-    /* נשמר בענן: דורון לומד מזה בסריקה הבאה (agent_core/taste.py) */
-    S.skip=S.skip||{};S.skip[id]={r:t,t:(j&&j.title||'').slice(0,90),co:j&&j.co||'',loc:(j&&j.loc||'').slice(0,40),at:new Date().toISOString().slice(0,10)};
-    const ks=Object.keys(S.skip);if(ks.length>150)ks.sort((a,b)=>(S.skip[a].at||'').localeCompare(S.skip[b].at||'')).slice(0,ks.length-150).forEach(k=>delete S.skip[k]);
-    track('skip_why',{r:t});save();toast('הבנתי. אציג פחות משרות כאלה')}}))});
+  else toast('למה זה לא מתאים?',{undo:undoLast,ms:6500,chips:whyChips(id,j,'',()=>toast('הבנתי. אציג פחות משרות כאלה'))});
 }
+/* סיבות לדילוג ולהסרה מההגשות (אותה רשימה). "אחר…" = טקסט חופשי קצר. נשמר בענן: דורון לומד מזה (agent_core/taste.py) */
+const WHY=['לא עומד בדרישות','בכירה מדי','לא התחום שלי','מיקום','החברה','לא מעניין'];
+function skipWhy(id,j,t,x,from){S.skipReasons[id]=t;S.skip=S.skip||{};
+  S.skip[id]={r:t,t:(j&&j.title||'').slice(0,90),co:j&&j.co||'',loc:(j&&j.loc||'').slice(0,40),at:new Date().toISOString().slice(0,10)};
+  if(x)S.skip[id].x=x.slice(0,60);if(from)S.skip[id].from=from;
+  const ks=Object.keys(S.skip);if(ks.length>150)ks.sort((a,b)=>(S.skip[a].at||'').localeCompare(S.skip[b].at||'')).slice(0,ks.length-150).forEach(k=>delete S.skip[k]);
+  track(from?'remove_reason':'skip_why',{r:t});save()}
+function whyChips(id,j,from,done){return[...WHY.map(t=>({t,fn:()=>{skipWhy(id,j,t,'',from);done(t)}})),
+  {t:'אחר…',other:true,fn:x=>{skipWhy(id,j,'אחר',x,from);done('אחר')}}]}
 function undoLast(){
   if(!lastAct)return;const{id,kind}=lastAct;delete S.decisions[id];delete S.skipReasons[id];if(S.skip)delete S.skip[id];
   if(kind==='save') S.apps=S.apps.filter(a=>!(a.jobId===id&&a.status==='saved'));

@@ -118,6 +118,12 @@ def main(DAYS: int = 14) -> None:
         s, k = c["save"] + c["applied"], c["skip"]
         print(f"   {src:<18} הוצגו {sum(c.values()):>4}, נשמרו {s:>3}, דולגו {k:>3}   → {pct(s, s + k)}")
 
+    sk = [v for p in profs.values() for v in ((p.get("state") or {}).get("skip") or {}).values() if isinstance(v, dict)]
+    print(f"   סיבות דילוג והסרה ({len(sk)}): {dict(Counter(v.get('r') for v in sk).most_common(8))}")
+    own = Counter(str(v["x"]).strip() for v in sk if str(v.get("x") or "").strip())
+    if own:   # "אחר" במילים של המשתמשים: מה שחוזר אצל כמה = מועמד לכפתור קבוע
+        print("   במילים שלהם (אחר): " + " | ".join(f"{x} ×{n}" if n > 1 else x for x, n in own.most_common(10)))
+
     # ── 3. מקורות וחיפושים ──
     q = defaultdict(Counter)
     for s in (r["stats"] for r in scans):

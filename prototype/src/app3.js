@@ -67,8 +67,7 @@ function paintAppTab(id){
           <div class="note-row"><span class="hint-line note-kb">Enter לשמירה · Shift+Enter לשורה חדשה</span><button class="btn btn-sm btn-primary" id="edNoteBtn" disabled onclick="saveNote('${id}')">שמירה</button></div></div></div>
       <div class="s-sec"><a class="btn btn-ghost btn-block ext" href="${j.url||LI_URL+'jobs/'}" target="_blank" rel="noopener">פתח את המשרה${ICO.open}</a>
         ${CLOUDM?`<button class="btn btn-ghost btn-block" style="margin-top:8px" onclick="askAboutJob('${a.jobId}')">לשאול את ${escB(N('assistant'))} על המשרה</button>`:''}
-        ${CLOUDM&&a.status==='saved'?`<button class="btn btn-ghost btn-block" style="margin-top:8px" onclick="prepNow()">${ICO.spark||''}להכין עכשיו</button><button class="btn btn-ghost btn-block" style="margin-top:8px" onclick="markClosed('${id}')">המשרה נסגרה</button>`:''}
-        <button class="btn btn-ghost btn-block" style="margin-top:8px;color:var(--rose)" onclick="closeSheet();removeApp('${id}')">להסיר מההגשות</button></div>`;
+                <button class="btn btn-ghost btn-block" style="margin-top:8px;color:var(--rose)" onclick="closeSheet();removeApp('${id}')">להסיר מההגשות</button></div>`;
   }else if(appTab==='letter'){
     el.innerHTML=kitTabHtml(a,j,id);
   }else if(appTab==='ref'&&REAL){
@@ -321,9 +320,10 @@ function openTxt(j){const c=j.check;if(!c)return`${escB(N('hunter'))} יבדוק
   const d=agoTxt(daysSince(c.at));
   return c.st==='open'?`כן, נבדק ${escB(d)}`:c.st==='unknown'?`לא הצלחתי לבדוק (האתר לא ענה${c.n>1?` ${c.n} פעמים`:''}). כדאי לפתוח ולבדוק`:'נסגרה'}
 async function markClosed(id){track('job_closed_btn');const a=appOf(id);if(!a)return;const j=JOBS[a.jobId],now=new Date().toISOString();
-  j.closed_at=now;closedToHistory();save();closeSheet();refreshApps();
-  if(CLOUDM&&ME){try{const {data}=await SB.from('jobs').select('card').eq('user_id',ME.id).eq('id',a.jobId).maybeSingle();
-    if(data)await SB.from('jobs').update({card:Object.assign({},data.card,{closed_at:now,closed_by:'user'})}).eq('user_id',ME.id).eq('id',a.jobId)}catch(e){console.warn(e)}}}
+  j.closed_at=now;closedToHistory();save();closeSheet();refreshApps();closeInCloud(a.jobId,now)}
+async function closeInCloud(jobId,now){   // דורון לא בודק אותה שוב, והסוכנים מפסיקים לעבוד עליה
+  if(CLOUDM&&ME){try{const {data}=await SB.from('jobs').select('card').eq('user_id',ME.id).eq('id',jobId).maybeSingle();
+    if(data)await SB.from('jobs').update({card:Object.assign({},data.card,{closed_at:now,closed_by:'user'})}).eq('user_id',ME.id).eq('id',jobId)}catch(e){console.warn(e)}}}
 function removeApp(id){
   const a=appOf(id);if(!a)return;const j=JOBS[a.jobId];
   S.apps=S.apps.filter(x=>x.id!==id);S.history=S.history||[];
@@ -332,12 +332,9 @@ function removeApp(id){
   lastRemoved=a.jobId;save();refreshApps();
   /* למה הוסרה: דורון לומד מזה כמו מדילוג (agent_core/taste.py). "נסגרה" = לא סיבה של טעם */
   const h=S.history[0];
-  toast(`הוסרה מההגשות. למה?`,{undo:()=>restoreApp(lastRemoved),ms:9000,chips:['נסגרה','בכירה מדי','לא התחום שלי','מיקום','החברה','לא מעניין'].map(t=>({t,fn:()=>{
-    track('remove_reason',{r:t});h.why=t;
-    if(t==='נסגרה'){h.reason='closed';j.closed_at=j.closed_at||new Date().toISOString()}
-    else{S.decisions[a.jobId]='skip';S.skipReasons[a.jobId]=t;S.skip=S.skip||{};
-      S.skip[a.jobId]={r:t,t:(j.title||'').slice(0,90),co:j.co||'',loc:(j.loc||'').slice(0,40),at:new Date().toISOString().slice(0,10),from:'apps'}}
-    save();refreshApps();toast(t==='נסגרה'?'עודכן: המשרה נסגרה':`תודה, ${N('hunter')} ילמד מזה`)}}))});
+  toast(`הוסרה מההגשות. למה?`,{undo:()=>restoreApp(lastRemoved),ms:9000,chips:[{t:'נסגרה',fn:()=>{
+      track('remove_reason',{r:'נסגרה'});h.why='נסגרה';h.reason='closed';j.closed_at=j.closed_at||new Date().toISOString();save();refreshApps();closeInCloud(a.jobId,j.closed_at);toast('עודכן: המשרה נסגרה')}},
+    ...whyChips(a.jobId,j,'apps',t=>{h.why=(S.skip[a.jobId]||{}).x||t;S.decisions[a.jobId]='skip';save();refreshApps();toast(`תודה, ${N('hunter')} ילמד מזה`)})]});
 }
 function restoreApp(jobId){
   const h=(S.history||[]).find(x=>x.jobId===jobId);if(!h)return;
