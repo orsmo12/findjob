@@ -48,12 +48,12 @@ def main(idx=None, days=10):
     jobs = get("jobs", select="card,fit,decision,created_at", user_id=f"eq.{uid}", created_at=f"gte.{since}", order="created_at.desc")
     shown = [j for j in jobs if j.get("decision") != "filtered"]
     print(f"\nמשרות שהוצגו ב-{days} ימים: {len(shown)} | לפי מקור {dict(Counter((j['card'] or {}).get('src') for j in shown))}")
-    ages = [age((j["card"] or {}).get("posted")) for j in shown]
+    ages = [(j["card"] or {}).get("posted_days") if (j["card"] or {}).get("posted_days") is not None else age((j["card"] or {}).get("posted")) for j in shown]
     known = [x for x in ages if x is not None]
     print(f"   גיל מפרסום: ידוע ל-{len(known)}/{len(shown)}, מעל 30 יום {sum(x > 30 for x in known)}, מעל 90 {sum(x > 90 for x in known)}")
     for j in shown[:40]:
         c = j["card"] or {}
-        print(f"   {j['created_at'][5:10]} {str(j.get('decision') or 'ממתין'):<7} {float(j.get('fit') or 0):.1f} | {str(c.get('src'))[:12]:<12} | פורסם {str(c.get('posted') or c.get('posted_days') or '?')[:10]:<10} | {c.get('title', '')[:45]} @ {c.get('co', '')[:22]}")
+        print(f"   {j['created_at'][5:10]} {str(j.get('decision') or 'ממתין'):<7} {float(j.get('fit') or 0):.1f} | {str(c.get('src'))[:12]:<12} | לפני {str(c.get('posted_days') if c.get('posted_days') is not None else '?'):>3} ימים | {c.get('title', '')[:45]} @ {c.get('co', '')[:22]}")
 
 
 if __name__ == "__main__":
