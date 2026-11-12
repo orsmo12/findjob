@@ -965,7 +965,7 @@ a.person>svg{flex:0 0 18px;width:18px;height:18px;fill:none;stroke:var(--ink3);s
 .tour-card{position:fixed;left:14px;right:14px;max-width:380px;margin:auto;background:var(--tour-bg,#fff);color:var(--tour-ink,#1F2A30);border-radius:20px;padding:14px 16px 14px;
   box-shadow:0 24px 60px -12px rgba(0,0,0,.55);border-top:5px solid var(--hi)}
 .tour-card::before{content:'';position:fixed;left:calc(var(--ax) - 9px);width:18px;height:18px;background:var(--tour-bg,#fff);transform:rotate(45deg);margin-top:-14px}
-.tour-card.above::before,.tour-card.over::before{display:none}
+.tour-card.above::before,.tour-card.over::before,.tour-card.side::before{display:none}
 .tour-card{max-height:calc(100vh - 24px);overflow:auto}
 :root{--sat:env(safe-area-inset-top)}
 .tour-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
@@ -1100,11 +1100,11 @@ a.person>svg{flex:0 0 18px;width:18px;height:18px;fill:none;stroke:var(--ink3);s
    תפריט צד קבוע ולחיץ משמאל + אזור תוכן של 720px, הכל ממורכז. W = 272 (תפריט) + 16 (רווח) + 720 (תוכן) */
 @media (min-width:1024px){
   :root{--dk-l:max(0px,calc(50% - 504px));--dk-r:max(0px,calc(50% - 504px))}
-  #drawerOverlay,#drawerOverlay.open{position:fixed;inset:0 auto 0 var(--dk-l);width:272px;z-index:290;background:none;pointer-events:auto}
+  #drawerOverlay,#drawerOverlay.open{position:fixed;inset:0 auto 0 var(--dk-l);width:272px;z-index:150;background:none;pointer-events:auto}   /* מתחת לסיור (200), כדי שיוחשך איתו */
   #drawer,#drawerOverlay.open #drawer{position:absolute;inset:0;left:0;width:100%;transform:none;transition:none;box-shadow:none;border-right:1px solid var(--glass-brd);overflow-y:auto}
   #drawer .dr-x{display:none}
   #menuBtn{visibility:hidden}
-  #app{max-width:720px;margin:0 0 0 calc(var(--dk-l) + 288px)}
+  #app{max-width:720px;margin:0 auto 0 calc(var(--dk-l) + 288px)}   /* auto מימין: ב-RTL אחרת הדפדפן מתעלם מהשוליים משמאל */
   #topbar{left:calc(var(--dk-l) + 288px);transform:none;max-width:720px}
   #chatBtn{right:calc(var(--dk-r) + 16px)}
   #chatPop{right:calc(var(--dk-r) + 12px)}
@@ -1116,6 +1116,8 @@ a.person>svg{flex:0 0 18px;width:18px;height:18px;fill:none;stroke:var(--ink3);s
   .sheet.open .sheet-panel{opacity:1;visibility:visible}
   .dr-item{cursor:pointer}
 }
+
+.note-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:6px}.note-row .hint-line{font-size:12px;color:var(--ink3);margin:0}.note-row .btn{margin-inline-start:auto}@media (pointer:coarse){.note-kb{display:none}}
 
 </style>
 <link rel="manifest" href="/manifest.webmanifest">
@@ -2447,7 +2449,8 @@ function paintAppTab(id){
       ${REAL?tailorHtml(j):''}
       <div class="s-sec"><h4>עריכה</h4>
         <div class="field"><label for="edIv">מועד ראיון או שיחה</label><input id="edIv" value="${escB(a.iv||'')}" placeholder="למשל: רביעי, 14:00" onchange="appOf('${id}').iv=this.value.trim();save();refreshApps()"></div>
-        <div class="field"><label for="edNote">הערות שלי</label><textarea id="edNote" class="textbox" rows="3" placeholder="עם מי דיברתי, מה ביקשו, מה הלאה…" onchange="appOf('${id}').note=this.value;save()">${esc(a.note||'')}</textarea></div></div>
+        <div class="field"><label for="edNote">הערות שלי</label><textarea id="edNote" class="textbox" rows="3" placeholder="עם מי דיברתי, מה ביקשו, מה הלאה…" oninput="$('edNoteBtn').disabled=this.value===(appOf('${id}').note||'')" onkeydown="if(event.key==='Enter'&&!event.shiftKey&&matchMedia('(pointer:fine)').matches){event.preventDefault();saveNote('${id}')}">${esc(a.note||'')}</textarea>
+          <div class="note-row"><span class="hint-line note-kb">Enter לשמירה · Shift+Enter לשורה חדשה</span><button class="btn btn-sm btn-primary" id="edNoteBtn" disabled onclick="saveNote('${id}')">שמירה</button></div></div></div>
       <div class="s-sec"><a class="btn btn-ghost btn-block ext" href="${j.url||LI_URL+'jobs/'}" target="_blank" rel="noopener">פתח את המשרה${ICO.open}</a>
         ${CLOUDM?`<button class="btn btn-ghost btn-block" style="margin-top:8px" onclick="askAboutJob('${a.jobId}')">לשאול את ${escB(N('assistant'))} על המשרה</button>`:''}
         ${CLOUDM&&a.status==='saved'?`<button class="btn btn-ghost btn-block" style="margin-top:8px" onclick="prepNow()">${ICO.spark||''}להכין עכשיו</button><button class="btn btn-ghost btn-block" style="margin-top:8px" onclick="markClosed('${id}')">המשרה נסגרה</button>`:''}
@@ -2695,6 +2698,8 @@ function storiesHtml(){
     <button class="btn btn-sm btn-ghost btn-block" style="margin-top:8px" onclick="editStory()">להוסיף סיפור</button></section>`;
 }
 
+function saveNote(id){const a=appOf(id),t=$('edNote');if(!a||!t)return;a.note=t.value.trim();save();refreshApps();
+  $('edNoteBtn').disabled=true;toast(a.note?'ההערה נשמרה':'ההערה נמחקה')}
 /* ═════════ הסרה בהחלקה + היסטוריה ═════════ */
 let lastRemoved=null;
 /* האם המשרה עדיין פתוחה: מה שדורון בדק בבוקר */
@@ -2711,21 +2716,28 @@ function removeApp(id){
   S.history.unshift({jobId:a.jobId,co:j.co,title:j.title,url:j.url,reason:'removed',date:new Date().toISOString(),app:a});
   if(S.decisions[a.jobId]==='save')S.decisions[a.jobId]='removed';  // הסוכנים מפסיקים לעבוד עליה
   lastRemoved=a.jobId;save();refreshApps();
-  toast(`${j.title} הוסרה מההגשות`,{undo:()=>restoreApp(lastRemoved),ms:5200});
+  /* למה הוסרה: דורון לומד מזה כמו מדילוג (agent_core/taste.py). "נסגרה" = לא סיבה של טעם */
+  const h=S.history[0];
+  toast(`הוסרה מההגשות. למה?`,{undo:()=>restoreApp(lastRemoved),ms:9000,chips:['נסגרה','בכירה מדי','לא התחום שלי','מיקום','החברה','לא מעניין'].map(t=>({t,fn:()=>{
+    track('remove_reason',{r:t});h.why=t;
+    if(t==='נסגרה'){h.reason='closed';j.closed_at=j.closed_at||new Date().toISOString()}
+    else{S.decisions[a.jobId]='skip';S.skipReasons[a.jobId]=t;S.skip=S.skip||{};
+      S.skip[a.jobId]={r:t,t:(j.title||'').slice(0,90),co:j.co||'',loc:(j.loc||'').slice(0,40),at:new Date().toISOString().slice(0,10),from:'apps'}}
+    save();refreshApps();toast(t==='נסגרה'?'עודכן: המשרה נסגרה':`תודה, ${N('hunter')} ילמד מזה`)}}))});
 }
 function restoreApp(jobId){
   const h=(S.history||[]).find(x=>x.jobId===jobId);if(!h)return;
   if(h.reason==='closed'){toast('המשרה נסגרה, אי אפשר להחזיר אותה להגשות');return}
   S.history=S.history.filter(x=>x!==h);
   S.apps.unshift(h.app||{id:'a-'+jobId,jobId,status:'saved',date:new Date().toISOString(),letter:''});
-  S.decisions[jobId]='save';save();refreshApps();toast('המשרה חזרה להגשות');
+  S.decisions[jobId]='save';delete S.skipReasons[jobId];if(S.skip)delete S.skip[jobId];save();refreshApps();toast('המשרה חזרה להגשות');
 }
 function historyHtml(onlyIfAny){
   const H=(S.history||[]).filter(h=>JOBS[h.jobId]||h.title);
   if(!H.length)return'';
   const why={closed:'נסגרה למועמדים',removed:'הסרת'};
   return`<details class="history"${onlyIfAny?' open':''}><summary>היסטוריה <b class="num">${H.length}</b></summary>
-    ${H.map(h=>`<div class="hist-row"><span class="tx"><b dir="auto">${escB(h.title)}</b><span>${escB(h.co)} · ${why[h.reason]||''} · ${new Date(h.date).toLocaleDateString('he-IL')}</span></span>
+    ${H.map(h=>`<div class="hist-row"><span class="tx"><b dir="auto">${escB(h.title)}</b><span>${escB(h.co)} · ${why[h.reason]||''}${h.why&&h.why!=='נסגרה'?`: ${escB(h.why)}`:''} · ${new Date(h.date).toLocaleDateString('he-IL')}</span></span>
       ${h.reason==='removed'?`<button class="btn btn-sm btn-ghost" onclick="restoreApp('${h.jobId}')">להחזיר</button>`:h.url?`<a class="btn btn-sm btn-ghost ext" href="${escB(h.url)}" target="_blank" rel="noopener">למודעה${ICO.open}</a>`:''}</div>`).join('')}
   </details>`;
 }
@@ -3330,7 +3342,7 @@ function tourMain(){const q=queue().length,a=ans(),sw=domainOf(a)==='פיתוח 
     {sel:'#menuBtn',t:'הכל בתפריט',d:'משרות, הגשות, הכנה לראיון, LinkedIn והמשרד. שום דבר לא נשלח בשמך בלי שתלחץ בעצמך. הסיור נפתח שוב מהתפריט.'},
   ].filter(Boolean)}
 const PAGE_TIPS={
-  jobs:[{sel:'#deck .jcard',t:'ככה מחליטים',d:'ימינה = לשמור (הצוות מכין מכתב, סקירה והכנה). שמאלה = לדלג. לחיצה על הכרטיס = כל הפרטים ולמה הציון.'},
+  jobs:[{sel:'#deck .jcard:not([aria-hidden])',t:'ככה מחליטים',d:'ימינה = לשמור (הצוות מכין מכתב, סקירה והכנה). שמאלה = לדלג. לחיצה על הכרטיס = כל הפרטים ולמה הציון.'},
         {sel:'#addJobBtn',t:'מצאת משרה בעצמך?',d:'מדביקים קישור, ודורון מדרג אותה כמו כל משרה אחרת.'}],
   apps:[{sel:'#appsList .app',t:'המשרות ששמרת',d:'בכל משרה: ערכת הגשה (מכתב, פרטים, מילוי טופס), הכנה לראיון וסקירת החברה. מסמנים "הגשתי" אחרי ששלחת.'},
         {sel:'#appsList > .btn',t:'לא רוצה לחכות?',d:'"לעדכן הכל עכשיו" מריץ את הסוכנים רק בשבילך. בדרך כלל 2 עד 4 דקות.'}],
@@ -3354,7 +3366,10 @@ function tourShow(){
   if(tourKind!=='main'&&curPg!==tourKind){tourAbortFor(curPg);return}
   const st=tourSteps[tourI],el=document.querySelector(st.sel);if(!tourVisible(el)){tourNext();return}
   const rm=matchMedia('(prefers-reduced-motion:reduce)').matches;
-  el.scrollIntoView({block:'center',behavior:rm?'auto':'smooth'});
+  /* גוללים רק בתוך אזור גלילה אמיתי (.scroll). scrollIntoView גלל גם מסכים עם overflow:hidden (משרות),
+     והתוכן נשאר מוזז מתחת לסרגל העליון עם כותרת חתוכה גם אחרי הסיור */
+  const sc=el.closest('.scroll');if(sc){const a=el.getBoundingClientRect(),b=sc.getBoundingClientRect();
+    sc.scrollBy({top:a.top+a.height/2-(b.top+b.height/2),behavior:rm?'auto':'smooth'})}
   setTimeout(()=>{const r=el.getBoundingClientRect(),pad=8,vh=innerHeight,below=r.top+r.height/2<vh/2;
     let w=$('tour');if(!w){w=document.createElement('div');w.id='tour';document.body.appendChild(w);document.addEventListener('keydown',tourKey)}
     const last=tourI===tourSteps.length-1,ax=Math.max(28,Math.min(innerWidth-28,r.left+r.width/2));
@@ -3370,6 +3385,11 @@ function tourPlace(c,r,pad,below){const vh=innerHeight,m=12,gap=pad+14,h=Math.mi
   const tb=$('topbar'),top0=tb&&tb.offsetParent!==null?Math.max(0,tb.getBoundingClientRect().bottom-m+6):0;   // לא מתחת לסרגל העליון
   const fitB=vh-r.bottom-gap>=h+m,fitA=r.top-gap-top0>=h+m;let top,cls;
   if(fitB&&(below||!fitA)){top=r.bottom+gap;cls='below'}else if(fitA){top=r.top-gap-h;cls='above'}else{top=vh-h-m;cls='over'}
+  /* מחשב: החלון ליד המטרה ולא באמצע המסך. אם יש מקום בצד — בצד, כדי לא להסתיר כפתורים (כרטיס משרה) */
+  const vw=innerWidth,cw=Math.min(380,vw-2*m);
+  if(vw>=1024){const side=r.left-gap-cw>=m?r.left-gap-cw:vw-r.right-gap-cw>=m?r.right+gap:null;
+    if(side!==null&&cls!=='below'){c.style.left=side+'px';c.style.right='auto';c.style.margin='0';cls='side';top=r.top+Math.min(r.height,vh)/2-h/2}
+    else{c.style.left=Math.max(m,Math.min(vw-cw-m,r.left+r.width/2-cw/2))+'px';c.style.right='auto';c.style.margin='0'}}
   c.style.top=Math.max(m+top0,Math.min(top,vh-h-m))+'px';c.className='tour-card '+cls;c.style.visibility=''}
 
 /* ═════════ CLOUD — חיבור ל-Supabase (רק בגרסה המאוחסנת) ═════════

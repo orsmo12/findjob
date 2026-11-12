@@ -223,7 +223,7 @@ function tourMain(){const q=queue().length,a=ans(),sw=domainOf(a)==='פיתוח 
     {sel:'#menuBtn',t:'הכל בתפריט',d:'משרות, הגשות, הכנה לראיון, LinkedIn והמשרד. שום דבר לא נשלח בשמך בלי שתלחץ בעצמך. הסיור נפתח שוב מהתפריט.'},
   ].filter(Boolean)}
 const PAGE_TIPS={
-  jobs:[{sel:'#deck .jcard',t:'ככה מחליטים',d:'ימינה = לשמור (הצוות מכין מכתב, סקירה והכנה). שמאלה = לדלג. לחיצה על הכרטיס = כל הפרטים ולמה הציון.'},
+  jobs:[{sel:'#deck .jcard:not([aria-hidden])',t:'ככה מחליטים',d:'ימינה = לשמור (הצוות מכין מכתב, סקירה והכנה). שמאלה = לדלג. לחיצה על הכרטיס = כל הפרטים ולמה הציון.'},
         {sel:'#addJobBtn',t:'מצאת משרה בעצמך?',d:'מדביקים קישור, ודורון מדרג אותה כמו כל משרה אחרת.'}],
   apps:[{sel:'#appsList .app',t:'המשרות ששמרת',d:'בכל משרה: ערכת הגשה (מכתב, פרטים, מילוי טופס), הכנה לראיון וסקירת החברה. מסמנים "הגשתי" אחרי ששלחת.'},
         {sel:'#appsList > .btn',t:'לא רוצה לחכות?',d:'"לעדכן הכל עכשיו" מריץ את הסוכנים רק בשבילך. בדרך כלל 2 עד 4 דקות.'}],
@@ -247,7 +247,10 @@ function tourShow(){
   if(tourKind!=='main'&&curPg!==tourKind){tourAbortFor(curPg);return}
   const st=tourSteps[tourI],el=document.querySelector(st.sel);if(!tourVisible(el)){tourNext();return}
   const rm=matchMedia('(prefers-reduced-motion:reduce)').matches;
-  el.scrollIntoView({block:'center',behavior:rm?'auto':'smooth'});
+  /* גוללים רק בתוך אזור גלילה אמיתי (.scroll). scrollIntoView גלל גם מסכים עם overflow:hidden (משרות),
+     והתוכן נשאר מוזז מתחת לסרגל העליון עם כותרת חתוכה גם אחרי הסיור */
+  const sc=el.closest('.scroll');if(sc){const a=el.getBoundingClientRect(),b=sc.getBoundingClientRect();
+    sc.scrollBy({top:a.top+a.height/2-(b.top+b.height/2),behavior:rm?'auto':'smooth'})}
   setTimeout(()=>{const r=el.getBoundingClientRect(),pad=8,vh=innerHeight,below=r.top+r.height/2<vh/2;
     let w=$('tour');if(!w){w=document.createElement('div');w.id='tour';document.body.appendChild(w);document.addEventListener('keydown',tourKey)}
     const last=tourI===tourSteps.length-1,ax=Math.max(28,Math.min(innerWidth-28,r.left+r.width/2));
@@ -263,4 +266,9 @@ function tourPlace(c,r,pad,below){const vh=innerHeight,m=12,gap=pad+14,h=Math.mi
   const tb=$('topbar'),top0=tb&&tb.offsetParent!==null?Math.max(0,tb.getBoundingClientRect().bottom-m+6):0;   // לא מתחת לסרגל העליון
   const fitB=vh-r.bottom-gap>=h+m,fitA=r.top-gap-top0>=h+m;let top,cls;
   if(fitB&&(below||!fitA)){top=r.bottom+gap;cls='below'}else if(fitA){top=r.top-gap-h;cls='above'}else{top=vh-h-m;cls='over'}
+  /* מחשב: החלון ליד המטרה ולא באמצע המסך. אם יש מקום בצד — בצד, כדי לא להסתיר כפתורים (כרטיס משרה) */
+  const vw=innerWidth,cw=Math.min(380,vw-2*m);
+  if(vw>=1024){const side=r.left-gap-cw>=m?r.left-gap-cw:vw-r.right-gap-cw>=m?r.right+gap:null;
+    if(side!==null&&cls!=='below'){c.style.left=side+'px';c.style.right='auto';c.style.margin='0';cls='side';top=r.top+Math.min(r.height,vh)/2-h/2}
+    else{c.style.left=Math.max(m,Math.min(vw-cw-m,r.left+r.width/2-cw/2))+'px';c.style.right='auto';c.style.margin='0'}}
   c.style.top=Math.max(m+top0,Math.min(top,vh-h-m))+'px';c.className='tour-card '+cls;c.style.visibility=''}

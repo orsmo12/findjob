@@ -63,7 +63,8 @@ function paintAppTab(id){
       ${REAL?tailorHtml(j):''}
       <div class="s-sec"><h4>עריכה</h4>
         <div class="field"><label for="edIv">מועד ראיון או שיחה</label><input id="edIv" value="${escB(a.iv||'')}" placeholder="למשל: רביעי, 14:00" onchange="appOf('${id}').iv=this.value.trim();save();refreshApps()"></div>
-        <div class="field"><label for="edNote">הערות שלי</label><textarea id="edNote" class="textbox" rows="3" placeholder="עם מי דיברתי, מה ביקשו, מה הלאה…" onchange="appOf('${id}').note=this.value;save()">${esc(a.note||'')}</textarea></div></div>
+        <div class="field"><label for="edNote">הערות שלי</label><textarea id="edNote" class="textbox" rows="3" placeholder="עם מי דיברתי, מה ביקשו, מה הלאה…" oninput="$('edNoteBtn').disabled=this.value===(appOf('${id}').note||'')" onkeydown="if(event.key==='Enter'&&!event.shiftKey&&matchMedia('(pointer:fine)').matches){event.preventDefault();saveNote('${id}')}">${esc(a.note||'')}</textarea>
+          <div class="note-row"><span class="hint-line note-kb">Enter לשמירה · Shift+Enter לשורה חדשה</span><button class="btn btn-sm btn-primary" id="edNoteBtn" disabled onclick="saveNote('${id}')">שמירה</button></div></div></div>
       <div class="s-sec"><a class="btn btn-ghost btn-block ext" href="${j.url||LI_URL+'jobs/'}" target="_blank" rel="noopener">פתח את המשרה${ICO.open}</a>
         ${CLOUDM?`<button class="btn btn-ghost btn-block" style="margin-top:8px" onclick="askAboutJob('${a.jobId}')">לשאול את ${escB(N('assistant'))} על המשרה</button>`:''}
         ${CLOUDM&&a.status==='saved'?`<button class="btn btn-ghost btn-block" style="margin-top:8px" onclick="prepNow()">${ICO.spark||''}להכין עכשיו</button><button class="btn btn-ghost btn-block" style="margin-top:8px" onclick="markClosed('${id}')">המשרה נסגרה</button>`:''}
@@ -311,6 +312,8 @@ function storiesHtml(){
     <button class="btn btn-sm btn-ghost btn-block" style="margin-top:8px" onclick="editStory()">להוסיף סיפור</button></section>`;
 }
 
+function saveNote(id){const a=appOf(id),t=$('edNote');if(!a||!t)return;a.note=t.value.trim();save();refreshApps();
+  $('edNoteBtn').disabled=true;toast(a.note?'ההערה נשמרה':'ההערה נמחקה')}
 /* ═════════ הסרה בהחלקה + היסטוריה ═════════ */
 let lastRemoved=null;
 /* האם המשרה עדיין פתוחה: מה שדורון בדק בבוקר */
@@ -327,21 +330,28 @@ function removeApp(id){
   S.history.unshift({jobId:a.jobId,co:j.co,title:j.title,url:j.url,reason:'removed',date:new Date().toISOString(),app:a});
   if(S.decisions[a.jobId]==='save')S.decisions[a.jobId]='removed';  // הסוכנים מפסיקים לעבוד עליה
   lastRemoved=a.jobId;save();refreshApps();
-  toast(`${j.title} הוסרה מההגשות`,{undo:()=>restoreApp(lastRemoved),ms:5200});
+  /* למה הוסרה: דורון לומד מזה כמו מדילוג (agent_core/taste.py). "נסגרה" = לא סיבה של טעם */
+  const h=S.history[0];
+  toast(`הוסרה מההגשות. למה?`,{undo:()=>restoreApp(lastRemoved),ms:9000,chips:['נסגרה','בכירה מדי','לא התחום שלי','מיקום','החברה','לא מעניין'].map(t=>({t,fn:()=>{
+    track('remove_reason',{r:t});h.why=t;
+    if(t==='נסגרה'){h.reason='closed';j.closed_at=j.closed_at||new Date().toISOString()}
+    else{S.decisions[a.jobId]='skip';S.skipReasons[a.jobId]=t;S.skip=S.skip||{};
+      S.skip[a.jobId]={r:t,t:(j.title||'').slice(0,90),co:j.co||'',loc:(j.loc||'').slice(0,40),at:new Date().toISOString().slice(0,10),from:'apps'}}
+    save();refreshApps();toast(t==='נסגרה'?'עודכן: המשרה נסגרה':`תודה, ${N('hunter')} ילמד מזה`)}}))});
 }
 function restoreApp(jobId){
   const h=(S.history||[]).find(x=>x.jobId===jobId);if(!h)return;
   if(h.reason==='closed'){toast('המשרה נסגרה, אי אפשר להחזיר אותה להגשות');return}
   S.history=S.history.filter(x=>x!==h);
   S.apps.unshift(h.app||{id:'a-'+jobId,jobId,status:'saved',date:new Date().toISOString(),letter:''});
-  S.decisions[jobId]='save';save();refreshApps();toast('המשרה חזרה להגשות');
+  S.decisions[jobId]='save';delete S.skipReasons[jobId];if(S.skip)delete S.skip[jobId];save();refreshApps();toast('המשרה חזרה להגשות');
 }
 function historyHtml(onlyIfAny){
   const H=(S.history||[]).filter(h=>JOBS[h.jobId]||h.title);
   if(!H.length)return'';
   const why={closed:'נסגרה למועמדים',removed:'הסרת'};
   return`<details class="history"${onlyIfAny?' open':''}><summary>היסטוריה <b class="num">${H.length}</b></summary>
-    ${H.map(h=>`<div class="hist-row"><span class="tx"><b dir="auto">${escB(h.title)}</b><span>${escB(h.co)} · ${why[h.reason]||''} · ${new Date(h.date).toLocaleDateString('he-IL')}</span></span>
+    ${H.map(h=>`<div class="hist-row"><span class="tx"><b dir="auto">${escB(h.title)}</b><span>${escB(h.co)} · ${why[h.reason]||''}${h.why&&h.why!=='נסגרה'?`: ${escB(h.why)}`:''} · ${new Date(h.date).toLocaleDateString('he-IL')}</span></span>
       ${h.reason==='removed'?`<button class="btn btn-sm btn-ghost" onclick="restoreApp('${h.jobId}')">להחזיר</button>`:h.url?`<a class="btn btn-sm btn-ghost ext" href="${escB(h.url)}" target="_blank" rel="noopener">למודעה${ICO.open}</a>`:''}</div>`).join('')}
   </details>`;
 }
