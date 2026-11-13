@@ -33,6 +33,7 @@ def test_fill_rule_spares_experienced_users():
 def test_cap_rise_uses_range_top():
     c = {"dims": {"level": "short"}, "gaps": ["במודעה נדרשות 5 שנות ניסיון. יותר ממה שיש לך"]}
     assert S.cap_rise(c, {"exp": "3–5 שנים"}) and not S.cap_rise({**c, "gaps": ["במודעה נדרשות 8 שנות ניסיון."]}, {"exp": "3–5 שנים"})
+    assert not S.cap_rise({**c, "gaps": ["במודעה נדרשות 1 שנות ניסיון."]}, {"exp": "אין עדיין"})   # בלי ניסיון: בלי שינוי
 
 
 def test_hands_on_only_when_not_chosen():

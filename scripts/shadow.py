@@ -63,7 +63,8 @@ def cap_rise(card: dict, a: dict) -> bool:
         return False
     m = YEARS.search(" ".join(card.get("gaps") or []))
     top = EXP_MAX_YEARS.get(a.get("exp") or "")
-    return bool(m and top and int(m.group(1)) <= top)
+    has = (a.get("exp") or "") not in ("", "אין עדיין", "פחות משנה")   # רק מי שסימן טווח ניסיון; בלי ניסיון — התקרה נשארת
+    return bool(has and m and top and int(m.group(1)) <= top)
 
 
 def hands_on_hide(card: dict, plan: dict) -> bool:
@@ -89,7 +90,10 @@ def learn_new(rows: list[dict], skips: dict, off: list, plan: dict) -> dict:
 def show(name: str, hit: list[dict]) -> None:
     d = Counter(j.get("decision") or "ממתין" for j in hit)
     bad = [j for j in hit if j.get("decision") in KEEP]
-    print(f"   {name}: {len(hit)} משרות | {dict(d)} | {'⚠️ פוגע ב-' + str(len(bad)) + ' שנשמרו/הוגשו' if bad else '✓ לא פוגע במשרות שנשמרו'}")
+    up = name.startswith("עולות")
+    verdict = (f"✓ {len(bad)} מהן נשמרו — הכלל מתקן" if up and bad else "" if up
+               else f"⚠️ פוגע ב-{len(bad)} שנשמרו/הוגשו" if bad else "✓ לא פוגע במשרות שנשמרו")
+    print(f"   {name}: {len(hit)} משרות | {dict(d)} | {verdict}")
     for j in (bad or hit)[:5]:
         c = j.get("card") or {}
         print(f"      {float(j.get('fit') or 0):.1f} {j.get('decision') or 'ממתין':<7} {str(c.get('title'))[:55]}")
