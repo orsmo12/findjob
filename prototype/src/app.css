@@ -272,6 +272,7 @@ body.drawer-open .burger span:nth-child(3){top:6px;transform:rotate(-45deg)}
 
 /* ── tracker ── */
 #seg:empty{display:none}
+.li-tabs{margin:12px -14px 4px}.li-panel{display:none}.li-panel.on{display:block}.li-panel>.sec-h:first-child{margin-top:8px}
 .seg{display:flex;gap:7px;overflow-x:auto;margin:0 -14px;padding:2px 14px 4px}
 .seg::-webkit-scrollbar{display:none}
 .seg .chip{height:34px;padding:0 13px;font-size:13.5px;background:var(--glass-strong);border:1px solid var(--glass-brd)}

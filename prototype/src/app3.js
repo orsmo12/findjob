@@ -232,7 +232,19 @@ function openStatus(id){
 function setStatus(id,k){const a=appOf(id);if(a.status!==k){stepsOf(a);if(k==='rejected')a.stop=a.status;addStep(a,k);a.status=k;if(k==='applied')a.date=new Date().toISOString();save()}refreshApps();if(REAL&&(k==='interview'||k==='screening')){closeSheet();openPrep(appOf(id).jobId)}else openApp(id,(k==='interview'||k==='screening')?'prep':'details');toast(`השלב עודכן: ${STATUSES[k]}`)}
 
 /* ═════════ LinkedIn ═════════ */
+/* LinkedIn בלשוניות: כל כותרת אזור (.sec-h) הופכת ללשונית, כדי שלא נצטרך לגלול עמוד ארוך */
+let liTab=0;
+function liTabs(){const box=$('liScroll');if(!box)return;const hs=[...box.querySelectorAll(':scope > .sec-h')];if(hs.length<2)return;
+  const short=t=>/פוסטים/.test(t)?'פוסטים':/פרופיל/.test(t)?'הפרופיל':/הפוסט/.test(t)?'הפוסט שלך':/אנשים/.test(t)?'אנשים':t;
+  liTab=Math.min(liTab,hs.length-1);
+  hs.forEach((h,i)=>{let n=h.nextElementSibling;const els=[h];while(n&&!n.classList.contains('sec-h')){els.push(n);n=n.nextElementSibling}
+    const w=document.createElement('div');w.className='li-panel'+(i===liTab?' on':'');w.setAttribute('role','tabpanel');h.before(w);els.forEach(e=>w.appendChild(e))});
+  const bar=document.createElement('div');bar.className='seg li-tabs';bar.setAttribute('role','tablist');
+  bar.innerHTML=hs.map((h,i)=>`<button class="chip${i===liTab?' sel':''}" role="tab" aria-selected="${i===liTab}" onclick="liTab=${i};renderLinkedIn()">${escB(short(h.querySelector('h2').textContent))}</button>`).join('');
+  box.querySelector('.li-panel').before(bar)}
 function renderLinkedIn(){
+  renderLinkedInInner();liTabs()}
+function renderLinkedInInner(){
   if(CLOUDM){renderLinkedInReal();return}
   const L=S.li, c=Math.min(L.comments,WEEK_GOAL.comments), sc=liScore();
   $('liScroll').innerHTML=`
