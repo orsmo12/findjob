@@ -176,7 +176,7 @@ function renderHome(){
     ${S.apps.some(a=>a.status!=='saved')?funnelHtml():''}
     <button class="today glass" id="qCard" onclick="openQuestions()"></button>
     <section class="todo glass" id="todoBox" aria-label="המשימות שלי"></section>`;
-  renderQCard();renderTodo();
+  renderQCard();renderTodo();if(typeof askFromHash==='function')setTimeout(askFromHash,0);
 }
 function renderQCard(){
   const el=$('qCard');if(!el)return;const {done,total}=qProgress();

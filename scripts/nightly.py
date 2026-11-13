@@ -221,6 +221,21 @@ for u in users:
             r_ = P.send(ustate.get("push"), P.message(feed["stats"]["shown"], str(team.get("hunter") or "דורון")))
             if r_ != "skip":
                 print(f"{u['user_id'][:8]}: התראה {r_}")
+        try:   # מסלול הגשה: "שמעת מ-X?" עם כפתורים. מקסימום אחת ביום, רק 09:00–20:00 שעון ישראל
+            from datetime import datetime as _dt
+            from zoneinfo import ZoneInfo
+            from agent_core import push as P
+            now_il = _dt.now(ZoneInfo("Asia/Jerusalem"))
+            if ustate.get("push") and 9 <= now_il.hour < 20:
+                mem = db.latest_plan(u["user_id"], "push_ask") or {}
+                today = now_il.date().isoformat()
+                if mem.get("last") != today:
+                    cards = {r["id"]: r.get("card") or {} for r in db.all_jobs(u["user_id"], days=90)}
+                    pay, aid = P.ask_payload(ustate.get("apps") or [], cards, mem.get("asked") or {}, today)
+                    if pay and P.send(ustate.get("push"), pay) == "sent":
+                        db.save_memory(u["user_id"], "push_ask", {"last": today, "asked": {**(mem.get("asked") or {}), aid: today}})
+        except Exception as e:  # noqa: BLE001
+            print(f"התראת הגשה: {type(e).__name__}")
         if H.available():  # דורון: משרה בציון גבוה מאוד — גיל וקובי מתחילים לעבוד עליה מיד
             existing = H._open(u["user_id"])
             for j in H.high_fit(feed["jobs"]):

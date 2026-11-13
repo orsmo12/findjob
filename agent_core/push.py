@@ -32,3 +32,30 @@ def send(sub: dict | None, payload: dict) -> str:
         return "gone" if code in (404, 410) else "error"
     except Exception:  # noqa: BLE001
         return "error"
+
+
+def ask_payload(apps: list[dict], cards: dict, asked: dict, today: str) -> tuple[dict | None, str]:
+    """מסלול הגשה: שאלה אחת ביום עם כפתורים. שבוע אחרי הגשה, או יום אחרי שיחה/מטלה/ראיון.
+    asked: {app_id: תאריך ששאלנו} — לא שואלים על אותה הגשה פעמיים בשבוע. מחזיר (payload, app_id) או (None, "")."""
+    from datetime import date, datetime
+    d0 = date.fromisoformat(today)
+    days = lambda iso: (d0 - datetime.fromisoformat(str(iso).replace("Z", "+00:00")).date()).days if iso else -1
+    for a in apps or []:
+        st, aid = a.get("status"), a.get("id")
+        if not aid or (a.get("snooze") and str(a["snooze"])[:10] > today):
+            continue
+        if asked.get(aid) and days(asked[aid]) < 7:
+            continue
+        steps = a.get("steps") or []
+        last = steps[-1]["at"] if steps else a.get("date")
+        co = (cards.get(a.get("jobId")) or {}).get("co") or "החברה"
+        if st == "applied" and 7 <= days(last) < 30:
+            q = f"שמעת מ-{co}?"
+        elif st in ("screening", "task", "interview") and a.get("when") and days(a["when"]) >= 1:
+            q = f"איך היה ב-{co}?"
+        else:
+            continue
+        return ({"title": "findjob", "body": q, "url": f"/#ask={aid}", "tag": "ask-" + aid,
+                 "actions": [{"action": "yes", "title": "ממשיכים איתי" if st == "applied" else "עברתי לשלב הבא"},
+                             {"action": "no", "title": "לא ממשיכים"}, {"action": "wait", "title": "עוד אין תשובה"}]}, aid)
+    return None, ""

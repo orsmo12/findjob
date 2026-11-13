@@ -48,6 +48,26 @@ function openAsk(id,queue){if(queue)askQ=queue.slice();const a=appOf(id),j=JOBS[
     ${askHtml(a)}${askQ.length>1?`<p class="hint-line" style="margin-top:10px">עוד ${askQ.length-1} אחרי זו</p>`:''}`);
   document.querySelectorAll('#sheet .ask-btns button').forEach(b=>b.addEventListener('click',()=>setTimeout(nextAsk,400)))}
 function nextAsk(){askQ.shift();const n=askQ.find(id=>appOf(id)&&askOf(appOf(id)));if(n&&!document.querySelector('#sheet .next-grid'))openAsk(n)}
+/* תשובה מהתראה: /#ask=<id>&a=yes|no|wait. בלי כפתור (iOS): נפתח חלון השאלה */
+function askFromHash(){const m=(location.hash||'').match(/ask=([^&]+)(?:&a=(\w+))?/);if(!m)return;const a=appOf(decodeURIComponent(m[1]));
+  history.replaceState(null,'',location.pathname+location.search);if(!a)return;track('push_answer',{a:m[2]||'open'});
+  if(m[2]==='yes'){if(curPg!=='apps')goPage('apps');openNext(a.id)}else if(m[2]==='no')endApp(a.id,'rejected');else if(m[2]==='wait')snoozeAsk(a.id);else openAsk(a.id)}
+/* הדבקת מייל מהחברה: שי מסווג ומציע עדכון. רק באישור */
+const MAIL_K={rejection:['rejected','לא ממשיכים'],screening:['screening','שיחה ראשונה'],task:['task','מטלה או מבחן'],interview:['interview','ראיון'],offer:['offer','הצעה']};
+function openMail(id){const a=appOf(id),j=JOBS[a.jobId];
+  openSheet(`<h3 id="sheetTitle">הדבקת מייל מהחברה</h3><div class="sheet-sub">${escB(j.co)} · ${escB(N('assistant'))} יקרא ויציע עדכון. שום דבר לא משתנה בלי אישור</div>
+    <label for="mailTx" class="vh">המייל</label><textarea id="mailTx" class="textbox" rows="8" placeholder="הדבק כאן את המייל שקיבלת"></textarea>
+    <p class="hint-line" id="mailRes" aria-live="polite"></p><button class="btn btn-primary btn-block" id="mailBtn" onclick="parseMail('${id}')">לקרוא את המייל</button>`)}
+async function parseMail(id){const a=appOf(id),j=JOBS[a.jobId],t=($('mailTx').value||'').trim(),out=$('mailRes'),btn=$('mailBtn');
+  if(t.length<40){out.textContent='המייל קצר מדי';return}track('mail_paste');btnBusy(btn,true);out.textContent=`${N('assistant')} קורא…`;let d={};
+  try{const {data:{session}}=await SB.auth.getSession();const r=await fetch('/api/mailparse',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:t,co:j.co,title:j.title,token:session&&session.access_token})});d=await r.json().catch(()=>({}))}catch(e){d={error:'net'}}
+  btnBusy(btn,false);const k=MAIL_K[d.kind];
+  if(!k){out.textContent=d.error?'משהו השתבש. נסה שוב בעוד דקה.':`לא ברור מהמייל מה השלב הבא${d.summary?': '+d.summary:''}. אפשר לעדכן ידנית ב"שינוי שלב".`;return}
+  out.innerHTML=`${escB(d.summary||'')}<br><b>להציע: ${k[1]}${d.when?' · '+escB(whenTxt(d.when)):''}${d.contact?' · '+escB(d.contact):''}</b>`;
+  btn.textContent='לעדכן';btn.onclick=()=>{closeSheet();if(k[0]==='rejected'){endApp(id,'rejected');return}
+    const prev=JSON.stringify(a);if(k[0]==='interview')a.round=a.status==='interview'?(a.round||1)+1:1;
+    addStep(a,k[0],{by:'mail',...(d.contact?{note:d.contact}:{}),...(k[0]==='interview'?{round:a.round}:{})});a.status=k[0];a.when=d.when?new Date(d.when).toISOString():'';delete a.snooze;
+    save();refreshApps();toast(`עודכן מהמייל: ${stLabel(a)}`,{undo:()=>{const o=JSON.parse(prev);Object.keys(a).forEach(x=>delete a[x]);Object.assign(a,o);save();refreshApps()},ms:6000})}}
 function reviewWaiting(){const q=S.apps.filter(a=>groupOf(a)==='waiting'&&askOf(a)).map(a=>a.id);if(q.length)openAsk(q[0],q)}
 function trackHtml(a){if(a.status==='saved'||a.status==='closed')return'';
   const had=stepsOf(a).some(x=>x.k==='task')||a.status==='task',keys=TRACK.filter(k=>k!=='task'||had),
@@ -99,7 +119,7 @@ function renderApps(){S.apps.forEach(stepsOf);
       ${k==='waiting'&&nAsk>1?`<div class="review"><span>${nAsk} הגשות בלי עדכון</span><button class="btn btn-sm" onclick="reviewWaiting()">לעבור עליהן ←</button></div>`:''}
       ${by[k].map(appCard).join('')||'<p class="grp-empty">אין כאן כרגע</p>'}</section>`;
   $('appsList').innerHTML=line+prepBtn+`<div class="app-groups">${GRP.map(([k])=>col(k)).join('')}</div>`+historyHtml();
-  bindAppSwipes();
+  bindAppSwipes();setTimeout(askFromHash,0);
 }
 /* "מה השלב הבא?": 4 אפשרויות, "מתי?" (אפשר להשאיר ריק), שמירה. אחרי ראיון מוצע ראיון נוסף */
 const NEXT=[['screening','שיחה ראשונה','היכרות קצרה, בדרך כלל עם גיוס'],['task','מטלה או מבחן','מטלת בית, מבחן אונליין או שאלון'],['interview','ראיון','מקצועי, מנהל או HR'],['offer','הצעה','קיבלתי הצעה']];
@@ -197,7 +217,7 @@ function paintAppTab(id){
       <div class="s-sec"><a class="btn btn-ghost btn-block ext" href="${j.url||LI_URL+'jobs/'}" target="_blank" rel="noopener">פתח את המשרה${ICO.open}</a>
         ${CLOUDM?`<button class="btn btn-ghost btn-block" style="margin-top:8px" onclick="askAboutJob('${a.jobId}')">לשאול את ${escB(N('assistant'))} על המשרה</button>`:''}
         </div></details>
-      <div class="app-foot"><button class="btn btn-ghost" onclick="openStatus('${id}')">שינוי שלב</button><button class="btn btn-ghost" style="color:var(--rose)" onclick="closeSheet();removeApp('${id}')">הסרה</button></div>`;
+      <div class="app-foot">${CLOUDM&&!CLOSED.includes(a.status)&&a.status!=='saved'?`<button class="btn btn-ghost" onclick="openMail('${id}')">הדבקת מייל מהחברה</button>`:''}<button class="btn btn-ghost" onclick="openStatus('${id}')">שינוי שלב</button><button class="btn btn-ghost" style="color:var(--rose)" onclick="closeSheet();removeApp('${id}')">הסרה</button></div>`;
     tlFaces();
   }else if(appTab==='letter'){
     el.innerHTML=kitTabHtml(a,j,id);
