@@ -86,7 +86,7 @@ function appCard(a){const j=JOBS[a.jobId],g=groupOf(a),k=askOf(a);
     <button class="app-top" style="width:100%;text-align:right" onclick="openApp('${a.id}')" aria-label="${escB(j.title)} ב-${escB(j.co)}, ${stLabel(a)}, ${escB(nowTxt(a))}">
       ${logo(j)}<span class="app-info"><span class="app-title" dir="${dirOf(j.title)||'auto'}" style="display:block;text-align:right">${escB(j.title)}</span><span class="app-sub" style="display:block">${escB(j.co)} · ${escB(nowTxt(a))}${j.closed_at&&!CLOSED.includes(a.status)?' · המשרה נסגרה':''}</span></span>
       <span class="status st-${a.status}">${stLabel(a)}</span></button>
-    ${k?`<button class="ask-tag" onclick="openAsk('${a.id}')">${escB(k.q)} ←</button>`:''}
+    ${k&&g!=='waiting'?`<button class="ask-tag" onclick="openAsk('${a.id}')">${escB(k.q)} ←</button>`:''}
   </article></div>`}
 /* המספרים: בלוח הבקרה (משפך) ובשורה אחת במחשב. מסקנות רק מ-8 הגשות ו-4 תשובות */
 function funnelNums(){const live=S.apps.filter(a=>a.status!=='saved'&&a.status!=='closed'),n=k=>live.filter(a=>reached(a,k)).length;
@@ -116,7 +116,7 @@ function renderApps(){S.apps.forEach(stepsOf);
   const prepBtn=CLOUDM&&S.apps.some(a=>a.status==='saved')?`<button class="btn btn-sm btn-ghost btn-block" style="margin-bottom:10px" onclick="prepNow()">${ICO.spark||''}לעדכן הכל עכשיו</button>`:'';
   const f=funnelNums(),line=`<p class="apps-line">${GRP.map(([k,l])=>`${by[k].length} ${l}`).join(' · ')} · ${f.ivs} ראיונות · ${f.offers} הצעות</p>`;
   const col=k=>`<section class="app-group g-${k}${appGrp===k?' on':''}" role="tabpanel"><h3 class="grp-h">${GRP.find(x=>x[0]===k)[1]} <span class="num">${by[k].length}</span></h3>
-      ${k==='waiting'&&nAsk>1?`<div class="review"><span>${nAsk} הגשות בלי עדכון</span><button class="btn btn-sm" onclick="reviewWaiting()">לעבור עליהן ←</button></div>`:''}
+      ${k==='waiting'&&nAsk?`<button class="review-link" onclick="reviewWaiting()">קיבלת תשובה מאחת החברות? לעדכן ←</button>`:''}
       ${by[k].map(appCard).join('')||'<p class="grp-empty">אין כאן כרגע</p>'}</section>`;
   $('appsList').innerHTML=line+prepBtn+`<div class="app-groups">${GRP.map(([k])=>col(k)).join('')}</div>`+historyHtml();
   bindAppSwipes();setTimeout(askFromHash,0);

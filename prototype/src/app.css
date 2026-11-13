@@ -312,6 +312,7 @@ body.drawer-open .burger span:nth-child(3){top:6px;transform:rotate(-45deg)}
 .review{display:flex;align-items:center;justify-content:space-between;gap:10px;background:#FBEFD3;color:#5C4413;border-radius:var(--rad-m);padding:10px 12px;font-size:13px;margin-bottom:10px}
 .review .btn{background:#5C4413;color:#fff;border:0}
 .grp-h{font-size:13.5px;font-weight:600;color:var(--ink2);justify-content:space-between;gap:6px}.grp-h .num{color:var(--ink3);font-weight:500}
+.review-link{display:block;width:100%;text-align:right;background:none;border:0;font:inherit;font-size:13px;color:var(--ink2);padding:4px 4px 10px;min-height:36px;cursor:pointer}
 .grp-empty{font-size:13px;color:var(--ink3);padding:8px 4px}
 .app-head .ask{margin-top:4px}
 .app.soon{box-shadow:inset -4px 0 0 #F2C46D}
