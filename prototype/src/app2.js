@@ -131,17 +131,24 @@ function sinceBrief(t0){const out=[],seen=new Set();
   return out.slice(0,4)}
 function brLi(x,i,hide){const [lbl,cls]=BR_TONE[x.tone]||BR_TONE.update/* act ישן → עדכון */,go=BR_GO[x.go];
   return `<li class="b2-i ${cls}${hide?' b2-more':''}"${hide?' hidden':''}>${go?`<button onclick="${go}">`:'<div>'}<span class="b2-tag">${lbl}</span><span class="b2-t">${escB(x.t)}</span>${go?'<span class="b2-go" aria-hidden="true">‹</span></button>':'</div>'}</li>`}
-function shaiBrief(){const r=shaiToday();if(!r)return '';const b=r.stats.brief_ai,t0=new Date(r.created_at),since=sinceBrief(t0);
-  const items=b.items||[],main=items.filter(x=>x.tone!=='bg'),bg=items.filter(x=>x.tone==='bg'),SHOW=5;
-  const when=t0.toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'});
+/* "שי מעדכן אותך": 3 שורות קצרות (עד 2 שורות טקסט כל אחת), השאר ב"עוד" שנפתח במקום. מכתבים מאוחדים לשורה אחת */
+function brShort(t){t=String(t||'');const parts=t.split(/;\s*/);   // רשימת משרות ארוכה באנגלית → מספר + שמות החברות בלבד
+  if(parts.length>1){const cos=[...new Set(parts.map(x=>((/\sב-(.+?)(?:\.\s.*)?$/.exec(x)||[])[1]||'').trim()).filter(Boolean))];if(cos.length)return`${parts.length} משרות חדשות: ${cos.slice(0,3).join(', ')}${cos.length>3?` ועוד ${cos.length-3}`:''}`}
+  return t}
+function brMerge(list){const out=[],cos=[];list.forEach(x=>{const m=/^(?:מכתב פנייה מוכן ל-|הוכנו מכתבים חדשים ל-|מכתבים חדשים הוכנו:\s*)(.+)$/.exec(x.t||'');
+    if(m)cos.push(...m[1].split(/,\s*/));else out.push(x)});
+  if(cos.length){const u=[...new Set(cos.map(c=>c.trim()).filter(Boolean))];out.unshift({t:`מכתבי פנייה מוכנים: ${u.slice(0,3).join(', ')}${u.length>3?` ועוד ${u.length-3}`:''}`,tone:'update',go:'apps'})}
+  return out}
+function shaiBrief(){const r=shaiToday();if(!r)return '';const b=r.stats.brief_ai,t0=new Date(r.created_at);
+  const items=b.items||[],bg=items.filter(x=>x.tone==='bg'),SHOW=3;
+  const all=brMerge([...sinceBrief(t0),...items.filter(x=>x.tone!=='bg')]).map(x=>Object.assign({},x,{t:brShort(x.t)}));
+  const when=t0.toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'}),more=all.length-SHOW+(bg.length?1:0);
   return `<section class="brief b2" aria-labelledby="brH">
     <div class="b2-head"><span class="b2-av" aria-hidden="true">${escB((N('assistant')||'ש').slice(0,1))}</span><div><h2 id="brH">${escB(N('assistant'))} מעדכן אותך</h2><span>הסיכום של היום · ${escB(when)}</span></div></div>
     ${b.headline?`<p class="b2-hl">${escB(b.headline)}</p>`:''}
-    ${since.length?`<div class="b2-sec">מאז הבוקר</div><ul class="b2-list">${since.map((x,i)=>brLi(x,i,false)).join('')}</ul>`:''}
-    ${main.length?`${since.length?'<div class="b2-sec">הסיכום</div>':''}<ul class="b2-list">${main.map((x,i)=>brLi(x,i,i>=SHOW)).join('')}</ul>
-      ${main.length>SHOW?`<button class="br-toggle" onclick="const L=this.previousElementSibling,o=L.classList.toggle('all');L.querySelectorAll('.b2-more').forEach(l=>l.hidden=!o);this.textContent=o?'פחות':'עוד ${main.length-SHOW}'">עוד ${main.length-SHOW}</button>`:''}`
-      :(!since.length?'<p class="b2-quiet">יום שקט. אין משהו שדורש ממך פעולה.</p>':'')}
-    ${bg.length?`<p class="b2-bg">${bg.map(x=>escB(x.t)).join(' · ')}</p>`:''}
+    ${all.length?`<ul class="b2-list">${all.map((x,i)=>brLi(x,i,i>=SHOW)).join('')}${bg.length?`<li class="b2-more b2-bg" hidden>${bg.map(x=>escB(x.t)).join(' · ')}</li>`:''}</ul>
+      ${more>0?`<button class="br-toggle b2-tog" aria-expanded="false" onclick="const L=this.previousElementSibling,o=L.classList.toggle('all');L.querySelectorAll('.b2-more').forEach(l=>l.hidden=!o);this.setAttribute('aria-expanded',o);this.textContent=o?'פחות ▴':'עוד ${more} ▾'">עוד ${more} ▾</button>`:''}`
+      :'<p class="b2-quiet">יום שקט. אין משהו שדורש ממך פעולה.</p>'}
   </section>`}
 function briefItems(closed,sug){
   const out=[],day=Date.now()-864e5,seen=new Set();
