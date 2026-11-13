@@ -95,10 +95,40 @@ function saveNext(id){const a=appOf(id),prev=JSON.stringify(a),k=nextPick,w=$('n
 /* סיום: לא ממשיכים / התקבלתי / דחיתי. נשמר באיזה שלב נעצר (מזין את המשפך). ביטול 6 שניות */
 function endApp(id,k){const a=appOf(id),prev=JSON.stringify(a);if(k==='rejected')a.stop=a.status;
   addStep(a,k);a.status=k;a.when='';track('app_'+k);save();refreshApps();
-  const msg=k==='rejected'?`אין המשך בתהליך מול ${JOBS[a.jobId].co}. זה חלק מהדרך.`:k==='accepted'?'מזל טוב! 🎉':'עודכן: דחית את ההצעה';
+  if(k==='rejected'){afterRejectUndo(a,prev);return}
+  const msg=k==='accepted'?'מזל טוב! 🎉':'עודכן: דחית את ההצעה';
   toast(msg,{undo:()=>{const o=JSON.parse(prev);Object.keys(a).forEach(x=>delete a[x]);Object.assign(a,o);save();refreshApps()},ms:6000})}
+function afterRejectUndo(a,prev){const j=JOBS[a.jobId];
+  toast(`אין המשך בתהליך מול ${j.co}. זה חלק מהדרך.`,{ms:9000,undo:()=>{const o=JSON.parse(prev);Object.keys(a).forEach(x=>delete a[x]);Object.assign(a,o);save();refreshApps()},chips:[
+    {t:'בקשת משוב',fn:()=>{track('feedback_ask');toggleChat(true);chatAsk(`נסח לי מייל קצר ומנומס לבקשת משוב מ-${j.co} על התהליך לתפקיד ${j.title}. ${a.stop==='applied'?'לא עברתי את שלב ההגשה.':`התהליך הסתיים אחרי ה${STEP_TXT[a.stop]||'שלב האחרון'}.`}`)}},
+    {t:'למה לדעתך?',fn:()=>setTimeout(()=>toast('למה לדעתך?',{ms:12000,chips:whyChips(a.jobId,j,'rejected',t=>{a.why=t;save();toast('תודה, דורון ילמד מזה')})}),50)}]})}
 function snoozeAsk(id){const a=appOf(id);a.snooze=new Date(Date.now()+7*DAY).toISOString();save();refreshApps();
   toast('בסדר, אשאל שוב בעוד שבוע',{undo:()=>{delete a.snooze;save();refreshApps()},ms:6000})}
+/* חלון משרה (סבב 2): כותרת + "עכשיו" + פעולה אחת, ציר זמן (בלי שמות סוכנים: פעולה + אייקון), הערה לכל שלב */
+function appHead(a,j){const act=a.status==='saved'?`<a class="btn btn-primary btn-block ext" href="${j.url||LI_URL+'jobs/'}" target="_blank" rel="noopener">פתח והגש${ICO.open}</a>`
+    :['screening','task','interview'].includes(a.status)?`<button class="btn btn-primary btn-block" onclick="${REAL?`closeSheet();openPrep('${a.jobId}')`:`appTab='prep';paintAppTab('${a.id}')`}">להכנה עם ${escB(N('coach'))}</button>`
+    :a.status==='offer'&&CLOUDM?`<button class="btn btn-primary btn-block" onclick="askAboutJob('${a.jobId}')">בדיקת ההצעה עם ${escB(N('assistant'))}</button>`:'';
+  return`<div class="app-head"><div><span class="status st-${a.status}">${stLabel(a)}</span></div><p class="app-now">${escB(nowTxt(a))}</p>${act}</div>`}
+const STEP_TXT={saved:'נשמרה',applied:'הוגשה',screening:'שיחה ראשונה',task:'מטלה או מבחן',interview:'ראיון',offer:'הצעה',accepted:'התקבלתי',rejected:'לא ממשיכים',ghosted:'אין מענה',withdrew:'ויתרתי',closed:'המשרה נסגרה'};
+const AG_EV=[['brief','researcher','חקירה על החברה'],['tailor','linkedin','התאמת קורות חיים'],['letter','assistant','כתיבת מכתב פנייה']];
+let tlAll=false,tlQ=[];
+function timelineHtml(a,j){const st=stepsOf(a),rows=[],ix=k=>CAREER.agents.findIndex(g=>g.key===k);
+  st.forEach((x,i)=>{rows.push({i,me:true,t:STEP_TXT[x.k]+(x.k==='saved'&&j.fit?` · התאמה ${j.fit.toFixed(1)}`:'')+(x.k==='interview'&&x.round>1?` ${x.round}`:''),at:x.at,note:x.note});
+    if(x.k==='saved')AG_EV.forEach(([f,ag,t])=>{if(CLOUDM?j[f]:true)rows.push({ag:ix(ag),t})});
+    if(x.k==='interview'&&(CLOUDM?j.prep:true))rows.push({ag:ix('coach'),t:'הכנה לראיון'})});
+  const cur=st.length-1,ended=CLOSED.includes(a.status),nx=!ended&&{saved:'הגשה',applied:'תשובה מהחברה',screening:'השלב הבא',task:'השלב הבא',interview:'השלב הבא',offer:'החלטה'}[a.status];
+  tlQ=[];const show=tlAll||rows.length<=8?rows:rows.slice(-8);
+  const html=show.map(r=>{if(!r.me){const q=tlQ.push(r.ag)-1;return`<li class="tl-ag"><span class="tl-dot"><canvas id="tlf-${q}" width="96" height="96"></canvas></span><span class="tl-t">${r.t}</span></li>`}
+    const c=r.i===cur&&!ended?'cur':'me',d=r.at?new Date(r.at):null;
+    return`<li class="tl-${c}"><span class="tl-dot"></span><span class="tl-t">${escB(r.t)}${r.note?`<q>${escB(r.note)}</q>`:''}</span><button class="tl-d" onclick="fixDate('${a.id}',${r.i},this)" aria-label="תיקון תאריך">${d?`${d.getDate()}.${d.getMonth()+1}`:'—'}</button></li>`}).join('');
+  return`<ol class="tl" aria-label="ציר זמן">${!tlAll&&rows.length>8?`<li class="tl-more"><button onclick="tlAll=true;paintAppTab('${a.id}')">עוד ${rows.length-8}</button></li>`:''}${html}${nx?`<li class="tl-next"><span class="tl-dot"></span><span class="tl-t">${nx}</span></li>`:''}</ol>
+    <div class="tl-note"><input id="stNote" placeholder="הוספת הערה לשלב..." aria-label="הערה לשלב הנוכחי" onkeydown="if(event.key==='Enter'){event.preventDefault();saveStepNote('${a.id}')}"><button class="btn btn-sm btn-primary" onclick="saveStepNote('${a.id}')">שמירה</button></div>`}
+function tlFaces(){tlQ.forEach((ag,i)=>ag>=0&&face($('tlf-'+i),ag))}
+function saveStepNote(id){const a=appOf(id),v=($('stNote').value||'').trim();if(!v)return;const st=stepsOf(a);st[st.length-1].note=v.slice(0,200);save();paintAppTab(id);toast('ההערה נשמרה')}
+function fixDate(id,i,el){const a=appOf(id),x=stepsOf(a)[i];
+  const inp=document.createElement('input');inp.type='date';inp.className='tl-dinp';inp.value=(x.at||'').slice(0,10);
+  inp.onchange=()=>{if(inp.value){x.at=new Date(inp.value+'T12:00').toISOString();if(i===0||x.k==='applied')a.date=x.at;save();refreshApps();paintAppTab(id)}};
+  el.replaceWith(inp);inp.focus();try{inp.showPicker()}catch(e){}}
 /* "הגשתי": ריבוע ריק, ו-✓ ירוק אחרי סימון. לחיצה שנייה מבטלת */
 function appliedBox(a,wide){const on=a.status!=='saved';
   return `<button class="chk-btn${on?' on':''}${wide?' wide':''}" role="checkbox" aria-checked="${on}" onclick="${on?`unmarkApplied('${a.id}')`:`markApplied('${a.id}')`};${wide?'paintAppTab(\''+a.id+'\')':''}"><span class="box" aria-hidden="true">${on?'✓':''}</span>הגשתי</button>`}
@@ -125,7 +155,8 @@ function paintAppTab(id){
   el.setAttribute('aria-labelledby','tab-'+appTab);
   if(appTab==='details'){
     const fu=followDue(a);
-    el.innerHTML=`<div class="s-sec" style="margin-top:12px">
+    el.innerHTML=`${appHead(a,j)}${timelineHtml(a,j)}
+      <details class="s-sec app-more"><summary>פרטים</summary><div class="s-sec" style="margin-top:12px">
         <div class="kv"><span>שלב</span><button class="status st-${a.status}" onclick="openStatus('${id}')">${STATUSES[a.status]} · שינוי</button></div>
         <div class="kv"><span>${a.status==='saved'?'נשמרה':'הוגשה'}</span><b>${agoTxt(daysSince(a.date))}</b></div>
         ${a.iv?`<div class="kv"><span>ראיון</span><b>${escB(a.iv)}</b></div>`:''}
@@ -143,7 +174,9 @@ function paintAppTab(id){
           <div class="note-row"><span class="hint-line note-kb">Enter לשמירה · Shift+Enter לשורה חדשה</span><button class="btn btn-sm btn-primary" id="edNoteBtn" disabled onclick="saveNote('${id}')">שמירה</button></div></div></div>
       <div class="s-sec"><a class="btn btn-ghost btn-block ext" href="${j.url||LI_URL+'jobs/'}" target="_blank" rel="noopener">פתח את המשרה${ICO.open}</a>
         ${CLOUDM?`<button class="btn btn-ghost btn-block" style="margin-top:8px" onclick="askAboutJob('${a.jobId}')">לשאול את ${escB(N('assistant'))} על המשרה</button>`:''}
-                <button class="btn btn-ghost btn-block" style="margin-top:8px;color:var(--rose)" onclick="closeSheet();removeApp('${id}')">להסיר מההגשות</button></div>`;
+        </div></details>
+      <div class="app-foot"><button class="btn btn-ghost" onclick="openStatus('${id}')">שינוי שלב</button><button class="btn btn-ghost" style="color:var(--rose)" onclick="closeSheet();removeApp('${id}')">הסרה</button></div>`;
+    tlFaces();
   }else if(appTab==='letter'){
     el.innerHTML=kitTabHtml(a,j,id);
   }else if(appTab==='ref'&&REAL){
