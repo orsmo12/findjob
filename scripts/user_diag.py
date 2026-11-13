@@ -38,9 +38,14 @@ def main(idx=None, days=10):
     print(f"   אירועים אחרונים: {(us.get('ev') or [])[-15:]}")
     print(f"   טלגרם: {st.get('telegram') or st.get('tg_channels') or '-'} | דילוגים עם סיבה: {Counter(v.get('r') for v in (st.get('skip') or {}).values() if isinstance(v, dict))}")
     try:
-        plan = build_search_plan({"cv_text": p.get("cv_text") or "", "answers": p.get("answers") or {}}).to_dict()
+        learned = db.latest_plan(uid, "meeting")   # כמו ב-nightly: שאילתות שנלמדו, תפקידים שאושרו וסיבות דילוג
+        plan = build_search_plan({"cv_text": p.get("cv_text") or "", "answers": p.get("answers") or {},
+                                  "extra_titles": [x["value"] for x in st.get("accepted") or [] if x.get("type") == "role"],
+                                  "drop_queries": learned.get("drop_queries") or [], "learned_queries": learned.get("add_queries") or [],
+                                  "skip_reasons": {k: v.get("r") for k, v in (st.get("skip") or {}).items() if isinstance(v, dict)}}).to_dict()
         print(f"   תוכנית חיפוש: levels={plan.get('levels')} domains={plan.get('domains')}\n   שאילתות: {plan.get('queries')}")
     except Exception as e:  # noqa: BLE001
+        plan = {}
         print(f"   תוכנית חיפוש: {e}")
     since = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
     runs = get("runs", select="stats,created_at", user_id=f"eq.{uid}", agent="eq.hunter", created_at=f"gte.{since}", order="created_at.asc")
@@ -58,6 +63,32 @@ def main(idx=None, days=10):
         c = j["card"] or {}
         print(f"   {j['created_at'][5:10]} {str(j.get('decision') or 'ממתין'):<7} {float(j.get('fit') or 0):.1f} | {str(c.get('src'))[:12]:<12} | לפני {str(c.get('posted_days') if c.get('posted_days') is not None else '?'):>3} ימים | {c.get('title', '')[:45]} @ {c.get('co', '')[:22]}")
 
+    # למה משרה עברה ונדחתה: סיבת הדילוג, ציון, תקרת ניסיון, השלמה, ומה הסוכן המדרג קיבל מהטעם
+    from agent_core.agents.hunter import off_field, prefs_text, MIN_SHOWN, NEAR_FIT
+    from agent_core.taste import learn
+    skips = st.get("skip") or {}
+    try:
+        plan["taste"] = learn(db.all_jobs(uid, days=60), skips, st.get("taste_off") or [])
+        print(f"\nטעם: { {k: plan['taste'][k] for k in ('likes', 'dislikes', 'avoid_cos', 'avoid_locs', 'reasons', 'own', 'n')} }")
+        print(f"   prefs_text לסוכן המדרג: {prefs_text(plan)[:600]}")
+    except Exception as e:  # noqa: BLE001
+        print(f"   טעם: {e}")
+    print(f"\nהחלטות בפירוט (סף 3.5, השלמה ל-{MIN_SHOWN} מ-{NEAR_FIT}):")
+    for j in [j for j in jobs if j.get("decision") in ("skip", "removed", "save", "applied")][:40]:
+        c, k = j["card"] or {}, skips.get((j["card"] or {}).get("id")) or {}
+        print(f"   {j['decision']:<7} {float(j.get('fit') or 0):.1f} near={int(bool(c.get('near')))} off_field={int(off_field({'title': c.get('title')}, plan))} "
+              f"gap={c.get('level_gap') or '-'} dims={c.get('dims') or {}} | סיבה={k.get('r') or '-'} {('«' + k['x'] + '»') if k.get('x') else ''} | q={c.get('q') or '?'} | {str(c.get('title'))[:50]}")
+    qs = {}
+    for r in runs:
+        for q, v in ((r.get("stats") or {}).get("queries") or {}).items():
+            t = qs.setdefault(q, [0, 0, 0]); t[0] += v.get("got", 0); t[1] += v.get("new", 0); t[2] += v.get("fit", 0)
+    print("\nתשואה לפי שאילתה (נאספו → חדשות → עברו סף):")
+    for q, (g, n, f) in sorted(qs.items(), key=lambda x: -x[1][1]):
+        print(f"   {str(q)[:45]:<45} {g:>5} → {n:>4} → {f:>3}")
+    tot = Counter()
+    for r in runs:
+        tot.update({k: v for k, v in (r.get("stats") or {}).items() if isinstance(v, int)})
+    print(f"   סיכום משפך: {dict(tot)}")
 
 if __name__ == "__main__":
     main(int(sys.argv[1]) if len(sys.argv) > 1 and sys.argv[1] != "" else None, int(sys.argv[2]) if len(sys.argv) > 2 else 10)
