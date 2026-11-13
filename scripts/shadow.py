@@ -67,10 +67,15 @@ def cap_rise(card: dict, a: dict) -> bool:
     return bool(has and m and top and int(m.group(1)) <= top)
 
 
-def hands_on_hide(card: dict, plan: dict) -> bool:
-    """משרת מפעיל/טכנאי למי שלא בחר תפקיד כזה."""
-    mine = " ".join((plan.get("titles") or []) + (plan.get("heads") or []))
-    return bool(HANDS_ON.search(card.get("title") or "")) and not HANDS_ON.search(mine)
+ENGINEER = re.compile(r"\b(engineer|developer|designer)\b|מהנדס|מתכנן", re.I)
+
+
+def hands_on_hide(card: dict, plan: dict, cv: str = "") -> bool:
+    """משרת מפעיל/טכנאי (בלי "מהנדס" בכותרת) — רק אם לפי השאלון וקורות החיים המשתמש לא מחפש תפקיד כזה:
+    לא בחר אותו (תפקידים/תפקיד אחר) ולא מופיע בקורות החיים."""
+    t = card.get("title") or ""
+    mine = " ".join((plan.get("titles") or []) + (plan.get("heads") or []) + (plan.get("extra_titles") or []))
+    return bool(HANDS_ON.search(t)) and not ENGINEER.search(t) and not HANDS_ON.search(mine) and not HANDS_ON.search(cv or "")
 
 
 def learn_new(rows: list[dict], skips: dict, off: list, plan: dict) -> dict:
@@ -117,6 +122,7 @@ def main(days=7):
             continue
         print(f"\n═══ משתמש #{i} | {a.get('status')} | ניסיון {a.get('exp')} | תחום {a.get('field') or a.get('domains')} | levels={plan.get('levels')} have_years={plan.get('have_years')}")
         print(f"   רצות: {searched(plan)}")
+        print(f"   לפי השאלון: תפקידים שבחר {a.get('roles') or '-'} | תפקיד אחר {a.get('custom_roles') or '-'} | מפעיל/טכנאי בקו״ח: {'כן' if HANDS_ON.search(p.get('cv_text') or '') else 'לא'}")
         for w in audit(plan, a) or ["אין אזהרות"]:
             print(f"   {'⚠️ ' if w != 'אין אזהרות' else '✓ '}{w}")
         jobs = [j for j in get("jobs", select="id,card,fit,decision", user_id=f"eq.{uid}", created_at=f"gte.{since}") or []
@@ -124,7 +130,7 @@ def main(days=7):
         print(f"   משרות שהוצגו ב-{days} ימים: {len(jobs)}")
         for name, rule in (("השלמה בלי משרות שהורדו בגלל ניסיון", lambda c: fill_hide(c, plan)),
                            ("עולות: תקרה לפי הטווח העליון", lambda c: cap_rise(c, a)),
-                           ("יורדות: מפעיל/טכנאי", lambda c: hands_on_hide(c, plan))):
+                           ("יורדות: מפעיל/טכנאי", lambda c: hands_on_hide(c, plan, p.get("cv_text") or ""))):
             hit = [j for j in jobs if rule(j.get("card") or {})]
             show(name, hit)
             tot[name] += sum(1 for j in hit if j.get("decision") in KEEP) * (0 if name.startswith("עולות") else 1)

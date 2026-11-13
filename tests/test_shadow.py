@@ -40,6 +40,8 @@ def test_hands_on_only_when_not_chosen():
     assert S.hands_on_hide({"title": "מפעיל ייצור סטרילי"}, {"titles": ["Mechanical Engineer"]})
     assert not S.hands_on_hide({"title": "Field Technician"}, {"titles": ["Field Technician"]})
     assert not S.hands_on_hide({"title": "Mechanical Design Engineer"}, {"titles": ["Mechanical Engineer"]})
+    assert not S.hands_on_hide({"title": "CNC Process Engineer"}, {"titles": ["Process Engineer"]})        # מהנדס: נשארת
+    assert not S.hands_on_hide({"title": "Mechanical Technician"}, {"titles": ["Mechanical Engineer"]}, "Worked as a lab technician")  # בקו״ח
 
 
 def test_taste_keeps_chosen_roles():
