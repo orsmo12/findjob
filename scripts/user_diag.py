@@ -99,6 +99,20 @@ def main(idx=None, days=10):
         d = f if isinstance(f, dict) else {}
         for k, u in (d.get("usage") or {}).items():
             print(f"   טוקנים {d.get('date')} {k}: {u.get('calls')} קריאות, {u.get('tokens')} טוקנים, משימות {u.get('tasks')}")
+    # מכתבים: מספרים בלבד (בלי טקסט, הריפו ציבורי)
+    import re, statistics
+    from agent_core.agents.letter_graph import slop_in
+    lt = [(j.get("letter") or {}) for j in (get("jobs", select="letter,decision", user_id=f"eq.{uid}", letter="not.is.null") or [])]
+    lt = [x for x in lt if x.get("text")]
+    if lt:
+        wc = [len(x["text"].split()) for x in lt]
+        paras = [x["text"].strip().split("\n\n") for x in lt]
+        firsts = Counter(re.sub(r"\W+", " ", (pp[1] if len(pp) > 1 else pp[0]).lower())[:60] for pp in paras)
+        prj = Counter(tuple(sorted(x.get("projects") or [])) for x in lt)
+        print(f"\nמכתבים: {len(lt)} | גרסאות {dict(Counter(x.get('v') for x in lt))} | שפה {dict(Counter(x.get('lang') for x in lt))} | סבבי תיקון {dict(Counter(x.get('rounds') for x in lt))} | לא עברו בדיקת אמת {sum(not x.get('checked') for x in lt)}")
+        print(f"   מילים: חציון {statistics.median(wc)}, טווח {min(wc)}–{max(wc)} | פסקאות {dict(Counter(len(pp) for pp in paras))} | ביטויים שחוקים {sum(bool(slop_in(x['text'])) for x in lt)}")
+        print(f"   פתיחות שונות: {len(firsts)}/{len(lt)} (הנפוצה ×{firsts.most_common(1)[0][1]}) | צירופי פרויקטים שונים: {len(prj)} (הנפוץ ×{prj.most_common(1)[0][1]}) | בלי פרויקט {sum(not x.get('projects') for x in lt)}")
+        print(f"   העתקת מכתב (אירועים אחרונים): {sum(1 for e in (us.get('ev') or []) if e.get('e') == 'letter_copy')} | אחרונה {(us.get('m') or {}).get('letter_copy')}")
 
 if __name__ == "__main__":
     main(int(sys.argv[1]) if len(sys.argv) > 1 and sys.argv[1] != "" else None, int(sys.argv[2]) if len(sys.argv) > 2 else 10)
