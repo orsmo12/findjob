@@ -89,6 +89,16 @@ def main(idx=None, days=10):
     for r in runs:
         tot.update({k: v for k, v in (r.get("stats") or {}).items() if isinstance(v, int)})
     print(f"   סיכום משפך: {dict(tot)}")
+    # הסוכנים: ריצות, משימות ותקלות של המשתמש, וטוקנים היום (מכסה משותפת, מתאפסת כל יום)
+    ag = get("runs", select="agent,stats,created_at", user_id=f"eq.{uid}", created_at=f"gte.{since}")
+    fails = Counter(r["agent"] for r in ag if (r.get("stats") or {}).get("failures"))
+    print(f"\nריצות לפי סוכן: {dict(Counter(r['agent'] for r in ag))} | עם תקלות: {dict(fails)}")
+    tk = get("agent_tasks", select="kind,status", user_id=f"eq.{uid}", created_at=f"gte.{since}") or []
+    print(f"   agent_tasks: {dict(Counter((t.get('kind'), t.get('status')) for t in tk))}")
+    for f in (db.system_memory("budget").get("files") or {}).values():
+        d = f if isinstance(f, dict) else {}
+        for k, u in (d.get("usage") or {}).items():
+            print(f"   טוקנים {d.get('date')} {k}: {u.get('calls')} קריאות, {u.get('tokens')} טוקנים, משימות {u.get('tasks')}")
 
 if __name__ == "__main__":
     main(int(sys.argv[1]) if len(sys.argv) > 1 and sys.argv[1] != "" else None, int(sys.argv[2]) if len(sys.argv) > 2 else 10)
