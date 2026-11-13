@@ -1,33 +1,109 @@
 /* ═════════ הגשות ═════════ */
-let trFilter='all';
-function inSeg(a,k){return k==='all'||(k==='closed'?CLOSED.includes(a.status):a.status===k)}
-function appSub(a){const d=daysSince(a.date);
-  return a.status==='saved'?`שמרת ${agoTxt(d)}`:a.status==='interview'?`ראיון ${a.iv||'בתיאום'}`:a.status==='screening'?'מחכות לך שאלות סינון':a.status==='offer'?'קיבלת הצעה':CLOSED.includes(a.status)?STATUSES[a.status]:`הגשת ${agoTxt(d)}`}
-function renderApps(){
-  const cnt=k=>S.apps.filter(a=>inSeg(a,k)).length;
-  if(trFilter!=='all'&&!cnt(trFilter)) trFilter='all';
-  $('seg').innerHTML=SEGS.filter(([k])=>k==='all'||cnt(k)).map(([k,l])=>`<button class="chip${trFilter===k?' sel':''}" role="tab" aria-selected="${trFilter===k}" onclick="trFilter='${k}';renderApps()">${l} <b class="num">${cnt(k)}</b></button>`).join('');
-  const list=S.apps.filter(a=>inSeg(a,trFilter));
-  if(!list.length){$('appsList').innerHTML=historyHtml(true)+`<div class="empty"><div class="empty-ic">📋</div><h3>עוד אין כאן משרות</h3><p>משרות שתשמור יגיעו לכאן, עם מכתב פנייה מוכן.</p><button class="btn btn-primary" onclick="goPage('jobs')">למשרות החדשות</button></div>`;return}
-  const order={interview:0,screening:1,offer:2,saved:3,applied:4,rejected:5,ghosted:6,withdrew:7};
+/* מסלול הגשה (סבב 1, מפרט claude/findjob-apps-track-spec.md): שלבים, steps, שאלה בכרטיס, "מה השלב הבא?", משפך, 4 קבוצות */
+const TRACK=['applied','screening','task','interview','offer'];
+const REACH={applied:1,screening:2,task:3,interview:4,offer:5,accepted:6};
+/* הגשה ישנה בלי steps: נבנה מ-date ו-status הקיימים (אותה הגשה, רק תוויות חדשות) */
+function stepsOf(a){if(!a.steps){const at=a.date||new Date().toISOString(),st=[{k:'saved',at,by:'user'}];
+    if(a.status!=='saved'&&a.status!=='closed')st.push({k:'applied',at,by:'user'});
+    if(!['saved','applied','closed'].includes(a.status))st.push({k:a.status,at,by:'user'});
+    if(a.status==='interview')a.round=a.round||1;a.steps=st}
+  return a.steps}
+function addStep(a,k,extra){stepsOf(a).push({k,at:new Date().toISOString(),by:'user',...(extra||{})})}
+function lastStep(a,k){const st=stepsOf(a);for(let i=st.length-1;i>=0;i--)if(!k||st[i].k===k)return st[i];return null}
+function reached(a,k){return stepsOf(a).some(x=>(REACH[x.k]||0)>=REACH[k])||(REACH[a.status]||0)>=REACH[k]}
+const stLabel=a=>a.status==='interview'&&a.round>1?`ראיון ${a.round}`:STATUSES[a.status];
+const WD=['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'];
+function whenTxt(iso){if(!iso)return'';const d=new Date(iso),t=d.toTimeString().slice(0,5),hasT=t!=='00:00',dd=Math.round((new Date(d.toDateString())-new Date(new Date().toDateString()))/DAY);
+  const day=dd===0?'היום':dd===1?'מחר':dd>1&&dd<7?`ביום ${WD[d.getDay()]}`:`ב-${d.getDate()}.${d.getMonth()+1}`;return day+(hasT?` ב-${t}`:'')}
+const lettered=j=>!CLOUDM||!!(j.letter&&j.letter.text);
+function nowTxt(a){const j=JOBS[a.jobId],w=a.when,past=w&&new Date(w)<new Date(new Date().toDateString());
+  switch(a.status){
+    case'saved':return lettered(j)?'מכתב הפנייה מוכן · עוד לא הוגש':'עוד לא הוגש';
+    case'applied':{const d=daysSince((lastStep(a,'applied')||{}).at||a.date);return d<1?'הוגשה היום · ממתינים לתשובה':`ממתינים לתשובה כבר ${d} ימים`}
+    case'screening':return w?(past?`השיחה הראשונה הייתה ${whenTxt(w).replace(/^ב-/,'ב-')}`:`שיחה ראשונה ${whenTxt(w)}`):'שיחה ראשונה · עוד אין מועד';
+    case'task':return w?(past?'המטלה הוגשה? אפשר לעדכן':`מטלה להגשה עד ${new Date(w).getDate()}.${new Date(w).getMonth()+1}`):'מטלה או מבחן · עוד אין מועד';
+    case'interview':{const n=a.round>1?`ראיון ${a.round}`:'ראיון',prep=REAL?(j.prep?' · ההכנה מוכנה':''):' · ההכנה מוכנה';
+      return w?(past?`${n} היה ${whenTxt(w)}`:`${n} ${whenTxt(w)}${prep}`):a.iv?`${n} ${a.iv}${prep}`:`${n} · עוד אין מועד`}
+    case'offer':return'קיבלת הצעה';
+    case'accepted':return'התקבלת 🎉';
+    case'rejected':return a.stop&&a.stop!=='applied'?`הסתיים אחרי ה${a.stop==='interview'?'ראיון':a.stop==='task'?'מטלה':a.stop==='screening'?'שיחה הראשונה':'הצעה'}`:'הסתיים אחרי ההגשה';
+    case'ghosted':return'לא התקבלה תשובה';case'withdrew':return'ויתרת על המשרה';case'closed':return'המשרה נסגרה לפני ההגשה';}
+  return''}
+/* השאלה בכרטיס: אחרי "הגשתי", ואחרי שיחה/מטלה/ראיון מהיום שאחרי התאריך. "עוד אין תשובה" מסתיר ל-7 ימים */
+function askOf(a){if(a.snooze&&new Date(a.snooze)>new Date())return null;
+  if(a.status==='applied')return{q:'קיבלת תשובה?',yes:'ממשיכים איתי',strong:daysSince((lastStep(a,'applied')||{}).at||a.date)>=5};
+  if(['screening','task','interview'].includes(a.status)&&!(a.iv&&!a.when)){const w=a.when,since=daysSince((lastStep(a)||{}).at||a.date);
+    if(w?new Date(w)<new Date(new Date().toDateString()):since>=3)return{q:a.status==='task'?'איך הלך עם המטלה?':'איך היה?',yes:'עברתי לשלב הבא',strong:true}}
+  if(a.status==='offer')return{q:'מה החלטת?',offer:true};
+  return null}
+function askHtml(a){const k=askOf(a);if(!k)return'';
+  if(k.offer)return`<div class="ask"><span class="ask-q">${k.q}</span><div class="ask-btns"><button class="btn btn-sm btn-primary" onclick="endApp('${a.id}','accepted')">קיבלתי את ההצעה</button><button class="btn btn-sm btn-ghost" onclick="endApp('${a.id}','withdrew')">דחיתי</button></div></div>`;
+  return`<div class="ask${k.strong?' strong':''}"><span class="ask-q">${k.q}</span><div class="ask-btns"><button class="btn btn-sm btn-primary" onclick="openNext('${a.id}')">${k.yes}</button><button class="btn btn-sm btn-ghost" onclick="endApp('${a.id}','rejected')">לא ממשיכים</button><button class="btn btn-sm btn-ghost" onclick="snoozeAsk('${a.id}')">עוד אין תשובה</button></div></div>`}
+/* פס מסלול: עבר = מלאה, נוכחי = טבעת מנטה, עתיד = ריקה. מטלה רק אם הייתה. דחייה = נקודה אלמוגית ומקווקו אחריה */
+function trackHtml(a){if(a.status==='saved'||a.status==='closed')return'';
+  const had=stepsOf(a).some(x=>x.k==='task')||a.status==='task',keys=TRACK.filter(k=>k!=='task'||had),
+    cur=a.status==='rejected'||a.status==='ghosted'||a.status==='withdrew'?(a.stop||lastReal(a)):a.status==='accepted'?'offer':a.status,ci=keys.indexOf(cur),
+    stop=a.status==='rejected',L={applied:'הגשתי',screening:'שיחה',task:'מטלה',interview:'ראיון',offer:'הצעה'};
+  return`<ol class="trk${stop?' stopped':''}" aria-label="מסלול ההגשה">${keys.map((k,i)=>{const c=i<ci?'done':i===ci?(stop?'stop':'cur'):'next';
+    return`<li class="${c}" aria-label="${L[k]}: ${c==='done'?'עבר':c==='cur'?'עכשיו':c==='stop'?'נעצר כאן':'עוד לא'}"><i></i><span>${L[k]}</span></li>`}).join('')}</ol>`}
+function lastReal(a){const st=stepsOf(a).filter(x=>TRACK.includes(x.k));return st.length?st[st.length-1].k:'applied'}
+function groupOf(a){if(CLOSED.includes(a.status))return'closed';
+  const w=a.when&&new Date(a.when),soon=w&&w>=new Date(new Date().toDateString())&&(w-new Date())<7*DAY,ask=askOf(a);
+  if(soon||(ask&&a.status!=='applied')||(a.status==='saved'&&lettered(JOBS[a.jobId])))return'open';
+  if(['screening','task','interview','offer'].includes(a.status))return'progress';
+  return'waiting'}
+function appCard(a){const j=JOBS[a.jobId],g=groupOf(a);
+  return`<div class="swipe" data-id="${a.id}"><div class="swipe-bg" aria-hidden="true"><span>הסרה</span><span>הסרה</span></div><article class="app glass${g==='open'?' soon':''}${CLOSED.includes(a.status)?' dim':''}">${j.closed_at&&!CLOSED.includes(a.status)?`<div class="closed-tag">המשרה נסגרה למועמדים חדשים</div>`:''}
+    <button class="app-top" style="width:100%;text-align:right" onclick="openApp('${a.id}')" aria-label="${escB(j.title)} ב-${escB(j.co)}, ${stLabel(a)}">
+      ${logo(j)}<span class="app-info"><span class="app-title" dir="${dirOf(j.title)||'auto'}" style="display:block;text-align:right">${escB(j.title)}</span><span class="app-sub" style="display:block">${escB(j.co)}${j.loc?' · '+escB(String(j.loc).split(',')[0]):''}</span></span>
+      <span class="status st-${a.status}">${stLabel(a)}</span></button>
+    <div class="app-now">${escB(nowTxt(a))}</div>${trackHtml(a)}${askHtml(a)}
+    ${a.status==='saved'?`<div class="app-actions"><button class="btn btn-sm btn-ghost" onclick="openApp('${a.id}','letter')">לערכת ההגשה</button>${appliedBox(a)}</div>`:''}
+    ${(a.status==='interview'||a.status==='screening')&&!askOf(a)?`<div class="app-actions"><button class="btn btn-sm btn-primary" onclick="${REAL?`openPrep('${a.jobId}')`:`openApp('${a.id}','prep')`}">להכנה עם ${escB(N('coach'))}</button></div>`:''}
+  </article></div>`}
+function funnelHtml(){const live=S.apps.filter(a=>a.status!=='saved'&&a.status!=='closed'),n=k=>live.filter(a=>reached(a,k)).length,
+    c=[['הגשות',live.length],['שיחות',n('screening')],['ראיונות',n('interview')],['הצעות',n('offer')]];
+  return`<div class="funnel card glass" role="group" aria-label="משפך ההגשות">${c.map(([l,v])=>`<div class="fn"><b class="num">${v}</b><span>${l}</span></div>`).join('')}
+    <div class="fn-bar" aria-hidden="true">${c.map(([,v])=>`<i style="flex:${Math.max(v,0.2)}" class="${v?'on':''}"></i>`).join('')}</div></div>`}
+let closedOpen=false;
+function renderApps(){S.apps.forEach(stepsOf);
+  $('seg').innerHTML='';
+  if(!S.apps.length){$('appsList').innerHTML=historyHtml(true)+`<div class="empty"><div class="empty-ic">📋</div><h3>עוד אין הגשות</h3><p>משרות ששמרת יופיעו כאן, עם מכתב פנייה מוכן.</p><button class="btn btn-primary" onclick="goPage('jobs')">למשרות</button></div>`;return}
+  const G={open:'הגשות פתוחות',progress:'בתהליך',waiting:'ממתינים לתשובה'},by={open:[],progress:[],waiting:[],closed:[]};
+  S.apps.forEach(a=>by[groupOf(a)].push(a));
+  const when=a=>a.when?new Date(a.when).getTime():9e15;
+  by.open.sort((x,y)=>when(x)-when(y));by.progress.sort((x,y)=>(REACH[y.status]||0)-(REACH[x.status]||0));
+  by.waiting.sort((x,y)=>(x.status==='saved')-(y.status==='saved')||new Date(x.date)-new Date(y.date));   // הוותיקות ראשונות, "עוד לא הוגש" בסוף
   const prepBtn=CLOUDM&&S.apps.some(a=>a.status==='saved')?`<button class="btn btn-sm btn-ghost btn-block" style="margin-bottom:10px" onclick="prepNow()">${ICO.spark||''}לעדכן הכל עכשיו</button>`:'';
-  $('appsList').innerHTML=prepBtn+list.slice().sort((x,y)=>order[x.status]-order[y.status]).map(a=>{
-    const j=JOBS[a.jobId],fu=followDue(a);
-    return`<div class="swipe" data-id="${a.id}"><div class="swipe-bg" aria-hidden="true"><span>הסרה</span><span>הסרה</span></div><article class="app glass">${j.closed_at?`<div class="closed-tag">המשרה נסגרה למועמדים חדשים</div>`:''}
-      <button class="app-top" style="width:100%;text-align:right" onclick="openApp('${a.id}')" aria-label="${escB(j.title)} ב-${escB(j.co)}, ${STATUSES[a.status]}">
-        ${logo(j)}<span class="app-info"><span class="app-title" dir="${dirOf(j.title)||'auto'}" style="display:block;text-align:right">${escB(j.title)}</span><span class="app-sub" style="display:block">${escB(j.co)} · ${escB(appSub(a))}</span></span>
-        <span class="status st-${a.status}">${STATUSES[a.status]}</span></button>
-      ${fu?`<div class="follow"><span>${daysSince(a.date)} ימים בלי תשובה. הודעה קצרה עכשיו מעלה את הסיכוי לתגובה.</span><button class="btn btn-sm btn-ghost" onclick="openApp('${a.id}','details')">להודעה</button></div>`:''}
-      ${a.status==='saved'||a.status==='applied'?`<div class="app-actions"><button class="btn btn-sm btn-ghost" onclick="openApp('${a.id}','letter')">לערכת ההגשה</button>${appliedBox(a)}</div>`:''}
-      ${a.status==='interview'||a.status==='screening'?`<div class="app-actions"><button class="btn btn-sm btn-primary" onclick="${REAL?`openPrep('${a.jobId}')`:`openApp('${a.id}','prep')`}">${a.status==='interview'?'להכנה לראיון':'לשאלות הסינון'}</button></div>`:''}
-    </article></div>`}).join('')+historyHtml();
+  $('appsList').innerHTML=funnelHtml()+prepBtn+`<div class="app-groups">${Object.entries(G).filter(([k])=>by[k].length).map(([k,l])=>`<section class="app-group g-${k}"><h3 class="grp-h">${l} <span class="num">${by[k].length}</span></h3>${by[k].map(appCard).join('')}</section>`).join('')}</div>`
+    +(by.closed.length?`<details class="closed-grp"${closedOpen?' open':''} ontoggle="closedOpen=this.open"><summary>נסגרו (${by.closed.length})</summary>${by.closed.map(appCard).join('')}</details>`:'')+historyHtml();
   bindAppSwipes();
 }
+/* "מה השלב הבא?": 4 אפשרויות, "מתי?" (אפשר להשאיר ריק), שמירה. אחרי ראיון מוצע ראיון נוסף */
+const NEXT=[['screening','שיחה ראשונה','היכרות קצרה, בדרך כלל עם גיוס'],['task','מטלה או מבחן','מטלת בית, מבחן אונליין או שאלון'],['interview','ראיון','מקצועי, מנהל או HR'],['offer','הצעה','קיבלתי הצעה']];
+let nextPick=null;
+function openNext(id){const a=appOf(id),j=JOBS[a.jobId];nextPick=a.status==='interview'||a.status==='task'||a.status==='screening'?'interview':'screening';
+  openSheet(`<h3 id="sheetTitle">מה השלב הבא?</h3><div class="sheet-sub">${escB(j.title)} · ${escB(j.co)}</div>
+    <div class="next-grid" role="radiogroup" aria-label="השלב הבא">${NEXT.map(([k,l,d])=>`<button class="next-opt${k===nextPick?' sel':''}" role="radio" aria-checked="${k===nextPick}" data-k="${k}" onclick="nextPick='${k}';document.querySelectorAll('.next-opt').forEach(b=>{b.classList.toggle('sel',b.dataset.k===nextPick);b.setAttribute('aria-checked',b.dataset.k===nextPick)})"><b>${k==='interview'&&a.status==='interview'?`ראיון ${(a.round||1)+1}`:l}</b><span>${d}</span></button>`).join('')}</div>
+    <div class="field"><label for="nxWhen">מתי? (אפשר להשאיר ריק)</label><input id="nxWhen" type="datetime-local"></div>
+    <button class="btn btn-primary btn-block" onclick="saveNext('${id}')">שמירה</button>`)}
+function saveNext(id){const a=appOf(id),prev=JSON.stringify(a),k=nextPick,w=$('nxWhen')&&$('nxWhen').value;
+  if(k==='interview')a.round=a.status==='interview'?(a.round||1)+1:1;
+  addStep(a,k,k==='interview'?{round:a.round}:null);a.status=k;a.when=w?new Date(w).toISOString():'';delete a.snooze;delete a.iv;
+  track('app_'+k);save();closeSheet();refreshApps();
+  toast(`עודכן: ${stLabel(a)}${w?' '+whenTxt(a.when):''}`,{undo:()=>{Object.assign(a,JSON.parse(prev));Object.keys(a).forEach(x=>{if(!(x in JSON.parse(prev)))delete a[x]});save();refreshApps()},ms:6000})}
+/* סיום: לא ממשיכים / התקבלתי / דחיתי. נשמר באיזה שלב נעצר (מזין את המשפך). ביטול 6 שניות */
+function endApp(id,k){const a=appOf(id),prev=JSON.stringify(a);if(k==='rejected')a.stop=a.status;
+  addStep(a,k);a.status=k;a.when='';track('app_'+k);save();refreshApps();
+  const msg=k==='rejected'?`אין המשך בתהליך מול ${JOBS[a.jobId].co}. זה חלק מהדרך.`:k==='accepted'?'מזל טוב! 🎉':'עודכן: דחית את ההצעה';
+  toast(msg,{undo:()=>{const o=JSON.parse(prev);Object.keys(a).forEach(x=>delete a[x]);Object.assign(a,o);save();refreshApps()},ms:6000})}
+function snoozeAsk(id){const a=appOf(id);a.snooze=new Date(Date.now()+7*DAY).toISOString();save();refreshApps();
+  toast('בסדר, אשאל שוב בעוד שבוע',{undo:()=>{delete a.snooze;save();refreshApps()},ms:6000})}
 /* "הגשתי": ריבוע ריק, ו-✓ ירוק אחרי סימון. לחיצה שנייה מבטלת */
 function appliedBox(a,wide){const on=a.status!=='saved';
   return `<button class="chk-btn${on?' on':''}${wide?' wide':''}" role="checkbox" aria-checked="${on}" onclick="${on?`unmarkApplied('${a.id}')`:`markApplied('${a.id}')`};${wide?'paintAppTab(\''+a.id+'\')':''}"><span class="box" aria-hidden="true">${on?'✓':''}</span>הגשתי</button>`}
-function unmarkApplied(id){const a=appOf(id);if(!a||a.status!=='applied')return;a.status='saved';save();refreshApps();toast('ביטלתי את הסימון. המשרה חזרה ל"שמור"')}
-function markApplied(id){track('applied');const a=appOf(id);a.status='applied';a.date=new Date().toISOString();save();refreshApps();toast('סימנתי שהגשת. אזכיר לך לשלוח הודעת המשך בעוד שבוע')}
+function unmarkApplied(id){const a=appOf(id);if(!a||a.status!=='applied')return;a.status='saved';a.steps=stepsOf(a).filter(x=>x.k!=='applied');save();refreshApps();toast('ביטלתי את הסימון. המשרה חזרה ל"שמור"')}
+function markApplied(id){track('applied');const a=appOf(id);stepsOf(a);a.status='applied';a.date=new Date().toISOString();addStep(a,'applied');save();refreshApps();toast('סימנתי שהגשת. אזכיר לך לשלוח הודעת המשך בעוד שבוע')}
 function refreshApps(){if(curPg==='apps')renderApps();if(curPg==='main')renderHome();if(curPg==='jobs')renderJobs();syncChrome()}
 
 /* application sheet: details · letter · referrals · prep */
@@ -90,7 +166,7 @@ function paintAppTab(id){
     const P=PREP[a.status];
     el.innerHTML=`<p style="font-size:13.5px;color:var(--ink2);margin:12px 0 6px">${escB(P.lead)}</p>
       <div class="card-solid" style="padding:4px 14px">${P.qs.map(q=>`<details class="q"><summary><span class="qtag" lang="en">${escB(q.tag)}</span><span class="qtxt">${escB(q.q)}</span></summary><div class="hint">${q.h}</div></details>`).join('')}</div>
-      <button class="btn btn-primary btn-block" style="margin-top:14px" onclick="closeSheet();toggleChat(true);chatAsk('בוא נתרגל ${a.status==='interview'?'ראיון':'שאלות סינון'}')">לתרגל עם ${escB(N('coach'))}</button>`;
+      <button class="btn btn-primary btn-block" style="margin-top:14px" onclick="closeSheet();toggleChat(true);chatAsk('בוא נתרגל ${a.status==='interview'?'ראיון':'שיחה ראשונה'}')">לתרגל עם ${escB(N('coach'))}</button>`;
   }
 }
 function sentFollow(id){const a=appOf(id);a.follow=$('fuText').value;a.date=new Date().toISOString();save();closeSheet();refreshApps();toast('מעולה. אזכיר שוב בעוד שבוע אם לא יענו')}
@@ -98,7 +174,7 @@ function openStatus(id){
   const a=appOf(id),j=JOBS[a.jobId];
   openSheet(`<h3 id="sheetTitle">שלב ההגשה</h3><div class="sheet-sub">${escB(j.co)}</div><div class="s-sec" role="radiogroup" aria-label="שלב">${Object.entries(STATUSES).map(([k,l])=>`<button class="opt${a.status===k?' sel':''}" role="radio" aria-checked="${a.status===k}" onclick="setStatus('${id}','${k}')"><span class="status st-${k}">${l}</span><span class="radio" aria-hidden="true"></span></button>`).join('')}</div>`);
 }
-function setStatus(id,k){const a=appOf(id);if(a.status!==k){a.status=k;if(k==='applied')a.date=new Date().toISOString();save()}refreshApps();if(REAL&&(k==='interview'||k==='screening')){closeSheet();openPrep(appOf(id).jobId)}else openApp(id,(k==='interview'||k==='screening')?'prep':'details');toast(`השלב עודכן: ${STATUSES[k]}`)}
+function setStatus(id,k){const a=appOf(id);if(a.status!==k){stepsOf(a);if(k==='rejected')a.stop=a.status;addStep(a,k);a.status=k;if(k==='applied')a.date=new Date().toISOString();save()}refreshApps();if(REAL&&(k==='interview'||k==='screening')){closeSheet();openPrep(appOf(id).jobId)}else openApp(id,(k==='interview'||k==='screening')?'prep':'details');toast(`השלב עודכן: ${STATUSES[k]}`)}
 
 /* ═════════ LinkedIn ═════════ */
 function renderLinkedIn(){

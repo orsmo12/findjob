@@ -271,6 +271,7 @@ body.drawer-open .burger span:nth-child(3){top:6px;transform:rotate(-45deg)}
 .swipe-hint{text-align:center;font-size:12px;color:var(--ink3);margin-top:-6px}
 
 /* ── tracker ── */
+#seg:empty{display:none}
 .seg{display:flex;gap:7px;overflow-x:auto;margin:0 -14px;padding:2px 14px 4px}
 .seg::-webkit-scrollbar{display:none}
 .seg .chip{height:34px;padding:0 13px;font-size:13.5px;background:var(--glass-strong);border:1px solid var(--glass-brd)}
@@ -284,14 +285,44 @@ body.drawer-open .burger span:nth-child(3){top:6px;transform:rotate(-45deg)}
 .app-sub{font-size:12.5px;color:var(--ink3);margin-top:1px}
 .status{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 11px;border-radius:15px;font-size:12.5px;font-weight:600;flex-shrink:0}
 .status::before{content:'';width:7px;height:7px;border-radius:50%;background:currentColor}
-.st-saved{background:rgba(18,40,32,.06);color:var(--ink2)}
-.st-applied{background:var(--teal-lt);color:var(--teal)}
-.st-screening{background:var(--sky-lt);color:var(--sky)}
-.st-interview{background:var(--amber-lt);color:#A9620F}
-.st-offer{background:var(--brand-lt);color:var(--brand)}
-.st-withdrew{background:rgba(18,40,32,.05);color:var(--ink3)}
-.st-rejected{background:var(--rose-lt);color:var(--rose)}
-.st-ghosted{background:rgba(18,40,32,.05);color:var(--ink3)}
+.st-saved{background:#E6EBED;color:#4F626B}
+.st-applied{background:#E3E9EE;color:#2F4858}
+.st-screening,.st-task,.st-interview{background:#D9F5E9;color:#173B33}
+.st-offer,.st-accepted{background:#E4F3EA;color:#1E8A5A}
+.st-rejected{background:#F8E6E1;color:#7A3B2C}
+.st-ghosted,.st-withdrew,.st-closed{background:#ECEFF0;color:#6B7A80}
+/* מסלול הגשה (סבב 1) */
+.funnel{display:flex;flex-wrap:wrap;padding:12px 8px 10px;margin-bottom:12px;border-radius:var(--rad-l)}
+.fn{flex:1;text-align:center;display:flex;flex-direction:column;gap:2px}
+.fn b{font-size:22px;font-weight:700;color:var(--ink)}.fn span{font-size:12px;color:var(--ink3)}
+.fn-bar{flex-basis:100%;display:flex;gap:4px;margin-top:10px}.fn-bar i{height:5px;border-radius:3px;background:#E6EBED}.fn-bar i.on{background:#2F4858}
+.grp-h{font-size:13.5px;font-weight:600;color:var(--ink2);margin:14px 4px 8px;display:flex;justify-content:space-between}
+.grp-h .num{color:var(--ink3);font-weight:500}
+.app-group .swipe+.swipe{margin-top:10px}
+.app.soon{box-shadow:inset -4px 0 0 #F2C46D}
+.app.dim{opacity:.62}
+.app-now{font-size:13px;color:var(--ink2);margin-top:8px}
+.trk{display:flex;list-style:none;margin:10px 0 0;padding:0}
+.trk li{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;position:relative;font-size:11px;color:var(--ink3)}
+.trk li::before{content:'';position:absolute;top:5px;right:50%;width:100%;height:2px;background:#D5DDE0}
+.trk li:first-child::before{display:none}
+.trk li.done::before,.trk li.cur::before,.trk li.stop::before{background:#2F4858}
+.trk.stopped li.next::before{background:repeating-linear-gradient(90deg,#D5DDE0 0 4px,transparent 4px 8px)}
+.trk i{width:12px;height:12px;border-radius:50%;border:2px solid #C3CDD1;background:#fff;position:relative;z-index:1}
+.trk .done i{background:#2F4858;border-color:#2F4858}
+.trk .cur i{background:#7BE0B5;border-color:#2F4858;box-shadow:0 0 0 3px rgba(123,224,181,.45)}
+.trk .stop i{background:#E4A08F;border-color:#E4A08F}
+.trk .cur span{color:var(--ink);font-weight:600}
+.ask{margin-top:12px;padding-top:10px;border-top:1px solid rgba(18,40,32,.08)}
+.ask-q{display:block;font-size:13px;font-weight:600;margin-bottom:8px;color:var(--ink2)}
+.ask.strong .ask-q{color:var(--ink)}
+.ask-btns{display:flex;gap:6px}.ask-btns .btn{flex:1 1 0;min-height:40px;padding:0 6px;font-size:12.5px;white-space:nowrap}
+.closed-grp{margin-top:14px}.closed-grp summary{cursor:pointer;font-size:13.5px;font-weight:600;color:var(--ink2);padding:10px 4px;min-height:40px}
+.closed-grp .swipe{margin-top:10px}
+.next-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0}
+.next-opt{display:flex;flex-direction:column;gap:3px;text-align:right;padding:12px;border-radius:var(--rad-m);border:1.5px solid rgba(18,40,32,.12);background:#fff;font:inherit;color:inherit;min-height:64px;cursor:pointer}
+.next-opt b{font-size:14px}.next-opt span{font-size:12px;color:var(--ink3)}
+.next-opt.sel{border-color:#2F4858;box-shadow:0 0 0 2px rgba(47,72,88,.15)}
 .follow{display:flex;align-items:center;gap:10px;margin-top:12px;padding:10px 12px;border-radius:var(--rad-m);background:var(--amber-lt);font-size:13px;color:#8A4E0E}
 .follow span{flex:1}
 .app-actions{display:flex;gap:8px;margin-top:12px}
@@ -953,6 +984,8 @@ a.person>svg{flex:0 0 18px;width:18px;height:18px;fill:none;stroke:var(--ink3);s
 /* ── מחשב (1024px ומעלה). בטלפון ובטאבלט שום דבר מכאן לא חל ──
    תפריט צד קבוע ולחיץ משמאל + אזור תוכן של 720px, הכל ממורכז. W = 272 (תפריט) + 16 (רווח) + 720 (תוכן) */
 @media (min-width:1024px){
+  .app-groups{display:grid;grid-template-columns:repeat(auto-fit,minmax(0,1fr));gap:14px;align-items:start}
+  .app-groups .grp-h{margin-top:4px}
   :root{--dk-l:max(0px,calc(50% - 504px));--dk-r:max(0px,calc(50% - 504px))}
   #drawerOverlay,#drawerOverlay.open{position:fixed;inset:0 auto 0 var(--dk-l);width:272px;z-index:150;background:none;pointer-events:auto}   /* מתחת לסיור (200), כדי שיוחשך איתו */
   #drawer,#drawerOverlay.open #drawer{position:absolute;inset:0;left:0;width:100%;transform:none;transition:none;box-shadow:none;border-right:1px solid var(--glass-brd);overflow-y:auto}

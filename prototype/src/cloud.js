@@ -110,7 +110,7 @@ function addBotMsg(text,action,idx){
   if(action){const c=actionCard(action,idx);if(c)$('chatMsgs').appendChild(c)}
   $('chatMsgs').scrollTop=1e6;
 }
-const ST_HE={saved:'שמור',applied:'הוגש',screening:'סינון',interview:'ראיון',offer:'הצעה',rejected:'נדחה',ghosted:'אין מענה',withdrew:'ויתרתי'};
+const ST_HE=STATUSES;   // אותן תוויות כמו במסך ההגשות
 function actionText(x){const j=x.job_id&&JOBS[x.job_id],n=j?`${j.title} ב-${j.co}`:'';
   return{set_status:`לעדכן את ${n} ל"${ST_HE[x.status]||x.status}"${x.iv?` (${x.iv})`:''}`,add_note:`להוסיף הערה ל-${n}: "${x.text}"`,
     set_letter:`להחליף את מכתב הפנייה ל-${n} בגרסה החדשה`,add_job:`להוסיף משרה מהקישור`,save_job:`לשמור את ${n} ולהעביר להגשות`,
@@ -130,7 +130,7 @@ async function runAction(x){
   const app=x.job_id&&S.apps.find(a=>a.jobId===x.job_id);
   const needApp=()=>{if(!app){toast('המשרה לא נמצאת בהגשות');return false}return true};
   switch(x.type){
-    case 'set_status':if(!needApp()||!ST_HE[x.status])return false;app.status=x.status;if(x.iv)app.iv=x.iv;if(x.status==='applied')app.date=new Date().toISOString();break;
+    case 'set_status':if(!needApp()||!ST_HE[x.status])return false;stepsOf(app);if(x.status==='rejected')app.stop=app.status;if(app.status!==x.status)addStep(app,x.status);app.status=x.status;if(x.iv)app.iv=x.iv;if(x.status==='applied')app.date=new Date().toISOString();break;
     case 'add_note':if(!needApp())return false;app.note=((app.note||'')+'\n'+x.text).trim();break;
     case 'set_letter':if(!needApp())return false;app.letter=x.text;break;
     case 'save_job':if(!JOBS[x.job_id])return false;S.decisions[x.job_id]='save';if(!app)S.apps.unshift({id:'a-'+x.job_id,jobId:x.job_id,status:'saved',date:new Date().toISOString(),letter:''});break;

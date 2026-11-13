@@ -6,8 +6,8 @@ const SB = 'https://cavfthbkwosnwqdqkmap.supabase.co';
 const PK = 'sb_publishable_kTXa--U7akPkHozrbkw0Xg_w4_u5iOH';
 const LLM = require('./_llm');
 const MODELS = ['openai/gpt-oss-120b', 'qwen/qwen3.8-27b', 'openai/gpt-oss-20b', 'llama-3.1-8b-instant'];
-const STATUS = { saved: 'שמור', applied: 'הוגש', screening: 'סינון', interview: 'ראיון', offer: 'הצעה', rejected: 'נדחה', ghosted: 'אין מענה', withdrew: 'ויתרתי' };
-const PRIO = { interview: 0, screening: 1, offer: 2, saved: 3, applied: 4 };
+const STATUS = { saved: 'שמרתי', applied: 'הגשתי', screening: 'שיחה ראשונה', task: 'מטלה או מבחן', interview: 'ראיון', offer: 'הצעה', accepted: 'התקבלתי', rejected: 'לא ממשיכים', ghosted: 'אין מענה', withdrew: 'ויתרתי' };
+const PRIO = { interview: 0, task: 1, screening: 1, offer: 2, saved: 3, applied: 4 };
 
 const SHARED_DAILY = 40;   // הודעות צ׳אט ביום לכל משתמש על המפתח המשותף, כדי שמשתמש אחד לא יגמור אותו לכולם. מפתח אישי: בלי הגבלה
 
@@ -79,7 +79,7 @@ const SYSTEM = `אתה שי, העוזר האישי באפליקציית findjob,
 אם המשתמש מבקש במפורש לשנות משהו באפליקציה, הצע פעולה אחת בסוף התשובה, בשורה נפרדת בדיוק בפורמט:
 <<ACTION {"type": "...", ...}>>
 הפעולה מתבצעת רק אחרי שהוא מאשר, אז בטקסט תגיד מה תעשה ("אעדכן…, אשר למטה"). סוגים:
-- {"type":"set_status","job_id":"...","status":"saved|applied|screening|interview|offer|rejected|ghosted|withdrew","iv":"מועד אם נמסר"}
+- {"type":"set_status","job_id":"...","status":"saved|applied|screening|task|interview|offer|accepted|rejected|ghosted|withdrew","iv":"מועד אם נמסר"}
 - {"type":"add_note","job_id":"...","text":"..."}
 - {"type":"set_letter","job_id":"...","text":"המכתב המלא החדש"}
 - {"type":"add_job","url":"https://..."}

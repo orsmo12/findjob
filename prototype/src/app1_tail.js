@@ -1,7 +1,6 @@
 /* ═════════ applications: stages ═════════ */
-const STATUSES={saved:'שמור',applied:'הוגש',screening:'סינון',interview:'ראיון',offer:'הצעה',rejected:'נדחה',ghosted:'אין מענה',withdrew:'ויתרתי'};
-const CLOSED=['rejected','ghosted','withdrew'];
-const SEGS=[['all','הכל'],['saved','שמור'],['applied','הוגש'],['screening','סינון'],['interview','ראיון'],['offer','הצעה'],['closed','נסגרו']];
+const STATUSES={saved:'שמרתי',applied:'הגשתי',screening:'שיחה ראשונה',task:'מטלה או מבחן',interview:'ראיון',offer:'הצעה',accepted:'התקבלתי',rejected:'לא ממשיכים',ghosted:'אין מענה',withdrew:'ויתרתי',closed:'נסגרה'};
+const CLOSED=['rejected','ghosted','withdrew','accepted','closed'];
 
 /* ═════════ agent messages (live in the Office) ═════════ */
 const UPDATES=[
@@ -110,7 +109,7 @@ const goalTxt=()=>{const a=prof().ans||{};return [(a.roles||[]).slice(0,2).join(
 const queue=()=>DECK.filter(id=>!S.decisions[id]);
 const appOf=id=>S.apps.find(a=>a.id===id);
 const followDue=a=>a.status==='applied'&&daysSince(a.date)>=7;
-const appNeedsMe=a=>a.status==='saved'||followDue(a)||a.status==='screening'||a.status==='interview';
+const appNeedsMe=a=>a.status==='saved'||followDue(a)||['screening','task','interview'].includes(a.status);
 const hotPosts=()=>CLOUDM?((typeof LI!=='undefined'&&LI.posts)||[]).filter(p=>!S.li.handled[p.id]):REAL?[]:POSTS.filter(p=>p.mins<60&&!S.li.handled[p.id]);
 const fixesLeft=()=>CLOUDM?((typeof LI!=='undefined'&&LI.fixes)||[]).filter(f=>!S.li.fixes[f.id]):REAL?[]:LI_FIXES.filter(f=>!S.li.fixes[f.id]);
 const liScore=()=>Math.min(100,62+Object.keys(S.li.fixes).length*8);

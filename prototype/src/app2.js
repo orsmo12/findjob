@@ -101,7 +101,7 @@ function nextSteps(){
   const out=[],hp=hotPosts(),q=queue();
   if(hp.length&&(CLOUDM||!REAL)) out.push({ic:ICO.li,c:'i-amber',b:hp.length===1?'פוסט ששווה להגיב עליו':`${hp.length} פוסטים ששווה להגיב עליהם`,s:CLOUDM?'תגובות מוכנות להעתקה':`הראשון פורסם לפני ${Math.min(...hp.map(p=>p.mins))} דק׳`,w:CLOUDM?null:['עכשיו','w-urgent'],go:"goPage('linkedin')"});
   S.apps.filter(a=>a.status==='interview').forEach(a=>out.push({ic:ICO.cal,c:'i-amber',b:`ראיון ב-${JOBS[a.jobId].co}${a.iv?', '+a.iv:''}`,s:'ההכנה מוכנה',w:['השבוע','w-soon'],go:`openPrep('${a.jobId}')`}));
-  S.apps.filter(a=>a.status==='screening').forEach(a=>out.push({ic:ICO.cal,c:'i-sky',b:`שאלות סינון מ-${JOBS[a.jobId].co}`,s:'ההכנה מחכה לך',go:`openPrep('${a.jobId}')`}));
+  S.apps.filter(a=>a.status==='screening').forEach(a=>out.push({ic:ICO.cal,c:'i-sky',b:`שיחה ראשונה עם ${JOBS[a.jobId].co}`,s:'ההכנה מחכה לך',go:`openPrep('${a.jobId}')`}));
   if(q.length) out.push({ic:ICO.jobs,c:'i-green',b:q.length===1?'משרה חדשה מחכה לך':`${q.length} משרות חדשות מחכות לך`,s:q.slice(0,2).map(id=>JOBS[id].co).join(', ')+(q.length>2?` ועוד ${q.length-2}`:''),go:"goPage('jobs')"});
   S.apps.filter(followDue).forEach(a=>out.push({ic:ICO.mail,c:'i-teal',b:`${JOBS[a.jobId].co} לא ענו ${daysSince(a.date)} ימים`,s:'הודעת המשך מוכנה',go:`openApp('${a.id}','details')`}));
   S.apps.filter(a=>a.status==='saved').forEach(a=>out.push({ic:ICO.send,c:'i-green',b:`${JOBS[a.jobId].co}: שמרת ועוד לא הגשת`,s:'המכתב מוכן',go:`openApp('${a.id}','letter')`}));
