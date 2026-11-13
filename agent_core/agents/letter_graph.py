@@ -46,6 +46,20 @@ QUALITY = """What an excellent letter does (the quality bar):
    then "Best regards," and the full name on its own line."""
 
 
+RESERVE = re.compile(r"reserv|מילואים", re.I)
+RESERVE_NOTE = ("RESERVE DUTY (written in the CV or status): add one sentence, as in the examples: long periods of reserve duty meant "
+                "completing most of the degree through self-study, so the candidate learns new tools quickly and independently. "
+                "Put it right after the honest gap if there is one.")
+
+# 6 הכללים מהמכתבים שאור אהב (claude/findjob-letter-examples.md). העורך בודק רק אותם.
+RULES = ["Opening: the role, the location and the candidate's current status (degree) in the first paragraph",
+         "The main project described in the job's own terms, tied to requirements in the ad",
+         "Honest about a missing important requirement (if there is one), followed by self-learning proof",
+         "Military or earlier experience linked to something the job asks for (only if the CV has it)",
+         "Closing names the team or company and the location",
+         "No clichés or AI phrasing, 120-190 words, 3-4 short paragraphs"]
+
+
 class S(TypedDict, total=False):
     cv: str; job: dict; name: str; brief: dict; status: str; own_letters: list[str]; may_reuse: bool
     lang: str; need: dict; text: str; issues: list[str]; rounds: int; bad: list[str]; checked: bool
@@ -76,7 +90,9 @@ def need(st: S) -> dict:
     d = _j(chat("assistant", "letter_need", [{"role": "user", "content": f"""Read the job ad, the company brief and the CV.
 Return JSON only: {{"requirements": [the 3-4 most important requirements in the ad, short],
  "domain": "what the company works on, in a few words, only from the ad or brief",
- "projects": [1-3 project names EXACTLY as written in the CV, most relevant first, each answering a requirement],
+ "projects": [project names EXACTLY as written in the CV: the ONE project that answers the most requirements first;
+   add a second ONLY if it answers an important requirement the first does not (max 2)],
+ "covers": {{"<project>": [the requirements it answers]}},
  "gaps": [important requirements the CV does not show, max 2]}}
 
 JOB: {j['title']} at {j['co']}
@@ -86,7 +102,8 @@ COMPANY BRIEF: {_brief_text(st.get('brief'))}
 CV:
 {st['cv'][:4500]}"""}], tier="judge", max_tokens=700))
     cvl = st["cv"].lower()
-    d["projects"] = [p for p in d.get("projects") or [] if isinstance(p, str) and p.lower() in cvl][:3]   # רק פרויקטים שבאמת בקורות החיים
+    d["projects"] = [p for p in d.get("projects") or [] if isinstance(p, str) and p.lower() in cvl][:2]   # רק פרויקטים שבאמת בקורות החיים
+    d["reserve"] = bool(RESERVE.search(st["cv"] + " " + (st.get("status") or "")))   # מילואים: רק אם כתוב אצל המשתמש
     act.log("assistant", f"{j['co']}: החברה מחפשת {', '.join((d.get('requirements') or [])[:3]) or 'לא ברור מהמודעה'}. "
             + (f"הפרויקטים שהכי עונים: {', '.join(d['projects'])}." if d["projects"] else "לא מצאתי פרויקט שעונה ישירות."))
     return {"need": d, "lang": ad_language(_ad(st)) if _ad(st) else "English", "rounds": 0}
@@ -115,6 +132,7 @@ WHAT THE COMPANY NEEDS: {', '.join(n.get('requirements') or []) or '(see ad)'}
 COMPANY DOMAIN: {n.get('domain') or '(see ad)'}
 PROJECTS TO FEATURE: {', '.join(n.get('projects') or []) or '(choose from the CV)'}
 GAPS TO ADDRESS HONESTLY: {', '.join(n.get('gaps') or []) or 'none'}
+{RESERVE_NOTE if n.get('reserve') else ''}
 CURRENT STATUS: {st.get('status') or '(not given; use the CV)'}
 {_style_block(st)}
 
@@ -124,6 +142,22 @@ AD:
 CV:
 {st['cv'][:4500]}"""}], tier="write", max_tokens=1600)
     return {"text": text.strip()}
+
+
+def letter_score(text: str, job: dict, cv: str = "", projects: list | None = None) -> dict:
+    """בדיקה בקוד (בלי AI) של 6 הכללים, לכלי הפיתוח. מחזיר כלל → עובר/לא."""
+    t, paras = (text or "").lower(), [p for p in re.split(r"\n\s*\n", text or "") if p.strip()]
+    first = (paras[1] if len(paras) > 2 else paras[0]).lower() if paras else ""
+    last = " ".join(paras[-2:]).lower() if paras else ""
+    title_w = [w for w in re.findall(r"[a-z]{3,}", (job.get("title") or "").lower())][:3]
+    loc = re.split(r"[,·|-]", job.get("loc") or "")[0].strip().lower()
+    mil = bool(re.search(r"\bidf\b|military|army|צה\"?ל|reserv|מילואים", cv or "", re.I))
+    return {"opening": any(w in first for w in title_w) and bool(re.search(r"b\.?sc|degree|graduat|student|תואר", first)),
+            "project": any((p or "").lower() in t for p in projects or []) if projects else bool(re.search(r"project|פרויקט", t)),
+            "gap_honest": bool(re.search(r"haven.t|have not|not yet|yet to|עוד לא|טרם", t)),
+            "military": (not mil) or bool(re.search(r"\bidf\b|military|army|reserve|officer|צה\"?ל|מילואים", t)),
+            "closing": (job.get("co") or "").lower()[:12] in last or (bool(loc) and loc in last),
+            "clean": not slop_in(text or "") and 110 <= len((text or "").split()) <= 200}
 
 
 def slop_in(text: str) -> list[str]:
@@ -137,16 +171,19 @@ def critique(st: S) -> dict:
     words = len(text.split())
     if words > 210:
         issues.append(f"too long ({words} words), cut to under 190")
-    d = _j(chat("assistant", "letter_critique", [{"role": "user", "content": f"""You are a strict editor. Check this cover letter against the quality bar.
-{QUALITY}
-Return JSON only: {{"issues": [concrete fixes needed, max 4, empty if it already meets the bar]}}
-Flag: a generic opening, a project described without the job's terms, a skill not tied to the ad, missing company/team/location in the closing,
-anything that sounds like a template or AI.
+    rules = "\n".join(f"{i + 1}. {r}" for i, r in enumerate(RULES))
+    d = _j(chat("assistant", "letter_critique", [{"role": "user", "content": f"""You are a strict editor. Check this cover letter ONLY against these 6 rules:
+{rules}
+Return JSON only: {{"fail": [numbers of rules that clearly fail], "issues": [one concrete fix per failed rule]}}.
+If every rule passes, return {{"fail": [], "issues": []}}. Do not suggest anything outside the 6 rules (no style polishing).
+Rule 3 passes when the CV covers the important requirements. Rule 4 passes when the CV has no military or earlier experience.
 
-JOB: {st['job']['title']} at {st['job']['co']}
+JOB: {st['job']['title']} at {st['job']['co']} ({st['job'].get('loc') or ''})
 AD (short): {_ad(st)[:1200]}
 LETTER:
-{text}"""}], tier="judge", max_tokens=500))
+{text}"""}], tier="judge", max_tokens=400))
+    if not d.get("fail"):
+        d["issues"] = []
     issues += [str(x)[:200] for x in (d.get("issues") or [])[:4]]
     if issues:
         act.log("assistant", f"ביקורת על המכתב ל-{st['job']['co']}: {len(issues)} דברים לתקן ({issues[0][:60]}…)")
@@ -228,5 +265,6 @@ def write_letter_v4(cv: str, job: dict, name: str, brief: dict | None = None, st
     act.log("assistant", f"כותב מכתב ל-{job['co']}: מה החברה צריכה, אילו פרויקטים מתאימים, טיוטה, ביקורת ובדיקת אמת")
     out = _graph.invoke({"cv": cv, "job": job, "name": name, "brief": brief or {}, "status": status,
                          "own_letters": own_letters or [], "may_reuse": may_reuse}, {"recursion_limit": 25})
-    return {"text": out["text"], "lang": out.get("lang") or "English", "v": 5, "checked": bool(out.get("checked")),
-            "rounds": out.get("rounds") or 0, "projects": (out.get("need") or {}).get("projects") or []}
+    pr = (out.get("need") or {}).get("projects") or []
+    return {"text": out["text"], "lang": out.get("lang") or "English", "v": 6, "checked": bool(out.get("checked")),
+            "rounds": out.get("rounds") or 0, "projects": pr, "score": letter_score(out["text"], job, cv, pr)}

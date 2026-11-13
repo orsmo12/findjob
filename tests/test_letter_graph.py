@@ -26,7 +26,7 @@ def test_loop_fixes_slop_and_grounding():
     })
     assert calls[:3] == ["letter_need", "letter_draft", "letter_critique"]
     assert calls.count("letter_rewrite") == 2                 # פעם בגלל הביקורת, פעם בגלל בדיקת האמת
-    assert out["v"] == 5 and out["checked"] and "Kubernetes" not in out["text"] and out["projects"] == ["findjob"]
+    assert out["v"] == 6 and out["checked"] and "Kubernetes" not in out["text"] and out["projects"] == ["findjob"]
 
 
 def test_gives_up_after_two_rounds_and_drops_bad_sentence():
@@ -70,3 +70,19 @@ def test_missing_greeting_added_and_hebrew_signoff():
 
 def test_inflated_analogy_is_slop():
     assert "directly mirror" in LG.slop_in("tests directly mirroring the regression automation")
+
+
+def test_letter_score_and_reserve():
+    """מכתבים (סבב 7): 6 הכללים מהדוגמאות נבדקים בקוד, מילואים רק אם כתוב אצל המשתמש."""
+    from agent_core.agents import letter_graph as G
+    job = {"title": "AI Engineer", "co": "Monticello", "loc": "Tel Aviv, Israel"}
+    text = ("Dear Monticello team,\n\nI'm applying for the AI Engineer role in Tel Aviv. I'll complete my B.Sc. at HIT soon.\n\n"
+            "My main project, findjob, turns messy job ads into structured data with LLM agents, close to your document pipelines. "
+            + "It keeps a human in control and checks every output against its source. " * 3 +
+            "\n\nI haven't worked with Snowflake yet. During long reserve duty I completed most of my degree through self-study, "
+            "and as an IDF logistics officer I learned to own decisions under pressure.\n\n"
+            "I'd welcome the chance to help build the Monticello team in Tel Aviv.\n\nBest regards,\nOr")
+    sc = G.letter_score(text, job, "IDF logistics officer, reserve duty", ["findjob"])
+    assert all(sc.values()), sc
+    assert not G.letter_score(text.replace("I'm applying for the AI Engineer role", "Hello"), job, "", ["findjob"])["opening"]
+    assert G.RESERVE.search("מילואים פעילים") and not G.RESERVE.search("Python, React")

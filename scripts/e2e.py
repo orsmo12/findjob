@@ -152,7 +152,7 @@ def run(uid, email):
         check("   גיל: סקירת חברה", bool(row.get("brief")))
         check("   קובי: התאמת קורות חיים", row.get("tailor") is not None)
         check("   מאיה: שאלות הכנה", bool((row.get("prep") or {}).get("tasks") is not None))
-        check("   שי: מכתב בגרסה האחרונה", (lt.get("v") or 0) >= 5, f"v{lt.get('v')}, {len((lt.get('text') or '').split())} מילים, בדיקת אמת: {lt.get('checked')}")
+        check("   שי: מכתב בגרסה האחרונה", (lt.get("v") or 0) >= 6, f"v{lt.get('v')}, {len((lt.get('text') or '').split())} מילים, בדיקת אמת: {lt.get('checked')}")
         if lt.get("text"):
             (OUT / "letter.txt").write_text(lt["text"])
 
