@@ -68,11 +68,18 @@ def learn(rows: list[dict], skips: dict | None = None, off: list[str] | None = N
         if x.lower() not in {o.lower() for o in own} and x.lower() not in off_l:
             own.append(x)
     own = own[:5]
+    unmet = []   # "לא עומד בדרישות" + איזו דרישה: מה המשתמש אמר שאין לו (5 אחרונים)
+    for v in sorted((v for v in skips.values() if isinstance(v, dict) and str(v.get("q") or "").strip()), key=lambda v: v.get("at") or "", reverse=True):
+        q = re.sub(r"\s+", " ", str(v["q"])).strip()[:40]
+        if q.lower() not in {u.lower() for u in unmet} and q.lower() not in off_l:
+            unmet.append(q)
+    unmet = unmet[:5]
     note = "; ".join(x for x in ((f"tends to save: {', '.join(likes)}" if likes else ""),
                                  (f"tends to skip: {', '.join(dislikes)}" if dislikes else ""),
-                                 (f"said in their own words when skipping jobs: {' | '.join(own)}" if own else "")) if x)
+                                 (f"said in their own words when skipping jobs: {' | '.join(own)}" if own else ""),
+                                 (f"said they do NOT meet these requirements (mark them met only with clear CV evidence): {' | '.join(unmet)}" if unmet else "")) if x)
     return {"likes": likes, "dislikes": dislikes, "score": {w: score[w] for w in likes + dislikes}, "avoid_cos": avoid_cos,
-            "avoid_locs": avoid_locs, "reasons": dict(by_reason), "own": own, "note": note,
+            "avoid_locs": avoid_locs, "reasons": dict(by_reason), "own": own, "unmet": unmet, "note": note,
             "n": sum(1 for r in rows if r.get("decision") in ("save", "applied", "skip"))}
 
 

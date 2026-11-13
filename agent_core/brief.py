@@ -52,6 +52,10 @@ def facts(u: dict) -> list[dict]:
         out.append({"k": "wait", "t": f"{len(waiting)} משרות ששמרת עוד בהכנה (מכתב, סקירה)", "go": "apps"})
     cards = {r["id"]: r.get("card") or {} for r in saved}
     for a in st.get("apps") or []:
+        end = [x for x in a.get("steps") or [] if x.get("k") == "rejected" and str(x.get("at") or "") >= day]
+        if a.get("status") == "rejected" and end:   # מסלול הגשה: עדכון בלבד, בלי הוראות
+            c = cards.get(a.get("jobId")) or {}
+            out.append({"k": "update", "t": f"עדכנת שאין המשך בתהליך מול {c.get('co') or 'אחת החברות'}", "go": "apps"})
         if a.get("status") == "interview":
             c = cards.get(a.get("jobId")) or {}
             out.append({"k": "update", "t": f"יש לך ראיון ב-{c.get('co') or 'משרה ששמרת'}" + (f": {a['iv']}" if a.get("iv") else ""), "go": "prep"})

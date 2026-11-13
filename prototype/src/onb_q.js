@@ -190,7 +190,7 @@ function qNext(){qi++;S.qi=qi;save();renderQ()}
 function qBack(){if(qi>0){qi--;renderQ()}else if(onbSingle)closeOnb();else{onbStep=1;renderOnb()}}
 function qLater(){
   S.qi=qi;onbDraft.ans=prof().ans;commitOnb();
-  const first=!S.onboarded;S.onboarded=true;save();closeOnb();
+  const first=!S.onboarded;S.onboarded=true;if(first)track('onb_done',{later:1});save();closeOnb();
   if(first)goPage('main');else{curPg==='profile'?renderProfile():curPg==='main'?renderHome():0}
   const {done,total}=qProgress();toast(`שמרתי ${done} מתוך ${total} תשובות. אפשר להמשיך מהלוח או מהפרופיל`,{ms:4200});
 }

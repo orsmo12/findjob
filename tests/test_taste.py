@@ -25,3 +25,10 @@ def test_skip_for_requirements_is_not_taste():
     assert "sales" in learn(sales, {f"k{i}": {"r": "לא מעניין"} for i in range(2)})["dislikes"]
     mine = role_words({"titles": ["Full Stack Developer"]})
     assert "full" not in learn(rows, {f"j{i}": {"r": "לא התחום שלי"} for i in range(3)}, [], mine)["dislikes"]
+
+
+def test_unmet_requirement_reaches_rater():
+    """סבב 5: "לא עומד בדרישות" + איזו דרישה → הסוכן המדרג יודע מה המשתמש אמר שאין לו."""
+    t = learn([], {"a": {"r": "לא עומד בדרישות", "q": "Armored corps background", "at": "2026-11-13"},
+                   "b": {"r": "לא עומד בדרישות", "q": "armored corps background", "at": "2026-11-12"}})
+    assert t["unmet"] == ["Armored corps background"] and "do NOT meet" in t["note"]

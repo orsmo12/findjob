@@ -32,7 +32,7 @@ def searched(plan: dict) -> list[str]:
     return list(dict.fromkeys(q for r in range(1, 5) for q in pick_queries(plan.get("queries", []), n, BUDGET, r)))
 
 
-def audit(plan: dict, a: dict) -> list[str]:
+def audit(plan: dict, a: dict, raw: dict | None = None) -> list[str]:
     """אזהרות על אי-התאמה בין מה שהמשתמש ענה לבין מה שמחפשים לו."""
     w, ran = [], searched(plan)
     levels = set(plan.get("levels") or [])
@@ -45,7 +45,7 @@ def audit(plan: dict, a: dict) -> list[str]:
     miss = [h for h in heads if not any(h.lower() in q.lower() for q in ran)]
     if miss:
         w.append(f"{len(miss)}/{len(heads)} תפקידים שבחר לא מחופשים: {miss}")
-    if a.get("status") == "סטודנט/ית" and EXP_MAX_YEARS.get(a.get("exp") or "", 1) not in (None, 1, 2):
+    if a.get("status") == "סטודנט/ית" and EXP_MAX_YEARS.get(a.get("exp") or "", 1) not in (None, 1, 2) and not (raw if raw is not None else a).get("track"):   # ענה "את שתיהן"/"מלאה" = אין סתירה
         w.append(f"סתירה בשאלון: סטודנט + {a.get('exp')} ניסיון")
     return w
 
@@ -113,7 +113,7 @@ def main(days=7):
         print(f"\n═══ משתמש #{i} | {a.get('status')} | ניסיון {a.get('exp')} | תחום {a.get('field') or a.get('domains')} | levels={plan.get('levels')} have_years={plan.get('have_years')}")
         print(f"   רצות: {searched(plan)}")
         print(f"   לפי השאלון: תפקידים שבחר {a.get('roles') or '-'} | תפקיד אחר {a.get('custom_roles') or '-'} | מפעיל/טכנאי בקו״ח: {sorted({m.group(0).lower() for m in HANDS_ON.finditer(p.get('cv_text') or '')}) or 'לא'}")
-        for w in audit(plan, a) or ["אין אזהרות"]:
+        for w in audit(plan, a, p.get("answers") or {}) or ["אין אזהרות"]:
             print(f"   {'⚠️ ' if w != 'אין אזהרות' else '✓ '}{w}")
         jobs = [j for j in get("jobs", select="id,card,fit,decision", user_id=f"eq.{uid}", created_at=f"gte.{since}") or []
                 if j.get("decision") != "filtered"]

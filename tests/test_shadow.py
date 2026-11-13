@@ -14,8 +14,9 @@ def plan_of(a):
 
 def test_audit_flags_experienced_student():
     a = normalize_answers(MECH)
-    w = " | ".join(S.audit(plan_of(MECH), a))
-    assert "סתירה בשאלון" in w and "ג'וניור" not in w and "חיפושי סטודנט" not in w   # סבב 3: בלי ג'וניור, סטודנט רק כתוספת
+    w = " | ".join(S.audit(plan_of(MECH), a, MECH))
+    assert "סתירה בשאלון" in " | ".join(S.audit(plan_of(MECH), a, {**MECH, "track": ""}))
+    assert "סתירה בשאלון" not in w and "ג'וניור" not in w   # ענה "את שתיהן" (track): אין סתירה and "חיפושי סטודנט" not in w   # סבב 3: בלי ג'וניור, סטודנט רק כתוספת
     q = plan_of({**MECH, "roles": ["תכנון מכני", "ייצור ותהליכים"]})["queries"]
     assert q[:2] == ["Mechanical Engineer", "Manufacturing Engineer"] and q.index("Student Mechanical Engineer") > q.index("מהנדס ייצור")
 
