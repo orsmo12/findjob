@@ -408,6 +408,11 @@ How to judge:
    Tag every CORE requirement with a "src": "ad" if the ad writes it as a requirement (under Requirements / Must / You have,
    or says required / must, or it is in the job title); "guess" if the ad does not write it and you only assume it is needed.
 7. "level": the seniority the job is written for: "student", "junior", "mid" or "senior".
+8. "met" needs evidence: true ONLY when the CV names it (the technology in a job, project or course; the degree; the role).
+   Related or similar is not enough ("React" does not meet "Angular"). If the CV does not mention it, "met": false.
+9. Background conditions in the ad are CORE and "key": true, with kind "work": a specific military unit, corps or service
+   background, security clearance, a domain background (banking, medical devices, automotive), a native language, a license.
+   They are met only if the CV states them.
 
 Return JSON only:
 {{"core": [every CORE requirement, short English, each {{"req": "...", "kind": "skill|work|degree", "key": true/false, "src": "ad|guess", "met": true/false}}
