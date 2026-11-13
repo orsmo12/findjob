@@ -21,6 +21,15 @@ def age(p):
         return None
 
 
+def plan_for(uid, p, st):
+    """תוכנית החיפוש כמו ב-nightly: שאילתות שנלמדו, תפקידים שאושרו וסיבות דילוג."""
+    learned = db.latest_plan(uid, "meeting")
+    return build_search_plan({"cv_text": p.get("cv_text") or "", "answers": p.get("answers") or {},
+                              "extra_titles": [x["value"] for x in st.get("accepted") or [] if x.get("type") == "role"],
+                              "drop_queries": learned.get("drop_queries") or [], "learned_queries": learned.get("add_queries") or [],
+                              "skip_reasons": {k: v.get("r") for k, v in (st.get("skip") or {}).items() if isinstance(v, dict)}}).to_dict()
+
+
 def main(idx=None, days=10):
     users = sorted(db.auth_users(), key=lambda u: u.get("created_at") or "")
     for i, u in enumerate(users):
@@ -38,11 +47,7 @@ def main(idx=None, days=10):
     print(f"   אירועים אחרונים: {(us.get('ev') or [])[-15:]}")
     print(f"   טלגרם: {st.get('telegram') or st.get('tg_channels') or '-'} | דילוגים עם סיבה: {Counter(v.get('r') for v in (st.get('skip') or {}).values() if isinstance(v, dict))}")
     try:
-        learned = db.latest_plan(uid, "meeting")   # כמו ב-nightly: שאילתות שנלמדו, תפקידים שאושרו וסיבות דילוג
-        plan = build_search_plan({"cv_text": p.get("cv_text") or "", "answers": p.get("answers") or {},
-                                  "extra_titles": [x["value"] for x in st.get("accepted") or [] if x.get("type") == "role"],
-                                  "drop_queries": learned.get("drop_queries") or [], "learned_queries": learned.get("add_queries") or [],
-                                  "skip_reasons": {k: v.get("r") for k, v in (st.get("skip") or {}).items() if isinstance(v, dict)}}).to_dict()
+        plan = plan_for(uid, p, st)
         print(f"   תוכנית חיפוש: levels={plan.get('levels')} domains={plan.get('domains')}\n   שאילתות: {plan.get('queries')}")
     except Exception as e:  # noqa: BLE001
         plan = {}

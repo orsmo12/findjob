@@ -48,7 +48,7 @@ def main(DAYS: int = 14) -> None:
     """מדפיס את הדוח. scripts/nightly.py קורא לזה פעם בשבוע ושומר את הטקסט לכלי המפתח."""
     since = (datetime.now(timezone.utc) - timedelta(days=DAYS)).isoformat()
     users = sorted(db.auth_users(), key=lambda u: u.get("created_at") or "")
-    alias = {u["id"]: ("אור" if i == 0 else f"משתמש {i}") for i, u in enumerate(users)}
+    alias = {u["id"]: f"משתמש #{i}" for i, u in enumerate(users)}
     profs = {p["user_id"]: p for p in get("profiles", select="user_id,answers,state")}
     db_cv = {p["user_id"]: p.get("cv_text") or "" for p in get("profiles", select="user_id,cv_text")}
     runs = get("runs", select="user_id,stats,created_at", agent="eq.hunter", created_at=f"gte.{since}", order="created_at.asc")

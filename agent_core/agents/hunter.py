@@ -536,7 +536,8 @@ def to_card(j: dict, r: dict, cv: str = "") -> dict:
             "tags": tags_for(j.get("description", ""), cv),
             "src": {"indeed": "Indeed", "linkedin": "LinkedIn", "google": "Google Jobs", "greenhouse": "אתר החברה",
                     "lever": "אתר החברה", "ashby": "אתר החברה"}.get(j["source"], j["source"]),
-            "posted_days": days, "salary": j.get("salary", ""), "desc": j.get("description", "")[:600], "ad": j.get("description", "")[:4000], "url": j["url"], "rv": RATING_V}
+            "posted_days": days, "salary": j.get("salary", ""), "desc": j.get("description", "")[:600], "ad": j.get("description", "")[:4000], "url": j["url"], "rv": RATING_V,
+            "q": j.get("query") or j.get("source", "")}   # מאיזה חיפוש הגיעה (לכלי הפיתוח)
 
 
 MIN_SHOWN = 6     # אם פחות משרות עברו את הסף, משלימים מהקרובות לו
@@ -550,7 +551,8 @@ def rerate(card: dict, profile: dict, plan: dict, min_fit: float = 3.5) -> tuple
     src = {v: k for k, v in {"indeed": "Indeed", "linkedin": "LinkedIn", "google": "Google Jobs"}.items()}
     j = {"id": card["id"], "title": card.get("title", ""), "company": card.get("co", ""), "location": card.get("loc", ""),
          "url": card.get("url", ""), "description": card.get("ad") or "", "posted": "", "salary": card.get("salary", ""),
-         "source": src.get(card.get("src"), "greenhouse" if card.get("src") == "אתר החברה" else card.get("src", ""))}
+         "source": src.get(card.get("src"), "greenhouse" if card.get("src") == "אתר החברה" else card.get("src", "")),
+         "query": card.get("q") or ""}
     if len(j["description"]) < 300:
         j["description"] = ""
     enrich(j)
