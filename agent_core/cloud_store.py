@@ -36,7 +36,11 @@ def profiles_ready() -> list[dict]:
         params["user_id"] = f"eq.{only}"
     r = httpx.get(_url("profiles"), headers=_h(), params=params, timeout=30)
     r.raise_for_status()
-    return r.json()
+    try:   # משתמש שהמפתח השהה (scripts/user_pause.py): לא נסרק, בלי הכנות ובלי התראות. הנתונים נשמרים
+        paused = set(system_memory("paused").get("ids") or [])
+    except Exception:  # noqa: BLE001
+        paused = set()
+    return [u for u in r.json() if u.get("user_id") not in paused]
 
 
 def seen_ids(user_id: str) -> set[str]:
