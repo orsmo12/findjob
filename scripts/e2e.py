@@ -116,6 +116,10 @@ def run(uid, email):
         check("   'אחר' בשאלון: יואב תרגם טקסט חופשי לתפקידים", bool(dj.get("roles")), "; ".join(f"{r['label']} → {', '.join(r['titles'])}" for r in dj.get("roles", [])[:3]) or d.text[:80])
         k = httpx.post(SITE + "/api/checkkey", json={"token": token, "key": "AIzaSy" + "x" * 33}, timeout=30).json()
         check("   בדיקת מפתח Gemini: מזהה את הספק ודוחה מפתח מזויף", k.get("provider") == "gemini" and not k.get("ok"), str(k))
+        mail = ("Hi, thank you for applying to the Mechanical Engineer position at Acme. After careful review we decided "
+                "to move forward with other candidates. We wish you the best of luck. Dana, Talent team")
+        m = httpx.post(SITE + "/api/mailparse", json={"token": token, "text": mail, "co": "Acme", "title": "Mechanical Engineer"}, timeout=60).json()
+        check("   הדבקת מייל: שי מזהה דחייה ולא ממציא תאריך", m.get("kind") == "rejection" and not m.get("when"), str(m)[:160])
 
     # ── שלב ב: דורון סורק. מחכים לסיום ──
     done = res.get("prep_ok") and wait_prep_done(uid, since, 32)
