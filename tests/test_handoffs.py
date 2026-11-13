@@ -80,3 +80,12 @@ def test_search_status_for_owner_report():
     s = search_status([{"created_at": now, "stats": {"collected": 200, "too_senior": 13, "rated": 50, "shown": 6}}],
                       [{"created_at": now, "agent": "strategist", "stats": {"msg": "ישיבה שבועית", "failures": [{"x": 1}]}}])
     assert s["collected"] == 200 and s["shown"] == 6 and s["scans_24h"] == 1 and s["fails_24h"] == 1 and s["recent"][0]["a"] == "strategist"
+
+
+def test_inactive_users_wait():
+    """סבב 9: משתמש שלא נכנס 3 ימים — ההכנות מחכות. בלי נתוני שימוש = פעיל."""
+    from datetime import datetime, timezone, timedelta
+    from agent_core.handoffs import active_recently
+    iso = lambda d: (datetime.now(timezone.utc) - timedelta(days=d)).isoformat()
+    assert active_recently({"usage": {"last": iso(1)}}) and not active_recently({"usage": {"last": iso(5)}})
+    assert active_recently({}) and active_recently(None) and active_recently({"usage": {"last": "x"}})

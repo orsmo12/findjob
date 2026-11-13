@@ -129,6 +129,9 @@ for u in db.profiles_ready():
     use_key(valid_key((u.get("state") or {}).get("ai_key")))   # מפתח אישי (כל ספק) אם יש, אחרת המשותף
     cv, name = u["cv_text"], u.get("name") or u.get("first") or ""
     done: dict = {}
+    if not H.active_recently(u.get("state")):
+        print(f"{u['user_id'][:8]}: לא נכנס {H.INACTIVE_DAYS} ימים — ההכנות מחכות עד שיחזור")
+        continue
     act.start(u["user_id"])
     try:
         (work_by_tasks if H.available() else work_legacy)(u, cv, name, done)

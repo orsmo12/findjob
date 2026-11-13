@@ -20,5 +20,12 @@ def push() -> None:
         files = bg.snapshot()
         if files:
             db.save_system_memory("budget", {"files": files})
+            hist = db.system_memory("budget_hist").get("days") or {}   # היסטוריה יומית לפי סוכן (המכסה עצמה מתאפסת כל יום)
+            for i, f in enumerate(files.values()):   # קובץ לכל מפתח: נשמר לפי מספר הקובץ, כדי שמפתחות שונים לא ידרסו זה את זה
+                if isinstance(f, dict) and f.get("date"):
+                    day = hist.setdefault(f["date"], {})
+                    for k, v in (f.get("usage") or {}).items():
+                        day.setdefault(k, {})[str(i)] = int((v or {}).get("tokens") or 0)
+            db.save_system_memory("budget_hist", {"days": {d: hist[d] for d in sorted(hist)[-30:]}})
     except Exception as e:  # noqa: BLE001
         print(f"מצב המכסה לא נשמר: {type(e).__name__}")

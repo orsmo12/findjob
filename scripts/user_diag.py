@@ -100,6 +100,8 @@ def main(idx=None, days=10):
     print(f"\nריצות לפי סוכן: {dict(Counter(r['agent'] for r in ag))} | עם תקלות: {dict(fails)}")
     tk = get("agent_tasks", select="kind,status", user_id=f"eq.{uid}", created_at=f"gte.{since}") or []
     print(f"   agent_tasks: {dict(Counter((t.get('kind'), t.get('status')) for t in tk))}")
+    for d, ag in sorted((db.system_memory("budget_hist").get("days") or {}).items())[-7:]:
+        print(f"   טוקנים {d}: " + ", ".join(f"{a} {sum(v.values()):,}" for a, v in sorted(ag.items(), key=lambda x: -sum(x[1].values()))))
     for f in (db.system_memory("budget").get("files") or {}).values():
         d = f if isinstance(f, dict) else {}
         for k, u in (d.get("usage") or {}).items():

@@ -31,13 +31,15 @@ function nowTxt(a){const j=JOBS[a.jobId],w=a.when,past=w&&new Date(w)<new Date(n
   return''}
 /* השאלה בכרטיס: אחרי "הגשתי", ואחרי שיחה/מטלה/ראיון מהיום שאחרי התאריך. "עוד אין תשובה" מסתיר ל-7 ימים */
 function askOf(a){if(a.snooze&&new Date(a.snooze)>new Date())return null;
+  if(a.status==='applied'&&daysSince((lastStep(a,'applied')||{}).at||a.date)>=30)return{q:`עדיין אין תשובה מ-${JOBS[a.jobId].co}? לסמן 'אין מענה'?`,ghost:true};
   if(a.status==='applied')return{q:'קיבלת תשובה?',yes:'ממשיכים איתי',strong:daysSince((lastStep(a,'applied')||{}).at||a.date)>=5};
   if(['screening','task','interview'].includes(a.status)&&!(a.iv&&!a.when)){const w=a.when,since=daysSince((lastStep(a)||{}).at||a.date);
     if(w?new Date(w)<new Date(new Date().toDateString()):since>=3)return{q:a.status==='task'?'איך הלך עם המטלה?':'איך היה?',yes:'עברתי לשלב הבא',strong:true}}
   if(a.status==='offer')return{q:'מה החלטת?',offer:true};
   return null}
 function askHtml(a){const k=askOf(a);if(!k)return'';
-  if(k.offer)return`<div class="ask"><span class="ask-q">${k.q}</span><div class="ask-btns"><button class="btn btn-sm btn-primary" onclick="endApp('${a.id}','accepted')">קיבלתי את ההצעה</button><button class="btn btn-sm btn-ghost" onclick="endApp('${a.id}','withdrew')">דחיתי</button></div></div>`;
+  if(k.ghost)return`<div class="ask strong"><span class="ask-q">${escB(k.q)}</span><div class="ask-btns"><button class="btn btn-sm btn-primary" onclick="endApp('${a.id}','ghosted')">לסמן אין מענה</button><button class="btn btn-sm btn-ghost" onclick="openNext('${a.id}')">ממשיכים איתי</button><button class="btn btn-sm btn-ghost" onclick="snoozeAsk('${a.id}')">עוד מחכה</button></div></div>`;
+    if(k.offer)return`<div class="ask"><span class="ask-q">${k.q}</span><div class="ask-btns"><button class="btn btn-sm btn-primary" onclick="endApp('${a.id}','accepted')">קיבלתי את ההצעה</button><button class="btn btn-sm btn-ghost" onclick="endApp('${a.id}','withdrew')">דחיתי</button></div></div>`;
   return`<div class="ask${k.strong?' strong':''}"><span class="ask-q">${k.q}</span><div class="ask-btns"><button class="btn btn-sm btn-primary" onclick="openNext('${a.id}')">${k.yes}</button><button class="btn btn-sm btn-ghost" onclick="endApp('${a.id}','rejected')">לא ממשיכים</button><button class="btn btn-sm btn-ghost" onclick="snoozeAsk('${a.id}')">עוד אין תשובה</button></div></div>`}
 /* פס מסלול: עבר = מלאה, נוכחי = טבעת מנטה, עתיד = ריקה. מטלה רק אם הייתה. דחייה = נקודה אלמוגית ומקווקו אחריה */
 function trackHtml(a){if(a.status==='saved'||a.status==='closed')return'';
@@ -96,7 +98,7 @@ function saveNext(id){const a=appOf(id),prev=JSON.stringify(a),k=nextPick,w=$('n
 function endApp(id,k){const a=appOf(id),prev=JSON.stringify(a);if(k==='rejected')a.stop=a.status;
   addStep(a,k);a.status=k;a.when='';track('app_'+k);save();refreshApps();
   if(k==='rejected'){afterRejectUndo(a,prev);return}
-  const msg=k==='accepted'?'מזל טוב! 🎉':'עודכן: דחית את ההצעה';
+  const msg=k==='accepted'?'מזל טוב! 🎉':k==='ghosted'?'סימנתי: אין מענה':'עודכן: דחית את ההצעה';
   toast(msg,{undo:()=>{const o=JSON.parse(prev);Object.keys(a).forEach(x=>delete a[x]);Object.assign(a,o);save();refreshApps()},ms:6000})}
 function afterRejectUndo(a,prev){const j=JOBS[a.jobId];
   toast(`אין המשך בתהליך מול ${j.co}. זה חלק מהדרך.`,{ms:9000,undo:()=>{const o=JSON.parse(prev);Object.keys(a).forEach(x=>delete a[x]);Object.assign(a,o);save();refreshApps()},chips:[
