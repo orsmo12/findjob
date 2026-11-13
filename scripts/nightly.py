@@ -6,13 +6,14 @@ nightly.py — מה שרץ בענן כל לילה (GitHub Actions).
 """
 import sys
 import re
+import time
 from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from agent_core import cloud_store as db
 from agent_core.profile import build_search_plan
-from agent_core.agents.hunter import run, collect, rerate, RATING_V, BudgetDeferred
+from agent_core.agents.hunter import run, collect, rerate, RATING_V, BudgetDeferred, weak_queries
 from agent_core import activity as act
 from agent_core import handoffs as H
 from agent_core import run_report as RR, budget_sync
@@ -35,6 +36,7 @@ from agent_core.llm_router import clean_key, use_key
 k = clean_key(os.environ.get("GROQ_API_KEY"), "GROQ_API_KEY")
 raw = os.environ.get("GROQ_API_KEY") or ""
 print(f"מפתח Groq: {'תקין' if k.startswith('gsk_') and len(k) > 40 else 'לא תקין'} (אורך {len(k)}, נוקה: {'כן' if raw != k else 'לא'})")
+
 def user_key(u: dict) -> str | None:
     from agent_core.llm_router import valid_key   # Groq, Gemini, Claude או OpenAI
     return valid_key((u.get("state") or {}).get("ai_key"))
@@ -71,6 +73,11 @@ for u in users:
             "drop_queries": learned.get("drop_queries") or [], "learned_queries": learned.get("add_queries") or [],
             "skip_reasons": {k: v.get("r") for k, v in (ustate.get("skip") or {}).items() if isinstance(v, dict)}}
     plan = build_search_plan(prof).to_dict()
+    plan["rot"] = int(time.time() // (12 * 3600))   # סבב שאילתות: מתחלף בכל אחת משתי הסריקות היומיות (hunter.pick_queries)
+    try:   # שאילתות/מקורות שלא הביאו אף התאמה ב-3 סריקות ומעלה → לסוף התור (hunter.cheap_rank)
+        plan["weak_queries"] = weak_queries(db.recent_runs(u["user_id"], "hunter", days=4))
+    except Exception as e:  # noqa: BLE001
+        print(f"שאילתות חלשות: {e}")
     try:   # הטעם האישי מהשימוש באפליקציה: שמירות, דילוגים וסיבות דילוג (agent_core/taste.py)
         from agent_core.taste import learn as learn_taste, role_words
         plan["taste"] = learn_taste(db.all_jobs(u["user_id"], days=60), ustate.get("skip") or {}, ustate.get("taste_off") or [], role_words(plan))

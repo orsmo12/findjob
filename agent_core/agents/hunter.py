@@ -55,12 +55,37 @@ def salary_text(row: dict) -> str:
     return f"{cur}{fmt(lo)}–{fmt(hi)}{per}" if lo and hi else f"{cur}{fmt(lo or hi)}{per}"
 
 
+ROTATE_QUERIES = True     # מתג חזרה (סבב 3): סבב שאילתות בין סריקות כשלא כולן נכנסות
+CAP_BY_RANGE = True       # מתג חזרה (סבב 3): תקרת ניסיון לפי הקצה העליון של הטווח שסומן (3–5 → 5)
+HANDS_ON_FILTER = True    # מתג חזרה (סבב 3): משרת מפעיל/טכנאי רק למי שבחר תפקיד כזה בשאלון
+SAME_JOB_DEDUPE = True    # מתג חזרה (סבב 3): אותה חברה + אותה כותרת (בלי מספרים וסימנים) = משרה אחת
+WEAK_LAST = True          # מתג חזרה (סבב 3): משרות משאילתות שלא הביאו אף התאמה עוברות לסוף התור (לא נמחקות)
+
+def weak_queries(runs: list[dict], min_scans: int = 3, min_new: int = 20) -> list[str]:
+    """שאילתה או מקור שהופיעו ב-3 סריקות לפחות, הביאו 20+ משרות חדשות ואף אחת לא התאימה."""
+    agg: dict = {}
+    for r in runs:
+        for q, v in ((r.get("stats") or {}).get("queries") or {}).items():
+            a = agg.setdefault(q, [0, 0, 0]); a[0] += 1; a[1] += int(v.get("new", 0) or 0); a[2] += int(v.get("fit", 0) or 0)
+    return sorted(q for q, (n, new, fit) in agg.items() if n >= min_scans and new >= min_new and fit == 0)
+
+
+def pick_queries(queries: list[str], n_locs: int, budget: int = 12, rot: int = 0) -> list[str]:
+    """כמה שאילתות נכנסות לסריקה אחת (שאילתה × אזור ≤ budget). כשלא כולן נכנסות (הרבה אזורים/תפקידים),
+    מסובבים בין סריקות כך שכל התפקידים מחופשים בתוך יום-יומיים. rot=0: הסדר הרגיל (בלי שינוי)."""
+    per = max(1, budget // max(1, n_locs))
+    if not ROTATE_QUERIES or len(queries) <= per or not rot:
+        return queries[:per]
+    start = (rot * per) % len(queries)
+    return (queries[start:] + queries[:start])[:per]
+
+
 def collect(plan: dict, per_search: int = 20, budget: int = 12) -> list[dict]:
     """JobSpy לפי התוכנית: עד 12 חיפושים (שאילתה × אזור). LinkedIn כמודעות ציבוריות בלבד."""
     from jobspy import scrape_jobs
     out = []
     locs = plan.get("locations") or ["Israel"]
-    pairs = [(q, l) for q in plan.get("queries", []) for l in locs][:budget]
+    pairs = [(q, l) for q in pick_queries(plan.get("queries", []), len(locs), budget, plan.get("rot") or 0) for l in locs][:budget]
     for q, loc in pairs:
         if True:
             try:
@@ -158,11 +183,20 @@ def ai_too_senior(r: dict, plan: dict, title: str = "") -> bool:
     return not r.get("seniority_ok", True)
 
 
+def years_have(plan: dict):
+    """כמה שנות ניסיון נחשבות מול דרישת המודעה. מי שסימן טווח (1–2, 3–5): הקצה העליון של הטווח,
+    כי "3–5" יכול להיות 5. בלי ניסיון (have_years=0): כמו קודם."""
+    have = plan.get("have_years")
+    if have is None:
+        return plan.get("max_years")
+    if CAP_BY_RANGE and have and plan.get("max_years") and plan["max_years"] > have:
+        return plan["max_years"]
+    return have
+
+
 def note_stretch(r: dict, plan: dict) -> None:
     """מתיחה: שנה מעל מה שיש לך. כותבים את זה בגלוי בחוסרים."""
-    req, have = r.get("required_years") or 0, plan.get("have_years")
-    if have is None:
-        have = plan.get("max_years")
+    req, have = r.get("required_years") or 0, years_have(plan)
     if have is not None and req > have:
         more = "קצת יותר ממה שיש לך, אבל שווה לנסות" if req - have == 1 else "יותר ממה שיש לך"
         r["gaps"] = [f"במודעה נדרשות {req} שנות ניסיון. {more}"] + r["gaps"][:1]
@@ -212,7 +246,7 @@ def off_field(job: dict, plan: dict) -> bool:
 
 def prefilter(jobs: list[dict], plan: dict, seen_ids: set[str]) -> tuple[list[dict], dict]:
     stats = {"collected": len(jobs), "too_senior": 0, "already_seen": 0, "excluded": 0, "off_field": 0}
-    keep = []
+    keep, same = [], set()
     for j in jobs:
         if excluded(j, plan):
             stats["excluded"] += 1; continue
@@ -222,8 +256,35 @@ def prefilter(jobs: list[dict], plan: dict, seen_ids: set[str]) -> tuple[list[di
             stats["too_senior"] += 1; continue
         if off_field(j, plan):
             stats["off_field"] += 1; continue
+        if hands_on(j, plan):
+            stats["hands_on"] = stats.get("hands_on", 0) + 1; continue
+        k = same_key(j)
+        if SAME_JOB_DEDUPE and k in same:
+            stats["same_job"] = stats.get("same_job", 0) + 1; continue
+        same.add(k)
         keep.append(j)
     return keep, stats
+
+
+HANDS_ON = re.compile(r"\b(operator|technician|machinist|cnc)\b|מפעיל|טכנאי|כרסם|חרט|רתך|מרכיב", re.I)
+ENGINEER = re.compile(r"\b(engineer|developer|designer|programmer|scientist|analyst)\b|מהנדס|מתכנן|מפתח", re.I)
+
+
+def hands_on(job: dict, plan: dict) -> bool:
+    """משרת מפעיל/טכנאי (בלי מהנדס/מפתח בכותרת) — יורדת אם בשאלון לא נבחר תפקיד כזה (תפקידים או "תפקיד אחר").
+    לפי השאלון בלבד: ניסיון קודם כטכנאי בקורות החיים הוא עבר, לא יעד. נבדק בהרצת ניסיון: 0 משרות שנשמרו נפגעו."""
+    if not HANDS_ON_FILTER:
+        return False
+    t = job.get("title") or ""
+    mine = " ".join((plan.get("titles") or []) + (plan.get("heads") or []) + (plan.get("extra_titles") or []))
+    return bool(HANDS_ON.search(t)) and not ENGINEER.search(t) and not HANDS_ON.search(mine)
+
+
+def same_key(job: dict) -> tuple:
+    """אותה חברה + אותה כותרת אחרי הסרת מספרים, קודי משרה וסימנים (InfinityLabs פרסמו 3 כמעט זהות)."""
+    t = re.sub(r"\b[a-z]{0,4}[-_ ]?\d[\w-]*", " ", (job.get("title") or "").lower())   # קודי משרה: 7361, JB-5570, R-243003
+    t = re.sub(r"[^a-zא-ת]+", " ", t).split()
+    return ((job.get("company") or "").strip().lower(), " ".join(w for w in t if len(w) > 1))
 
 
 def cheap_rank(j: dict, plan: dict, cv: str) -> int:
@@ -234,6 +295,8 @@ def cheap_rank(j: dict, plan: dict, cv: str) -> int:
     if any(t.lower() in j["title"].lower() for t in plan.get("titles", [])):
         s += 5
     from agent_core.taste import boost   # הטעם האישי: מה המשתמש שומר ועל מה מדלג
+    if WEAK_LAST and (j.get("query") or j.get("source")) in set(plan.get("weak_queries") or []):
+        s -= 1000   # שאילתה/מקור שלא הביאו אף התאמה בסריקות האחרונות: לסוף התור (עדיין מדורגות אם נשאר מקום)
     return s + boost(j, plan.get("taste"))
 
 
@@ -429,9 +492,7 @@ def level_cap(r: dict, plan: dict, title: str = "") -> None:
     levels = set(plan.get("levels") or [])
     early = bool(levels & {"student", "intern", "junior", "entry"}) and "mid" not in levels
     req = r.get("required_years") or 0
-    have = plan.get("have_years")
-    if have is None:
-        have = plan.get("max_years")
+    have = years_have(plan)
     work = [c for c in r.get("core") or [] if c.get("kind") == "work" and _counted(c)]
     gap, cap = "", 5.0
     if have is not None and req > have:

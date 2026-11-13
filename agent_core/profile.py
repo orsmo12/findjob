@@ -121,6 +121,7 @@ REGIONS = {
     "באר שבע והדרום":   ["Beer Sheva"],
 }
 EXP_HAVE_YEARS = {"אין עדיין": 0, "פחות משנה": 0, "1–2 שנים": 1, "3–5 שנים": 3, "יותר מ-5 שנים": 5, "יותר מ-10 שנים": 10}   # כמה יש באמת
+JUNIOR_HE = re.compile(r"ג['׳]?וניור|גוניור")
 EXP_MAX_YEARS = {"אין עדיין": 1, "פחות משנה": 1, "1–2 שנים": 2, "3–5 שנים": 5, "יותר מ-5 שנים": None, "יותר מ-10 שנים": None}
 # הניסיון קובע את הרמה, לא הלימודים: סטודנט עם 5 שנות ניסיון בתחום לא מחפש משרת ג׳וניור
 EXP_LEVELS = {"3–5 שנים": ["mid"], "יותר מ-5 שנים": ["mid", "senior"], "יותר מ-10 שנים": ["mid", "senior"]}
@@ -161,7 +162,9 @@ class SearchPlan:
         rest = [t for t in self.titles if t not in heads]
         jr = "junior" in self.levels or "entry" in self.levels
         st = "student" in self.levels and self.student_positions
-        out = []
+        mid = "mid" in self.levels
+        st_inline = st and not mid   # עם ניסיון בתחום (סטודנט שעובד, למשל 3–5 שנים): משרות סטודנט רק כתוספת בסוף
+        out, st_tail = [], []
         for group in (heads, None, rest, "entry"):
             for t in (heads if group in (None, "entry") else group):
                 if group is None:
@@ -169,10 +172,12 @@ class SearchPlan:
                 elif group == "entry":
                     out += [f"Entry Level {t}"] if jr else []
                 else:
-                    out += ([f"Student {t}"] if st else []) + ([f"Junior {t}"] if jr else []) + ([t] if "mid" in self.levels else [])
-        if self.he_queries or self.learned_queries:  # אחרי הכותרות הראשיות, לפני השאר
-            k = len(heads) * (1 + st)
-            out = out[:k] + list(self.learned_queries) + list(self.he_queries) + out[k:]
+                    out += ([f"Student {t}"] if st_inline else []) + ([f"Junior {t}"] if jr else []) + ([t] if mid else [])
+                    st_tail += [f"Student {t}"] if st and not st_inline and group is heads else []
+        # אחרי הכותרות הראשיות: שאילתות שנלמדו, עברית, ואז (סטודנט עם ניסיון) משרות סטודנט לתפקידים הראשיים, ורק אז השאר
+        k = len(heads) * (1 + st_inline)
+        he = [q for q in self.he_queries if jr or not JUNIOR_HE.search(q)]   # "ג׳וניור" בעברית רק למי שמחפש ג׳וניור
+        out = out[:k] + list(self.learned_queries) + he + st_tail + out[k:]
         drop = {q.lower() for q in self.drop_queries}
         seen, uniq = set(), []
         for q in out:

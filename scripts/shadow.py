@@ -26,9 +26,10 @@ YEARS = re.compile(r"נדרשות (\d+) שנות ניסיון")
 
 # ── 1. בדיקת התאמה בין הפרופיל לחיפוש ──────────────────────────────────────
 def searched(plan: dict) -> list[str]:
-    """השאילתות שבאמת רצות בסריקה (אותו חיתוך כמו collect)."""
-    locs = plan.get("locations") or ["Israel"]
-    return list(dict.fromkeys(q for q, _ in [(q, l) for q in plan.get("queries", []) for l in locs][:BUDGET]))
+    """השאילתות שרצות ביומיים (4 סריקות, עם סבב השאילתות של collect)."""
+    from agent_core.agents.hunter import pick_queries
+    n = len(plan.get("locations") or ["Israel"])
+    return list(dict.fromkeys(q for r in range(1, 5) for q in pick_queries(plan.get("queries", []), n, BUDGET, r)))
 
 
 def audit(plan: dict, a: dict) -> list[str]:
@@ -44,8 +45,6 @@ def audit(plan: dict, a: dict) -> list[str]:
     miss = [h for h in heads if not any(h.lower() in q.lower() for q in ran)]
     if miss:
         w.append(f"{len(miss)}/{len(heads)} תפקידים שבחר לא מחופשים: {miss}")
-    if len(plan.get("locations") or []) > 2:
-        w.append(f"{len(plan['locations'])} אזורים → רק {len(ran)} שאילתות שונות רצות")
     if a.get("status") == "סטודנט/ית" and EXP_MAX_YEARS.get(a.get("exp") or "", 1) not in (None, 1, 2):
         w.append(f"סתירה בשאלון: סטודנט + {a.get('exp')} ניסיון")
     return w
