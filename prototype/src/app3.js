@@ -39,9 +39,16 @@ function askOf(a){if(a.snooze&&new Date(a.snooze)>new Date())return null;
   return null}
 function askHtml(a){const k=askOf(a);if(!k)return'';
   if(k.ghost)return`<div class="ask strong"><span class="ask-q">${escB(k.q)}</span><div class="ask-btns"><button class="btn btn-sm btn-primary" onclick="endApp('${a.id}','ghosted')">לסמן אין מענה</button><button class="btn btn-sm btn-ghost" onclick="openNext('${a.id}')">ממשיכים איתי</button><button class="btn btn-sm btn-ghost" onclick="snoozeAsk('${a.id}')">עוד מחכה</button></div></div>`;
-    if(k.offer)return`<div class="ask"><span class="ask-q">${k.q}</span><div class="ask-btns"><button class="btn btn-sm btn-primary" onclick="endApp('${a.id}','accepted')">קיבלתי את ההצעה</button><button class="btn btn-sm btn-ghost" onclick="endApp('${a.id}','withdrew')">דחיתי</button></div></div>`;
+  if(k.offer)return`<div class="ask"><span class="ask-q">${k.q}</span><div class="ask-btns"><button class="btn btn-sm btn-primary" onclick="endApp('${a.id}','accepted')">קיבלתי את ההצעה</button><button class="btn btn-sm btn-ghost" onclick="endApp('${a.id}','withdrew')">דחיתי</button></div></div>`;
   return`<div class="ask${k.strong?' strong':''}"><span class="ask-q">${k.q}</span><div class="ask-btns"><button class="btn btn-sm btn-primary" onclick="openNext('${a.id}')">${k.yes}</button><button class="btn btn-sm btn-ghost" onclick="endApp('${a.id}','rejected')">לא ממשיכים</button><button class="btn btn-sm btn-ghost" onclick="snoozeAsk('${a.id}')">עוד אין תשובה</button></div></div>`}
-/* פס מסלול: עבר = מלאה, נוכחי = טבעת מנטה, עתיד = ריקה. מטלה רק אם הייתה. דחייה = נקודה אלמוגית ומקווקו אחריה */
+/* השאלה נפתחת בחלון קטן (בכרטיס רק תווית). "לעבור עליהן": אחת אחרי השנייה */
+let askQ=[];
+function openAsk(id,queue){if(queue)askQ=queue.slice();const a=appOf(id),j=JOBS[a.jobId];
+  openSheet(`<div style="display:flex;gap:12px;align-items:center">${logo(j)}<div style="min-width:0"><h3 id="sheetTitle" dir="${dirOf(j.title)||'auto'}" style="text-align:right">${escB(j.title)}</h3><div class="sheet-sub">${escB(j.co)} · ${escB(nowTxt(a))}</div></div></div>
+    ${askHtml(a)}${askQ.length>1?`<p class="hint-line" style="margin-top:10px">עוד ${askQ.length-1} אחרי זו</p>`:''}`);
+  document.querySelectorAll('#sheet .ask-btns button').forEach(b=>b.addEventListener('click',()=>setTimeout(nextAsk,400)))}
+function nextAsk(){askQ.shift();const n=askQ.find(id=>appOf(id)&&askOf(appOf(id)));if(n&&!document.querySelector('#sheet .next-grid'))openAsk(n)}
+function reviewWaiting(){const q=S.apps.filter(a=>groupOf(a)==='waiting'&&askOf(a)).map(a=>a.id);if(q.length)openAsk(q[0],q)}
 function trackHtml(a){if(a.status==='saved'||a.status==='closed')return'';
   const had=stepsOf(a).some(x=>x.k==='task')||a.status==='task',keys=TRACK.filter(k=>k!=='task'||had),
     cur=a.status==='rejected'||a.status==='ghosted'||a.status==='withdrew'?(a.stop||lastReal(a)):a.status==='accepted'?'offer':a.status,ci=keys.indexOf(cur),
@@ -54,31 +61,44 @@ function groupOf(a){if(CLOSED.includes(a.status))return'closed';
   if(soon||(ask&&a.status!=='applied')||(a.status==='saved'&&lettered(JOBS[a.jobId])))return'open';
   if(['screening','task','interview','offer'].includes(a.status))return'progress';
   return'waiting'}
-function appCard(a){const j=JOBS[a.jobId],g=groupOf(a);
-  return`<div class="swipe" data-id="${a.id}"><div class="swipe-bg" aria-hidden="true"><span>הסרה</span><span>הסרה</span></div><article class="app glass${g==='open'?' soon':''}${CLOSED.includes(a.status)?' dim':''}">${j.closed_at&&!CLOSED.includes(a.status)?`<div class="closed-tag">המשרה נסגרה למועמדים חדשים</div>`:''}
-    <button class="app-top" style="width:100%;text-align:right" onclick="openApp('${a.id}')" aria-label="${escB(j.title)} ב-${escB(j.co)}, ${stLabel(a)}">
-      ${logo(j)}<span class="app-info"><span class="app-title" dir="${dirOf(j.title)||'auto'}" style="display:block;text-align:right">${escB(j.title)}</span><span class="app-sub" style="display:block">${escB(j.co)}${j.loc?' · '+escB(String(j.loc).split(',')[0]):''}</span></span>
+function appCard(a){const j=JOBS[a.jobId],g=groupOf(a),k=askOf(a);
+  return`<div class="swipe" data-id="${a.id}"><div class="swipe-bg" aria-hidden="true"><span>הסרה</span><span>הסרה</span></div><article class="app glass row-app${g==='open'?' soon':''}${CLOSED.includes(a.status)?' dim':''}">
+    <button class="app-top" style="width:100%;text-align:right" onclick="openApp('${a.id}')" aria-label="${escB(j.title)} ב-${escB(j.co)}, ${stLabel(a)}, ${escB(nowTxt(a))}">
+      ${logo(j)}<span class="app-info"><span class="app-title" dir="${dirOf(j.title)||'auto'}" style="display:block;text-align:right">${escB(j.title)}</span><span class="app-sub" style="display:block">${escB(j.co)} · ${escB(nowTxt(a))}${j.closed_at&&!CLOSED.includes(a.status)?' · המשרה נסגרה':''}</span></span>
       <span class="status st-${a.status}">${stLabel(a)}</span></button>
-    <div class="app-now">${escB(nowTxt(a))}</div>${trackHtml(a)}${askHtml(a)}
-    ${a.status==='saved'?`<div class="app-actions"><button class="btn btn-sm btn-ghost" onclick="openApp('${a.id}','letter')">לערכת ההגשה</button>${appliedBox(a)}</div>`:''}
-    ${(a.status==='interview'||a.status==='screening')&&!askOf(a)?`<div class="app-actions"><button class="btn btn-sm btn-primary" onclick="${REAL?`openPrep('${a.jobId}')`:`openApp('${a.id}','prep')`}">להכנה עם ${escB(N('coach'))}</button></div>`:''}
+    ${k?`<button class="ask-tag" onclick="openAsk('${a.id}')">${escB(k.q)} ←</button>`:''}
   </article></div>`}
-function funnelHtml(){const live=S.apps.filter(a=>a.status!=='saved'&&a.status!=='closed'),n=k=>live.filter(a=>reached(a,k)).length,
-    c=[['הגשות',live.length],['שיחות',n('screening')],['ראיונות',n('interview')],['הצעות',n('offer')]];
-  return`<div class="funnel card glass" role="group" aria-label="משפך ההגשות">${c.map(([l,v])=>`<div class="fn"><b class="num">${v}</b><span>${l}</span></div>`).join('')}
-    <div class="fn-bar" aria-hidden="true">${c.map(([,v])=>`<i style="flex:${Math.max(v,0.2)}" class="${v?'on':''}"></i>`).join('')}</div></div>`}
-let closedOpen=false;
+/* המספרים: בלוח הבקרה (משפך) ובשורה אחת במחשב. מסקנות רק מ-8 הגשות ו-4 תשובות */
+function funnelNums(){const live=S.apps.filter(a=>a.status!=='saved'&&a.status!=='closed'),n=k=>live.filter(a=>reached(a,k)).length;
+  return{apps:live.length,talks:n('screening'),ivs:n('interview'),offers:n('offer'),answers:live.filter(a=>a.status!=='applied').length,
+    early:live.filter(a=>a.status==='rejected'&&(a.stop||'applied')==='applied').length,late:live.filter(a=>a.status==='rejected'&&a.stop&&a.stop!=='applied').length,ghost:live.filter(a=>a.status==='ghosted').length}}
+function funnelInsight(){const f=funnelNums();if(f.apps<8||f.answers<4)return'';
+  if(f.early>=Math.max(3,f.answers*.5))return`רוב הדחיות מגיעות לפני שיחה (${f.early} מ-${f.answers}). כדאי לחזק את קורות החיים ואת בחירת המשרות.`;
+  if(f.late>=3)return`${f.late} תהליכים נעצרו אחרי שיחה או ראיון. תרגול עם ${N('coach')} יכול לעזור.`;
+  if(f.ghost>=3)return`${f.ghost} הגשות בלי מענה בכלל. הודעת המשך שבוע אחרי ההגשה מעלה את הסיכוי לתשובה.`;
+  return''}
+function funnelHtml(){const f=funnelNums(),c=[['הגשות',f.apps],['שיחות',f.talks],['ראיונות',f.ivs],['הצעות',f.offers]],ins=funnelInsight();
+  return`<button class="funnel card glass" onclick="goPage('apps')" aria-label="ההגשות שלך: ${c.map(([l,v])=>v+' '+l).join(', ')}">${c.map(([l,v])=>`<span class="fn"><b class="num">${v}</b><span>${l}</span></span>`).join('')}
+    <span class="fn-bar" aria-hidden="true">${c.map(([,v])=>`<i style="flex:${Math.max(v,0.2)}" class="${v?'on':''}"></i>`).join('')}</span>${ins?`<span class="fn-ins">${escB(ins)}</span>`:''}</button>`}
+let appGrp=null;
+const GRP=[['open','פתוחות'],['progress','בתהליך'],['waiting','ממתינות'],['closed','נסגרו']];
 function renderApps(){S.apps.forEach(stepsOf);
-  $('seg').innerHTML='';
-  if(!S.apps.length){$('appsList').innerHTML=historyHtml(true)+`<div class="empty"><div class="empty-ic">📋</div><h3>עוד אין הגשות</h3><p>משרות ששמרת יופיעו כאן, עם מכתב פנייה מוכן.</p><button class="btn btn-primary" onclick="goPage('jobs')">למשרות</button></div>`;return}
-  const G={open:'הגשות פתוחות',progress:'בתהליך',waiting:'ממתינים לתשובה'},by={open:[],progress:[],waiting:[],closed:[]};
-  S.apps.forEach(a=>by[groupOf(a)].push(a));
+  if(!S.apps.length){$('seg').innerHTML='';$('appsList').innerHTML=historyHtml(true)+`<div class="empty"><div class="empty-ic">📋</div><h3>עוד אין הגשות</h3><p>משרות ששמרת יופיעו כאן, עם מכתב פנייה מוכן.</p><button class="btn btn-primary" onclick="goPage('jobs')">למשרות</button></div>`;return}
+  const by={open:[],progress:[],waiting:[],closed:[]};S.apps.forEach(a=>by[groupOf(a)].push(a));
   const when=a=>a.when?new Date(a.when).getTime():9e15;
   by.open.sort((x,y)=>when(x)-when(y));by.progress.sort((x,y)=>(REACH[y.status]||0)-(REACH[x.status]||0));
   by.waiting.sort((x,y)=>(x.status==='saved')-(y.status==='saved')||new Date(x.date)-new Date(y.date));   // הוותיקות ראשונות, "עוד לא הוגש" בסוף
+  by.closed.sort((x,y)=>new Date((lastStep(y)||{}).at||y.date)-new Date((lastStep(x)||{}).at||x.date));
+  if(!appGrp||!by[appGrp].length)appGrp=GRP.map(([k])=>k).find(k=>by[k].length);
+  const dot=k=>k!=='closed'&&by[k].some(a=>askOf(a)||k==='open');
+  $('seg').innerHTML=GRP.map(([k,l])=>`<button class="chip${appGrp===k?' sel':''}" role="tab" aria-selected="${appGrp===k}" onclick="appGrp='${k}';renderApps()">${l} <b class="num">${by[k].length}</b>${dot(k)&&by[k].length?'<span class="tab-dot" aria-label="מחכה לך"></span>':''}</button>`).join('');
+  const nAsk=by.waiting.filter(a=>askOf(a)).length;
   const prepBtn=CLOUDM&&S.apps.some(a=>a.status==='saved')?`<button class="btn btn-sm btn-ghost btn-block" style="margin-bottom:10px" onclick="prepNow()">${ICO.spark||''}לעדכן הכל עכשיו</button>`:'';
-  $('appsList').innerHTML=funnelHtml()+prepBtn+`<div class="app-groups">${Object.entries(G).filter(([k])=>by[k].length).map(([k,l])=>`<section class="app-group g-${k}"><h3 class="grp-h">${l} <span class="num">${by[k].length}</span></h3>${by[k].map(appCard).join('')}</section>`).join('')}</div>`
-    +(by.closed.length?`<details class="closed-grp"${closedOpen?' open':''} ontoggle="closedOpen=this.open"><summary>נסגרו (${by.closed.length})</summary>${by.closed.map(appCard).join('')}</details>`:'')+historyHtml();
+  const f=funnelNums(),line=`<p class="apps-line">${GRP.map(([k,l])=>`${by[k].length} ${l}`).join(' · ')} · ${f.ivs} ראיונות · ${f.offers} הצעות</p>`;
+  const col=k=>`<section class="app-group g-${k}${appGrp===k?' on':''}" role="tabpanel"><h3 class="grp-h">${GRP.find(x=>x[0]===k)[1]} <span class="num">${by[k].length}</span></h3>
+      ${k==='waiting'&&nAsk>1?`<div class="review"><span>${nAsk} הגשות בלי עדכון</span><button class="btn btn-sm" onclick="reviewWaiting()">לעבור עליהן ←</button></div>`:''}
+      ${by[k].map(appCard).join('')||'<p class="grp-empty">אין כאן כרגע</p>'}</section>`;
+  $('appsList').innerHTML=line+prepBtn+`<div class="app-groups">${GRP.map(([k])=>col(k)).join('')}</div>`+historyHtml();
   bindAppSwipes();
 }
 /* "מה השלב הבא?": 4 אפשרויות, "מתי?" (אפשר להשאיר ריק), שמירה. אחרי ראיון מוצע ראיון נוסף */
@@ -107,10 +127,10 @@ function afterRejectUndo(a,prev){const j=JOBS[a.jobId];
 function snoozeAsk(id){const a=appOf(id);a.snooze=new Date(Date.now()+7*DAY).toISOString();save();refreshApps();
   toast('בסדר, אשאל שוב בעוד שבוע',{undo:()=>{delete a.snooze;save();refreshApps()},ms:6000})}
 /* חלון משרה (סבב 2): כותרת + "עכשיו" + פעולה אחת, ציר זמן (בלי שמות סוכנים: פעולה + אייקון), הערה לכל שלב */
-function appHead(a,j){const act=a.status==='saved'?`<a class="btn btn-primary btn-block ext" href="${j.url||LI_URL+'jobs/'}" target="_blank" rel="noopener">פתח והגש${ICO.open}</a>`
+function appHead(a,j){const act=a.status==='saved'?`<div class="duo"><a class="btn btn-primary ext" href="${j.url||LI_URL+'jobs/'}" target="_blank" rel="noopener">פתח והגש${ICO.open}</a>${appliedBox(a,true)}</div>`
     :['screening','task','interview'].includes(a.status)?`<button class="btn btn-primary btn-block" onclick="${REAL?`closeSheet();openPrep('${a.jobId}')`:`appTab='prep';paintAppTab('${a.id}')`}">להכנה עם ${escB(N('coach'))}</button>`
     :a.status==='offer'&&CLOUDM?`<button class="btn btn-primary btn-block" onclick="askAboutJob('${a.jobId}')">בדיקת ההצעה עם ${escB(N('assistant'))}</button>`:'';
-  return`<div class="app-head"><div><span class="status st-${a.status}">${stLabel(a)}</span></div><p class="app-now">${escB(nowTxt(a))}</p>${act}</div>`}
+  return`<div class="app-head"><div><span class="status st-${a.status}">${stLabel(a)}</span></div><p class="app-now">${escB(nowTxt(a))}</p>${act}${askHtml(a)}</div>`}
 const STEP_TXT={saved:'נשמרה',applied:'הוגשה',screening:'שיחה ראשונה',task:'מטלה או מבחן',interview:'ראיון',offer:'הצעה',accepted:'התקבלתי',rejected:'לא ממשיכים',ghosted:'אין מענה',withdrew:'ויתרתי',closed:'המשרה נסגרה'};
 const AG_EV=[['brief','researcher','חקירה על החברה'],['tailor','linkedin','התאמת קורות חיים'],['letter','assistant','כתיבת מכתב פנייה']];
 let tlAll=false,tlQ=[];

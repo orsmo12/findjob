@@ -5,7 +5,7 @@ function goPage(id,anchor){
   track('page_'+id);if(id==='jobs'&&queue().length)track('jobs_seen');
   if(typeof offAnimId!=='undefined') cancelAnimationFrame(offAnimId);
   closeDrawer();closeSheet();if(chatOpen)toggleChat();
-  curPg=id;
+  curPg=id;document.body.dataset.pg=id;
   document.querySelectorAll('.pg').forEach(p=>p.classList.toggle('on',p.id==='pg-'+id));
   document.body.className=(document.body.className.replace(/\bpg-\w+/g,'').trim()+' pg-'+id).trim();
   $('tbTitle').innerHTML=id==='main'?'<span class="wordmark" aria-hidden="true">findjob</span><span class="vh">לוח בקרה</span>':escB(TITLES[id]);
@@ -173,6 +173,7 @@ function renderHome(){
       ${shown.length?shown.map(x=>`<button class="nx" onclick="${x.go}"><span class="ic ${x.c}" aria-hidden="true">${x.ic}</span><span class="tx"><b>${escB(x.b)}</b><span>${escB(x.s)}</span></span>${x.w?`<span class="when ${x.w[1]}">${x.w[0]}</span>`:''}<span class="chev" aria-hidden="true"></span></button>`).join('')
         :'<p style="padding:6px 16px 14px;color:var(--ink2);font-size:14px">אין צעדים פתוחים כרגע. הסוכנים ממשיכים לעבוד ויעדכנו אותך.</p>'}
     </section>
+    ${S.apps.some(a=>a.status!=='saved')?funnelHtml():''}
     <button class="today glass" id="qCard" onclick="openQuestions()"></button>
     <section class="todo glass" id="todoBox" aria-label="המשימות שלי"></section>`;
   renderQCard();renderTodo();

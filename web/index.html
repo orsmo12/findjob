@@ -439,13 +439,27 @@ body.drawer-open .burger span:nth-child(3){top:6px;transform:rotate(-45deg)}
 .st-rejected{background:#F8E6E1;color:#7A3B2C}
 .st-ghosted,.st-withdrew,.st-closed{background:#ECEFF0;color:#6B7A80}
 /* מסלול הגשה (סבב 1) */
-.funnel{display:flex;flex-wrap:wrap;padding:12px 8px 10px;margin-bottom:12px;border-radius:var(--rad-l)}
-.fn{flex:1;text-align:center;display:flex;flex-direction:column;gap:2px}
+.funnel{display:flex;flex-wrap:wrap;width:100%;padding:12px 8px 10px;margin:12px 0;border-radius:var(--rad-l);border:0;font:inherit;color:inherit;text-align:center;cursor:pointer}
+.fn{flex:1;display:flex;flex-direction:column;gap:2px}
 .fn b{font-size:22px;font-weight:700;color:var(--ink)}.fn span{font-size:12px;color:var(--ink3)}
 .fn-bar{flex-basis:100%;display:flex;gap:4px;margin-top:10px}.fn-bar i{height:5px;border-radius:3px;background:#E6EBED}.fn-bar i.on{background:#2F4858}
-.grp-h{font-size:13.5px;font-weight:600;color:var(--ink2);margin:14px 4px 8px;display:flex;justify-content:space-between}
-.grp-h .num{color:var(--ink3);font-weight:500}
-.app-group .swipe+.swipe{margin-top:10px}
+.fn-ins{flex-basis:100%;margin-top:10px;font-size:13px;color:var(--ink2);text-align:right;padding:0 6px}
+/* מסך ההגשות: לשוניות + שורות קומפקטיות (טלפון), עמודות (מחשב) */
+.apps-line{display:none;font-size:13px;color:var(--ink3);margin:0 4px 12px}
+.app-group{display:none}.app-group.on{display:block}
+.app-group .grp-h{display:none}
+.app-group .swipe+.swipe{margin-top:8px}
+.row-app{padding:10px 12px}.row-app .app-top{gap:10px}.row-app .app-top .logo-tile{width:38px;height:38px;font-size:13px}
+.row-app .app-title{font-size:14.5px}.row-app .app-sub{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row-app .status{height:26px;padding:0 9px;font-size:11.5px}.row-app .status::before{display:none}
+.ask-tag{display:inline-block;margin:6px 48px 0 0;padding:4px 10px;min-height:28px;border:0;border-radius:10px;background:#FBEFD3;color:#5C4413;font:inherit;font-size:12px;cursor:pointer}
+.tab-dot{width:7px;height:7px;border-radius:50%;background:#F2C46D;display:inline-block}
+.seg .chip.sel .num{color:#7BE0B5}
+.review{display:flex;align-items:center;justify-content:space-between;gap:10px;background:#FBEFD3;color:#5C4413;border-radius:var(--rad-m);padding:10px 12px;font-size:13px;margin-bottom:10px}
+.review .btn{background:#5C4413;color:#fff;border:0}
+.grp-h{font-size:13.5px;font-weight:600;color:var(--ink2);justify-content:space-between;gap:6px}.grp-h .num{color:var(--ink3);font-weight:500}
+.grp-empty{font-size:13px;color:var(--ink3);padding:8px 4px}
+.app-head .ask{margin-top:4px}
 .app.soon{box-shadow:inset -4px 0 0 #F2C46D}
 .app.dim{opacity:.62}
 .app-now{font-size:13px;color:var(--ink2);margin-top:8px}
@@ -1151,8 +1165,18 @@ a.person>svg{flex:0 0 18px;width:18px;height:18px;fill:none;stroke:var(--ink3);s
 .app-more>summary{cursor:pointer;font-size:13.5px;font-weight:600;color:var(--ink2);padding:10px 0;min-height:40px}
 .app-foot{display:flex;gap:8px;margin-top:6px}.app-foot .btn{flex:1}
 @media (min-width:1024px){
-  .app-groups{display:grid;grid-template-columns:repeat(auto-fit,minmax(0,1fr));gap:14px;align-items:start}
-  .app-groups .grp-h{margin-top:4px}
+  body[data-pg=apps] #app,body[data-pg=apps] #topbar{max-width:min(1080px,calc(100vw - var(--dk-l) - 312px))}
+  #pg-apps .seg{display:none}
+  .apps-line{display:block}
+  .app-groups{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;align-items:start}
+  .app-group,.app-group.on{display:block;background:rgba(47,72,88,.06);border-radius:var(--rad-l);padding:10px}
+  .app-group .grp-h{display:flex;margin:2px 4px 10px}
+  .g-closed{opacity:.8}
+  .row-app .status{display:none}
+  .row-app .app-top{align-items:flex-start}.row-app .app-top .logo-tile{width:30px;height:30px;font-size:11px}
+  .row-app .app-title,.row-app .app-sub{white-space:normal;overflow:visible}
+  .review{flex-direction:column;align-items:stretch;text-align:center}
+  .row-app .ask-tag{margin-right:0}
   :root{--dk-l:max(0px,calc(50% - 504px));--dk-r:max(0px,calc(50% - 504px))}
   #drawerOverlay,#drawerOverlay.open{position:fixed;inset:0 auto 0 var(--dk-l);width:272px;z-index:150;background:none;pointer-events:auto}   /* מתחת לסיור (200), כדי שיוחשך איתו */
   #drawer,#drawerOverlay.open #drawer{position:absolute;inset:0;left:0;width:100%;transform:none;transition:none;box-shadow:none;border-right:1px solid var(--glass-brd);overflow-y:auto}
@@ -2131,7 +2155,7 @@ function goPage(id,anchor){
   track('page_'+id);if(id==='jobs'&&queue().length)track('jobs_seen');
   if(typeof offAnimId!=='undefined') cancelAnimationFrame(offAnimId);
   closeDrawer();closeSheet();if(chatOpen)toggleChat();
-  curPg=id;
+  curPg=id;document.body.dataset.pg=id;
   document.querySelectorAll('.pg').forEach(p=>p.classList.toggle('on',p.id==='pg-'+id));
   document.body.className=(document.body.className.replace(/\bpg-\w+/g,'').trim()+' pg-'+id).trim();
   $('tbTitle').innerHTML=id==='main'?'<span class="wordmark" aria-hidden="true">findjob</span><span class="vh">לוח בקרה</span>':escB(TITLES[id]);
@@ -2299,6 +2323,7 @@ function renderHome(){
       ${shown.length?shown.map(x=>`<button class="nx" onclick="${x.go}"><span class="ic ${x.c}" aria-hidden="true">${x.ic}</span><span class="tx"><b>${escB(x.b)}</b><span>${escB(x.s)}</span></span>${x.w?`<span class="when ${x.w[1]}">${x.w[0]}</span>`:''}<span class="chev" aria-hidden="true"></span></button>`).join('')
         :'<p style="padding:6px 16px 14px;color:var(--ink2);font-size:14px">אין צעדים פתוחים כרגע. הסוכנים ממשיכים לעבוד ויעדכנו אותך.</p>'}
     </section>
+    ${S.apps.some(a=>a.status!=='saved')?funnelHtml():''}
     <button class="today glass" id="qCard" onclick="openQuestions()"></button>
     <section class="todo glass" id="todoBox" aria-label="המשימות שלי"></section>`;
   renderQCard();renderTodo();
@@ -2489,9 +2514,16 @@ function askOf(a){if(a.snooze&&new Date(a.snooze)>new Date())return null;
   return null}
 function askHtml(a){const k=askOf(a);if(!k)return'';
   if(k.ghost)return`<div class="ask strong"><span class="ask-q">${escB(k.q)}</span><div class="ask-btns"><button class="btn btn-sm btn-primary" onclick="endApp('${a.id}','ghosted')">לסמן אין מענה</button><button class="btn btn-sm btn-ghost" onclick="openNext('${a.id}')">ממשיכים איתי</button><button class="btn btn-sm btn-ghost" onclick="snoozeAsk('${a.id}')">עוד מחכה</button></div></div>`;
-    if(k.offer)return`<div class="ask"><span class="ask-q">${k.q}</span><div class="ask-btns"><button class="btn btn-sm btn-primary" onclick="endApp('${a.id}','accepted')">קיבלתי את ההצעה</button><button class="btn btn-sm btn-ghost" onclick="endApp('${a.id}','withdrew')">דחיתי</button></div></div>`;
+  if(k.offer)return`<div class="ask"><span class="ask-q">${k.q}</span><div class="ask-btns"><button class="btn btn-sm btn-primary" onclick="endApp('${a.id}','accepted')">קיבלתי את ההצעה</button><button class="btn btn-sm btn-ghost" onclick="endApp('${a.id}','withdrew')">דחיתי</button></div></div>`;
   return`<div class="ask${k.strong?' strong':''}"><span class="ask-q">${k.q}</span><div class="ask-btns"><button class="btn btn-sm btn-primary" onclick="openNext('${a.id}')">${k.yes}</button><button class="btn btn-sm btn-ghost" onclick="endApp('${a.id}','rejected')">לא ממשיכים</button><button class="btn btn-sm btn-ghost" onclick="snoozeAsk('${a.id}')">עוד אין תשובה</button></div></div>`}
-/* פס מסלול: עבר = מלאה, נוכחי = טבעת מנטה, עתיד = ריקה. מטלה רק אם הייתה. דחייה = נקודה אלמוגית ומקווקו אחריה */
+/* השאלה נפתחת בחלון קטן (בכרטיס רק תווית). "לעבור עליהן": אחת אחרי השנייה */
+let askQ=[];
+function openAsk(id,queue){if(queue)askQ=queue.slice();const a=appOf(id),j=JOBS[a.jobId];
+  openSheet(`<div style="display:flex;gap:12px;align-items:center">${logo(j)}<div style="min-width:0"><h3 id="sheetTitle" dir="${dirOf(j.title)||'auto'}" style="text-align:right">${escB(j.title)}</h3><div class="sheet-sub">${escB(j.co)} · ${escB(nowTxt(a))}</div></div></div>
+    ${askHtml(a)}${askQ.length>1?`<p class="hint-line" style="margin-top:10px">עוד ${askQ.length-1} אחרי זו</p>`:''}`);
+  document.querySelectorAll('#sheet .ask-btns button').forEach(b=>b.addEventListener('click',()=>setTimeout(nextAsk,400)))}
+function nextAsk(){askQ.shift();const n=askQ.find(id=>appOf(id)&&askOf(appOf(id)));if(n&&!document.querySelector('#sheet .next-grid'))openAsk(n)}
+function reviewWaiting(){const q=S.apps.filter(a=>groupOf(a)==='waiting'&&askOf(a)).map(a=>a.id);if(q.length)openAsk(q[0],q)}
 function trackHtml(a){if(a.status==='saved'||a.status==='closed')return'';
   const had=stepsOf(a).some(x=>x.k==='task')||a.status==='task',keys=TRACK.filter(k=>k!=='task'||had),
     cur=a.status==='rejected'||a.status==='ghosted'||a.status==='withdrew'?(a.stop||lastReal(a)):a.status==='accepted'?'offer':a.status,ci=keys.indexOf(cur),
@@ -2504,31 +2536,44 @@ function groupOf(a){if(CLOSED.includes(a.status))return'closed';
   if(soon||(ask&&a.status!=='applied')||(a.status==='saved'&&lettered(JOBS[a.jobId])))return'open';
   if(['screening','task','interview','offer'].includes(a.status))return'progress';
   return'waiting'}
-function appCard(a){const j=JOBS[a.jobId],g=groupOf(a);
-  return`<div class="swipe" data-id="${a.id}"><div class="swipe-bg" aria-hidden="true"><span>הסרה</span><span>הסרה</span></div><article class="app glass${g==='open'?' soon':''}${CLOSED.includes(a.status)?' dim':''}">${j.closed_at&&!CLOSED.includes(a.status)?`<div class="closed-tag">המשרה נסגרה למועמדים חדשים</div>`:''}
-    <button class="app-top" style="width:100%;text-align:right" onclick="openApp('${a.id}')" aria-label="${escB(j.title)} ב-${escB(j.co)}, ${stLabel(a)}">
-      ${logo(j)}<span class="app-info"><span class="app-title" dir="${dirOf(j.title)||'auto'}" style="display:block;text-align:right">${escB(j.title)}</span><span class="app-sub" style="display:block">${escB(j.co)}${j.loc?' · '+escB(String(j.loc).split(',')[0]):''}</span></span>
+function appCard(a){const j=JOBS[a.jobId],g=groupOf(a),k=askOf(a);
+  return`<div class="swipe" data-id="${a.id}"><div class="swipe-bg" aria-hidden="true"><span>הסרה</span><span>הסרה</span></div><article class="app glass row-app${g==='open'?' soon':''}${CLOSED.includes(a.status)?' dim':''}">
+    <button class="app-top" style="width:100%;text-align:right" onclick="openApp('${a.id}')" aria-label="${escB(j.title)} ב-${escB(j.co)}, ${stLabel(a)}, ${escB(nowTxt(a))}">
+      ${logo(j)}<span class="app-info"><span class="app-title" dir="${dirOf(j.title)||'auto'}" style="display:block;text-align:right">${escB(j.title)}</span><span class="app-sub" style="display:block">${escB(j.co)} · ${escB(nowTxt(a))}${j.closed_at&&!CLOSED.includes(a.status)?' · המשרה נסגרה':''}</span></span>
       <span class="status st-${a.status}">${stLabel(a)}</span></button>
-    <div class="app-now">${escB(nowTxt(a))}</div>${trackHtml(a)}${askHtml(a)}
-    ${a.status==='saved'?`<div class="app-actions"><button class="btn btn-sm btn-ghost" onclick="openApp('${a.id}','letter')">לערכת ההגשה</button>${appliedBox(a)}</div>`:''}
-    ${(a.status==='interview'||a.status==='screening')&&!askOf(a)?`<div class="app-actions"><button class="btn btn-sm btn-primary" onclick="${REAL?`openPrep('${a.jobId}')`:`openApp('${a.id}','prep')`}">להכנה עם ${escB(N('coach'))}</button></div>`:''}
+    ${k?`<button class="ask-tag" onclick="openAsk('${a.id}')">${escB(k.q)} ←</button>`:''}
   </article></div>`}
-function funnelHtml(){const live=S.apps.filter(a=>a.status!=='saved'&&a.status!=='closed'),n=k=>live.filter(a=>reached(a,k)).length,
-    c=[['הגשות',live.length],['שיחות',n('screening')],['ראיונות',n('interview')],['הצעות',n('offer')]];
-  return`<div class="funnel card glass" role="group" aria-label="משפך ההגשות">${c.map(([l,v])=>`<div class="fn"><b class="num">${v}</b><span>${l}</span></div>`).join('')}
-    <div class="fn-bar" aria-hidden="true">${c.map(([,v])=>`<i style="flex:${Math.max(v,0.2)}" class="${v?'on':''}"></i>`).join('')}</div></div>`}
-let closedOpen=false;
+/* המספרים: בלוח הבקרה (משפך) ובשורה אחת במחשב. מסקנות רק מ-8 הגשות ו-4 תשובות */
+function funnelNums(){const live=S.apps.filter(a=>a.status!=='saved'&&a.status!=='closed'),n=k=>live.filter(a=>reached(a,k)).length;
+  return{apps:live.length,talks:n('screening'),ivs:n('interview'),offers:n('offer'),answers:live.filter(a=>a.status!=='applied').length,
+    early:live.filter(a=>a.status==='rejected'&&(a.stop||'applied')==='applied').length,late:live.filter(a=>a.status==='rejected'&&a.stop&&a.stop!=='applied').length,ghost:live.filter(a=>a.status==='ghosted').length}}
+function funnelInsight(){const f=funnelNums();if(f.apps<8||f.answers<4)return'';
+  if(f.early>=Math.max(3,f.answers*.5))return`רוב הדחיות מגיעות לפני שיחה (${f.early} מ-${f.answers}). כדאי לחזק את קורות החיים ואת בחירת המשרות.`;
+  if(f.late>=3)return`${f.late} תהליכים נעצרו אחרי שיחה או ראיון. תרגול עם ${N('coach')} יכול לעזור.`;
+  if(f.ghost>=3)return`${f.ghost} הגשות בלי מענה בכלל. הודעת המשך שבוע אחרי ההגשה מעלה את הסיכוי לתשובה.`;
+  return''}
+function funnelHtml(){const f=funnelNums(),c=[['הגשות',f.apps],['שיחות',f.talks],['ראיונות',f.ivs],['הצעות',f.offers]],ins=funnelInsight();
+  return`<button class="funnel card glass" onclick="goPage('apps')" aria-label="ההגשות שלך: ${c.map(([l,v])=>v+' '+l).join(', ')}">${c.map(([l,v])=>`<span class="fn"><b class="num">${v}</b><span>${l}</span></span>`).join('')}
+    <span class="fn-bar" aria-hidden="true">${c.map(([,v])=>`<i style="flex:${Math.max(v,0.2)}" class="${v?'on':''}"></i>`).join('')}</span>${ins?`<span class="fn-ins">${escB(ins)}</span>`:''}</button>`}
+let appGrp=null;
+const GRP=[['open','פתוחות'],['progress','בתהליך'],['waiting','ממתינות'],['closed','נסגרו']];
 function renderApps(){S.apps.forEach(stepsOf);
-  $('seg').innerHTML='';
-  if(!S.apps.length){$('appsList').innerHTML=historyHtml(true)+`<div class="empty"><div class="empty-ic">📋</div><h3>עוד אין הגשות</h3><p>משרות ששמרת יופיעו כאן, עם מכתב פנייה מוכן.</p><button class="btn btn-primary" onclick="goPage('jobs')">למשרות</button></div>`;return}
-  const G={open:'הגשות פתוחות',progress:'בתהליך',waiting:'ממתינים לתשובה'},by={open:[],progress:[],waiting:[],closed:[]};
-  S.apps.forEach(a=>by[groupOf(a)].push(a));
+  if(!S.apps.length){$('seg').innerHTML='';$('appsList').innerHTML=historyHtml(true)+`<div class="empty"><div class="empty-ic">📋</div><h3>עוד אין הגשות</h3><p>משרות ששמרת יופיעו כאן, עם מכתב פנייה מוכן.</p><button class="btn btn-primary" onclick="goPage('jobs')">למשרות</button></div>`;return}
+  const by={open:[],progress:[],waiting:[],closed:[]};S.apps.forEach(a=>by[groupOf(a)].push(a));
   const when=a=>a.when?new Date(a.when).getTime():9e15;
   by.open.sort((x,y)=>when(x)-when(y));by.progress.sort((x,y)=>(REACH[y.status]||0)-(REACH[x.status]||0));
   by.waiting.sort((x,y)=>(x.status==='saved')-(y.status==='saved')||new Date(x.date)-new Date(y.date));   // הוותיקות ראשונות, "עוד לא הוגש" בסוף
+  by.closed.sort((x,y)=>new Date((lastStep(y)||{}).at||y.date)-new Date((lastStep(x)||{}).at||x.date));
+  if(!appGrp||!by[appGrp].length)appGrp=GRP.map(([k])=>k).find(k=>by[k].length);
+  const dot=k=>k!=='closed'&&by[k].some(a=>askOf(a)||k==='open');
+  $('seg').innerHTML=GRP.map(([k,l])=>`<button class="chip${appGrp===k?' sel':''}" role="tab" aria-selected="${appGrp===k}" onclick="appGrp='${k}';renderApps()">${l} <b class="num">${by[k].length}</b>${dot(k)&&by[k].length?'<span class="tab-dot" aria-label="מחכה לך"></span>':''}</button>`).join('');
+  const nAsk=by.waiting.filter(a=>askOf(a)).length;
   const prepBtn=CLOUDM&&S.apps.some(a=>a.status==='saved')?`<button class="btn btn-sm btn-ghost btn-block" style="margin-bottom:10px" onclick="prepNow()">${ICO.spark||''}לעדכן הכל עכשיו</button>`:'';
-  $('appsList').innerHTML=funnelHtml()+prepBtn+`<div class="app-groups">${Object.entries(G).filter(([k])=>by[k].length).map(([k,l])=>`<section class="app-group g-${k}"><h3 class="grp-h">${l} <span class="num">${by[k].length}</span></h3>${by[k].map(appCard).join('')}</section>`).join('')}</div>`
-    +(by.closed.length?`<details class="closed-grp"${closedOpen?' open':''} ontoggle="closedOpen=this.open"><summary>נסגרו (${by.closed.length})</summary>${by.closed.map(appCard).join('')}</details>`:'')+historyHtml();
+  const f=funnelNums(),line=`<p class="apps-line">${GRP.map(([k,l])=>`${by[k].length} ${l}`).join(' · ')} · ${f.ivs} ראיונות · ${f.offers} הצעות</p>`;
+  const col=k=>`<section class="app-group g-${k}${appGrp===k?' on':''}" role="tabpanel"><h3 class="grp-h">${GRP.find(x=>x[0]===k)[1]} <span class="num">${by[k].length}</span></h3>
+      ${k==='waiting'&&nAsk>1?`<div class="review"><span>${nAsk} הגשות בלי עדכון</span><button class="btn btn-sm" onclick="reviewWaiting()">לעבור עליהן ←</button></div>`:''}
+      ${by[k].map(appCard).join('')||'<p class="grp-empty">אין כאן כרגע</p>'}</section>`;
+  $('appsList').innerHTML=line+prepBtn+`<div class="app-groups">${GRP.map(([k])=>col(k)).join('')}</div>`+historyHtml();
   bindAppSwipes();
 }
 /* "מה השלב הבא?": 4 אפשרויות, "מתי?" (אפשר להשאיר ריק), שמירה. אחרי ראיון מוצע ראיון נוסף */
@@ -2557,10 +2602,10 @@ function afterRejectUndo(a,prev){const j=JOBS[a.jobId];
 function snoozeAsk(id){const a=appOf(id);a.snooze=new Date(Date.now()+7*DAY).toISOString();save();refreshApps();
   toast('בסדר, אשאל שוב בעוד שבוע',{undo:()=>{delete a.snooze;save();refreshApps()},ms:6000})}
 /* חלון משרה (סבב 2): כותרת + "עכשיו" + פעולה אחת, ציר זמן (בלי שמות סוכנים: פעולה + אייקון), הערה לכל שלב */
-function appHead(a,j){const act=a.status==='saved'?`<a class="btn btn-primary btn-block ext" href="${j.url||LI_URL+'jobs/'}" target="_blank" rel="noopener">פתח והגש${ICO.open}</a>`
+function appHead(a,j){const act=a.status==='saved'?`<div class="duo"><a class="btn btn-primary ext" href="${j.url||LI_URL+'jobs/'}" target="_blank" rel="noopener">פתח והגש${ICO.open}</a>${appliedBox(a,true)}</div>`
     :['screening','task','interview'].includes(a.status)?`<button class="btn btn-primary btn-block" onclick="${REAL?`closeSheet();openPrep('${a.jobId}')`:`appTab='prep';paintAppTab('${a.id}')`}">להכנה עם ${escB(N('coach'))}</button>`
     :a.status==='offer'&&CLOUDM?`<button class="btn btn-primary btn-block" onclick="askAboutJob('${a.jobId}')">בדיקת ההצעה עם ${escB(N('assistant'))}</button>`:'';
-  return`<div class="app-head"><div><span class="status st-${a.status}">${stLabel(a)}</span></div><p class="app-now">${escB(nowTxt(a))}</p>${act}</div>`}
+  return`<div class="app-head"><div><span class="status st-${a.status}">${stLabel(a)}</span></div><p class="app-now">${escB(nowTxt(a))}</p>${act}${askHtml(a)}</div>`}
 const STEP_TXT={saved:'נשמרה',applied:'הוגשה',screening:'שיחה ראשונה',task:'מטלה או מבחן',interview:'ראיון',offer:'הצעה',accepted:'התקבלתי',rejected:'לא ממשיכים',ghosted:'אין מענה',withdrew:'ויתרתי',closed:'המשרה נסגרה'};
 const AG_EV=[['brief','researcher','חקירה על החברה'],['tailor','linkedin','התאמת קורות חיים'],['letter','assistant','כתיבת מכתב פנייה']];
 let tlAll=false,tlQ=[];

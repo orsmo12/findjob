@@ -292,13 +292,27 @@ body.drawer-open .burger span:nth-child(3){top:6px;transform:rotate(-45deg)}
 .st-rejected{background:#F8E6E1;color:#7A3B2C}
 .st-ghosted,.st-withdrew,.st-closed{background:#ECEFF0;color:#6B7A80}
 /* מסלול הגשה (סבב 1) */
-.funnel{display:flex;flex-wrap:wrap;padding:12px 8px 10px;margin-bottom:12px;border-radius:var(--rad-l)}
-.fn{flex:1;text-align:center;display:flex;flex-direction:column;gap:2px}
+.funnel{display:flex;flex-wrap:wrap;width:100%;padding:12px 8px 10px;margin:12px 0;border-radius:var(--rad-l);border:0;font:inherit;color:inherit;text-align:center;cursor:pointer}
+.fn{flex:1;display:flex;flex-direction:column;gap:2px}
 .fn b{font-size:22px;font-weight:700;color:var(--ink)}.fn span{font-size:12px;color:var(--ink3)}
 .fn-bar{flex-basis:100%;display:flex;gap:4px;margin-top:10px}.fn-bar i{height:5px;border-radius:3px;background:#E6EBED}.fn-bar i.on{background:#2F4858}
-.grp-h{font-size:13.5px;font-weight:600;color:var(--ink2);margin:14px 4px 8px;display:flex;justify-content:space-between}
-.grp-h .num{color:var(--ink3);font-weight:500}
-.app-group .swipe+.swipe{margin-top:10px}
+.fn-ins{flex-basis:100%;margin-top:10px;font-size:13px;color:var(--ink2);text-align:right;padding:0 6px}
+/* מסך ההגשות: לשוניות + שורות קומפקטיות (טלפון), עמודות (מחשב) */
+.apps-line{display:none;font-size:13px;color:var(--ink3);margin:0 4px 12px}
+.app-group{display:none}.app-group.on{display:block}
+.app-group .grp-h{display:none}
+.app-group .swipe+.swipe{margin-top:8px}
+.row-app{padding:10px 12px}.row-app .app-top{gap:10px}.row-app .app-top .logo-tile{width:38px;height:38px;font-size:13px}
+.row-app .app-title{font-size:14.5px}.row-app .app-sub{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row-app .status{height:26px;padding:0 9px;font-size:11.5px}.row-app .status::before{display:none}
+.ask-tag{display:inline-block;margin:6px 48px 0 0;padding:4px 10px;min-height:28px;border:0;border-radius:10px;background:#FBEFD3;color:#5C4413;font:inherit;font-size:12px;cursor:pointer}
+.tab-dot{width:7px;height:7px;border-radius:50%;background:#F2C46D;display:inline-block}
+.seg .chip.sel .num{color:#7BE0B5}
+.review{display:flex;align-items:center;justify-content:space-between;gap:10px;background:#FBEFD3;color:#5C4413;border-radius:var(--rad-m);padding:10px 12px;font-size:13px;margin-bottom:10px}
+.review .btn{background:#5C4413;color:#fff;border:0}
+.grp-h{font-size:13.5px;font-weight:600;color:var(--ink2);justify-content:space-between;gap:6px}.grp-h .num{color:var(--ink3);font-weight:500}
+.grp-empty{font-size:13px;color:var(--ink3);padding:8px 4px}
+.app-head .ask{margin-top:4px}
 .app.soon{box-shadow:inset -4px 0 0 #F2C46D}
 .app.dim{opacity:.62}
 .app-now{font-size:13px;color:var(--ink2);margin-top:8px}
@@ -1004,8 +1018,18 @@ a.person>svg{flex:0 0 18px;width:18px;height:18px;fill:none;stroke:var(--ink3);s
 .app-more>summary{cursor:pointer;font-size:13.5px;font-weight:600;color:var(--ink2);padding:10px 0;min-height:40px}
 .app-foot{display:flex;gap:8px;margin-top:6px}.app-foot .btn{flex:1}
 @media (min-width:1024px){
-  .app-groups{display:grid;grid-template-columns:repeat(auto-fit,minmax(0,1fr));gap:14px;align-items:start}
-  .app-groups .grp-h{margin-top:4px}
+  body[data-pg=apps] #app,body[data-pg=apps] #topbar{max-width:min(1080px,calc(100vw - var(--dk-l) - 312px))}
+  #pg-apps .seg{display:none}
+  .apps-line{display:block}
+  .app-groups{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;align-items:start}
+  .app-group,.app-group.on{display:block;background:rgba(47,72,88,.06);border-radius:var(--rad-l);padding:10px}
+  .app-group .grp-h{display:flex;margin:2px 4px 10px}
+  .g-closed{opacity:.8}
+  .row-app .status{display:none}
+  .row-app .app-top{align-items:flex-start}.row-app .app-top .logo-tile{width:30px;height:30px;font-size:11px}
+  .row-app .app-title,.row-app .app-sub{white-space:normal;overflow:visible}
+  .review{flex-direction:column;align-items:stretch;text-align:center}
+  .row-app .ask-tag{margin-right:0}
   :root{--dk-l:max(0px,calc(50% - 504px));--dk-r:max(0px,calc(50% - 504px))}
   #drawerOverlay,#drawerOverlay.open{position:fixed;inset:0 auto 0 var(--dk-l);width:272px;z-index:150;background:none;pointer-events:auto}   /* מתחת לסיור (200), כדי שיוחשך איתו */
   #drawer,#drawerOverlay.open #drawer{position:absolute;inset:0;left:0;width:100%;transform:none;transition:none;box-shadow:none;border-right:1px solid var(--glass-brd);overflow-y:auto}
