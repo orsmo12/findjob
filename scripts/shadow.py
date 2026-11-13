@@ -71,11 +71,11 @@ ENGINEER = re.compile(r"\b(engineer|developer|designer)\b|מהנדס|מתכנן"
 
 
 def hands_on_hide(card: dict, plan: dict, cv: str = "") -> bool:
-    """משרת מפעיל/טכנאי (בלי "מהנדס" בכותרת) — רק אם לפי השאלון וקורות החיים המשתמש לא מחפש תפקיד כזה:
-    לא בחר אותו (תפקידים/תפקיד אחר) ולא מופיע בקורות החיים."""
+    """משרת מפעיל/טכנאי (בלי "מהנדס" בכותרת) — יורדת אם בשאלון המשתמש לא בחר תפקיד כזה (תפקידים או "תפקיד אחר").
+    לפי השאלון בלבד: ניסיון קודם כטכנאי בקורות החיים הוא עבר, לא יעד (cv נשאר לתאימות, לא משפיע)."""
     t = card.get("title") or ""
     mine = " ".join((plan.get("titles") or []) + (plan.get("heads") or []) + (plan.get("extra_titles") or []))
-    return bool(HANDS_ON.search(t)) and not ENGINEER.search(t) and not HANDS_ON.search(mine) and not HANDS_ON.search(cv or "")
+    return bool(HANDS_ON.search(t)) and not ENGINEER.search(t) and not HANDS_ON.search(mine)
 
 
 def learn_new(rows: list[dict], skips: dict, off: list, plan: dict) -> dict:
