@@ -122,7 +122,7 @@ def main(days=7):
             continue
         print(f"\n═══ משתמש #{i} | {a.get('status')} | ניסיון {a.get('exp')} | תחום {a.get('field') or a.get('domains')} | levels={plan.get('levels')} have_years={plan.get('have_years')}")
         print(f"   רצות: {searched(plan)}")
-        print(f"   לפי השאלון: תפקידים שבחר {a.get('roles') or '-'} | תפקיד אחר {a.get('custom_roles') or '-'} | מפעיל/טכנאי בקו״ח: {'כן' if HANDS_ON.search(p.get('cv_text') or '') else 'לא'}")
+        print(f"   לפי השאלון: תפקידים שבחר {a.get('roles') or '-'} | תפקיד אחר {a.get('custom_roles') or '-'} | מפעיל/טכנאי בקו״ח: {sorted({m.group(0).lower() for m in HANDS_ON.finditer(p.get('cv_text') or '')}) or 'לא'}")
         for w in audit(plan, a) or ["אין אזהרות"]:
             print(f"   {'⚠️ ' if w != 'אין אזהרות' else '✓ '}{w}")
         jobs = [j for j in get("jobs", select="id,card,fit,decision", user_id=f"eq.{uid}", created_at=f"gte.{since}") or []
