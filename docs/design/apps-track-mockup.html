@@ -1,0 +1,109 @@
+<!doctype html><html dir="rtl" lang="he"><head><meta charset="utf-8"><style>
+@font-face{font-family:R;font-weight:400;src:url(https://cdn.jsdelivr.net/npm/@fontsource/rubik@5.1.0/files/rubik-hebrew-400-normal.woff2)}@font-face{font-family:R;font-weight:400;src:url(https://cdn.jsdelivr.net/npm/@fontsource/rubik@5.1.0/files/rubik-latin-400-normal.woff2);unicode-range:U+0000-00FF}
+@font-face{font-family:R;font-weight:500;src:url(https://cdn.jsdelivr.net/npm/@fontsource/rubik@5.1.0/files/rubik-hebrew-500-normal.woff2)}@font-face{font-family:R;font-weight:500;src:url(https://cdn.jsdelivr.net/npm/@fontsource/rubik@5.1.0/files/rubik-latin-500-normal.woff2);unicode-range:U+0000-00FF}
+@font-face{font-family:R;font-weight:700;src:url(https://cdn.jsdelivr.net/npm/@fontsource/rubik@5.1.0/files/rubik-hebrew-700-normal.woff2)}@font-face{font-family:R;font-weight:700;src:url(https://cdn.jsdelivr.net/npm/@fontsource/rubik@5.1.0/files/rubik-latin-700-normal.woff2);unicode-range:U+0000-00FF}
+:root{--bg:#F2F4F3;--ink:#2F4858;--ink2:#5B6B72;--ink3:#8A9BA3;--mint:#7BE0B5;--mintk:#173B33;--amb:#F2C46D;--ambk:#5C4413;--grn:#1E8A5A;--cor:#E4A08F;--cork:#7A3B2C;--gry:#B7C0C4;--card:#fff;--line:#E2E7E5}
+*{box-sizing:border-box;margin:0}body{font-family:R,sans-serif;background:#DCE2E0;color:var(--ink);padding:28px;display:flex;gap:28px;align-items:flex-start;direction:rtl}
+.ph{direction:rtl;width:390px;height:844px;background:var(--bg);border-radius:36px;overflow:hidden;position:relative;box-shadow:0 10px 40px rgba(47,72,88,.18);flex:none}
+.cap{direction:rtl;font-size:15px;font-weight:700;color:var(--ink);margin:0 4px 10px}.col{flex:none}
+.top{height:56px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:17px;border-bottom:1px solid var(--line);background:rgba(255,255,255,.6)}
+.sc{padding:14px 16px}
+.fun{background:#fff;border-radius:16px;padding:12px 14px;margin-bottom:14px}
+.fun-n{display:flex;justify-content:space-between;align-items:baseline;gap:6px}
+.fun-n div{text-align:center;flex:1}.fun-n b{display:block;font-size:20px}.fun-n span{font-size:11.5px;color:var(--ink2)}
+.fun-bar{display:flex;gap:3px;margin:10px 0 2px}.fun-bar i{height:6px;border-radius:3px;background:var(--ink)}
+.fun-t{font-size:12.5px;color:var(--ink2);line-height:1.45}.fun-t b{color:var(--ink)}
+.gh{font-size:13px;font-weight:700;color:var(--ink2);margin:14px 2px 8px;display:flex;justify-content:space-between}.gh em{font-style:normal;font-weight:400;color:var(--ink3)}
+.c{background:#fff;border-radius:16px;padding:12px 14px;margin-bottom:8px;position:relative}
+.c.need{box-shadow:inset -4px 0 0 var(--amb)}
+.r1{display:flex;gap:10px;align-items:center}.lg{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;font-weight:700;font-size:13px;color:#fff;flex:none}
+.tt{flex:1;min-width:0}.tt b{display:block;font-size:14.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.tt span{font-size:12.5px;color:var(--ink2)}
+.tag{font-size:11.5px;font-weight:500;padding:3px 9px;border-radius:999px;white-space:nowrap}
+.t-saved{background:#E6EBED;color:#4F626B}.t-wait{background:#E3E9EE;color:var(--ink)}.t-prog{background:#D9F5E9;color:var(--mintk)}.t-need{background:#FBEFD3;color:var(--ambk)}.t-off{background:#E4F3EA;color:var(--grn)}.t-no{background:#F8E6E1;color:var(--cork)}.t-gry{background:#ECEFF0;color:#6B7A80}
+.now{font-size:13px;margin:8px 0 0;color:var(--ink)}.now.m{color:var(--ink2)}
+.trk{display:flex;align-items:center;margin:10px 2px 2px}.trk i{width:9px;height:9px;border-radius:50%;border:2px solid var(--gry);background:#fff;flex:none}
+.trk i.d{background:var(--ink);border-color:var(--ink)}.trk i.cur{width:13px;height:13px;border:3px solid var(--mint);background:var(--ink)}.trk i.x{background:var(--cor);border-color:var(--cor)}
+.trk s{flex:1;height:2px;background:var(--gry);text-decoration:none}.trk s.d{background:var(--ink)}.trk s.dash{background:repeating-linear-gradient(to left,var(--gry) 0 4px,transparent 4px 8px)}
+.trkl{display:flex;justify-content:space-between;font-size:10px;color:var(--ink3);margin:3px 0 0}
+.q{margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}.q p{font-size:12.5px;font-weight:500;margin-bottom:7px}
+.bt{display:flex;gap:6px;flex-wrap:wrap}.b{font:inherit;font-size:12.5px;padding:7px 12px;border-radius:12px;border:1px solid var(--line);background:#fff;color:var(--ink)}
+.b.p{background:var(--ink);color:#fff;border-color:var(--ink)}.b.s{background:#F2F4F3;border-color:transparent}
+.closed{background:rgba(255,255,255,.55);border-radius:14px;padding:11px 14px;font-size:13px;color:var(--ink2);display:flex;justify-content:space-between}
+.nav{position:absolute;bottom:0;left:0;right:0;height:62px;background:#fff;border-top:1px solid var(--line);display:flex;justify-content:space-around;align-items:center;font-size:11px;color:var(--ink3)}.nav b{color:var(--ink)}
+.dim{position:absolute;inset:0;background:rgba(31,46,56,.42)}
+.sh{position:absolute;left:0;right:0;bottom:0;background:var(--bg);border-radius:24px 24px 0 0;padding:10px 16px 18px}
+.grab{width:40px;height:4px;border-radius:2px;background:#C9D1D4;margin:0 auto 12px}
+.sh h3{font-size:18px}.sh .sub{font-size:13px;color:var(--ink2);margin:2px 0 10px}
+.cta{display:block;width:100%;font:inherit;font-weight:500;font-size:14.5px;padding:12px;border-radius:14px;background:var(--ink);color:#fff;border:0;margin:10px 0 14px}
+.tl{position:relative;padding-right:22px}.tl::before{content:"";position:absolute;right:7px;top:6px;bottom:6px;width:2px;background:var(--line)}
+.ev{position:relative;display:flex;gap:8px;font-size:13px;padding:6px 0;align-items:flex-start}.ev .dt{color:var(--ink3);font-size:12px;width:38px;flex:none;direction:ltr;text-align:left;order:2;margin-right:auto}
+.ev::before{content:"";position:absolute;right:-19px;top:10px;width:10px;height:10px;border-radius:50%;background:var(--ink);box-shadow:0 0 0 3px var(--bg)}
+.ev.ag{color:var(--ink2)}.ev.ag::before{background:#fff;border:2px solid var(--mint);width:6px;height:6px}
+.ev.cur::before{background:var(--mint);box-shadow:0 0 0 3px var(--bg),0 0 0 5px var(--ink)}
+.ev.fut{color:var(--ink3)}.ev.fut::before{background:#fff;border:2px dashed var(--gry);width:6px;height:6px}
+.av{width:18px;height:18px;border-radius:50%;display:inline-grid;place-items:center;font-size:9.5px;font-weight:700;color:#fff;flex:none;margin-top:1px}
+.nt{display:block;font-size:12px;color:var(--ink2);margin-top:2px}
+.foot{display:flex;justify-content:space-between;font-size:12.5px;color:var(--ink2);margin-top:12px;padding-top:10px;border-top:1px solid var(--line)}
+.sec{font-size:12px;font-weight:700;color:var(--ink3);margin:12px 0 6px}
+.opt{display:grid;grid-template-columns:1fr 1fr;gap:8px}.opt div{background:#fff;border-radius:14px;padding:12px;font-size:13.5px;font-weight:500;border:1.5px solid transparent}.opt div.on{border-color:var(--ink)}.opt span{display:block;font-size:11.5px;font-weight:400;color:var(--ink2);margin-top:2px}
+.inp{background:#fff;border-radius:12px;padding:10px 12px;font-size:13.5px;color:var(--ink3);display:flex;justify-content:space-between;margin-top:6px}
+.toast{position:absolute;left:12px;right:12px;bottom:76px;background:#1F2E2A;color:#fff;border-radius:16px;padding:13px 14px;font-size:13.5px}
+.toast .bt{margin-top:9px}.toast .b{background:rgba(255,255,255,.12);border:0;color:#fff;font-size:12.5px}
+</style></head><body>
+
+<div class="col"><div class="cap">1 · מסך ההגשות</div><div class="ph"><div class="top">הגשות</div><div class="sc">
+ <div class="fun"><div class="fun-n"><div><b>12</b><span>הגשות</span></div><div><b>4</b><span>שיחות</span></div><div><b>2</b><span>ראיונות</span></div><div><b>0</b><span>הצעות</span></div></div>
+  <div class="fun-bar"><i style="flex:12"></i><i style="flex:4;opacity:.7"></i><i style="flex:2;opacity:.5"></i></div></div>
+ <div class="gh">הגשות פתוחות <em>2</em></div>
+ <div class="c need"><div class="r1"><div class="lg" style="background:#7B61FF">W</div><div class="tt"><b>Full-Stack Developer</b><span>Wix · תל אביב</span></div><span class="tag t-need">ראיון 2</span></div>
+  <div class="now">ראיון ביום חמישי ב-10:00 · ההכנה מוכנה</div>
+  <div class="trk"><i class="d"></i><s class="d"></s><i class="d"></i><s class="d"></s><i class="cur"></i><s></s><i></i></div><div class="trkl"><span>הגשתי</span><span>שיחה</span><span>ראיון</span><span>הצעה</span></div></div>
+ <div class="c need"><div class="r1"><div class="lg" style="background:#0A66C2">Sa</div><div class="tt"><b>Associate Developer</b><span>Sapiens · חולון</span></div><span class="tag t-saved">שמרתי</span></div>
+  <div class="now">מכתב הפנייה מוכן · עוד לא הוגש</div></div>
+ <div class="gh">ממתינים לתשובה <em>2</em></div>
+ <div class="c"><div class="r1"><div class="lg" style="background:#2F4858">O</div><div class="tt"><b>Internship Software Engineer</b><span>OriginAI · רמת גן</span></div><span class="tag t-wait">הגשתי</span></div>
+  <div class="now m">ממתינים לתשובה כבר 8 ימים</div>
+  <div class="q"><p>קיבלת תשובה?</p><div class="bt"><button class="b p">ממשיכים איתי</button><button class="b">לא ממשיכים</button><button class="b s">עוד אין תשובה</button></div></div></div>
+ <div class="c"><div class="r1"><div class="lg" style="background:#E2231A">Mo</div><div class="tt"><b>Computer Vision Student</b><span>Mobileye · ירושלים</span></div><span class="tag t-wait">הגשתי</span></div>
+  <div class="now m">ממתינים לתשובה כבר 3 ימים</div></div>
+ <div class="closed"><span>נסגרו (5)</span><span>⌄</span></div>
+</div><div class="nav"><span>לוח</span><span>משרות</span><b>הגשות</b><span>הכנה</span><span>פרופיל</span></div></div></div>
+
+<div class="col"><div class="cap">2 · חלון משרה: הסיפור המלא</div><div class="ph"><div class="top">הגשות</div><div class="dim"></div>
+ <div class="sh" style="top:70px"><div class="grab"></div>
+  <div class="r1"><div class="lg" style="background:#7B61FF">W</div><div class="tt"><h3>Full-Stack Developer</h3><div class="sub" style="margin:0">Wix · תל אביב</div></div><span class="tag t-need">ראיון 2</span></div>
+  <div class="now" style="margin-top:10px">ראיון ביום חמישי, 19.11 ב-10:00</div>
+  <button class="cta">להכנה עם מאיה</button>
+  <div class="tl">
+   <div class="ev"><span>נשמרה · התאמה 4.6</span><span class="dt">3.11</span></div>
+   <div class="ev ag"><span class="av" style="background:#3E8E7E">ג</span><span>חקירה על החברה</span><span class="dt">3.11</span></div>
+   <div class="ev ag"><span class="av" style="background:#C77D3A">ש</span><span>כתיבת מכתב פנייה</span><span class="dt">4.11</span></div>
+   <div class="ev"><span>הוגשה</span><span class="dt">5.11</span></div>
+   <div class="ev"><span>שיחה ראשונה<span class="nt">"דנה מגיוס, 20 דק׳, שאלה על פרויקט ה-AI"</span></span><span class="dt">9.11</span></div>
+   <div class="ev ag"><span class="av" style="background:#8E5BB5">מ</span><span>הכנה לראיון</span><span class="dt">11.11</span></div>
+   <div class="ev"><span>ראיון 1 · מקצועי</span><span class="dt">14.11</span></div>
+   <div class="ev cur"><span><b>ראיון 2</b> · מנהל צוות</span><span class="dt">19.11</span></div>
+   <div class="ev fut"><span>הצעה</span><span class="dt"></span></div>
+  </div>
+  <div class="inp"><span>הוספת הערה לשלב...</span><span style="color:var(--ink)">שמירה</span></div>
+  <div class="sec">פרטים ⌄</div>
+  <div class="foot"><span>הדבקת מייל מהחברה</span><span>שינוי שלב</span><span>הסרה</span></div>
+ </div></div></div>
+
+<div class="col"><div class="cap">3 · אחרי "ממשיכים איתי"</div><div class="ph"><div class="top">הגשות</div><div class="dim"></div>
+ <div class="sh"><div class="grab"></div><h3>מה השלב הבא?</h3><div class="sub">OriginAI · Internship Software Engineer</div>
+  <div class="opt"><div class="on">שיחה ראשונה<span>היכרות קצרה, בדרך כלל עם גיוס</span></div><div>מטלה או מבחן<span>מטלת בית, מבחן או שאלון</span></div><div>ראיון<span>מקצועי, מנהל או HR</span></div><div>הצעה<span>קיבלתי הצעה</span></div></div>
+  <div class="sec">מתי? (אפשר להשאיר ריק)</div><div class="inp"><span>יום ראשון, 16.11 · 11:30</span><span>📅</span></div>
+  <button class="cta" style="margin-top:14px">שמירה</button>
+ </div></div></div>
+
+<div class="col"><div class="cap">4 · אחרי "לא ממשיכים"</div><div class="ph"><div class="top">הגשות</div><div class="sc">
+ <div class="c" style="opacity:.55"><div class="r1"><div class="lg" style="background:#E2231A">Mo</div><div class="tt"><b>Computer Vision Student</b><span>Mobileye · ירושלים</span></div><span class="tag t-no">לא ממשיכים</span></div>
+  <div class="now m">הסתיים אחרי ההגשה</div>
+  <div class="trk"><i class="x"></i><s class="dash"></s><i></i><s class="dash"></s><i></i><s class="dash"></s><i></i></div><div class="trkl"><span>הגשתי</span><span>שיחה</span><span>ראיון</span><span>הצעה</span></div></div>
+ <div class="sec" style="margin-top:18px">צבעי השלבים</div>
+ <div class="bt" style="gap:6px 6px"><span class="tag t-saved">שמרתי</span><span class="tag t-wait">הגשתי</span><span class="tag t-prog">שיחה ראשונה</span><span class="tag t-prog">מטלה</span><span class="tag t-need">פעולה קרובה</span><span class="tag t-off">הצעה</span><span class="tag t-no">לא ממשיכים</span><span class="tag t-gry">אין מענה</span><span class="tag t-gry">ויתרתי</span></div>
+ </div>
+ <div class="toast">אין המשך בתהליך מול <bdi>Mobileye</bdi>. זה חלק מהדרך.<div class="bt"><button class="b">בקשת משוב</button><button class="b">למה לדעתך?</button><button class="b" style="background:none;color:#7BE0B5">ביטול</button></div></div>
+ <div class="nav"><span>לוח</span><span>משרות</span><b>הגשות</b><span>הכנה</span><span>פרופיל</span></div></div></div>
+</body></html>
