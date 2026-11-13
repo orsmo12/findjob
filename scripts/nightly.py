@@ -72,8 +72,8 @@ for u in users:
             "skip_reasons": {k: v.get("r") for k, v in (ustate.get("skip") or {}).items() if isinstance(v, dict)}}
     plan = build_search_plan(prof).to_dict()
     try:   # הטעם האישי מהשימוש באפליקציה: שמירות, דילוגים וסיבות דילוג (agent_core/taste.py)
-        from agent_core.taste import learn as learn_taste
-        plan["taste"] = learn_taste(db.all_jobs(u["user_id"], days=60), ustate.get("skip") or {}, ustate.get("taste_off") or [])
+        from agent_core.taste import learn as learn_taste, role_words
+        plan["taste"] = learn_taste(db.all_jobs(u["user_id"], days=60), ustate.get("skip") or {}, ustate.get("taste_off") or [], role_words(plan))
     except Exception as e:  # noqa: BLE001
         print(f"טעם אישי: {e}")
     act.start(u["user_id"])

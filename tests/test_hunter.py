@@ -216,3 +216,13 @@ def test_guessed_requirements_do_not_lower_score():
     d = r["dims"]
     assert r["fit"] == 5.0 and d["level"] == "ok" and d["skills"] == "3/3" and d["gn"] is True
     assert [x[0] for x in d["req"]] == ["Python", "REST", "SQL"] and d["nice"] == [["Docker", 0], ["FastAPI", 1]]
+
+
+def test_fill_skips_experience_gap_only_without_experience():
+    """סבב 2 (13.11): ההשלמה החזירה משרות שהורדו ל-3.3 בגלל ניסיון (אור: 8 מ-9 דולגו). למשתמש עם ניסיון — כמו קודם."""
+    from agent_core.agents.hunter import fill_blocked
+    r = {"fit": 3.3, "level_gap": "short"}
+    assert fill_blocked(r, {"have_years": 0}) and fill_blocked({**r, "level_gap": "level"}, {})
+    assert not fill_blocked(r, {"have_years": 3})                       # גלעד: Senior ששמר נשארות
+    assert not fill_blocked({"fit": 3.3, "level_gap": "work"}, {"have_years": 0})
+    assert not fill_blocked({"fit": 3.3}, {"have_years": 0})            # פער כישורים בלבד: נשארת

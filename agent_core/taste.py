@@ -1,6 +1,7 @@
 """
 taste.py — דורון לומד את הטעם של כל משתמש מהשימוש באפליקציה (לא מניחושים):
-  • מילים בכותרות של משרות ששמר (+) ושדילג עליהן (−). דילוג עם "לא התחום שלי" שוקל כפול.
+  • מילים בכותרות של משרות ששמר (+). מילים יורדות (−) רק מדילוג עם "לא התחום שלי" (כפול) או "לא מעניין":
+    דילוג בגלל דרישות/בכירות/מיקום/חברה הוא לא טעם בתחום. מילים של התפקידים שהמשתמש בחר לא נלמדות כ"נוטה לדלג".
   • חברות שדילג עליהן עם "החברה" (או 3 דילוגים בלי אף שמירה) → בעדיפות נמוכה.
   • ערים שדילג עליהן עם "מיקום" פעמיים → בעדיפות נמוכה.
   • "אחר" עם טקסט חופשי → 5 הניסוחים האחרונים עוברים לסוכן המדרג בשורה אחת (בלי לשנות את הציון מול קורות החיים).
@@ -19,16 +20,25 @@ STOP = {"and", "the", "for", "with", "of", "in", "to", "at", "a", "an", "&", "-"
 SKIP_FIELD = "לא התחום שלי"
 SKIP_CO = "החברה"
 SKIP_LOC = "מיקום"
+SKIP_DULL = "לא מעניין"
+TASTE_REASONS_ONLY = True   # מתג חזרה (13.11): מילים יורדות רק מ"לא התחום שלי"/"לא מעניין"
 
 
 def words(title: str) -> set[str]:
     return {w for w in re.findall(r"[a-z][a-z+#.]{1,}|[א-ת׳']{2,}", (title or "").lower()) if w not in STOP}
 
 
-def learn(rows: list[dict], skips: dict | None = None, off: list[str] | None = None) -> dict:
-    """rows: שורות מטבלת jobs (card, decision). skips: {job_id: {"r": סיבה, "t": כותרת, "co": חברה, "loc": מיקום}}."""
+def role_words(plan: dict) -> set[str]:
+    """המילים של התפקידים שהמשתמש בחר (כותרות, ראשיות, שאושרו ו"תפקיד אחר")."""
+    return set().union(set(), *[words(t) for t in (plan.get("titles") or []) + (plan.get("heads") or []) + (plan.get("extra_titles") or [])])
+
+
+def learn(rows: list[dict], skips: dict | None = None, off: list[str] | None = None, mine: set[str] | None = None) -> dict:
+    """rows: שורות מטבלת jobs (card, decision). skips: {job_id: {"r": סיבה, "t": כותרת, "co": חברה, "loc": מיקום}}.
+    mine: מילות התפקידים שבחר (role_words) — לא נלמדות כ"נוטה לדלג"."""
     skips = skips or {}
     off_l = {str(x).lower() for x in off or []}
+    mine = {str(x).lower() for x in mine or ()}
     plus, minus = Counter(), Counter()
     saved_cos, skip_cos = Counter(), Counter()
     for r in rows:
@@ -38,12 +48,13 @@ def learn(rows: list[dict], skips: dict | None = None, off: list[str] | None = N
             saved_cos[c.get("co", "")] += 1
         elif d == "skip":
             why = (skips.get(c.get("id") or r.get("id")) or {}).get("r", "")
-            for w in words(c.get("title", "")):
-                minus[w] += 2 if why == SKIP_FIELD else 1
+            if not TASTE_REASONS_ONLY or why in (SKIP_FIELD, SKIP_DULL):
+                for w in words(c.get("title", "")):
+                    minus[w] += 2 if why == SKIP_FIELD else 1
             skip_cos[c.get("co", "")] += 1
     score = {w: plus[w] - minus[w] for w in set(plus) | set(minus) if w not in off_l}
     likes = sorted([w for w, s in score.items() if s >= 2], key=lambda w: -score[w])[:8]
-    dislikes = sorted([w for w, s in score.items() if s <= -2], key=lambda w: score[w])[:8]
+    dislikes = sorted([w for w, s in score.items() if s <= -2 and w not in mine], key=lambda w: score[w])[:8]
     by_reason = Counter(v.get("r") for v in skips.values() if isinstance(v, dict))
     avoid_cos = sorted({v.get("co") for v in skips.values() if isinstance(v, dict) and v.get("r") == SKIP_CO and v.get("co")}
                        | {co for co, k in skip_cos.items() if co and k >= 3 and not saved_cos.get(co)})

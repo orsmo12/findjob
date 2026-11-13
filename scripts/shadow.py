@@ -14,7 +14,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from agent_core.profile import EXP_MAX_YEARS, normalize_answers
-from agent_core.taste import SKIP_FIELD, learn, words
+from agent_core.taste import learn, role_words, words
 
 KEEP = ("save", "applied")          # החלטות שאסור לפגוע בהן
 BUDGET = 12                          # כמו collect(): עד 12 חיפושים (שאילתה × אזור)
@@ -79,17 +79,8 @@ def hands_on_hide(card: dict, plan: dict, cv: str = "") -> bool:
 
 
 def learn_new(rows: list[dict], skips: dict, off: list, plan: dict) -> dict:
-    """טעם: מילים יורדות רק מ"לא התחום שלי"/"לא מעניין", ולעולם לא מילים של התפקידים שבחר."""
-    mine = set().union(*[words(t) for t in (plan.get("titles") or []) + (plan.get("heads") or [])] or [set()])
-    keep = []
-    for r in rows:
-        c = r.get("card") or {}
-        why = (skips.get(c.get("id") or r.get("id")) or {}).get("r", "")
-        if r.get("decision") == "skip" and why not in (SKIP_FIELD, "לא מעניין"):
-            continue
-        keep.append(r)
-    t = learn(keep, skips, list(off or []) + sorted(mine))
-    return t
+    """הטעם כפי שהוא עכשיו באוויר (סבב 2): מילים יורדות רק מ"לא התחום שלי"/"לא מעניין", בלי מילות התפקידים שבחר."""
+    return learn(rows, skips, off, role_words(plan))
 
 
 def show(name: str, hit: list[dict]) -> None:
@@ -136,8 +127,7 @@ def main(days=7):
             tot[name] += sum(1 for j in hit if j.get("decision") in KEEP) * (0 if name.startswith("עולות") else 1)
         skips, off = st.get("skip") or {}, st.get("taste_off") or []
         rows = db.all_jobs(uid, days=60)
-        old, new = learn(rows, skips, off), learn_new(rows, skips, off, plan)
-        print(f"   טעם, נוטה לדלג: לפני {old['dislikes']} → אחרי {new['dislikes']}")
+        print(f"   טעם, נוטה לדלג: {learn_new(rows, skips, off, plan)['dislikes']}")
     print(f"\nסיכום: משרות שנשמרו/הוגשו שהיו נפגעות: {dict(tot) or 'אף אחת ✓'}")
 
 

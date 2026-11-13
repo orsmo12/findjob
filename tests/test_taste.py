@@ -13,3 +13,15 @@ def test_own_words_reach_rating_note():
     assert len(t["own"]) == 5 and "c" not in t["own"] and t["own"][0] == "d"
     assert t["own"].count("בלי משמרות") == 1 and "own words" in t["note"]
     assert learn([], {}, [])["own"] == [] and "own words" not in learn([], {}, [])["note"]
+
+
+def test_skip_for_requirements_is_not_taste():
+    """סבב 2 (13.11): אור דילג על Full Stack בגלל דרישות → נלמד "נוטה לדלג: full stack". עכשיו רק "לא התחום שלי"/"לא מעניין"."""
+    from agent_core.taste import role_words
+    rows = [{"card": {"id": f"j{i}", "title": "Full Stack Engineer"}, "decision": "skip"} for i in range(3)]
+    assert learn(rows, {f"j{i}": {"r": "לא עומד בדרישות"} for i in range(3)})["dislikes"] == []
+    assert learn(rows, {})["dislikes"] == []                                   # דילוג בלי סיבה: לא נלמד
+    sales = [{"card": {"id": f"k{i}", "title": "Sales Manager"}, "decision": "skip"} for i in range(2)]
+    assert "sales" in learn(sales, {f"k{i}": {"r": "לא מעניין"} for i in range(2)})["dislikes"]
+    mine = role_words({"titles": ["Full Stack Developer"]})
+    assert "full" not in learn(rows, {f"j{i}": {"r": "לא התחום שלי"} for i in range(3)}, [], mine)["dislikes"]

@@ -70,10 +70,10 @@ def main(idx=None, days=10):
 
     # למה משרה עברה ונדחתה: סיבת הדילוג, ציון, תקרת ניסיון, השלמה, ומה הסוכן המדרג קיבל מהטעם
     from agent_core.agents.hunter import off_field, prefs_text, MIN_SHOWN, NEAR_FIT
-    from agent_core.taste import learn
+    from agent_core.taste import learn, role_words
     skips = st.get("skip") or {}
     try:
-        plan["taste"] = learn(db.all_jobs(uid, days=60), skips, st.get("taste_off") or [])
+        plan["taste"] = learn(db.all_jobs(uid, days=60), skips, st.get("taste_off") or [], role_words(plan))
         print(f"\nטעם: { {k: plan['taste'][k] for k in ('likes', 'dislikes', 'avoid_cos', 'avoid_locs', 'reasons', 'own', 'n')} }")
         print(f"   prefs_text לסוכן המדרג: {prefs_text(plan)[:600]}")
     except Exception as e:  # noqa: BLE001

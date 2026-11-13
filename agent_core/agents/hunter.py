@@ -542,6 +542,13 @@ def to_card(j: dict, r: dict, cv: str = "") -> dict:
 
 MIN_SHOWN = 6     # אם פחות משרות עברו את הסף, משלימים מהקרובות לו
 NEAR_FIT = 3.0    # "קרובה לסף": מוצגת רק כהשלמה, עם תגית
+FILL_SKIPS_LEVEL_GAP = True   # מתג חזרה (13.11): ההשלמה לא מחזירה משרה שהורדה בגלל ניסיון
+
+
+def fill_blocked(r: dict, plan: dict) -> bool:
+    """משרה שתקרת הניסיון הורידה (פער שנים / רמה) לא חוזרת כהשלמה — רק למי שאין לו ניסיון.
+    למשתמש עם ניסיון (have_years>0) ההשלמה נשארת כמו שהייתה. נבדק בהרצת ניסיון (shadow): 0 משרות שנשמרו נפגעו."""
+    return FILL_SKIPS_LEVEL_GAP and not plan.get("have_years") and r.get("level_gap") in ("short", "level")
 RATING_V = 8  # גרסת שיטת הדירוג. משרות שדורגו בגרסה ישנה מדורגות מחדש
 
 
@@ -636,7 +643,7 @@ def run(profile: dict, plan: dict, raw: list[dict] | None = None, rate_top: int 
         act.log("hunter", f"{j['title']} ב-{j['company']}: {r['fit']:.1f}/5" + (f" (נדרשות {r['required_years']} שנים)" if r.get("required_years") else "") + f" {'✓ מתאימה' if ok else '· מתחת לסף'}")
         if not ok:
             drop(j, f"ציון {r['fit']:.1f}", r["fit"])
-            if r["fit"] >= NEAR_FIT:
+            if r["fit"] >= NEAR_FIT and not fill_blocked(r, plan):
                 near.append((j, r))
         if ok:
             cards.append(to_card(j, r, cv))
