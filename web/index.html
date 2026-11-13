@@ -2572,7 +2572,7 @@ function trackHtml(a){if(a.status==='saved'||a.status==='closed')return'';
 function lastReal(a){const st=stepsOf(a).filter(x=>TRACK.includes(x.k));return st.length?st[st.length-1].k:'applied'}
 function groupOf(a){if(CLOSED.includes(a.status))return'closed';
   const w=a.when&&new Date(a.when),soon=w&&w>=new Date(new Date().toDateString())&&(w-new Date())<7*DAY,ask=askOf(a);
-  if(soon||(ask&&a.status!=='applied')||(a.status==='saved'&&lettered(JOBS[a.jobId])))return'open';
+  if(soon||(ask&&a.status!=='applied')||a.status==='saved')return'open';
   if(['screening','task','interview','offer'].includes(a.status))return'progress';
   return'waiting'}
 function appCard(a){const j=JOBS[a.jobId],g=groupOf(a),k=askOf(a);
