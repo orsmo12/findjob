@@ -80,7 +80,7 @@ async function cloudBoot(){
   try{await cloudLoad()}catch(e){console.warn(e);toast('אין חיבור לענן כרגע. מוצג מה ששמור במכשיר')}
   {const md=ME.user_metadata||{},p=prof(),full=(md.full_name||md.name||'').trim();
    if(full&&!p.name)p.name=full;if(full&&!p.first)p.first=full.split(/\s+/)[0];}
-  closeOnb();init();
+  closeOnb();init();prepResume();setTimeout(pushCheck,1500);
   clearTimeout(bt);{const d=$('boot');if(d){d.classList.add('out');setTimeout(()=>d.remove(),260)}}
   if(S.ak_pending&&!S.ai_key&&Date.now()-S.ak_pending<3600e3){   // חזר מיצירת מפתח והאפליקציה נטענה מחדש: ישר לשדה ההדבקה
     setTimeout(()=>{onbStep=3;onbSingle=!!S.onboarded;onbDraft=JSON.parse(JSON.stringify(prof()));$('onb').classList.add('open');renderOnb()},300);return}
@@ -369,13 +369,26 @@ function aiKeyCard(){return `<section class="card glass" aria-labelledby="akH"><
 
 /* "להכין עכשיו": ריצה של הסוכנים רק בשבילך (מכתב, סקירה, הכנה, התאמת קורות חיים, בדיקה שהמשרות פתוחות) */
 let _prep=null;
+/* המצב "הסוכנים עובדים" נשמר גם אחרי רענון, והכפתורים נעולים עד הסיום */
+function prepClear(){delete S.prep;save();prepRerender()}
+function prepRerender(){if(curPg==='apps')renderApps();else if(curPg==='jobs')renderJobs()}
+function prepResume(){const p=S.prep;if(!p||_prep)return;
+  if(Date.now()-p.t0>(p.scan?30:9)*60e3){delete S.prep;save();return}
+  _prep={at:p.at,t0:p.t0,scan:p.scan};prepBar();_prep.timer=setInterval(prepPoll,15000);prepPoll()}
+function prepBtn(kind,label,cls){
+  if(_prep){const pc=Math.min(92,Math.round((Date.now()-_prep.t0)/(_prep.scan?9000:2400)));
+    return `<button class="${cls}" disabled aria-busy="true">${LD('ld-s')} הסוכנים עובדים… ${pc}%</button>`}
+  return `<span class="prep-wrap"><button class="${cls}" onclick="prepNow(${kind==='scan'?"'scan'":''})">${kind==='scan'?'':(ICO.spark||'')}${label}</button><button class="prep-q" aria-label="מה זה עושה?" onclick="prepHelp('${kind}')">?</button></span>`}
+function prepHelp(kind){openSheet(kind==='scan'
+  ?`<h3 id="sheetTitle">לחפש עכשיו</h3><div class="sheet-sub">${escB(N('hunter'))} מריץ סריקה רק בשבילך, בלי לחכות לסריקה הקבועה (פעמיים ביום). בדרך כלל 8 עד 15 דקות. אפשר לסגור את האפליקציה בינתיים.</div>`
+  :`<h3 id="sheetTitle">לעדכן הכל עכשיו</h3><div class="sheet-sub">הסוכנים עובדים רק בשבילך, בלי לחכות לריצה הקבועה: מכתב פנייה לכל משרה שמורה שעוד אין לה, סקירת חברה, שאלות הכנה לראיון, התאמת קורות חיים, ובדיקה שהמשרות עדיין פתוחות. בדרך כלל 2 עד 4 דקות. אפשר להפעיל פעם ב-10 דקות.</div>`)}
 async function prepNow(kind){kind=kind==='scan'?'scan':'prep';
   if(_prep){toast('הסוכנים כבר עובדים. אפשר להמשיך להשתמש באפליקציה');return}
   closeSheet();let d={},r;
   try{const {data:{session}}=await SB.auth.getSession();
     r=await fetch('/api/prepnow',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:session&&session.access_token,kind})});d=await r.json()}catch(e){}
   if(!r||!d.ok){if(d.error==='no_cv'){toast(`צריך קודם קורות חיים. בלעדיהם ${N('hunter')} לא יכול לחפש`);goPage('profile');return}toast(d.error==='wait'?`אפשר להפעיל פעם ב-10 דקות. עוד ${d.minutes} דק׳`:d.error==='no_token'?'הכפתור עוד לא מחובר. המפתח צריך להשלים הגדרה אחת':d.error==='auth'?'צריך להתחבר מחדש':'לא הצלחתי להפעיל. נסה שוב בעוד דקה');return}
-  track(kind==='scan'?'scan_first':'prep_now');_prep={at:d.at,t0:Date.now(),scan:kind==='scan'};prepBar();if(curPg==='jobs')renderJobs();_prep.timer=setInterval(prepPoll,15000);
+  track(kind==='scan'?'scan_first':'prep_now');_prep={at:d.at,t0:Date.now(),scan:kind==='scan'};S.prep={at:_prep.at,t0:_prep.t0,scan:_prep.scan};save();prepBar();prepRerender();_prep.timer=setInterval(prepPoll,15000);
 }
 function prepBar(done){let b=$('prepBar');if(!b){b=document.createElement('div');b.id='prepBar';b.setAttribute('role','status');document.body.appendChild(b)}
   if(done){b.innerHTML=_prep&&_prep.scan?`<b>מוכן ✓</b><span>המשרות הראשונות מחכות לך במסך המשרות.</span>`:`<b>מוכן ✓</b><span>הכל עודכן. המכתבים, הסקירות וההכנה מחכים בהגשות.</span>`;b.classList.add('done');setTimeout(()=>b.remove(),6000);return}
@@ -384,8 +397,8 @@ function prepBar(done){let b=$('prepBar');if(!b){b=document.createElement('div')
     :`<b>${LD('ld-s')} הסוכנים עובדים בשבילך</b><span>בדרך כלל 2 עד 4 דקות. בסיום הכל יופיע בהגשות ובמשרד.</span><i><u style="width:${p}%"></u></i>`}
 async function prepPoll(){if(!_prep)return;prepBar();
   try{const {data}=await SB.from('runs').select('plan,created_at').eq('user_id',ME.id).eq('agent','assistant').gte('created_at',_prep.at).not('plan','is',null).limit(5);
-    if((data||[]).some(x=>x.plan&&x.plan.prep_done)){clearInterval(_prep.timer);_prep=null;await cloudLoad();if(typeof refreshApps==='function')refreshApps();prepBar(true);return}}catch(e){}
-  if(Date.now()-_prep.t0>(_prep.scan?30:9)*60e3){clearInterval(_prep.timer);_prep=null;const b=$('prepBar');if(b)b.remove();toast('זה לוקח יותר מהרגיל. התוצאות יופיעו כשהריצה תסתיים');try{await cloudLoad();refreshApps()}catch(e){}}}
+    if((data||[]).some(x=>x.plan&&x.plan.prep_done)){clearInterval(_prep.timer);_prep=null;prepClear();await cloudLoad();if(typeof refreshApps==='function')refreshApps();prepBar(true);return}}catch(e){}
+  if(Date.now()-_prep.t0>(_prep.scan?30:9)*60e3){clearInterval(_prep.timer);_prep=null;prepClear();const b=$('prepBar');if(b)b.remove();toast('זה לוקח יותר מהרגיל. התוצאות יופיעו כשהריצה תסתיים');try{await cloudLoad();refreshApps()}catch(e){}}}
 
 /* התראות לטלפון (Web Push). המפתח הציבורי של השרת. ריק = עוד לא הוגדר */
 const VAPID_PUB='BIJTs9qVwO1m9UMkTlwH31BdzRQcVen8aESezqiYeSad9bZuaBlyuvSmMQ6hBkLGEOUbH3NiXjyfUsmHULBhJxs';
@@ -401,7 +414,22 @@ async function pushToggle(){
   const perm=await Notification.requestPermission();if(perm!=='granted'){toast('צריך לאשר התראות בדפדפן');return}
   const pb=document.querySelector('[onclick="pushToggle()"]');if(pb){pb.disabled=true;pb.setAttribute('aria-busy','true')}$('nb')&&$('nb').insertAdjacentHTML('beforeend',' '+LD('ld-s'));
   try{const r=await navigator.serviceWorker.ready,sub=await r.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64u(VAPID_PUB)});
-    S.push=sub.toJSON();track('push_on');save();renderSettings();toast(`מופעל. ${N('hunter')} ישלח הודעה כשיש משרות חדשות`)}catch(e){toast('לא הצלחתי להפעיל התראות בדפדפן הזה')}if(pb)pb.disabled=false;renderSettings()}
+    S.push=sub.toJSON();S.push_at=new Date().toISOString();track('push_on');save();renderSettings();toast(`מופעל. ${N('hunter')} ישלח הודעה כשיש משרות חדשות`)}catch(e){toast('לא הצלחתי להפעיל התראות בדפדפן הזה')}if(pb)pb.disabled=false;renderSettings()}
+
+/* בכל פתיחה: המנוי להתראות עדיין בתוקף? דפדפנים מחליפים מנויים, והשרת מסמן "push_gone" כשמנוי פג. מחדשים בשקט */
+async function pushCheck(){if(!S.push||!VAPID_PUB||!('PushManager' in window)||!('Notification' in window))return;
+  if(Notification.permission!=='granted'){S.push=null;save();return}   // ההרשאה בוטלה בהגדרות הטלפון
+  try{const r=await navigator.serviceWorker.ready;let sub=await r.pushManager.getSubscription();
+    const gone=(RUNS||[]).some(x=>x.agent==='push_gone'&&new Date(x.created_at)>new Date(S.push_at||0));
+    if(sub&&gone){await sub.unsubscribe();sub=null}
+    if(!sub)sub=await r.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64u(VAPID_PUB)});
+    const j=sub.toJSON();if(gone||!S.push.endpoint||j.endpoint!==S.push.endpoint){S.push=j;S.push_at=new Date().toISOString();save()}}catch(e){}}
+
+/* חזרה לאפליקציה אחרי יותר מ-2 דקות: טוענים מחדש ומציירים את המסך הנוכחי (בלי לצאת ולהיכנס) */
+let _hiddenAt=0;
+document.addEventListener('visibilitychange',async()=>{if(document.visibilityState==='hidden'){_hiddenAt=Date.now();return}
+  if(!ME||!_hiddenAt||Date.now()-_hiddenAt<120e3||document.querySelector('.sheet.open,#onb.open'))return;_hiddenAt=0;
+  try{await cloudLoad();({main:renderHome,jobs:renderJobs,apps:renderApps,prep:renderPrep,linkedin:renderLinkedIn,profile:renderProfile,settings:renderSettings})[curPg]?.()}catch(e){}});
 
 /* מחיקת החשבון: פונקציה במסד שמוחקת רק את המשתמש המחובר, וכל הנתונים שלו נמחקים איתו */
 async function deleteAccount(){btnBusy(document.querySelector('[onclick^="deleteAccount"]'),true,'מוחק…');

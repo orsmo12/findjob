@@ -135,17 +135,26 @@ function brLi(x,i,hide){const [lbl,cls]=BR_TONE[x.tone]||BR_TONE.update/* act י
 function brShort(t){t=String(t||'');const parts=t.split(/;\s*/);   // רשימת משרות ארוכה באנגלית → מספר + שמות החברות בלבד
   if(parts.length>1){const cos=[...new Set(parts.map(x=>((/\sב-(.+?)(?:\.\s.*)?$/.exec(x)||[])[1]||'').trim()).filter(Boolean))];if(cos.length)return`${parts.length} משרות חדשות: ${cos.slice(0,3).join(', ')}${cos.length>3?` ועוד ${cos.length-3}`:''}`}
   return t}
+/* הסיכום נכתב פעם ביום, אבל המספרים בו נבדקים מול מה שיש עכשיו: משרות שכבר עברת עליהן לא "מחכות".
+   שורה שחוזרת על הכותרת (אותן משרות חדשות) לא מוצגת פעמיים */
+function brLive(head,list){const n=typeof queue==='function'?queue().length:0,JR=/משר(?:ות|ה)\s+חדש/;
+  const num=t=>n===1?t.replace(/\d+\s*משרות\s+חדשות/,'משרה חדשה אחת'):t.replace(/\d+(?=\s*משרות\s+חדשות)/,String(n));
+  const isJ=x=>(x.go==='jobs'||x.tone==='new')&&JR.test(x.t||''),hadJobs=JR.test(head)||list.some(isJ);
+  const items=list.filter(x=>!(isJ(x)&&(!n||JR.test(head)))).map(x=>isJ(x)?Object.assign({},x,{t:num(x.t)}):x);
+  if(JR.test(head))head=n?num(head):'';
+  if(hadJobs&&!n)items.unshift({t:'עברת על כל המשרות החדשות ✓',tone:'update',go:''});
+  return {head,items}}
 function brMerge(list){const out=[],cos=[];list.forEach(x=>{const m=/^(?:מכתב פנייה מוכן ל-|הוכנו מכתבים חדשים ל-|מכתבים חדשים הוכנו:\s*)(.+)$/.exec(x.t||'');
     if(m)cos.push(...m[1].split(/,\s*/));else out.push(x)});
   if(cos.length){const u=[...new Set(cos.map(c=>c.trim()).filter(Boolean))];out.unshift({t:`מכתבי פנייה מוכנים: ${u.slice(0,3).join(', ')}${u.length>3?` ועוד ${u.length-3}`:''}`,tone:'update',go:'apps'})}
   return out}
 function shaiBrief(){const r=shaiToday();if(!r)return '';const b=r.stats.brief_ai,t0=new Date(r.created_at);
   const items=b.items||[],bg=items.filter(x=>x.tone==='bg'),SHOW=3;
-  const all=brMerge([...sinceBrief(t0),...items.filter(x=>x.tone!=='bg')]).map(x=>Object.assign({},x,{t:brShort(x.t)}));
+  const lv=brLive(b.headline||'',brMerge([...sinceBrief(t0),...items.filter(x=>x.tone!=='bg')])),all=lv.items.map(x=>Object.assign({},x,{t:brShort(x.t)}));
   const when=t0.toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'}),more=all.length-SHOW+(bg.length?1:0);
   return `<section class="brief b2" aria-labelledby="brH">
     <div class="b2-head"><span class="b2-av" aria-hidden="true">${escB((N('assistant')||'ש').slice(0,1))}</span><div><h2 id="brH">${escB(N('assistant'))} מעדכן אותך</h2><span>הסיכום של היום · ${escB(when)}</span></div></div>
-    ${b.headline?`<p class="b2-hl">${escB(b.headline)}</p>`:''}
+    ${lv.head?`<p class="b2-hl">${escB(lv.head)}</p>`:''}
     ${all.length?`<ul class="b2-list">${all.map((x,i)=>brLi(x,i,i>=SHOW)).join('')}${bg.length?`<li class="b2-more b2-bg" hidden>${bg.map(x=>escB(x.t)).join(' · ')}</li>`:''}</ul>
       ${more>0?`<button class="br-toggle b2-tog" aria-expanded="false" onclick="const L=this.previousElementSibling,o=L.classList.toggle('all');L.querySelectorAll('.b2-more').forEach(l=>l.hidden=!o);this.setAttribute('aria-expanded',o);this.textContent=o?'פחות ▴':'עוד ${more} ▾'">עוד ${more} ▾</button>`:''}`
       :'<p class="b2-quiet">יום שקט. אין משהו שדורש ממך פעולה.</p>'}
@@ -217,6 +226,10 @@ function bindTodoDrag(h){
 }
 
 /* ═════════ משרות חדשות ═════════ */
+/* סריקה בלי משרות חדשות: הסבר אמיתי מהמספרים של הסריקה, במקום מסך ריק */
+function lastScanWhy(){const s=(typeof FEEDD!=='undefined'&&FEEDD&&FEEDD.stats)||{};if(s.shown||!s.collected)return'';
+  const no=(s.too_senior||0)+(s.off_field||0);
+  return `<p class="scan-why">בסריקה האחרונה ${escB(N('hunter'))} בדק ${s.collected} משרות: ${s.already_seen||0} כבר ראית${no?`, ${no} לא מתאימות לרמה או לתחום`:''}. מהשאר לא נמצאה משרה חדשה שמתאימה לך.</p>`}
 let lastAct=null, busy=false;
 function renderJobs(){
   $('addJobBtn').hidden=!CLOUDM;
@@ -236,8 +249,8 @@ function renderJobs(){
     if(scanning&&!DECK.length){deck.innerHTML=`<div class="empty" role="status"><div class="empty-ld">${LD('ld-l')}</div><h3>${escB(N('hunter'))} מחפש לך משרות ראשונות</h3>
       <p>בדרך כלל 10–15 דקות. אפשר להמשיך להסתובב באפליקציה, המשרות יופיעו כאן לבד.</p>${skelHtml(2)}</div>`;return}
     if(!DECK.length){deck.innerHTML=`<div class="empty"><div class="empty-ic">🔍</div><h3>עוד אין כאן משרות</h3>
-      <p>${escB(N('hunter'))} מחפש פעמיים ביום. הסריקה הבאה: ${escB(nextScan())}.</p>${CLOUDM?`<button class="btn btn-primary" onclick="prepNow('scan')">לחפש עכשיו</button>`:''}</div>`;return}
-    deck.innerHTML=`<div class="empty"><div class="empty-ic">✓</div><h3>עברת על כל המשרות החדשות</h3><p>${escB(N('hunter'))} יחפש שוב ${escB(nextScan())}.${scanning?' הוא כבר מחפש עכשיו.':''}${sv?(sv===1?' בינתיים משרה אחת ששמרת מחכה להגשה.':` בינתיים ${sv} משרות ששמרת מחכות להגשה.`):''}</p>${sv?`<button class="btn btn-primary" onclick="goPage('apps')">להגשות</button>`:`<button class="btn btn-ghost" onclick="goPage('main')">ללוח הבקרה</button>`}</div>`;
+      <p>${escB(N('hunter'))} מחפש פעמיים ביום. הסריקה הבאה: ${escB(nextScan())}.</p>${CLOUDM?`${prepBtn('scan','לחפש עכשיו','btn btn-primary')}`:''}</div>`;return}
+    deck.innerHTML=`<div class="empty"><div class="empty-ic">✓</div><h3>עברת על כל המשרות החדשות</h3>${lastScanWhy()}<p>${escB(N('hunter'))} יחפש שוב ${escB(nextScan())}.${scanning?' הוא כבר מחפש עכשיו.':''}${sv?(sv===1?' בינתיים משרה אחת ששמרת מחכה להגשה.':` בינתיים ${sv} משרות ששמרת מחכות להגשה.`):''}</p>${sv?`<button class="btn btn-primary" onclick="goPage('apps')">להגשות</button>`:`<button class="btn btn-ghost" onclick="goPage('main')">ללוח הבקרה</button>`}</div>`;
     return;
   }
   $('deckActions').style.display='';

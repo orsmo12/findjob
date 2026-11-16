@@ -160,6 +160,33 @@ def letter_score(text: str, job: dict, cv: str = "", projects: list | None = Non
             "clean": not slop_in(text or "") and 110 <= len((text or "").split()) <= 200}
 
 
+def letter_why(text: str, job: dict) -> list[str]:
+    """למה כלל נכשל בבדיקה בקוד: קודים קצרים בלבד, בלי טקסט מהמכתב (לכלי המפתח, הריפו ציבורי)."""
+    paras = [p for p in re.split(r"\n\s*\n", text or "") if p.strip()]
+    if not paras:
+        return ["empty"]
+    first = (paras[1] if len(paras) > 2 else paras[0]).lower()
+    second = (paras[2] if len(paras) > 3 else "").lower()
+    last = " ".join(paras[-2:]).lower()
+    title_w = [w for w in re.findall(r"[a-z]{3,}", (job.get("title") or "").lower())][:3]
+    deg = r"b\.?sc|degree|graduat|student|תואר"
+    out = []
+    if not any(w in first for w in title_w):
+        out.append("opening:no_title_word")
+    if not re.search(deg, first):
+        out.append("opening:degree_later" if re.search(deg, second) else "opening:no_degree")
+    loc = re.split(r"[,·|-]", job.get("loc") or "")[0].strip().lower()
+    if not ((job.get("co") or "").lower()[:12] in last or (loc and loc in last)):
+        out.append("closing:no_company" + ("_in_letter" if (job.get("co") or "").lower()[:12] in (text or "").lower() else ""))
+    n = len((text or "").split())
+    if not 110 <= n <= 200:
+        out.append("clean:words_" + ("short" if n < 110 else "long"))
+    if slop_in(text or ""):
+        out.append("clean:slop")
+    out.append(f"paras:{len(paras)}")
+    return out
+
+
 def slop_in(text: str) -> list[str]:
     t = text.lower()
     return [p for p in SLOP if p in t]

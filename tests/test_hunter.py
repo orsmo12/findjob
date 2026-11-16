@@ -226,3 +226,22 @@ def test_fill_skips_experience_gap_only_without_experience():
     assert not fill_blocked(r, {"have_years": 3})                       # גלעד: Senior ששמר נשארות
     assert not fill_blocked({"fit": 3.3, "level_gap": "work"}, {"have_years": 0})
     assert not fill_blocked({"fit": 3.3}, {"have_years": 0})            # פער כישורים בלבד: נשארת
+
+
+def test_no_desc_does_not_take_a_rating_slot():
+    """משרה שאת המודעה שלה לא הצלחנו לקרוא לא תופסת מקום בתור הדירוג (עם תקרה), והמתג מחזיר את ההתנהגות הישנה."""
+    from agent_core.agents import hunter as H
+    old = (H.enrich, H.has_full_ad, H.NO_DESC_FREE_SLOT)
+    H.enrich = lambda j: j
+    H.has_full_ad = lambda j: j["ok"]
+    jobs = [{"id": i, "ok": i % 2 == 0} for i in range(10)]   # 0,2,4,6,8 עם מודעה
+    try:
+        st = {}
+        got = list(H.rating_slots(jobs, 3, st))
+        assert [j["id"] for j, f in got if f] == [0, 2, 4] and st["no_desc"] == 2
+        st = {}
+        assert len([1 for _, f in H.rating_slots([{"id": i, "ok": False} for i in range(20)], 3, st) if not f]) == 6   # תקרה: עוד 3 מעבר למכסה
+        H.NO_DESC_FREE_SLOT = False
+        assert [j["id"] for j, f in H.rating_slots(jobs, 3, {})] == [0, 1, 2]
+    finally:
+        H.enrich, H.has_full_ad, H.NO_DESC_FREE_SLOT = old

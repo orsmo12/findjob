@@ -113,7 +113,7 @@ function renderApps(){S.apps.forEach(stepsOf);
   const dot=k=>k!=='closed'&&by[k].some(a=>askOf(a)||k==='open');
   $('seg').innerHTML=GRP.map(([k,l])=>`<button class="chip${appGrp===k?' sel':''}" role="tab" aria-selected="${appGrp===k}" onclick="appGrp='${k}';renderApps()">${l} <b class="num">${by[k].length}</b>${dot(k)&&by[k].length?'<span class="tab-dot" aria-label="מחכה לך"></span>':''}</button>`).join('');
   const nAsk=by.waiting.filter(a=>askOf(a)).length;
-  const prepBtn=CLOUDM&&S.apps.some(a=>a.status==='saved')?`<button class="btn btn-sm btn-ghost btn-block" style="margin-bottom:10px" onclick="prepNow()">${ICO.spark||''}לעדכן הכל עכשיו</button>`:'';
+  const prepBtn=CLOUDM&&S.apps.some(a=>a.status==='saved')?`<div style="margin-bottom:10px">${prepBtn('prep','לעדכן הכל עכשיו','btn btn-sm btn-ghost btn-block')}</div>`:'';
   const f=funnelNums(),line=`<p class="apps-line">${GRP.map(([k,l])=>`${by[k].length} ${l}`).join(' · ')} · ${f.ivs} ראיונות · ${f.offers} הצעות</p>`;
   const col=k=>`<section class="app-group g-${k}${appGrp===k?' on':''}" role="tabpanel"><h3 class="grp-h">${GRP.find(x=>x[0]===k)[1]} <span class="num">${by[k].length}</span></h3>
       ${k==='waiting'&&nAsk?`<button class="review-link" onclick="reviewWaiting()">קיבלת תשובה מאחת החברות? לעדכן ←</button>`:''}

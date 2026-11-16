@@ -151,6 +151,9 @@ body.drawer-open .burger span:nth-child(3){top:6px;transform:rotate(-45deg)}
 .btn:active{transform:scale(.97)}
 .btn-primary{background:linear-gradient(140deg,var(--brand),var(--brand2));color:#fff;box-shadow:0 10px 22px -12px rgba(47,72,88,.65),inset 0 1px 0 rgba(255,255,255,.18)}
 .btn-ghost{background:rgba(255,255,255,.7);border:1px solid var(--glass-brd);color:var(--ink);box-shadow:var(--g-shadow)}
+.prep-wrap{display:flex;gap:8px;align-items:center}.prep-wrap>.btn{flex:1}
+.prep-q{flex:none;width:34px;height:34px;border-radius:50%;border:1px solid var(--glass-brd);background:rgba(255,255,255,.7);color:var(--ink2);font:600 15px/1 var(--font);cursor:pointer}
+.btn[aria-busy="true"]{opacity:.75;cursor:default}
 .btn-block{width:100%}
 .btn[disabled]{opacity:.45;pointer-events:none}
 .btn-sm{height:36px;padding:0 13px;font-size:13px;border-radius:12px}

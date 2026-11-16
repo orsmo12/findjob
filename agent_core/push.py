@@ -25,7 +25,8 @@ def send(sub: dict | None, payload: dict) -> str:
         return "skip"
     try:
         webpush(subscription_info=sub, data=json.dumps(payload, ensure_ascii=False), vapid_private_key=key,
-                vapid_claims={"sub": "mailto:findjob@users.noreply.github.com"}, ttl=6 * 3600)
+                vapid_claims={"sub": "mailto:findjob@users.noreply.github.com"}, ttl=6 * 3600,
+                headers={"Urgency": "high"})   # בעדיפות רגילה אנדרואיד דוחה את ההתראה עד שמעירים את הטלפון
         return "sent"
     except WebPushException as e:
         code = getattr(getattr(e, "response", None), "status_code", 0)

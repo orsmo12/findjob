@@ -221,6 +221,8 @@ for u in users:
             r_ = P.send(ustate.get("push"), P.message(feed["stats"]["shown"], str(team.get("hunter") or "דורון")))
             if r_ != "skip":
                 print(f"{u['user_id'][:8]}: התראה {r_}")
+            if r_ == "gone":   # המנוי פג: האפליקציה מחדשת אותו בשקט בפתיחה הבאה (pushCheck ב-cloud.js)
+                db.save_memory(u["user_id"], "push_gone", {"at": datetime.now(timezone.utc).isoformat()})
         try:   # מסלול הגשה: "שמעת מ-X?" עם כפתורים. מקסימום אחת ביום, רק 09:00–20:00 שעון ישראל
             from datetime import datetime as _dt
             from zoneinfo import ZoneInfo
@@ -232,7 +234,10 @@ for u in users:
                 if mem.get("last") != today:
                     cards = {r["id"]: r.get("card") or {} for r in db.all_jobs(u["user_id"], days=90)}
                     pay, aid = P.ask_payload(ustate.get("apps") or [], cards, mem.get("asked") or {}, today)
-                    if pay and P.send(ustate.get("push"), pay) == "sent":
+                    res = P.send(ustate.get("push"), pay) if pay else "skip"
+                    if res == "gone":
+                        db.save_memory(u["user_id"], "push_gone", {"at": _dt.now(ZoneInfo("UTC")).isoformat()})
+                    if res == "sent":
                         db.save_memory(u["user_id"], "push_ask", {"last": today, "asked": {**(mem.get("asked") or {}), aid: today}})
         except Exception as e:  # noqa: BLE001
             print(f"התראת הגשה: {type(e).__name__}")
@@ -243,7 +248,8 @@ for u in users:
             act.flush()
         s = feed["stats"]
         print(f"{u['user_id'][:8]}: נאספו {s['collected']}, בכירות מדי {s['too_senior']}, מתחום אחר {s.get('off_field', 0)}, כבר נראו {s['already_seen']}, "
-              f"דורגו {s['rated']} (מתוכם {s.get('ai_senior', 0)} בכירות לפי הדירוג), ציונים {sorted(s.get('fits', []), reverse=True)}, מוצגות {s['shown']}")
+              f"דורגו {s['rated']} (מתוכם {s.get('ai_senior', 0)} בכירות לפי הדירוג), ציונים {sorted(s.get('fits', []), reverse=True)}, "
+              f"בלי מודעה מלאה {s.get('no_desc', 0)}, נדחו למכסה {s.get('deferred', 0)}, מוצגות {s['shown']}")
     except Exception as e:  # משתמש אחד שנכשל לא עוצר את האחרים
         import traceback; traceback.print_exc()
         print(f"{u['user_id'][:8]}: חיפוש נכשל: {type(e).__name__}: {e}")

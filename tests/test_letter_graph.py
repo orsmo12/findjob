@@ -86,3 +86,12 @@ def test_letter_score_and_reserve():
     assert all(sc.values()), sc
     assert not G.letter_score(text.replace("I'm applying for the AI Engineer role", "Hello"), job, "", ["findjob"])["opening"]
     assert G.RESERVE.search("מילואים פעילים") and not G.RESERVE.search("Python, React")
+
+
+def test_letter_why_codes_only():
+    """כלי המפתח רואה למה כלל נכשל בקודים, בלי טקסט מהמכתב."""
+    from agent_core.agents.letter_graph import letter_why
+    txt = "Dear Wix team,\n\nI am excited to apply.\n\nI hold a B.Sc. in Computer Science and built a backend project.\n\nBest regards,\nOr"
+    why = letter_why(txt, {"title": "Backend Developer", "co": "Wix", "loc": "Tel Aviv"})
+    assert "opening:no_title_word" in why and "opening:degree_later" in why and "closing:no_company_in_letter" in why
+    assert all(":" in c and len(c) < 40 for c in why)   # רק קודים קצרים

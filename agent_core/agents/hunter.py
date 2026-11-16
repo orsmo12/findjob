@@ -643,6 +643,29 @@ def rerate(card: dict, profile: dict, plan: dict, min_fit: float = 3.5) -> tuple
     return "ok", new, f"{r['fit']:.1f}/5"
 
 
+NO_DESC_FREE_SLOT = True   # מתג חזרה (16.11): משרה שאת המודעה שלה לא הצלחנו לקרוא לא תופסת מקום בתור הדירוג
+
+
+def rating_slots(jobs: list[dict], rate_top: int, stats: dict):
+    """המשרות שנכנסות לדירוג, לפי הסדר. מחזיר (משרה, יש מודעה מלאה).
+    משרה בלי מודעה מלאה (LinkedIn חוסם מהענן) לא נספרת במכסה של rate_top, כדי שמשרות אחרות יקבלו את המקום.
+    תקרה: עד rate_top משרות כאלה בסריקה, כדי לא להציף את LinkedIn בבקשות. נמצא ב-16.11: 25%–30% מהמקומות נשרפו כך."""
+    used = nd = 0
+    for j in jobs:
+        if used >= rate_top:
+            return
+        enrich(j)
+        if not has_full_ad(j):
+            stats["no_desc"] = stats.get("no_desc", 0) + 1
+            nd += 1
+            if not NO_DESC_FREE_SLOT or nd > rate_top:
+                used += 1
+            yield j, False
+            continue
+        used += 1
+        yield j, True
+
+
 def run(profile: dict, plan: dict, raw: list[dict] | None = None, rate_top: int = 25, min_fit: float = 3.5, remember: bool = True,
         seen: set[str] | None = None, persist: bool = True) -> dict:
     """persist=False: לא כותבים קבצים מקומיים (בענן התוצאות נשמרות ב-Supabase)."""
@@ -672,10 +695,10 @@ def run(profile: dict, plan: dict, raw: list[dict] | None = None, rate_top: int 
     # משרה שנבדקה ונפסלה נשמרת (decision=filtered), כדי שלא נבזבז עליה את מכסת ה-AI בכל סריקה מחדש
     drop = lambda j, why, fit=None: rejected.append({"id": j["id"], "co": j["company"], "title": j["title"], "url": j["url"],
                                                     "fit": fit or 0, "filtered_why": why, "rv": RATING_V})
-    for j in jobs[:rate_top]:
-        enrich(j)
-        if not has_full_ad(j):  # בלי מודעה מלאה אי אפשר לדרג באמת. לא מציגים — ננסה שוב בסריקה הבאה
-            stats["no_desc"] = stats.get("no_desc", 0) + 1
+    n_rated = 0
+    for j, full in rating_slots(jobs, rate_top, stats):
+        n_rated += full
+        if not full:  # בלי מודעה מלאה אי אפשר לדרג באמת. לא מציגים — ננסה שוב בסריקה הבאה
             act.log("hunter", f"{j['title']} ב-{j['company']}: לא הצלחתי לקרוא את המודעה המלאה. לא מדרג לפי כותרת בלבד, אנסה שוב בסריקה הבאה.")
             continue
         if too_senior(j, plan):  # עכשיו כשיש תיאור מלא, בודקים שוב את שנות הניסיון
@@ -723,7 +746,7 @@ def run(profile: dict, plan: dict, raw: list[dict] | None = None, rate_top: int 
             cards.append(c)
         act.log("hunter", f"מעט משרות עברו את הסף, אז הוספתי {len(add)} קרובות (ציון {add[-1][1]['fit']:.1f} ומעלה) עם תגית התאמה חלקית")
     cards.sort(key=lambda c: -c["fit"])
-    stats.update(rated=min(len(jobs), rate_top) - deferred, deferred=deferred, shown=len(cards), queries=qy)
+    stats.update(rated=n_rated - deferred, deferred=deferred, shown=len(cards), queries=qy)
     feed = {"generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"), "stats": stats,
             "plan": {k: plan.get(k) for k in ("queries", "locations", "levels", "why", "taste")}, "jobs": cards, "rejected": rejected}
     if not persist:

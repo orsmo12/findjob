@@ -109,7 +109,7 @@ def main(idx=None, days=10):
     # מכתבים: מספרים בלבד (בלי טקסט, הריפו ציבורי)
     import re, statistics
     from agent_core.agents.letter_graph import slop_in
-    lrows = [j for j in (get("jobs", select="letter,decision", user_id=f"eq.{uid}", letter="not.is.null") or []) if (j.get("letter") or {}).get("text")]
+    lrows = [j for j in (get("jobs", select="id,letter,decision", user_id=f"eq.{uid}", letter="not.is.null") or []) if (j.get("letter") or {}).get("text")]
     lt = [j["letter"] for j in lrows]
     if lrows:
         from agent_core.handoffs import LETTER_V
@@ -117,6 +117,11 @@ def main(idx=None, days=10):
         sc = [x["score"] for x in lt if x.get("score")]
         if sc:
             print(f"   6 הכללים (מכתבים חדשים, {len(sc)}): " + ", ".join(f"{k} {sum(bool(d.get(k)) for d in sc)}/{len(sc)}" for k in sc[0]))
+        from agent_core.agents.letter_graph import letter_why   # למה נכשל: קודים בלבד, בלי טקסט
+        cards = {j["id"]: j.get("card") or {} for j in (get("jobs", select="id,card", user_id=f"eq.{uid}", letter="not.is.null") or [])}
+        why = Counter(c for j in lrows if (j["letter"].get("v") or 0) >= LETTER_V
+                      for c in letter_why(j["letter"]["text"], {"title": cards.get(j.get("id"), {}).get("title"), "co": cards.get(j.get("id"), {}).get("co"), "loc": cards.get(j.get("id"), {}).get("loc")}))
+        print(f"   למה נכשל (קודים): {dict(why.most_common(12))}")
     if lt:
         wc = [len(x["text"].split()) for x in lt]
         paras = [x["text"].strip().split("\n\n") for x in lt]

@@ -298,6 +298,9 @@ body.drawer-open .burger span:nth-child(3){top:6px;transform:rotate(-45deg)}
 .btn:active{transform:scale(.97)}
 .btn-primary{background:linear-gradient(140deg,var(--brand),var(--brand2));color:#fff;box-shadow:0 10px 22px -12px rgba(47,72,88,.65),inset 0 1px 0 rgba(255,255,255,.18)}
 .btn-ghost{background:rgba(255,255,255,.7);border:1px solid var(--glass-brd);color:var(--ink);box-shadow:var(--g-shadow)}
+.prep-wrap{display:flex;gap:8px;align-items:center}.prep-wrap>.btn{flex:1}
+.prep-q{flex:none;width:34px;height:34px;border-radius:50%;border:1px solid var(--glass-brd);background:rgba(255,255,255,.7);color:var(--ink2);font:600 15px/1 var(--font);cursor:pointer}
+.btn[aria-busy="true"]{opacity:.75;cursor:default}
 .btn-block{width:100%}
 .btn[disabled]{opacity:.45;pointer-events:none}
 .btn-sm{height:36px;padding:0 13px;font-size:13px;border-radius:12px}
@@ -2292,17 +2295,26 @@ function brLi(x,i,hide){const [lbl,cls]=BR_TONE[x.tone]||BR_TONE.update/* act י
 function brShort(t){t=String(t||'');const parts=t.split(/;\s*/);   // רשימת משרות ארוכה באנגלית → מספר + שמות החברות בלבד
   if(parts.length>1){const cos=[...new Set(parts.map(x=>((/\sב-(.+?)(?:\.\s.*)?$/.exec(x)||[])[1]||'').trim()).filter(Boolean))];if(cos.length)return`${parts.length} משרות חדשות: ${cos.slice(0,3).join(', ')}${cos.length>3?` ועוד ${cos.length-3}`:''}`}
   return t}
+/* הסיכום נכתב פעם ביום, אבל המספרים בו נבדקים מול מה שיש עכשיו: משרות שכבר עברת עליהן לא "מחכות".
+   שורה שחוזרת על הכותרת (אותן משרות חדשות) לא מוצגת פעמיים */
+function brLive(head,list){const n=typeof queue==='function'?queue().length:0,JR=/משר(?:ות|ה)\s+חדש/;
+  const num=t=>n===1?t.replace(/\d+\s*משרות\s+חדשות/,'משרה חדשה אחת'):t.replace(/\d+(?=\s*משרות\s+חדשות)/,String(n));
+  const isJ=x=>(x.go==='jobs'||x.tone==='new')&&JR.test(x.t||''),hadJobs=JR.test(head)||list.some(isJ);
+  const items=list.filter(x=>!(isJ(x)&&(!n||JR.test(head)))).map(x=>isJ(x)?Object.assign({},x,{t:num(x.t)}):x);
+  if(JR.test(head))head=n?num(head):'';
+  if(hadJobs&&!n)items.unshift({t:'עברת על כל המשרות החדשות ✓',tone:'update',go:''});
+  return {head,items}}
 function brMerge(list){const out=[],cos=[];list.forEach(x=>{const m=/^(?:מכתב פנייה מוכן ל-|הוכנו מכתבים חדשים ל-|מכתבים חדשים הוכנו:\s*)(.+)$/.exec(x.t||'');
     if(m)cos.push(...m[1].split(/,\s*/));else out.push(x)});
   if(cos.length){const u=[...new Set(cos.map(c=>c.trim()).filter(Boolean))];out.unshift({t:`מכתבי פנייה מוכנים: ${u.slice(0,3).join(', ')}${u.length>3?` ועוד ${u.length-3}`:''}`,tone:'update',go:'apps'})}
   return out}
 function shaiBrief(){const r=shaiToday();if(!r)return '';const b=r.stats.brief_ai,t0=new Date(r.created_at);
   const items=b.items||[],bg=items.filter(x=>x.tone==='bg'),SHOW=3;
-  const all=brMerge([...sinceBrief(t0),...items.filter(x=>x.tone!=='bg')]).map(x=>Object.assign({},x,{t:brShort(x.t)}));
+  const lv=brLive(b.headline||'',brMerge([...sinceBrief(t0),...items.filter(x=>x.tone!=='bg')])),all=lv.items.map(x=>Object.assign({},x,{t:brShort(x.t)}));
   const when=t0.toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'}),more=all.length-SHOW+(bg.length?1:0);
   return `<section class="brief b2" aria-labelledby="brH">
     <div class="b2-head"><span class="b2-av" aria-hidden="true">${escB((N('assistant')||'ש').slice(0,1))}</span><div><h2 id="brH">${escB(N('assistant'))} מעדכן אותך</h2><span>הסיכום של היום · ${escB(when)}</span></div></div>
-    ${b.headline?`<p class="b2-hl">${escB(b.headline)}</p>`:''}
+    ${lv.head?`<p class="b2-hl">${escB(lv.head)}</p>`:''}
     ${all.length?`<ul class="b2-list">${all.map((x,i)=>brLi(x,i,i>=SHOW)).join('')}${bg.length?`<li class="b2-more b2-bg" hidden>${bg.map(x=>escB(x.t)).join(' · ')}</li>`:''}</ul>
       ${more>0?`<button class="br-toggle b2-tog" aria-expanded="false" onclick="const L=this.previousElementSibling,o=L.classList.toggle('all');L.querySelectorAll('.b2-more').forEach(l=>l.hidden=!o);this.setAttribute('aria-expanded',o);this.textContent=o?'פחות ▴':'עוד ${more} ▾'">עוד ${more} ▾</button>`:''}`
       :'<p class="b2-quiet">יום שקט. אין משהו שדורש ממך פעולה.</p>'}
@@ -2374,6 +2386,10 @@ function bindTodoDrag(h){
 }
 
 /* ═════════ משרות חדשות ═════════ */
+/* סריקה בלי משרות חדשות: הסבר אמיתי מהמספרים של הסריקה, במקום מסך ריק */
+function lastScanWhy(){const s=(typeof FEEDD!=='undefined'&&FEEDD&&FEEDD.stats)||{};if(s.shown||!s.collected)return'';
+  const no=(s.too_senior||0)+(s.off_field||0);
+  return `<p class="scan-why">בסריקה האחרונה ${escB(N('hunter'))} בדק ${s.collected} משרות: ${s.already_seen||0} כבר ראית${no?`, ${no} לא מתאימות לרמה או לתחום`:''}. מהשאר לא נמצאה משרה חדשה שמתאימה לך.</p>`}
 let lastAct=null, busy=false;
 function renderJobs(){
   $('addJobBtn').hidden=!CLOUDM;
@@ -2393,8 +2409,8 @@ function renderJobs(){
     if(scanning&&!DECK.length){deck.innerHTML=`<div class="empty" role="status"><div class="empty-ld">${LD('ld-l')}</div><h3>${escB(N('hunter'))} מחפש לך משרות ראשונות</h3>
       <p>בדרך כלל 10–15 דקות. אפשר להמשיך להסתובב באפליקציה, המשרות יופיעו כאן לבד.</p>${skelHtml(2)}</div>`;return}
     if(!DECK.length){deck.innerHTML=`<div class="empty"><div class="empty-ic">🔍</div><h3>עוד אין כאן משרות</h3>
-      <p>${escB(N('hunter'))} מחפש פעמיים ביום. הסריקה הבאה: ${escB(nextScan())}.</p>${CLOUDM?`<button class="btn btn-primary" onclick="prepNow('scan')">לחפש עכשיו</button>`:''}</div>`;return}
-    deck.innerHTML=`<div class="empty"><div class="empty-ic">✓</div><h3>עברת על כל המשרות החדשות</h3><p>${escB(N('hunter'))} יחפש שוב ${escB(nextScan())}.${scanning?' הוא כבר מחפש עכשיו.':''}${sv?(sv===1?' בינתיים משרה אחת ששמרת מחכה להגשה.':` בינתיים ${sv} משרות ששמרת מחכות להגשה.`):''}</p>${sv?`<button class="btn btn-primary" onclick="goPage('apps')">להגשות</button>`:`<button class="btn btn-ghost" onclick="goPage('main')">ללוח הבקרה</button>`}</div>`;
+      <p>${escB(N('hunter'))} מחפש פעמיים ביום. הסריקה הבאה: ${escB(nextScan())}.</p>${CLOUDM?`${prepBtn('scan','לחפש עכשיו','btn btn-primary')}`:''}</div>`;return}
+    deck.innerHTML=`<div class="empty"><div class="empty-ic">✓</div><h3>עברת על כל המשרות החדשות</h3>${lastScanWhy()}<p>${escB(N('hunter'))} יחפש שוב ${escB(nextScan())}.${scanning?' הוא כבר מחפש עכשיו.':''}${sv?(sv===1?' בינתיים משרה אחת ששמרת מחכה להגשה.':` בינתיים ${sv} משרות ששמרת מחכות להגשה.`):''}</p>${sv?`<button class="btn btn-primary" onclick="goPage('apps')">להגשות</button>`:`<button class="btn btn-ghost" onclick="goPage('main')">ללוח הבקרה</button>`}</div>`;
     return;
   }
   $('deckActions').style.display='';
@@ -2607,7 +2623,7 @@ function renderApps(){S.apps.forEach(stepsOf);
   const dot=k=>k!=='closed'&&by[k].some(a=>askOf(a)||k==='open');
   $('seg').innerHTML=GRP.map(([k,l])=>`<button class="chip${appGrp===k?' sel':''}" role="tab" aria-selected="${appGrp===k}" onclick="appGrp='${k}';renderApps()">${l} <b class="num">${by[k].length}</b>${dot(k)&&by[k].length?'<span class="tab-dot" aria-label="מחכה לך"></span>':''}</button>`).join('');
   const nAsk=by.waiting.filter(a=>askOf(a)).length;
-  const prepBtn=CLOUDM&&S.apps.some(a=>a.status==='saved')?`<button class="btn btn-sm btn-ghost btn-block" style="margin-bottom:10px" onclick="prepNow()">${ICO.spark||''}לעדכן הכל עכשיו</button>`:'';
+  const prepBtn=CLOUDM&&S.apps.some(a=>a.status==='saved')?`<div style="margin-bottom:10px">${prepBtn('prep','לעדכן הכל עכשיו','btn btn-sm btn-ghost btn-block')}</div>`:'';
   const f=funnelNums(),line=`<p class="apps-line">${GRP.map(([k,l])=>`${by[k].length} ${l}`).join(' · ')} · ${f.ivs} ראיונות · ${f.offers} הצעות</p>`;
   const col=k=>`<section class="app-group g-${k}${appGrp===k?' on':''}" role="tabpanel"><h3 class="grp-h">${GRP.find(x=>x[0]===k)[1]} <span class="num">${by[k].length}</span></h3>
       ${k==='waiting'&&nAsk?`<button class="review-link" onclick="reviewWaiting()">קיבלת תשובה מאחת החברות? לעדכן ←</button>`:''}
@@ -3741,7 +3757,7 @@ async function cloudBoot(){
   try{await cloudLoad()}catch(e){console.warn(e);toast('אין חיבור לענן כרגע. מוצג מה ששמור במכשיר')}
   {const md=ME.user_metadata||{},p=prof(),full=(md.full_name||md.name||'').trim();
    if(full&&!p.name)p.name=full;if(full&&!p.first)p.first=full.split(/\s+/)[0];}
-  closeOnb();init();
+  closeOnb();init();prepResume();setTimeout(pushCheck,1500);
   clearTimeout(bt);{const d=$('boot');if(d){d.classList.add('out');setTimeout(()=>d.remove(),260)}}
   if(S.ak_pending&&!S.ai_key&&Date.now()-S.ak_pending<3600e3){   // חזר מיצירת מפתח והאפליקציה נטענה מחדש: ישר לשדה ההדבקה
     setTimeout(()=>{onbStep=3;onbSingle=!!S.onboarded;onbDraft=JSON.parse(JSON.stringify(prof()));$('onb').classList.add('open');renderOnb()},300);return}
@@ -4030,13 +4046,26 @@ function aiKeyCard(){return `<section class="card glass" aria-labelledby="akH"><
 
 /* "להכין עכשיו": ריצה של הסוכנים רק בשבילך (מכתב, סקירה, הכנה, התאמת קורות חיים, בדיקה שהמשרות פתוחות) */
 let _prep=null;
+/* המצב "הסוכנים עובדים" נשמר גם אחרי רענון, והכפתורים נעולים עד הסיום */
+function prepClear(){delete S.prep;save();prepRerender()}
+function prepRerender(){if(curPg==='apps')renderApps();else if(curPg==='jobs')renderJobs()}
+function prepResume(){const p=S.prep;if(!p||_prep)return;
+  if(Date.now()-p.t0>(p.scan?30:9)*60e3){delete S.prep;save();return}
+  _prep={at:p.at,t0:p.t0,scan:p.scan};prepBar();_prep.timer=setInterval(prepPoll,15000);prepPoll()}
+function prepBtn(kind,label,cls){
+  if(_prep){const pc=Math.min(92,Math.round((Date.now()-_prep.t0)/(_prep.scan?9000:2400)));
+    return `<button class="${cls}" disabled aria-busy="true">${LD('ld-s')} הסוכנים עובדים… ${pc}%</button>`}
+  return `<span class="prep-wrap"><button class="${cls}" onclick="prepNow(${kind==='scan'?"'scan'":''})">${kind==='scan'?'':(ICO.spark||'')}${label}</button><button class="prep-q" aria-label="מה זה עושה?" onclick="prepHelp('${kind}')">?</button></span>`}
+function prepHelp(kind){openSheet(kind==='scan'
+  ?`<h3 id="sheetTitle">לחפש עכשיו</h3><div class="sheet-sub">${escB(N('hunter'))} מריץ סריקה רק בשבילך, בלי לחכות לסריקה הקבועה (פעמיים ביום). בדרך כלל 8 עד 15 דקות. אפשר לסגור את האפליקציה בינתיים.</div>`
+  :`<h3 id="sheetTitle">לעדכן הכל עכשיו</h3><div class="sheet-sub">הסוכנים עובדים רק בשבילך, בלי לחכות לריצה הקבועה: מכתב פנייה לכל משרה שמורה שעוד אין לה, סקירת חברה, שאלות הכנה לראיון, התאמת קורות חיים, ובדיקה שהמשרות עדיין פתוחות. בדרך כלל 2 עד 4 דקות. אפשר להפעיל פעם ב-10 דקות.</div>`)}
 async function prepNow(kind){kind=kind==='scan'?'scan':'prep';
   if(_prep){toast('הסוכנים כבר עובדים. אפשר להמשיך להשתמש באפליקציה');return}
   closeSheet();let d={},r;
   try{const {data:{session}}=await SB.auth.getSession();
     r=await fetch('/api/prepnow',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:session&&session.access_token,kind})});d=await r.json()}catch(e){}
   if(!r||!d.ok){if(d.error==='no_cv'){toast(`צריך קודם קורות חיים. בלעדיהם ${N('hunter')} לא יכול לחפש`);goPage('profile');return}toast(d.error==='wait'?`אפשר להפעיל פעם ב-10 דקות. עוד ${d.minutes} דק׳`:d.error==='no_token'?'הכפתור עוד לא מחובר. המפתח צריך להשלים הגדרה אחת':d.error==='auth'?'צריך להתחבר מחדש':'לא הצלחתי להפעיל. נסה שוב בעוד דקה');return}
-  track(kind==='scan'?'scan_first':'prep_now');_prep={at:d.at,t0:Date.now(),scan:kind==='scan'};prepBar();if(curPg==='jobs')renderJobs();_prep.timer=setInterval(prepPoll,15000);
+  track(kind==='scan'?'scan_first':'prep_now');_prep={at:d.at,t0:Date.now(),scan:kind==='scan'};S.prep={at:_prep.at,t0:_prep.t0,scan:_prep.scan};save();prepBar();prepRerender();_prep.timer=setInterval(prepPoll,15000);
 }
 function prepBar(done){let b=$('prepBar');if(!b){b=document.createElement('div');b.id='prepBar';b.setAttribute('role','status');document.body.appendChild(b)}
   if(done){b.innerHTML=_prep&&_prep.scan?`<b>מוכן ✓</b><span>המשרות הראשונות מחכות לך במסך המשרות.</span>`:`<b>מוכן ✓</b><span>הכל עודכן. המכתבים, הסקירות וההכנה מחכים בהגשות.</span>`;b.classList.add('done');setTimeout(()=>b.remove(),6000);return}
@@ -4045,8 +4074,8 @@ function prepBar(done){let b=$('prepBar');if(!b){b=document.createElement('div')
     :`<b>${LD('ld-s')} הסוכנים עובדים בשבילך</b><span>בדרך כלל 2 עד 4 דקות. בסיום הכל יופיע בהגשות ובמשרד.</span><i><u style="width:${p}%"></u></i>`}
 async function prepPoll(){if(!_prep)return;prepBar();
   try{const {data}=await SB.from('runs').select('plan,created_at').eq('user_id',ME.id).eq('agent','assistant').gte('created_at',_prep.at).not('plan','is',null).limit(5);
-    if((data||[]).some(x=>x.plan&&x.plan.prep_done)){clearInterval(_prep.timer);_prep=null;await cloudLoad();if(typeof refreshApps==='function')refreshApps();prepBar(true);return}}catch(e){}
-  if(Date.now()-_prep.t0>(_prep.scan?30:9)*60e3){clearInterval(_prep.timer);_prep=null;const b=$('prepBar');if(b)b.remove();toast('זה לוקח יותר מהרגיל. התוצאות יופיעו כשהריצה תסתיים');try{await cloudLoad();refreshApps()}catch(e){}}}
+    if((data||[]).some(x=>x.plan&&x.plan.prep_done)){clearInterval(_prep.timer);_prep=null;prepClear();await cloudLoad();if(typeof refreshApps==='function')refreshApps();prepBar(true);return}}catch(e){}
+  if(Date.now()-_prep.t0>(_prep.scan?30:9)*60e3){clearInterval(_prep.timer);_prep=null;prepClear();const b=$('prepBar');if(b)b.remove();toast('זה לוקח יותר מהרגיל. התוצאות יופיעו כשהריצה תסתיים');try{await cloudLoad();refreshApps()}catch(e){}}}
 
 /* התראות לטלפון (Web Push). המפתח הציבורי של השרת. ריק = עוד לא הוגדר */
 const VAPID_PUB='BIJTs9qVwO1m9UMkTlwH31BdzRQcVen8aESezqiYeSad9bZuaBlyuvSmMQ6hBkLGEOUbH3NiXjyfUsmHULBhJxs';
@@ -4062,7 +4091,22 @@ async function pushToggle(){
   const perm=await Notification.requestPermission();if(perm!=='granted'){toast('צריך לאשר התראות בדפדפן');return}
   const pb=document.querySelector('[onclick="pushToggle()"]');if(pb){pb.disabled=true;pb.setAttribute('aria-busy','true')}$('nb')&&$('nb').insertAdjacentHTML('beforeend',' '+LD('ld-s'));
   try{const r=await navigator.serviceWorker.ready,sub=await r.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64u(VAPID_PUB)});
-    S.push=sub.toJSON();track('push_on');save();renderSettings();toast(`מופעל. ${N('hunter')} ישלח הודעה כשיש משרות חדשות`)}catch(e){toast('לא הצלחתי להפעיל התראות בדפדפן הזה')}if(pb)pb.disabled=false;renderSettings()}
+    S.push=sub.toJSON();S.push_at=new Date().toISOString();track('push_on');save();renderSettings();toast(`מופעל. ${N('hunter')} ישלח הודעה כשיש משרות חדשות`)}catch(e){toast('לא הצלחתי להפעיל התראות בדפדפן הזה')}if(pb)pb.disabled=false;renderSettings()}
+
+/* בכל פתיחה: המנוי להתראות עדיין בתוקף? דפדפנים מחליפים מנויים, והשרת מסמן "push_gone" כשמנוי פג. מחדשים בשקט */
+async function pushCheck(){if(!S.push||!VAPID_PUB||!('PushManager' in window)||!('Notification' in window))return;
+  if(Notification.permission!=='granted'){S.push=null;save();return}   // ההרשאה בוטלה בהגדרות הטלפון
+  try{const r=await navigator.serviceWorker.ready;let sub=await r.pushManager.getSubscription();
+    const gone=(RUNS||[]).some(x=>x.agent==='push_gone'&&new Date(x.created_at)>new Date(S.push_at||0));
+    if(sub&&gone){await sub.unsubscribe();sub=null}
+    if(!sub)sub=await r.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64u(VAPID_PUB)});
+    const j=sub.toJSON();if(gone||!S.push.endpoint||j.endpoint!==S.push.endpoint){S.push=j;S.push_at=new Date().toISOString();save()}}catch(e){}}
+
+/* חזרה לאפליקציה אחרי יותר מ-2 דקות: טוענים מחדש ומציירים את המסך הנוכחי (בלי לצאת ולהיכנס) */
+let _hiddenAt=0;
+document.addEventListener('visibilitychange',async()=>{if(document.visibilityState==='hidden'){_hiddenAt=Date.now();return}
+  if(!ME||!_hiddenAt||Date.now()-_hiddenAt<120e3||document.querySelector('.sheet.open,#onb.open'))return;_hiddenAt=0;
+  try{await cloudLoad();({main:renderHome,jobs:renderJobs,apps:renderApps,prep:renderPrep,linkedin:renderLinkedIn,profile:renderProfile,settings:renderSettings})[curPg]?.()}catch(e){}});
 
 /* מחיקת החשבון: פונקציה במסד שמוחקת רק את המשתמש המחובר, וכל הנתונים שלו נמחקים איתו */
 async function deleteAccount(){btnBusy(document.querySelector('[onclick^="deleteAccount"]'),true,'מוחק…');

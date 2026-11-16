@@ -27,3 +27,23 @@ def test_ask_after_a_week_once():
     assert ask_payload([{**apps[0], "snooze": "2026-11-20T00:00:00Z"}], {}, {}, "2026-11-13") == (None, "")
     iv = [{"id": "b", "jobId": "j", "status": "interview", "when": "2026-11-12T10:00:00Z", "date": "2026-11-01"}]
     assert "איך היה" in ask_payload(iv, {}, {}, "2026-11-13")[0]["body"]
+
+
+def test_send_is_high_urgency():
+    """בעדיפות רגילה אנדרואיד מעכב התראות עד שפותחים את הטלפון."""
+    import sys, types
+    got = {}
+    fake = types.ModuleType("pywebpush")
+    class WebPushException(Exception): pass
+    fake.WebPushException = WebPushException
+    fake.webpush = lambda **kw: got.update(kw)
+    old, old_key = sys.modules.get("pywebpush"), os.environ.get("VAPID_PRIVATE_KEY")
+    sys.modules["pywebpush"], os.environ["VAPID_PRIVATE_KEY"] = fake, "k"
+    try:
+        assert P.send({"endpoint": "https://x"}, {"body": "b"}) == "sent"
+        assert got["headers"]["Urgency"] == "high"
+    finally:
+        sys.modules.pop("pywebpush")
+        if old: sys.modules["pywebpush"] = old
+        if old_key is None: os.environ.pop("VAPID_PRIVATE_KEY")
+        else: os.environ["VAPID_PRIVATE_KEY"] = old_key
