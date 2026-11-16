@@ -137,11 +137,15 @@ function brShort(t){t=String(t||'');const parts=t.split(/;\s*/);   // רשימת
   return t}
 /* הסיכום נכתב פעם ביום, אבל המספרים בו נבדקים מול מה שיש עכשיו: משרות שכבר עברת עליהן לא "מחכות".
    שורה שחוזרת על הכותרת (אותן משרות חדשות) לא מוצגת פעמיים */
-function brLive(head,list){const n=typeof queue==='function'?queue().length:0,JR=/משר(?:ות|ה)\s+חדש/;
-  const num=t=>n===1?t.replace(/\d+\s*משרות\s+חדשות/,'משרה חדשה אחת'):t.replace(/\d+(?=\s*משרות\s+חדשות)/,String(n));
-  const isJ=x=>(x.go==='jobs'||x.tone==='new')&&JR.test(x.t||''),hadJobs=JR.test(head)||list.some(isJ);
-  const items=list.filter(x=>!(isJ(x)&&(!n||JR.test(head)))).map(x=>isJ(x)?Object.assign({},x,{t:num(x.t)}):x);
-  if(JR.test(head))head=n?num(head):'';
+function brLive(head,list){const q=typeof queue==='function'?queue():[],n=q.length,JR=/משר(?:ות|ה)\s+חדש/;
+  /* שורת משרות חדשות נבנית מחדש ממה שבאמת עוד מחכה (מספר + חברות), לא מהטקסט של הבוקר */
+  const isJ=x=>x.go==='jobs'||(x.tone==='new'&&JR.test(x.t||'')),hadJobs=JR.test(head)||list.some(isJ);
+  const cos=[...new Set(q.map(id=>(JOBS[id]||{}).co).filter(Boolean))];
+  const now=n===1?`משרה חדשה: ${(JOBS[q[0]]||{}).title||''} ב-${(JOBS[q[0]]||{}).co||''}`:`${n} משרות חדשות: ${cos.slice(0,3).join(', ')}${cos.length>3?` ועוד ${cos.length-3}`:''}`;
+  let done=false;const items=[];
+  for(const x of list){if(!isJ(x)){items.push(x);continue}
+    if(n&&!done&&!JR.test(head)){items.push(Object.assign({},x,{t:now,go:'jobs',tone:'new'}));done=true}}
+  if(JR.test(head))head=n?head.replace(/\d+(?=\s*משרות\s+חדשות)/,String(n)):'';
   if(hadJobs&&!n)items.unshift({t:'עברת על כל המשרות החדשות ✓',tone:'update',go:''});
   return {head,items}}
 function brMerge(list){const out=[],cos=[];list.forEach(x=>{const m=/^(?:מכתב פנייה מוכן ל-|הוכנו מכתבים חדשים ל-|מכתבים חדשים הוכנו:\s*)(.+)$/.exec(x.t||'');
@@ -150,7 +154,7 @@ function brMerge(list){const out=[],cos=[];list.forEach(x=>{const m=/^(?:מכת�
   return out}
 function shaiBrief(){const r=shaiToday();if(!r)return '';const b=r.stats.brief_ai,t0=new Date(r.created_at);
   const items=b.items||[],bg=items.filter(x=>x.tone==='bg'),SHOW=3;
-  const lv=brLive(b.headline||'',brMerge([...sinceBrief(t0),...items.filter(x=>x.tone!=='bg')])),all=lv.items.map(x=>Object.assign({},x,{t:brShort(x.t)}));
+  const lv=brLive(b.headline||'',brMerge([...sinceBrief(t0),...items.filter(x=>x.tone!=='bg')]).map(x=>Object.assign({},x,{t:brShort(x.t)}))),all=lv.items;
   const when=t0.toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'}),more=all.length-SHOW+(bg.length?1:0);
   return `<section class="brief b2" aria-labelledby="brH">
     <div class="b2-head"><span class="b2-av" aria-hidden="true">${escB((N('assistant')||'ש').slice(0,1))}</span><div><h2 id="brH">${escB(N('assistant'))} מעדכן אותך</h2><span>הסיכום של היום · ${escB(when)}</span></div></div>
