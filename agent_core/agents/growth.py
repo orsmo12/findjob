@@ -192,8 +192,9 @@ def cv_suggestions(cv: str, evidence: list[dict], gaps: list[str]) -> list[dict]
 # ── קובי: התאמת קורות חיים למשרה מסוימת ─────────────────────────────────────
 TAILOR_PROMPT = """You help a candidate adapt their CV to ONE job ad, without adding anything new.
 Pick up to 3 existing CV lines that matter most for this job, and rewrite each so the job's own terms and
-priorities come first. You may reorder, shorten and rephrase. You may NOT add any technology, number,
-company, result or responsibility that is not already in the CV.
+priorities come first. You may reorder and rephrase. You may NOT add any technology, number,
+company, result or responsibility that is not already in the CV, and you may NOT drop any technology, tool, number or
+named product that is in the original line (move the important ones first instead).
 
 JOB: {title} at {co}
 AD:
@@ -213,6 +214,19 @@ def _squash(s: str) -> str:
     return re.sub(r"\s+", " ", s or "").strip().lower()
 
 
+TAILOR_V = 2            # 16.11: התאמה לא מוחקת כלים, מספרים או שמות (Linux, VS Code, Supabase נעלמו)
+TAILOR_KEEP_ALL = True  # מתג חזרה
+
+
+def lost_terms(before: str, after: str) -> list[str]:
+    """מונחים שהיו בשורה המקורית ונעלמו: מילים עם אות גדולה או ספרה (כלים, מוצרים, מספרים), בלי המילה הראשונה במשפט."""
+    words = re.findall(r"[A-Za-z0-9][A-Za-z0-9+#./-]*", before)
+    first = {m.group(1) for m in re.finditer(r"(?:^|[.:;•\-–]\s*)([A-Za-z]+)", before)}
+    keep = {w.rstrip(".,") for w in words if (re.search(r"[A-Z0-9]", w) and w not in first)}
+    low = after.lower()
+    return sorted(w for w in keep if w and w.lower() not in low)
+
+
 def tailor_edits(cv: str, d: dict) -> list[dict]:
     """בדיקת אמת להצעות: השורה המקורית חייבת להיות בקורות החיים, והחדשה בלי שום פרט שלא מופיע בהם."""
     cvs, out = _squash(cv), []
@@ -220,7 +234,7 @@ def tailor_edits(cv: str, d: dict) -> list[dict]:
         before, after = str(e.get("before", "")).strip(), str(e.get("after", "")).strip()
         if not before or not after or _squash(before) == _squash(after):
             continue
-        if _squash(before) not in cvs or not grounded(after, cv):
+        if _squash(before) not in cvs or not grounded(after, cv) or (TAILOR_KEEP_ALL and lost_terms(before, after)):
             continue
         out.append({"before": before[:400], "after": after[:400], "why": str(e.get("why", ""))[:200]})
     return out
@@ -238,4 +252,4 @@ def tailor_cv(cv: str, job: dict) -> dict:
     n = len((d.get("edits") or [])[:3])
     act.log("linkedin", f"התאמתי את קורות החיים ל-{job.get('title')} ב-{job.get('co')}: {len(edits)} שינויים"
             + (f" (זרקתי {n - len(edits)} עם פרט שלא כתוב אצלך)" if n > len(edits) else ""))
-    return {"edits": edits, "order": order, "v": 1}
+    return {"edits": edits, "order": order, "v": TAILOR_V}

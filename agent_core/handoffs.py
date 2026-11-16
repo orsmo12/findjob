@@ -28,12 +28,18 @@ _avail: bool | None = None
 
 # ── לוגיקה טהורה (נבדקת בלי רשת) ───────────────────────────────────────────
 
+def _tailor_v() -> int:
+    from agent_core.agents.growth import TAILOR_V
+    return TAILOR_V
+
+
 def missing_for_saved(row: dict) -> list[str]:
     """מה חסר במשרה ששמרת, לפי סדר העבודה."""
     out = []
     if not row.get("brief"):
         out.append("brief")
-    if not row.get("tailor"):
+    tl = row.get("tailor")
+    if not tl or (not tl.get("no_ad") and (tl.get("v") or _tailor_v()) < _tailor_v()):   # גרסה ישנה (מחקה כלים) נכתבת מחדש
         out.append("tailor")
     p = row.get("prep")
     if not p or p.get("tasks") is None or p.get("more_tasks"):

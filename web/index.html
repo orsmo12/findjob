@@ -1224,6 +1224,14 @@ a.person>svg{flex:0 0 18px;width:18px;height:18px;fill:none;stroke:var(--ink3);s
 .ra-c{flex:none;width:32px;height:32px;border-radius:10px;border:1px solid var(--glass-brd);background:#fff;display:grid;place-items:center;cursor:pointer}.ra-c svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2}.ra-r>span{text-align:left}
 .row-link{display:flex;justify-content:space-between;align-items:center;width:100%;padding:11px 12px;margin:8px 0;border-radius:12px;border:1px solid var(--glass-brd);background:rgba(255,255,255,.7);font:600 13.5px var(--font);color:var(--ink);cursor:pointer;text-align:right}
 
+.kc:has(.kc-eds[open]) .kc-diff{display:none}   /* כשהרשימה פתוחה לא רואים את ההתאמה הראשונה פעמיים */
+.cv-page{background:#fff;border:1px solid var(--brd);border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,.08);padding:18px 16px;margin:10px 0 12px;max-height:52vh;overflow:auto;font:12px/1.5 Arial,Helvetica,sans-serif;color:#111;text-align:start}
+.cv-page h1,#printRoot h1{font-size:17px;margin:0 0 4px}.cv-page h2,#printRoot h2{font-size:12px;letter-spacing:.04em;text-transform:uppercase;border-bottom:1px solid #999;margin:12px 0 5px;padding-bottom:2px}
+.cv-page p,#printRoot p{margin:0 0 3px}.cv-page ul,#printRoot ul{margin:0 0 5px;padding-inline-start:16px}
+#printRoot{display:none}
+@media print{@page{size:A4;margin:16mm 15mm}body>*:not(#printRoot){display:none!important}body{background:#fff!important}
+  #printRoot{display:block!important;font:10.5pt/1.45 Arial,Helvetica,sans-serif;color:#111}#printRoot h1{font-size:17pt}#printRoot h2{font-size:11pt}}
+
 </style>
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" href="/icon.svg">
@@ -3106,18 +3114,18 @@ function kitData(){const p=prof(),o={};KIT_FIELDS.forEach(([k,,f])=>{const v=f(p
 /* ערכת הגשה: 3 כרטיסים לפי הסדר של טופס אמיתי — קורות חיים (קובץ), מכתב, מילוי. כל כרטיס מראה קודם את המצב, והפרטים נפתחים במקום */
 function kitTabHtml(a,j,id){track('kit_open');
   const p=prof(),d=kitData(),vis=KIT_FIELDS.filter(([k])=>!['first','last'].includes(k)),missing=vis.filter(([k])=>!d[k]);
-  const letter=a.letter||(j.letter&&j.letter.text)||(REAL?'':letterFor(j)),t=j.tailor,ed=(t&&t.edits)||[],off=new Set(((S.tailorOff||{})[a.jobId])||[]);
+  const letter=a.letter||(j.letter&&j.letter.text)||(REAL?'':letterFor(j)),t=j.tailor,ed=tailorEdits(j),off=new Set(((S.tailorOff||{})[a.jobId])||[]);
   const card=(title,chip,amb,body,acts)=>`<section class="kc"><div class="kc-h"><h4>${title}</h4>${chip?`<span class="kc-chip${amb?' amb':''}">${chip}</span>`:''}</div>${body}${acts?`<div class="kc-acts">${acts}</div>`:''}</section>`;
   const cvBody=!REAL||!t?`<p class="card-sub" style="margin:6px 0 0">${REAL?`${escB(N('linkedin'))} יציע התאמות למשרה הזו אחרי הריצה הקרובה. בינתיים: קורות החיים מהפרופיל.`:'קורות החיים מהפרופיל.'}</p>`
     :!ed.length?`<p class="card-sub" style="margin:6px 0 0">${t.no_ad?`אין מודעה מלאה, אז ${escB(N('linkedin'))} לא הציע שינויים.`:`${escB(N('linkedin'))} בדק: קורות החיים כבר מדגישים את מה שהמשרה מבקשת.`}</p>`
     :`<p class="kc-diff" dir="auto"><s>${escB(ed[0].before)}</s><br><b>${escB(ed[0].after)}</b></p>
-      <details class="kc-det"><summary>${ed.length>1?`עוד התאמות (${ed.length-1})`:'לבחור מה ייכנס ל-PDF'}</summary>
+      <details class="kc-det kc-eds"><summary>${ed.length>1?`כל ההתאמות (${ed.length})`:'לבחור אם ייכנס ל-PDF'}</summary>
         <p class="card-sub">רק ניסוח וסדר של מה שכבר כתוב אצלך. מה שמסומן ייכנס ל-PDF.</p>${t.order?`<p class="card-sub">↑ ${escB(t.order)}</p>`:''}
         ${ed.map((e,x)=>`<label class="kc-ed"><input type="checkbox" ${off.has(x)?'':'checked'} onchange="tailorToggle('${a.jobId}',${x},this.checked)"><span dir="auto"><s>${escB(e.before)}</s><b>${escB(e.after)}</b>${e.why?`<small>${escB(e.why)}</small>`:''}</span></label>`).join('')}</details>`;
   const nOn=ed.filter((_,x)=>!off.has(x)).length;
   return `<div class="kit">
     ${card('קורות חיים למשרה',ed.length?`${nOn===ed.length?'':nOn+' מתוך '}${ed.length} התאמות`:'',!!ed.length,cvBody,
-      `<button class="btn btn-ghost btn-sm" onclick="tailorPdf('${a.jobId}',this)">${ed.length?'להוריד PDF למשרה':'להוריד PDF'}</button>`)}
+      `<button class="btn btn-ghost btn-sm" onclick="cvPreview('${a.jobId}','${id}')">${ed.length?'PDF למשרה':'PDF של קורות החיים'}</button>`)}
     ${card('מכתב פנייה',letter?`מוכן · ${letter.split(/\s+/).filter(Boolean).length} מילים`:'בהכנה',!letter,
       letter?`<p class="kc-pv" dir="auto">${escB(letter.replace(/\s*\n+\s*/g,' ').slice(0,240))}</p>
         <details class="kc-det"><summary>לקרוא ולערוך</summary><label for="letterBox" class="vh">מכתב פנייה</label><textarea class="textbox letterbox${/[֐-׿]/.test(letter.slice(0,300))?'':' ltr'}" id="letterBox" rows="14" spellcheck="false" oninput="appOf('${id}').letter=this.value;save()">${esc(letter)}</textarea>
@@ -3143,16 +3151,25 @@ function cvHtml(text){const L=String(text).split('\n');let h='',ul=false;const c
     if(/^[A-Z][A-Z &/]{3,}:?$/.test(x)||/^[א-ת ]{3,20}:$/.test(x)){close();h+=`<h2>${escB(x.replace(/:$/,''))}</h2>`;return}
     if(/^[-•*·]\s+/.test(x)){if(!ul){h+='<ul>';ul=true}h+=`<li>${escB(x.replace(/^[-•*·]\s+/,''))}</li>`;return}
     close();h+=`<p>${escB(x)}</p>`});close();return h}
-function tailorPdf(jobId,btn){const j=JOBS[jobId]||{},ed=((j.tailor||{}).edits||[]).filter((_,x)=>!new Set(((S.tailorOff||{})[jobId])||[]).has(x));
-  const w=window.open('','_blank');if(!w){toast('הדפדפן חסם חלון חדש. צריך לאשר חלונות קופצים לאתר');return}   // נפתח מיד בלחיצה, אחרת הדפדפן חוסם
-  btnBusy(btn,true,'מכין PDF…');track('cv_pdf');
-  const {text,miss}=cvWithEdits(prof().cv,ed),rtl=/[֐-׿]/.test(text.slice(0,400));
-  w.document.write(`<!doctype html><html lang="${rtl?'he':'en'}" dir="${rtl?'rtl':'ltr'}"><head><meta charset="utf-8"><title>${escB((cvFacts(prof().cv).full_en||prof().name||'CV')+' - '+(j.co||''))}</title><style>
-    @page{size:A4;margin:16mm 15mm}body{font:10.5pt/1.45 Arial,Helvetica,sans-serif;color:#111;margin:0;max-width:180mm}
-    h1{font-size:17pt;margin:0 0 2mm}h2{font-size:11pt;letter-spacing:.04em;border-bottom:1px solid #999;margin:5mm 0 2mm;padding-bottom:1mm;text-transform:uppercase}
-    p{margin:0 0 1.2mm}ul{margin:0 0 2mm;padding-inline-start:5mm}li{margin:0 0 1mm}</style></head><body>${cvHtml(text)}</body></html>`);
-  w.document.close();
-  setTimeout(()=>{btnBusy(btn,false);w.focus();w.print();if(miss)toast(`${miss} התאמות לא נכנסו כי הטקסט בקורות החיים השתנה`)},250)}
+/* התאמות שלא מוחקות כלום: גם הצעות ישנות (לפני הבדיקה בשרת) לא מוצגות אם נעלמו מהן כלים, מספרים או שמות */
+function lostTerms(b,a){const first=new Set([...String(b).matchAll(/(?:^|[.:;•\-–]\s*)([A-Za-z]+)/g)].map(m=>m[1])),low=String(a).toLowerCase();
+  return [...new Set((String(b).match(/[A-Za-z0-9][A-Za-z0-9+#./-]*/g)||[]).filter(w=>/[A-Z0-9]/.test(w)&&!first.has(w)).map(w=>w.replace(/[.,]+$/,'')))].filter(w=>w&&!low.includes(w.toLowerCase()))}
+function tailorEdits(j){return (((j||{}).tailor||{}).edits||[]).filter(e=>!lostTerms(e.before,e.after).length)}
+/* PDF למשרה: תצוגה מקדימה במקום (מיידית, בלי שרת ובלי AI), ואז "שמירה כ-PDF" מאותו מסך. בלי חלון או לשונית חדשה */
+function cvPreview(jobId,appId){const j=JOBS[jobId]||{},off=new Set(((S.tailorOff||{})[jobId])||[]),ed=tailorEdits(j).filter((_,x)=>!off.has(x));
+  const {text,miss}=cvWithEdits(prof().cv,ed),rtl=/[֐-׿]/.test(text.slice(0,400));track('cv_pdf');
+  window.__cvDoc={html:cvHtml(text),rtl,title:`${cvFacts(prof().cv).full_en||prof().name||'CV'} - CV - ${j.co||''}`.trim()};
+  openSheet(`<h3 id="sheetTitle">קורות חיים ל-${escB(j.co||'')}</h3>
+    <div class="sheet-sub">${ed.length?`עם ${ed.length} התאמות של ${escB(N('linkedin'))}`:'כמו בפרופיל'}${miss?` · ${miss} לא נכנסו כי הטקסט בקורות החיים השתנה`:''}</div>
+    <div class="cv-page" dir="${rtl?'rtl':'ltr'}">${window.__cvDoc.html}</div>
+    <div class="duo"><button class="btn btn-ghost" onclick="openApp('${appId}','letter')">חזרה</button><button class="btn btn-primary" onclick="cvPrint(this)">שמירה כ-PDF</button></div>
+    <p class="card-sub" style="margin-top:8px">בחלון ההדפסה בוחרים "שמירה כ-PDF". הקובץ נשמר בשם ${escB(window.__cvDoc.title)}.</p>`)}
+function cvPrint(btn){const d=window.__cvDoc;if(!d)return;btnBusy(btn,true);
+  let r=$('printRoot');if(!r){r=document.createElement('div');r.id='printRoot';document.body.appendChild(r)}
+  r.dir=d.rtl?'rtl':'ltr';r.innerHTML=d.html;const t0=document.title;document.title=d.title;   // שם הקובץ ב-PDF
+  const done=()=>{document.title=t0;r.innerHTML='';btnBusy(btn,false);removeEventListener('afterprint',done)};addEventListener('afterprint',done);
+  setTimeout(()=>{window.print();setTimeout(()=>{if(r.innerHTML)done()},1500)},50)}
+
 /* תשובות מוכנות: לשאלות הנפוצות בטפסים ובהגשה המהירה של LinkedIn (באנגלית, כמו בטפסים). כל תשובה עם העתקה */
 function readyAnswers(){const d=kitData(),h=k=>d['h_'+k]||'';
   return [['Full name',d.full],['Email',d.email],['Phone',d.phone],['LinkedIn',d.linkedin],['GitHub',d.github],['City',d.city&&d.city+', Israel'],

@@ -1076,3 +1076,11 @@ a.person>svg{flex:0 0 18px;width:18px;height:18px;fill:none;stroke:var(--ink3);s
 .ra-r small{color:var(--ink3);font-size:11.5px}.ra-r b{font-weight:600;font-size:13px;overflow-wrap:anywhere}
 .ra-c{flex:none;width:32px;height:32px;border-radius:10px;border:1px solid var(--glass-brd);background:#fff;display:grid;place-items:center;cursor:pointer}.ra-c svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2}.ra-r>span{text-align:left}
 .row-link{display:flex;justify-content:space-between;align-items:center;width:100%;padding:11px 12px;margin:8px 0;border-radius:12px;border:1px solid var(--glass-brd);background:rgba(255,255,255,.7);font:600 13.5px var(--font);color:var(--ink);cursor:pointer;text-align:right}
+
+.kc:has(.kc-eds[open]) .kc-diff{display:none}   /* כשהרשימה פתוחה לא רואים את ההתאמה הראשונה פעמיים */
+.cv-page{background:#fff;border:1px solid var(--brd);border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,.08);padding:18px 16px;margin:10px 0 12px;max-height:52vh;overflow:auto;font:12px/1.5 Arial,Helvetica,sans-serif;color:#111;text-align:start}
+.cv-page h1,#printRoot h1{font-size:17px;margin:0 0 4px}.cv-page h2,#printRoot h2{font-size:12px;letter-spacing:.04em;text-transform:uppercase;border-bottom:1px solid #999;margin:12px 0 5px;padding-bottom:2px}
+.cv-page p,#printRoot p{margin:0 0 3px}.cv-page ul,#printRoot ul{margin:0 0 5px;padding-inline-start:16px}
+#printRoot{display:none}
+@media print{@page{size:A4;margin:16mm 15mm}body>*:not(#printRoot){display:none!important}body{background:#fff!important}
+  #printRoot{display:block!important;font:10.5pt/1.45 Arial,Helvetica,sans-serif;color:#111}#printRoot h1{font-size:17pt}#printRoot h2{font-size:11pt}}

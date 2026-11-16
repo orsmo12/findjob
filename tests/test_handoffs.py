@@ -108,3 +108,18 @@ def test_scan_mode_slows_and_pauses():
         assert H.scan_mode(st(30), 0, morning=True, now=now) == "full"
     finally:
         H.SCAN_PAUSE_DAYS = old
+
+
+def test_tailor_never_drops_tools_or_facts():
+    """16.11: התאמה שמחקה Linux ו-VS Code, או Supabase ו-49 בדיקות, נזרקת. סידור מחדש בלי מחיקה עובר."""
+    from agent_core.agents.growth import lost_terms
+    cv = "Tools: Git, Linux, Playwright, VS Code\n- Shipped a mobile web app with Supabase (auth, Postgres) and Vercel serverless functions, covered by 49 automated tests."
+    d = {"edits": [
+        {"before": "Tools: Git, Linux, Playwright, VS Code", "after": "Tools: Playwright, Git, Python", "why": "x"},
+        {"before": "Shipped a mobile web app with Supabase (auth, Postgres) and Vercel serverless functions, covered by 49 automated tests.",
+         "after": "Delivered a web app with automated tests.", "why": "x"},
+        {"before": "Tools: Git, Linux, Playwright, VS Code", "after": "Tools: Playwright, Git, Linux, VS Code", "why": "x"}]}
+    out = tailor_edits(cv, d)
+    assert [e["after"] for e in out] == ["Tools: Playwright, Git, Linux, VS Code"]
+    assert lost_terms("Tools: Git, Linux, VS Code", "Tools: Git") == ["Code", "Linux", "VS"]
+    assert H.missing_for_saved({"brief": {"x": 1}, "tailor": {"edits": [], "v": 1}, "prep": {"tasks": []}, "letter": {"v": H.LETTER_V}}) == ["tailor"]
