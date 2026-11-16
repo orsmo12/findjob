@@ -95,3 +95,17 @@ def test_letter_why_codes_only():
     why = letter_why(txt, {"title": "Backend Developer", "co": "Wix", "loc": "Tel Aviv"})
     assert "opening:no_title_word" in why and "opening:degree_later" in why and "closing:no_company_in_letter" in why
     assert all(":" in c and len(c) < 40 for c in why)   # רק קודים קצרים
+
+
+def test_code_rule_failures_reach_the_rewrite():
+    """כלל שנכשל בבדיקה בקוד עובר לעורך כהוראת תיקון מדויקת, גם כשה-AI אישר אותו. המתג מכבה."""
+    txt = "Dear Acme team,\n\nI am applying.\n\nfindjob is my project in Python.\n\nBest regards,\nDana Levi"
+    got = LG.code_issues(txt, JOB)
+    assert any("AI Engineer" in x for x in got) and any("degree" in x for x in got) and any("Acme" in x and "Tel Aviv" in x for x in got)
+    LG.chat, LG.act.log = (lambda *a, **k: '{"fail": [], "issues": []}'), (lambda *a, **k: None)
+    assert len(LG.critique({"text": txt, "job": JOB})["issues"]) >= 3
+    LG.CODE_RULES_IN_CRITIQUE = False
+    try:
+        assert LG.critique({"text": txt, "job": JOB})["issues"] == []
+    finally:
+        LG.CODE_RULES_IN_CRITIQUE = True

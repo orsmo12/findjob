@@ -192,6 +192,23 @@ def slop_in(text: str) -> list[str]:
     return [p for p in SLOP if p in t]
 
 
+CODE_RULES_IN_CRITIQUE = True   # מתג חזרה (16.11)
+
+
+def code_issues(text: str, job: dict) -> list[str]:
+    """כללים שהבדיקה בקוד מצאה שנכשלו, כהוראת תיקון אחת לכל כלל (באנגלית, לשכתוב)."""
+    why, out = letter_why(text, job), []
+    if "opening:no_title_word" in why:
+        out.append(f'Rule 1: name the role "{job.get("title") or ""}" in the first paragraph')
+    if "opening:no_degree" in why or "opening:degree_later" in why:
+        out.append("Rule 1: state the candidate's current status (degree or studies, from the CV) in the first paragraph")
+    if any(c.startswith("closing:") for c in why):
+        out.append(f"Rule 5: the closing paragraph must name {job.get('co') or 'the company'}" + (f" and {job['loc']}" if job.get("loc") else ""))
+    if "clean:words_short" in why:
+        out.append("Rule 6: too short, write 120-190 words")
+    return out
+
+
 def critique(st: S) -> dict:
     """ביקורת עצמית מול רף האיכות. ניסוחי AI נבדקים בקוד, השאר במודל."""
     text, issues = st["text"], [f'remove the phrase "{p}"' for p in slop_in(st["text"])]
@@ -212,6 +229,8 @@ LETTER:
     if not d.get("fail"):
         d["issues"] = []
     issues += [str(x)[:200] for x in (d.get("issues") or [])[:4]]
+    if CODE_RULES_IN_CRITIQUE:   # העורך (AI) אישר כללים שהבדיקה בקוד מצאה שנכשלו (16.11: פתיחה 7/19, סגירה 6/19). התיקון המדויק עובר לשכתוב
+        issues += code_issues(text, st["job"])
     if issues:
         act.log("assistant", f"ביקורת על המכתב ל-{st['job']['co']}: {len(issues)} דברים לתקן ({issues[0][:60]}…)")
     return {"issues": issues}
