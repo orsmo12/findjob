@@ -675,6 +675,8 @@ const tx=n=>(n.innerText||n.textContent||'').trim();const lab=e=>{let t=[];if(e.
 t.push(e.getAttribute('aria-label')||'',e.placeholder||'',e.name||'',e.id||'');const w=e.closest('fieldset,[class*=field],[class*=question],[data-automation-id]');if(w&&(!t[0]||e.type==='radio'))t.unshift(tx(w.querySelector('legend,label,[class*=label]')||w).slice(0,160));return t.join(' | ')};
 const set=(e,v)=>{const p=e.tagName==='TEXTAREA'?HTMLTextAreaElement.prototype:HTMLInputElement.prototype;Object.getOwnPropertyDescriptor(p,'value').set.call(e,v);e.dispatchEvent(new Event('input',{bubbles:true}));e.dispatchEvent(new Event('change',{bubbles:true}))};
 const mark=(e,c)=>{e.style.outline='3px solid '+c;e.style.outlineOffset='2px'};const G='#3E8A66',Y='#E9A825';
+/* בחירה באפשרות (רדיו / אפשרות ברשימה מדומה) בלבד. לעולם לא כפתור, קישור או שליחה */
+const tap=el=>{if(!el||el.closest('button,a,[type=submit],form>[type=button]')&&!el.matches('[role=option]'))return;if(el.type==='radio'){el.checked=true;el.dispatchEvent(new Event('input',{bubbles:true}));el.dispatchEvent(new Event('change',{bubbles:true}))}el.dispatchEvent(new MouseEvent('click',{bubbles:true}))};
 const kindOf=L=>Q.find(q=>q[0].test(L));
 let clip='';try{clip=await navigator.clipboard.readText()}catch(x){}
 let n=0,y=0;const radios=new Set();
@@ -684,13 +686,13 @@ if(e.tagName==='SELECT'){if(e.selectedIndex>0)continue;const L=lab(e),q=kindOf(L
  if(i>0){e.selectedIndex=i;e.dispatchEvent(new Event('change',{bubbles:true}));mark(e,q[2]?G:Y);n++;if(!q[2])y++}else if(e.required||e.getAttribute('aria-required')==='true'||q){mark(e,Y);y++}continue}
 if(e.type==='radio'){if(!e.name||radios.has(e.name))continue;radios.add(e.name);const g=[...document.querySelectorAll('input[type=radio][name="'+CSS.escape(e.name)+'"]')];if(g.some(r=>r.checked))continue;
  const L=lab(e),q=kindOf(L),o=g.map(r=>{const l=r.id&&document.querySelector('label[for="'+CSS.escape(r.id)+'"]');return tx(l||r.closest('label')||r.parentElement)});const i=q&&q[1]?pick(q[1],o,L):-1;
- if(i>=0){g[i].click();mark(g[i].closest('label')||g[i],q[2]?G:Y);n++;if(!q[2])y++}else{mark(e.closest('fieldset')||e.parentElement,Y);y++}continue}
+ if(i>=0){tap(g[i]);mark(g[i].closest('label')||g[i],q[2]?G:Y);n++;if(!q[2])y++}else{mark(e.closest('fieldset')||e.parentElement,Y);y++}continue}
 if(e.type==='checkbox'){if(e.required||e.getAttribute('aria-required')==='true'){mark(e,Y);y++}continue}
 if(e.value&&e.value.trim())continue;const L=lab(e);let k=Object.keys(R).find(k=>R[k].test(L));
 if(k==='full'&&(R.first.test(L)||R.last.test(L)))k=R.first.test(L)?'first':'last';
 let v=k==='letter'?(clip.length>200?clip:''):(V[k]!==undefined?V[k]:D[k]);
 if(k&&v){set(e,v);const combo=e.getAttribute('role')==='combobox'||e.getAttribute('aria-autocomplete');
- if(combo){await new Promise(r=>setTimeout(r,450));const op=[...document.querySelectorAll('[role=option]')].find(o=>tx(o).toLowerCase().includes(String(v).toLowerCase().slice(0,12)));if(op)op.click()}
+ if(combo){await new Promise(r=>setTimeout(r,450));const op=[...document.querySelectorAll('[role=option]')].find(o=>tx(o).toLowerCase().includes(String(v).toLowerCase().slice(0,12)));if(op)tap(op)}
  const sure=!combo&&!['letter','city','salary','start','bonus','school','discipline'].includes(k);mark(e,sure?G:Y);n++;if(!sure)y++}
 else if(e.required||e.getAttribute('aria-required')==='true'){mark(e,Y);y++}}
 const b=document.createElement('div');b.dir='rtl';b.style.cssText='position:fixed;z-index:2147483647;top:12px;left:12px;right:12px;max-width:420px;margin:auto;background:#2F4858;color:#fff;font:15px/1.5 system-ui,sans-serif;padding:12px 16px;border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.3)';

@@ -11,3 +11,8 @@ def test_bookmarklet_never_submits():
 
 def test_bookmarklet_marks_uncertain_yellow():
     assert "#E9A825" in BM and "type==='file'" in BM
+
+
+def test_bookmarklet_only_taps_choices():
+    """בחירה ברדיו או באפשרות עוברת דרך tap, שמסרב לכפתורים, קישורים ושליחה."""
+    assert "const tap=el=>" in BM and "button,a,[type=submit]" in BM and BM.count("tap(") >= 2
