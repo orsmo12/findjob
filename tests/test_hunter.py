@@ -278,3 +278,11 @@ def test_round_b_shadow_false_positives_kept():
     assert not H.off_field({"title": "2027 Applied Scientist Internship – Masters, Amazon University Talent Acquisition"}, sw)
     assert not H.off_field({"title": "Automation & Logistics Systems Integrator (570)"}, sw)
     assert H.off_field({"title": "Logistic Subject Matter Expert"}, sw)
+
+
+def test_management_title_with_my_role_word_stays():
+    """R&D Project Manager נשאר למי שבחר R&D; Technical Project Manager יורד."""
+    from agent_core.agents import hunter as H
+    mech = {"domains": ["הנדסת מכונות"], "titles": ["R&D Mechanical Engineer", "Manufacturing Engineer"]}
+    assert not H.off_field({"title": "R&D Project Manager"}, mech)
+    assert H.off_field({"title": "Technical Project Manager"}, mech)

@@ -246,7 +246,19 @@ def off_field(job: dict, plan: dict) -> bool:
         return False
     if any(w for w in (plan.get("titles") or []) if w.lower() in t):
         return False
-    return any(re.search(rx, t) for f, rx in FIELD_WORDS.items() if f not in mine) or (OFF_FIELD_MGMT and bool(re.search(MGMT_WORDS, t)))
+    return any(re.search(rx, t) for f, rx in FIELD_WORDS.items() if f not in mine) or (OFF_FIELD_MGMT and bool(re.search(MGMT_WORDS, t))
+                                                                                       and not _shares_role_word(t, plan))
+
+
+GENERIC_ROLE = {"engineer", "developer", "junior", "senior", "student", "graduate", "manager", "lead", "intern", "מהנדס", "מפתח", "סטודנט"}
+
+
+def _shares_role_word(t: str, plan: dict) -> bool:
+    """תפקיד ניהולי שמכיל מילה מהתפקידים שבחר בשאלון (R&D Project Manager למי שבחר R&D) נשאר. הוא יכול לערוך בשאלון."""
+    rx = r"[a-z][a-z&+#.]+|[א-ת]{2,}"
+    mine = {w for x in (plan.get("titles") or []) + (plan.get("heads") or []) + (plan.get("extra_titles") or [])
+            for w in re.findall(rx, x.lower())} - GENERIC_ROLE
+    return bool(mine & set(re.findall(rx, t)))
 
 
 # פוסט ב-LinkedIn שנאסף כמשרה ("Would LOVE to join Cross River!!"): בלי מילת תפקיד, ונשמע כמו פוסט. כלל צר בכוונה:
