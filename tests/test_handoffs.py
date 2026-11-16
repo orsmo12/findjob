@@ -89,3 +89,22 @@ def test_inactive_users_wait():
     iso = lambda d: (datetime.now(timezone.utc) - timedelta(days=d)).isoformat()
     assert active_recently({"usage": {"last": iso(1)}}) and not active_recently({"usage": {"last": iso(5)}})
     assert active_recently({}) and active_recently(None) and active_recently({"usage": {"last": "x"}})
+
+
+def test_scan_mode_slows_and_pauses():
+    """לא עובר על המשרות: מעל 25 שמחכות או 3 ימים בלי כניסה → סריקה אחת ביום; 7 ימים → עצירה."""
+    from datetime import datetime, timezone, timedelta
+    from agent_core import handoffs as H
+    now = datetime(2026, 11, 16, 12, tzinfo=timezone.utc)
+    st = lambda d: {"usage": {"last": (now - timedelta(days=d)).isoformat()}}
+    assert H.scan_mode(st(0), 5, morning=False, now=now) == "full"
+    assert H.scan_mode(st(0), 25, morning=False, now=now) == "skip" and H.scan_mode(st(0), 25, morning=True, now=now) == "full"
+    assert H.scan_mode(st(4), 0, morning=False, now=now) == "skip" and H.scan_mode(st(4), 0, morning=True, now=now) == "full"
+    assert H.scan_mode(st(8), 0, morning=True, now=now) == "paused"
+    assert H.scan_mode({}, 0, morning=False, now=now) == "full"          # משתמש חדש
+    assert H.pending_jobs([{"decision": None}, {"decision": "save"}, {"decision": None, "card": {"closed_at": "x"}}]) == 1
+    old = H.SCAN_PAUSE_DAYS; H.SCAN_PAUSE_DAYS = 0
+    try:
+        assert H.scan_mode(st(30), 0, morning=True, now=now) == "full"
+    finally:
+        H.SCAN_PAUSE_DAYS = old

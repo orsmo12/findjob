@@ -90,7 +90,7 @@ def main(idx=None, days=10):
     print("\nתשואה לפי שאילתה (נאספו → חדשות → עברו סף):")
     for q, (g, n, f) in sorted(qs.items(), key=lambda x: -x[1][1]):
         print(f"   {str(q)[:45]:<45} {g:>5} → {n:>4} → {f:>3}")
-    tot = Counter()
+    tot = Counter({k: 0 for k in ("same_job", "hands_on", "post", "no_desc", "deferred")})   # תמיד מודפסים, גם כשהם 0
     for r in runs:
         tot.update({k: v for k, v in (r.get("stats") or {}).items() if isinstance(v, int)})
     print(f"   סיכום משפך: {dict(tot)}")

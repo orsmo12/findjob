@@ -21,6 +21,7 @@ SKIP_FIELD = "לא התחום שלי"
 SKIP_CO = "החברה"
 SKIP_LOC = "מיקום"
 SKIP_DULL = "לא מעניין"
+TASTE_NO_CO_WORDS = True    # מתג חזרה (16.11): שם החברה לא נלמד כ"נוטה לשמור" (Annapurna Labs → annapurna, labs)
 TASTE_REASONS_ONLY = True   # מתג חזרה (13.11): מילים יורדות רק מ"לא התחום שלי"/"לא מעניין"
 
 
@@ -44,7 +45,7 @@ def learn(rows: list[dict], skips: dict | None = None, off: list[str] | None = N
     for r in rows:
         c, d = r.get("card") or {}, r.get("decision")
         if d in ("save", "applied"):
-            plus.update(words(c.get("title", "")))
+            plus.update(words(c.get("title", "")) - (words(c.get("co", "")) if TASTE_NO_CO_WORDS else set()))
             saved_cos[c.get("co", "")] += 1
         elif d == "skip":
             why = (skips.get(c.get("id") or r.get("id")) or {}).get("r", "")

@@ -228,6 +228,11 @@ FIELD_WORDS = {
                 r"secretary|receptionist|מכירות|שיווק|גיוס|משאבי אנוש|הנהלת חשבונות|רואה חשבון|מזכיר|מזכירה|שירות לקוחות|נציג)\b",
 }
 DOMAIN_FIELD = {"פיתוח תוכנה": "software", "הנדסת מכונות": "mechanical"}
+# סבב ב (16.11): ניהול, לקוחות ולוגיסטיקה הגיעו לסטודנט מכונות (Head of Account Management, Logistic SME, Technical PM).
+# לא מסונן כשבכותרת יש מילה מהתחום של המשתמש או מהתפקידים שבחר
+OFF_FIELD_MGMT = True   # מתג חזרה
+MGMT_WORDS = (r"\b(project manager|program manager|product manager|account management|customer operations|logistic|logistics|"
+              r"supply chain|subject matter expert)\b|מנהל(?:\.?ת)? מוצר|מנהל(?:\.?ת)? פרויקט|לוגיסטיק")
 
 
 def off_field(job: dict, plan: dict) -> bool:
@@ -241,7 +246,22 @@ def off_field(job: dict, plan: dict) -> bool:
         return False
     if any(w for w in (plan.get("titles") or []) if w.lower() in t):
         return False
-    return any(re.search(rx, t) for f, rx in FIELD_WORDS.items() if f not in mine)
+    return any(re.search(rx, t) for f, rx in FIELD_WORDS.items() if f not in mine) or (OFF_FIELD_MGMT and bool(re.search(MGMT_WORDS, t)))
+
+
+# פוסט ב-LinkedIn שנאסף כמשרה ("Would LOVE to join Cross River!!"): בלי מילת תפקיד, ונשמע כמו פוסט. כלל צר בכוונה:
+# נבדק על 104 כותרות אמיתיות, ורק הפוסט נתפס (משרות כמו "Firmware Embedded - MSP" נשארות)
+POST_FILTER = True   # מתג חזרה (16.11)
+QUEUE_REFILTER = True   # מתג חזרה (16.11): הכללים חלים גם על משרות שמחכות בתור (nightly)
+ROLE_WORD = re.compile(r"\b(engineer|engineering|developer|programmer|analyst|scientist|designer|architect|manager|lead|specialist|"
+                       r"technician|operator|intern|internship|student|tester|qa|devops|consultant|integrator|planner|assistant|"
+                       r"researcher|associate|graduate|junior|senior)\b|מהנדס|מפתח|מתכנת|אנליסט|סטודנט|מנהל|טכנאי|מפעיל|שרטט|דרוש", re.I)
+POSTISH = re.compile(r"!{2,}|^\W*(would|i'?m|i am|looking for|join us|we'?re|we are)\b", re.I)
+
+
+def is_post(job: dict) -> bool:
+    t = job.get("title") or ""
+    return POST_FILTER and bool(POSTISH.search(t)) and not ROLE_WORD.search(t)
 
 
 def prefilter(jobs: list[dict], plan: dict, seen_ids: set[str]) -> tuple[list[dict], dict]:
@@ -258,6 +278,8 @@ def prefilter(jobs: list[dict], plan: dict, seen_ids: set[str]) -> tuple[list[di
             stats["off_field"] += 1; continue
         if hands_on(j, plan):
             stats["hands_on"] = stats.get("hands_on", 0) + 1; continue
+        if is_post(j):
+            stats["post"] = stats.get("post", 0) + 1; continue
         k = same_key(j)
         if SAME_JOB_DEDUPE and k in same:
             stats["same_job"] = stats.get("same_job", 0) + 1; continue

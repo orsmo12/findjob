@@ -245,3 +245,27 @@ def test_no_desc_does_not_take_a_rating_slot():
         assert [j["id"] for j, f in H.rating_slots(jobs, 3, {})] == [0, 1, 2]
     finally:
         H.enrich, H.has_full_ad, H.NO_DESC_FREE_SLOT = old
+
+
+def test_round_b_post_and_management_filters():
+    """פוסט שנאסף כמשרה יורד; משרות אמיתיות בלי מילת תפקיד נשארות. ניהול/לוגיסטיקה יורדים כשאין מילה מהתחום."""
+    from agent_core.agents import hunter as H
+    assert H.is_post({"title": "Would LOVE to join Cross River!!"})
+    for t in ("Firmware Embedded - MSP", "🚀 We Are Hiring: Junior Data Quality Analyst!", "NPI העברה מפיתוח לייצור", "כרסם /ת חרט/ת CNC"):
+        assert not H.is_post({"title": t}), t
+    mech = {"domains": ["הנדסת מכונות"], "titles": ["Mechanical Engineer"]}
+    for t in ("Head of Account Management / Customer Operations", "Logistic Subject Matter Expert", "Technical Project Manager"):
+        assert H.off_field({"title": t}, mech), t
+    assert not H.off_field({"title": "Mechanical Project Manager"}, mech)   # מילה מהתחום: נשאר
+    H.OFF_FIELD_MGMT = False
+    try:
+        assert not H.off_field({"title": "Technical Project Manager"}, mech)
+    finally:
+        H.OFF_FIELD_MGMT = True
+
+
+def test_taste_ignores_company_words():
+    from agent_core.taste import learn
+    rows = [{"card": {"id": str(i), "title": "SW Automation Student, Annapurna Labs", "co": "Annapurna Labs"}, "decision": "save"} for i in range(3)]
+    likes = learn(rows)["likes"]
+    assert "automation" in likes and "annapurna" not in likes and "labs" not in likes

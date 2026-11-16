@@ -83,6 +83,24 @@ for u in users:
         plan["taste"] = learn_taste(db.all_jobs(u["user_id"], days=60), ustate.get("skip") or {}, ustate.get("taste_off") or [], role_words(plan))
     except Exception as e:  # noqa: BLE001
         print(f"טעם אישי: {e}")
+    if not (os.environ.get("ONLY_USER") or "").strip():   # סריקה שהמשתמש הפעיל בעצמו לא מואטת
+        try:
+            from agent_core.handoffs import scan_mode, pending_jobs, days_away
+            waiting = pending_jobs(db.all_jobs(u["user_id"], days=30))
+            mode = scan_mode(ustate, waiting, MORNING)
+            if mode != "full":
+                print(f"{u['user_id'][:8]}: {'מושהה (לא נכנס 7 ימים)' if mode == 'paused' else 'סריקה אחת ביום'} — {waiting} משרות מחכות")
+                if mode == "paused":   # התראה אחת לכל היעדרות: "יש לך N משרות, נמשיך כשתחזור"
+                    mem = db.latest_plan(u["user_id"], "scan_pause") or {}
+                    last = ((ustate.get("usage") or {}).get("last")) or ""
+                    if mem.get("since") != last:
+                        from agent_core import push as P
+                        P.send(ustate.get("push"), {"title": "findjob", "tag": "scan-pause", "url": "/#jobs",
+                                                    "body": (f"יש לך {waiting} משרות שמחכות. " if waiting else "") + "עצרנו את החיפוש עד שתחזור, ונמשיך מאיפה שהפסקנו."})
+                        db.save_memory(u["user_id"], "scan_pause", {"since": last, "at": datetime.now(timezone.utc).isoformat(), "waiting": waiting})
+                continue
+        except Exception as e:  # noqa: BLE001
+            print(f"קצב סריקה: {type(e).__name__}")
     act.start(u["user_id"])
     try:  # דורון: דירוג מחדש של משרות בפיד שדורגו בלי מודעה מלאה או בשיטה ישנה
         todo = db.to_rerate(u["user_id"], RATING_V)[:12]
@@ -105,6 +123,17 @@ for u in users:
             elif st == "filtered":
                 db.update_job(u["user_id"], row["id"], {"decision": "filtered", "card": {**c, "filtered_why": why_}})
                 gone.append(f"{c['title']} ב-{c['co']}")
+        from agent_core.agents.hunter import QUEUE_REFILTER, hands_on, off_field, is_post
+        if QUEUE_REFILTER:   # סבב ב: כללי סינון חדשים חלים גם על משרות שכבר מחכות בתור (לא על משרות ששמרת)
+            for row in db.all_jobs(u["user_id"], days=30):
+                c = row.get("card") or {}
+                if row.get("decision") or not c.get("title"):
+                    continue
+                j_ = {"title": c["title"]}
+                why_ = "מפעיל/טכנאי" if hands_on(j_, plan) else "לא מהתחום" if off_field(j_, plan) else "פוסט ולא משרה" if is_post(j_) else ""
+                if why_:
+                    db.update_job(u["user_id"], row["id"], {"decision": "filtered", "card": {**c, "filtered_why": why_}})
+                    gone.append(f"{c['title']} ב-{c.get('co') or ''}")
         if gone:
             db.add_run(u["user_id"], "hunter", "קראתי שוב את המודעות המלאות והורדתי מהרשימה משרות שלא מתאימות לך: "
                        + "; ".join(gone) + ".")

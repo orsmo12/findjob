@@ -183,3 +183,35 @@ def active_recently(state: dict | None, days: int = INACTIVE_DAYS) -> bool:
         return datetime.fromisoformat(str(last).replace("Z", "+00:00")) >= datetime.now(timezone.utc) - timedelta(days=days)
     except ValueError:
         return True
+
+
+# סבב ב (16.11): משתמש שלא עובר על המשרות לא מקבל עוד ועוד. הערימה מעמיסה עליו כשיחזור ושורפת מכסה.
+SCAN_PENDING_MAX = 25   # מתג: מעל 25 משרות שמחכות → סריקה אחת ביום (0 = כבוי)
+SCAN_SLOW_DAYS = 3      # לא נכנס 3 ימים → סריקה אחת ביום
+SCAN_PAUSE_DAYS = 7     # לא נכנס 7 ימים → עוצרים עד שיחזור (0 = כבוי)
+
+
+def days_away(state: dict | None, now=None) -> float:
+    from datetime import datetime, timezone
+    last = ((state or {}).get("usage") or {}).get("last")
+    if not last:
+        return 0.0
+    try:
+        t = datetime.fromisoformat(str(last).replace("Z", "+00:00"))
+    except ValueError:
+        return 0.0
+    return ((now or datetime.now(timezone.utc)) - t).total_seconds() / 86400
+
+
+def pending_jobs(rows: list[dict]) -> int:
+    """משרות שהוצגו ועוד לא החלטת עליהן (בלי משרות שנסגרו)."""
+    return sum(1 for r in rows if not r.get("decision") and not (r.get("card") or {}).get("closed_at"))
+
+
+def scan_mode(state: dict | None, pending: int, morning: bool, now=None) -> str:
+    """'full' (פעמיים ביום) / 'skip' (היום כבר סרקנו פעם אחת) / 'paused' (לא נכנס 7 ימים)."""
+    away = days_away(state, now)
+    if SCAN_PAUSE_DAYS and away >= SCAN_PAUSE_DAYS:
+        return "paused"
+    slow = away >= SCAN_SLOW_DAYS or (SCAN_PENDING_MAX and pending >= SCAN_PENDING_MAX)
+    return "skip" if slow and not morning else "full"

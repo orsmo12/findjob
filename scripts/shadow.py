@@ -95,6 +95,7 @@ def show(name: str, hit: list[dict]) -> None:
 
 
 def main(days=7):
+    from agent_core.agents.hunter import off_field, is_post
     from agent_core import cloud_store as db
     from scripts.insights import get
     from scripts.user_diag import plan_for
@@ -120,7 +121,8 @@ def main(days=7):
         print(f"   משרות שהוצגו ב-{days} ימים: {len(jobs)}")
         for name, rule in (("השלמה בלי משרות שהורדו בגלל ניסיון", lambda c: fill_hide(c, plan)),
                            ("עולות: תקרה לפי הטווח העליון", lambda c: cap_rise(c, a)),
-                           ("יורדות: מפעיל/טכנאי", lambda c: hands_on_hide(c, plan, p.get("cv_text") or ""))):
+                           ("יורדות: מפעיל/טכנאי", lambda c: hands_on_hide(c, plan, p.get("cv_text") or "")),
+                           ("יורדות: לא מהתחום (ניהול/לוגיסטיקה) או פוסט", lambda c: off_field({"title": c.get("title")}, plan) or is_post({"title": c.get("title")}))):
             hit = [j for j in jobs if rule(j.get("card") or {})]
             show(name, hit)
             tot[name] += sum(1 for j in hit if j.get("decision") in KEEP) * (0 if name.startswith("עולות") else 1)
