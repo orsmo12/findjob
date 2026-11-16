@@ -269,3 +269,12 @@ def test_taste_ignores_company_words():
     rows = [{"card": {"id": str(i), "title": "SW Automation Student, Annapurna Labs", "co": "Annapurna Labs"}, "decision": "save"} for i in range(3)]
     likes = learn(rows)["likes"]
     assert "automation" in likes and "annapurna" not in likes and "labs" not in likes
+
+
+def test_round_b_shadow_false_positives_kept():
+    """נמצא ב-shadow: משרה ששמרת (Applied Scientist ב-Amazon, "Talent Acquisition" בכותרת) ו-Integrator עם "Logistics" לא יורדות."""
+    from agent_core.agents import hunter as H
+    sw = {"domains": ["פיתוח תוכנה"], "titles": ["Backend Developer"]}
+    assert not H.off_field({"title": "2027 Applied Scientist Internship – Masters, Amazon University Talent Acquisition"}, sw)
+    assert not H.off_field({"title": "Automation & Logistics Systems Integrator (570)"}, sw)
+    assert H.off_field({"title": "Logistic Subject Matter Expert"}, sw)

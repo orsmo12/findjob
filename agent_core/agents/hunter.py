@@ -218,7 +218,7 @@ def excluded(job: dict, plan: dict) -> bool:
 # לא נשלחת לדירוג AI: נמצא אצל גלעד — 40 דורגו, רובן 1.0–2.0, כלומר "לא התחום" ושרפו את תקציב הדירוג.
 FIELD_WORDS = {
     "software": r"\b(software|developer|frontend|front[- ]end|backend|back[- ]end|full[- ]?stack|devops|sre|data scientist|data engineer|"
-                r"machine learning|ml engineer|ai engineer|qa|automation engineer|android|ios|react|java|python|\.net|node|web|cloud|cyber|security engineer|"
+                r"machine learning|ml engineer|ai engineer|applied scientist|research scientist|qa|automation engineer|android|ios|react|java|python|\.net|node|web|cloud|cyber|security engineer|"
                 r"מפתח|מפתחת|פיתוח תוכנה|בודק תוכנה|אוטומציה)\b",
     "mechanical": r"\b(mechanical|mechanic|cad|solidworks|hvac|mechatronics|manufacturing|production engineer|tooling|thermal|structural|"
                   r"מכונות|מכני|מכנית|ייצור|תיכון|שרטט|הנדסאי)\b",
@@ -231,8 +231,8 @@ DOMAIN_FIELD = {"פיתוח תוכנה": "software", "הנדסת מכונות": 
 # סבב ב (16.11): ניהול, לקוחות ולוגיסטיקה הגיעו לסטודנט מכונות (Head of Account Management, Logistic SME, Technical PM).
 # לא מסונן כשבכותרת יש מילה מהתחום של המשתמש או מהתפקידים שבחר
 OFF_FIELD_MGMT = True   # מתג חזרה
-MGMT_WORDS = (r"\b(project manager|program manager|product manager|account management|customer operations|logistic|logistics|"
-              r"supply chain|subject matter expert)\b|מנהל(?:\.?ת)? מוצר|מנהל(?:\.?ת)? פרויקט|לוגיסטיק")
+MGMT_WORDS = (r"\b(project manager|program manager|product manager|account management|customer operations|"
+              r"logistics? (?:subject matter expert|manager|coordinator|specialist|officer)|supply chain)\b|מנהל(?:\.?ת)? מוצר|מנהל(?:\.?ת)? פרויקט|לוגיסטיק")
 
 
 def off_field(job: dict, plan: dict) -> bool:
