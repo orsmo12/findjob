@@ -188,6 +188,7 @@ def run(uid, email):
     res2 = browser("phase2", action_refresh(email))
     check("6. המשרות מוצגות באפליקציה", res2.get("cards", 0) > 0, f"{res2.get('cards', 0)} כרטיסים")
     check("   אין שגיאות JavaScript", not res2.get("errors"), "; ".join(res2.get("errors", [])[:3]))
+    check("   הגשות: המסך וכל הלשוניות של חלון המשרה נפתחים", res2.get("apps") == "ok", str(res2.get("apps")))
     check("7. מחיקת חשבון מהאפליקציה", res2.get("deleted"), res2.get("del_note", ""))
     left = rest("profiles", params={"select": "user_id", "user_id": f"eq.{uid}"}).json()
     check("   הפרופיל נמחק מהמסד", not left)

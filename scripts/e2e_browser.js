@@ -34,7 +34,14 @@ const [phase, link, out] = process.argv.slice(2);
       await p.screenshot({ path: `${out}/phase2_jobs.png` });
       const id = await p.evaluate(() => queue()[0]);
       if (id) { await p.evaluate(x => openJobInfo(x), id); await p.waitForTimeout(800); await p.screenshot({ path: `${out}/phase2_job.png` }); await p.evaluate(() => closeSheet()); }
-      await p.evaluate(() => goPage('apps')); await p.waitForTimeout(900);
+      // הגשות עם משרה שמורה: כל הלשוניות של חלון המשרה נפתחות בלי שגיאה (ב-16.11 המסך היה ריק רק כשהייתה משרה שמורה)
+      res.apps = await p.evaluate(() => { try {
+        if (!S.apps.some(a => a.status === 'saved') && DECK.length) S.apps.unshift({ id: 'a-' + DECK[0], jobId: DECK[0], status: 'saved', date: new Date().toISOString(), letter: '' });
+        goPage('apps'); const a = S.apps[0], out = [document.getElementById('appsList').innerHTML.length > 200];
+        for (const t of ['details', 'letter', 'ref']) { openApp(a.id, t); out.push(document.getElementById('sheetBody').innerHTML.length > 200); }
+        closeSheet(); return out.every(Boolean) ? 'ok' : 'empty: ' + out.join(',');
+      } catch (e) { return 'error: ' + e.message; } });
+      await p.waitForTimeout(600);
       await p.screenshot({ path: `${out}/phase2_apps.png` });
       // מחיקת חשבון: אותה פונקציה שהכפתור בהגדרות מפעיל
       await p.evaluate(() => { deleteAccount(); }); await p.waitForTimeout(5000);   // הדף נטען מחדש אחרי המחיקה
