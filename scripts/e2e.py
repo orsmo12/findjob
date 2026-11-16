@@ -11,6 +11,7 @@ e2e.py — כלי מפתח: בדיקה מקצה לקצה במערכת האמית
 """
 import json
 import os
+import re
 import subprocess
 import sys
 import time
@@ -72,7 +73,24 @@ def wait_prep_done(uid, since, minutes):
     return False
 
 
+E2E_EMAIL = re.compile(r"^findjob\.e2e\.\d+@example\.com$")   # רק משתמשי הבדיקה, אף פעם לא משתמש אמיתי
+
+
+def stale_test_users(users: list[dict]) -> list[str]:
+    """משתמשי בדיקה שנשארו מריצה שנעצרה באמצע (בוטלה לפני ה-finally)."""
+    return [u["id"] for u in users if E2E_EMAIL.match(u.get("email") or "")]
+
+
+def clean_stale():
+    r = httpx.get(f"{SB}/auth/v1/admin/users", headers=ADM, params={"per_page": 200}, timeout=30)
+    old = stale_test_users(r.json().get("users", []) if r.status_code == 200 else [])
+    for uid in old:
+        httpx.delete(f"{SB}/auth/v1/admin/users/{uid}", headers=ADM, timeout=30)
+    print(f"· משתמשי בדיקה ישנים שנמחקו: {len(old)}", flush=True)
+
+
 def main():
+    clean_stale()
     email = f"findjob.e2e.{int(time.time())}@example.com"
     r = httpx.post(f"{SB}/auth/v1/admin/users", headers=ADM, json={"email": email, "email_confirm": True}, timeout=30)
     check("1. יצירת משתמש בדיקה", r.status_code in (200, 201), str(r.status_code))
