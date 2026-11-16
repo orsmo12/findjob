@@ -1,10 +1,21 @@
 # findjob
 
-**A team of AI agents that runs a junior job search end to end — and is only allowed to say true things.**
+**A team of AI agents that runs a job search end to end, matched to your level and field, and is only allowed to say true things.**
 
 findjob reads your CV and a short questionnaire, then a team of six agents searches jobs twice a day, ranks them against your CV, researches the companies you save, writes tailored cover letters, prepares you for interviews and suggests CV and LinkedIn improvements. Every generated sentence is checked against its source (your CV, the job ad, or a cited web page) before you see it, and nothing happens in your accounts without you: the agents draft, you approve and act.
 
 Built by **Or Smolarchik** (B.Sc. Computer Science, HIT). Hebrew-first mobile web app · Python agents · free API tiers only.
+
+**Live app:** https://findjob-web.vercel.app (sign in with Google or email)
+
+## What it does
+
+- **Twice a day, new jobs that fit.** ~190 jobs per scan from LinkedIn, Indeed and company career boards, filtered by your level, field and region, then rated against your CV with reasons and gaps.
+- **Save a job, get the work done.** A tailored cover letter, a company brief with sources, interview questions and real take-home tasks, and CV lines for that role.
+- **Track every application.** Stages, a timeline, "what is the next step?", a reminder to ask "did you hear from X?", and paste a company email to have it classified (rejection, call, task, interview, offer).
+- **A daily update.** Shai sums up the last 24 hours in three short lines.
+- **Learns from you.** Skipping a job with a reason ("not my field", "missing requirement X") changes what the agents look for next.
+- **The office.** A live view of the agents at work and what they hand to each other.
 
 ---
 
@@ -55,6 +66,18 @@ Built by **Or Smolarchik** (B.Sc. Computer Science, HIT). Hebrew-first mobile we
 - **Field kits**: software and mechanical engineering are built in; for any other field, Yoav builds a kit (roles → job-ad titles, Hebrew search phrases, tools) from the CV.
 - **Activity log**: every agent writes what it is doing and what it hands to whom; the app shows it live in "the office".
 
+## Tech stack
+
+| Layer | Tools |
+|---|---|
+| Agents | Python 3, httpx, LangGraph (letter editor loop), JobSpy |
+| AI | Groq (free tier) through a router with model discovery and limits; users may add their own Gemini, Claude or OpenAI key for the chat |
+| App | Vanilla JS + CSS, built into one HTML file; PWA with Web Push |
+| Server | Vercel serverless functions (Node) |
+| Data | Supabase: Postgres, Auth (Google / email), Row-Level Security |
+| Runs | GitHub Actions on a schedule, plus developer tools (end-to-end test, shadow run, calibration, health) |
+| Tests | 131 tests without keys (`python tests/run_all.py`), Playwright for screenshots and the end-to-end check |
+
 ## Repository layout
 
 ```
@@ -67,7 +90,7 @@ agent_core/            Python agents and shared code
 scripts/               nightly.py, assistant_job.py (entry points for Actions)
 prototype/src/         the app source (built into one HTML file by build.py)
 web/                   deployed app + Vercel serverless functions
-tests/                 49 tests: python tests/run_all.py
+tests/                 131 tests: python tests/run_all.py
 ```
 
 ## Running
@@ -81,8 +104,6 @@ GROQ_API_KEY=… SUPABASE_URL=… SUPABASE_SERVICE_KEY=… python scripts/nightl
 Build the app: `cd prototype/src && python build.py --cloud <SUPABASE_URL> <PUBLISHABLE_KEY> ../../web/index.html`.
 
 ---
-
-© 2026 Or Smolarchik. Shared as a portfolio project. All rights reserved.
 
 ## License
 
