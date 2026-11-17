@@ -595,7 +595,7 @@ function kitData(){const p=prof(),o={};KIT_FIELDS.forEach(([k,,f])=>{const v=f(p
 function kitTabHtml(a,j,id){track('kit_open');
   const p=prof(),d=kitData(),vis=KIT_FIELDS.filter(([k])=>!['first','last'].includes(k)),missing=vis.filter(([k])=>!d[k]);
   const letter=a.letter||(j.letter&&j.letter.text)||(REAL?'':letterFor(j)),t=j.tailor,ed=tailorEdits(j),off=new Set(((S.tailorOff||{})[a.jobId])||[]);
-  const card=(title,chip,amb,body,acts,help)=>`<section class="kc"><div class="kc-h"><h4>${title}</h4>${help?`<button class="kc-q" aria-label="מה זה?" onclick="kitHelp('${help}','${id}')">?</button>`:''}${chip?`<span class="kc-chip${amb?' amb':''}">${chip}</span>`:''}</div>${body}${acts?`<div class="kc-acts">${acts}</div>`:''}</section>`;
+  const card=(title,chip,amb,body,acts,help)=>`<section class="kc"><div class="kc-h"><h4>${title}</h4>${help?`<button class="kc-q" aria-label="מה זה?" onclick="kitHelp('${help}','${id}',this)" aria-expanded="false">?</button>`:''}${chip?`<span class="kc-chip${amb?' amb':''}">${chip}</span>`:''}</div>${body}${acts?`<div class="kc-acts">${acts}</div>`:''}</section>`;
   const on=new Set(((S.tailorOn||{})[a.jobId])||[]);   // ברירת מחדל: לא מסומן. מסמנים מה נכנס ל-PDF
   const cvBody=!REAL||!t?`<p class="card-sub" style="margin:6px 0 0">${REAL?`${escB(N('linkedin'))} יציע התאמות למשרה הזו אחרי הריצה הקרובה. בינתיים: קורות החיים מהפרופיל.`:'קורות החיים מהפרופיל.'}</p>`
     :!ed.length?`<p class="card-sub" style="margin:6px 0 0">${t.no_ad?`אין מודעה מלאה, אז ${escB(N('linkedin'))} לא הציע שינויים.`:`${escB(N('linkedin'))} בדק: קורות החיים כבר מדגישים את מה שהמשרה מבקשת.`}</p>`
@@ -604,7 +604,7 @@ function kitTabHtml(a,j,id){track('kit_open');
   const nOn=ed.filter((_,x)=>on.has(x)).length;
   const needEn=REAL&&isHeb(prof().cv)&&!((prof().ans||{}).cv_en)&&!adHeb(j.desc||j.title);
   const enHint=needEn?`<p class="kc-hint">המודעה באנגלית וקורות החיים שלך בעברית. <button class="kc-more" onclick="closeSheet();goPage('profile')">להעלות גרסה באנגלית</button></p>`:'';
-  return `<div class="kit">${a.status==='saved'?`<p class="kit-now">${escB(nowTxt(a))}</p>`:''}
+  return `<div class="kit">
     ${card('קורות חיים למשרה',ed.length?(nOn?`${nOn} מסומנות`:`${ed.length} התאמות מוצעות`):'',!!ed.length&&!nOn,enHint+cvBody,
       `<button class="btn btn-ghost btn-sm${ed.length?(nOn?' is-on':' is-off'):''}" id="cvPdfBtn" onclick="${ed.length?`if(!((S.tailorOn||{})['${a.jobId}']||[]).length){toast('סמן לפחות התאמה אחת, והיא תיכנס ל-PDF');return}`:''}cvPreview('${a.jobId}','${id}')">${ed.length?'קובץ PDF למשרה':'PDF של קורות החיים'}</button>`,'cv')}
     ${card('מכתב פנייה',letter?`מוכן · ${letter.split(/\s+/).filter(Boolean).length} מילים`:'בהכנה',!letter,
@@ -628,10 +628,15 @@ function fitFold(j,jid){const d=j.dims||{},rq=Array.isArray(d.req)?d.req:[],met=
     ${j.reasons.length?`<div class="s-sec"><h4>למה זה מתאים לך</h4>${j.reasons.map(r=>`<div class="jc-r" style="margin-bottom:7px"><span class="ic ok" aria-hidden="true">✓</span><span>${escB(r)}</span></div>`).join('')}</div>`:''}
     ${j.gaps.length?`<div class="s-sec"><h4>מה חסר</h4>${j.gaps.map(g=>`<div class="jc-r" style="margin-bottom:7px"><span class="ic gap" aria-hidden="true">!</span><span>${escB(g)}</span></div>`).join('')}</div>`:''}
     <button class="kc-more" onclick="openJobInfo('${jid}')">המודעה המלאה ‹</button></details>`}
-function kitHelp(k,appId){const T={cv:['קורות חיים למשרה',`${escB(N('linkedin'))} מציע ניסוח וסדר למשרה הזו, רק ממה שכבר כתוב אצלך: בלי להוסיף ובלי להשמיט כלים או פרטים. מה שתסמן ייכנס ל-PDF, ואם לא תסמן כלום אפשר להוריד את קורות החיים כמו שהם.`],
+function kitHelp(k,appId,q){const T={cv:['קורות חיים למשרה',`${escB(N('linkedin'))} מציע ניסוח וסדר למשרה הזו, רק ממה שכבר כתוב אצלך: בלי להוסיף ובלי להשמיט כלים או פרטים. מה שתסמן ייכנס ל-PDF, ואם לא תסמן כלום אפשר להוריד את קורות החיים כמו שהם.`],
   letter:['מכתב פנייה',`${escB(N('assistant'))} כותב מכתב באנגלית לכל משרה שנשמרה, רק מעובדות שבקורות החיים, במודעה ובמה שכתבת על עצמך. אפשר לערוך, ואז להעתיק ולהדביק בשדה המכתב בטופס.`],
   form:['מילוי הטופס','"לפתוח את הטופס ולמלא" מעתיק את המכתב ופותח את המודעה. שם הסימנייה ממלאת שם, פרטי קשר, השכלה ושאלות כן/לא, ומסמנת בצהוב מה לבדוק. היא לא שולחת. בטלפון, בהגשה המהירה של LinkedIn, משתמשים ב"תשובות מוכנות להעתקה".']}[k];
-  if(T)openSheet(`<h3 id="sheetTitle">${T[0]}</h3><div class="sheet-sub">${T[1]}</div><button class="btn btn-ghost btn-block" style="margin-top:14px" onclick="openApp('${appId}','letter')">הבנתי</button>`)}
+  /* בועה בתוך הכרטיס, בלי לצאת מערכת ההגשה. נגיעה בחוץ או שוב ב-"?" סוגרת */
+  const c=q&&q.closest('.kc'),open=c&&c.querySelector('.kc-bub');document.querySelectorAll('.kc-bub').forEach(x=>x.remove());
+  document.querySelectorAll('.kc-q[aria-expanded="true"]').forEach(x=>x.setAttribute('aria-expanded','false'));if(!T||!c||open)return;
+  const b=document.createElement('div');b.className='kc-bub';b.setAttribute('role','tooltip');b.innerHTML=`<b>${T[0]}</b><br>${T[1]}`;c.appendChild(b);q.setAttribute('aria-expanded','true');
+  const r=q.getBoundingClientRect(),cr=c.getBoundingClientRect();b.style.setProperty('--ax',Math.max(8,cr.right-r.right+r.width/2-18)+'px');
+  setTimeout(()=>document.addEventListener('click',function off(e){if(!e.target.closest('.kc-q')){b.remove();q.setAttribute('aria-expanded','false');document.removeEventListener('click',off,true)}},true))}
 function tailorPick(jobId,x,v,appId){S.tailorOn=S.tailorOn||{};const L=new Set(S.tailorOn[jobId]||[]);v?L.add(x):L.delete(x);S.tailorOn[jobId]=[...L];save();paintAppTab(appId)}
 function tailorToggle(jobId,x,on){S.tailorOff=S.tailorOff||{};const L=new Set(S.tailorOff[jobId]||[]);on?L.delete(x):L.add(x);S.tailorOff[jobId]=[...L];save()}
 /* בלשונית הפרטים: רק קיצור. ההתאמות וה-PDF בערכת ההגשה */

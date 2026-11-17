@@ -1134,7 +1134,6 @@ a.person>svg{flex:0 0 18px;width:18px;height:18px;fill:none;stroke:var(--ink3);s
 .w-urgent,.w-soon{background:var(--mint);color:#fff}                                      /* "עכשיו"/"השבוע": המבטא (10%) */
 .logo-tile.logo-img{background:#fff!important;border:1px solid rgba(30,45,55,.10);overflow:hidden;padding:3px}.logo-img img{width:100%;height:100%;object-fit:contain;border-radius:inherit}
 .btn.is-off{opacity:.5}
-.kit-now{font-size:13px;color:var(--ink2);margin:2px 2px 0}
 .kc-ed span[dir=ltr]{text-align:left}
 
 /* שאלון: גודל קריא ולא צועק */
@@ -1164,3 +1163,10 @@ a.person>svg{flex:0 0 18px;width:18px;height:18px;fill:none;stroke:var(--ink3);s
 :root[data-theme="dark"] .chip.sel{color:var(--canvas)}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .chip.sel{color:var(--canvas)}}
 a.row{color:inherit;text-decoration:none}
+/* בועת הסבר בערכת ההגשה (kitHelp) */
+.kc{position:relative}
+.kc-q[aria-expanded="true"]{background:var(--brand);color:#fff;border-color:var(--brand)}
+.kc-bub{position:absolute;z-index:5;top:44px;inset-inline:12px;background:var(--brand);color:#fff;border-radius:14px;padding:12px 14px;font-size:13.5px;line-height:1.55;box-shadow:0 8px 24px rgba(0,0,0,.18);animation:bubIn .15s ease-out}
+.kc-bub b{font-size:14px}
+.kc-bub:before{content:"";position:absolute;top:-6px;inset-inline-start:var(--ax,20px);width:12px;height:12px;background:var(--brand);transform:rotate(45deg)}
+@keyframes bubIn{from{opacity:0;transform:translateY(-4px)}}
