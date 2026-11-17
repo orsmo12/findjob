@@ -101,6 +101,8 @@ for u in users:
                 continue
         except Exception as e:  # noqa: BLE001
             print(f"קצב סריקה: {type(e).__name__}")
+    if (os.environ.get("ONLY_USER") or "").strip():   # סריקה שהמשתמש הפעיל: האפליקציה מראה "רץ" ולא "ממתין בתור"
+        db.save_memory(u["user_id"], "assistant", {"prep_started": datetime.now(timezone.utc).isoformat()})
     act.start(u["user_id"])
     try:  # דורון: דירוג מחדש של משרות בפיד שדורגו בלי מודעה מלאה או בשיטה ישנה
         todo = db.to_rerate(u["user_id"], RATING_V)[:12]

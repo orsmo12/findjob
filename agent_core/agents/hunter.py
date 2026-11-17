@@ -108,7 +108,7 @@ def collect(plan: dict, per_search: int = 20, budget: int = 12) -> list[dict]:
                     "description": _clean(r.get("description"))[:6000], "source": _clean(r.get("site")),
                     "posted": _clean(r.get("date_posted")), "salary": salary_text(r),
                     "remote": bool(r.get("is_remote")) if _clean(r.get("is_remote")) else False,
-                    "query": q,
+                    "query": q, "logo": logo_url(r.get("company_logo")), "site": site_domain(r.get("company_url_direct")),
                 })
     return out
 
@@ -626,6 +626,7 @@ def to_card(j: dict, r: dict, cv: str = "") -> dict:
     except ValueError:
         pass
     return {"id": j["id"], "co": j["company"], "title": j["title"], "loc": j["location"],
+            **({"logo": j["logo"]} if j.get("logo") else {}), **({"site": j["site"]} if j.get("site") else {}),
             "fit": r["fit"], "reasons": r["reasons"], "gaps": r["gaps"], "partial": r["partial"],
             "level_gap": LEVEL_HE.get(r.get("level_gap") or ""), "dims": r.get("dims"),
             "tags": tags_for(j.get("description", ""), cv),
@@ -638,6 +639,19 @@ def to_card(j: dict, r: dict, cv: str = "") -> dict:
 MIN_SHOWN = 6     # אם פחות משרות עברו את הסף, משלימים מהקרובות לו
 NEAR_FIT = 3.0    # "קרובה לסף": מוצגת רק כהשלמה, עם תגית
 FILL_SKIPS_LEVEL_GAP = True   # מתג חזרה (13.11): ההשלמה לא מחזירה משרה שהורדה בגלל ניסיון
+
+
+def logo_url(v) -> str:
+    """לוגו של החברה מ-LinkedIn / Indeed (JobSpy). רק https, אחרת ריק."""
+    v = _clean(v)
+    return v if v.startswith("https://") and len(v) < 600 else ""
+
+
+def site_domain(v) -> str:
+    """הדומיין של אתר החברה (לסמל האתר כשאין לוגו). בלי קישורים של LinkedIn/Indeed עצמם."""
+    m = re.match(r"https?://(?:www\.)?([a-z0-9.-]+\.[a-z]{2,})", _clean(v).lower())
+    d = m.group(1) if m else ""
+    return "" if any(x in d for x in ("linkedin.", "indeed.", "glassdoor.", "google.")) else d
 
 
 def fill_blocked(r: dict, plan: dict) -> bool:

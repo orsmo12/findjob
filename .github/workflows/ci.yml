@@ -1,0 +1,26 @@
+name: "ci: tests + UI smoke"   # על כל push ו-PR: בדיקות היחידה, ובדיקת עשן לאפליקציה הבנויה (כל המסכים והלשוניות)
+on:
+  push:
+    branches: [main]
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: pip install httpx langgraph playwright
+      - name: tests (0 נכשלו)
+        run: python tests/run_all.py
+      - name: the built app matches the sources
+        run: |
+          KEY=$(grep -o 'const CLOUD={[^}]*}' web/index.html | python -c "import sys,json;print(json.loads(sys.stdin.read().split('=',1)[1])['key'])")
+          URL=$(grep -o 'const CLOUD={[^}]*}' web/index.html | python -c "import sys,json;print(json.loads(sys.stdin.read().split('=',1)[1])['url'])")
+          cd prototype/src && python build.py --cloud "$URL" "$KEY" /tmp/built.html >/dev/null
+          cmp -s /tmp/built.html ../../web/index.html || { echo "web/index.html לא נבנה מחדש אחרי שינוי ב-prototype/src"; exit 1; }
+      - name: UI smoke (390 + 1440)
+        run: python scripts/smoke_ui.py web/index.html

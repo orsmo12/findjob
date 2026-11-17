@@ -76,16 +76,17 @@ function trackHtml(a){if(a.status==='saved'||a.status==='closed')return'';
   return`<ol class="trk${stop?' stopped':''}" aria-label="מסלול ההגשה">${keys.map((k,i)=>{const c=i<ci?'done':i===ci?(stop?'stop':'cur'):'next';
     return`<li class="${c}" aria-label="${L[k]}: ${c==='done'?'עבר':c==='cur'?'עכשיו':c==='stop'?'נעצר כאן':'עוד לא'}"><i></i><span>${L[k]}</span></li>`}).join('')}</ol>`}
 function lastReal(a){const st=stepsOf(a).filter(x=>TRACK.includes(x.k));return st.length?st[st.length-1].k:'applied'}
+/* קבוצות: שיחה/ראיון/מטלה/הצעה תמיד ב"בתהליך" (גם כשהם השבוע, עם סימון), "פתוחות" = עוד לא הוגש, "ארכיון" = נסגרו */
 function groupOf(a){if(CLOSED.includes(a.status))return'closed';
-  const w=a.when&&new Date(a.when),soon=w&&w>=new Date(new Date().toDateString())&&(w-new Date())<7*DAY,ask=askOf(a);
-  if(soon||(ask&&a.status!=='applied')||a.status==='saved')return'open';
   if(['screening','task','interview','offer'].includes(a.status))return'progress';
+  if(a.status==='saved')return'open';
   return'waiting'}
+function soonOf(a){const w=a.when&&new Date(a.when);return !!(w&&w>=new Date(new Date().toDateString())&&(w-new Date())<7*DAY)}
 function appCard(a){const j=JOBS[a.jobId],g=groupOf(a),k=askOf(a);
-  return`<div class="swipe" data-id="${a.id}"><div class="swipe-bg" aria-hidden="true"><span>הסרה</span><span>הסרה</span></div><article class="app glass row-app${g==='open'?' soon':''}${CLOSED.includes(a.status)?' dim':''}">
+  return`<div class="swipe" data-id="${a.id}"><div class="swipe-bg" aria-hidden="true"><span>הסרה</span><span>הסרה</span></div><article class="app glass row-app g-${g}${CLOSED.includes(a.status)?' dim':''}">
     <button class="app-top" style="width:100%;text-align:right" onclick="openApp('${a.id}')" aria-label="${escB(j.title)} ב-${escB(j.co)}, ${stLabel(a)}, ${escB(nowTxt(a))}">
       ${logo(j)}<span class="app-info"><span class="app-title" dir="${dirOf(j.title)||'auto'}" style="display:block;text-align:right">${escB(j.title)}</span><span class="app-sub" style="display:block">${escB(j.co)} · ${escB(nowTxt(a))}${j.closed_at&&!CLOSED.includes(a.status)?' · המשרה נסגרה':''}</span></span>
-      <span class="status st-${a.status}">${stLabel(a)}</span></button>
+      ${soonOf(a)&&!CLOSED.includes(a.status)?'<span class="wk-tag">השבוע</span>':''}<span class="status st-${a.status}">${stLabel(a)}</span></button>
     ${k&&g!=='waiting'?`<button class="ask-tag" onclick="openAsk('${a.id}')">${escB(k.q)} ←</button>`:''}
   </article></div>`}
 /* המספרים: בלוח הבקרה (משפך) ובשורה אחת במחשב. מסקנות רק מ-8 הגשות ו-4 תשובות */
@@ -101,24 +102,24 @@ function funnelHtml(){const f=funnelNums(),c=[['הגשות',f.apps],['שיחות
   return`<button class="funnel card glass" onclick="goPage('apps')" aria-label="ההגשות שלך: ${c.map(([l,v])=>v+' '+l).join(', ')}">${c.map(([l,v])=>`<span class="fn"><b class="num">${v}</b><span>${l}</span></span>`).join('')}
     <span class="fn-bar" aria-hidden="true">${c.map(([,v])=>`<i style="flex:${Math.max(v,0.2)}" class="${v?'on':''}"></i>`).join('')}</span>${ins?`<span class="fn-ins">${escB(ins)}</span>`:''}</button>`}
 let appGrp=null;
-const GRP=[['open','פתוחות'],['progress','בתהליך'],['waiting','ממתינות'],['closed','נסגרו']];
+const GRP=[['open','פתוחות'],['progress','בתהליך'],['waiting','ממתינות'],['closed','ארכיון']];
 function renderApps(){S.apps.forEach(stepsOf);
   if(!S.apps.length){$('seg').innerHTML='';$('appsList').innerHTML=historyHtml(true)+`<div class="empty"><div class="empty-ic">📋</div><h3>עוד אין הגשות</h3><p>משרות ששמרת יופיעו כאן, עם מכתב פנייה מוכן.</p><button class="btn btn-primary" onclick="goPage('jobs')">למשרות</button></div>`;return}
   const by={open:[],progress:[],waiting:[],closed:[]};S.apps.forEach(a=>by[groupOf(a)].push(a));
   const when=a=>a.when?new Date(a.when).getTime():9e15;
-  by.open.sort((x,y)=>when(x)-when(y));by.progress.sort((x,y)=>(REACH[y.status]||0)-(REACH[x.status]||0));
+  by.open.sort((x,y)=>when(x)-when(y));by.progress.sort((x,y)=>(soonOf(y)-soonOf(x))||((REACH[y.status]||0)-(REACH[x.status]||0)));
   by.waiting.sort((x,y)=>(x.status==='saved')-(y.status==='saved')||new Date(x.date)-new Date(y.date));   // הוותיקות ראשונות, "עוד לא הוגש" בסוף
   by.closed.sort((x,y)=>new Date((lastStep(y)||{}).at||y.date)-new Date((lastStep(x)||{}).at||x.date));
   if(!appGrp||!by[appGrp].length)appGrp=GRP.map(([k])=>k).find(k=>by[k].length);
   const dot=k=>k!=='closed'&&by[k].some(a=>askOf(a)||k==='open');
-  $('seg').innerHTML=GRP.map(([k,l])=>`<button class="chip${appGrp===k?' sel':''}" role="tab" aria-selected="${appGrp===k}" onclick="appGrp='${k}';renderApps()">${l} <b class="num">${by[k].length}</b>${dot(k)&&by[k].length?'<span class="tab-dot" aria-label="מחכה לך"></span>':''}</button>`).join('');
+  $('seg').innerHTML=GRP.map(([k,l])=>`<button class="chip c-${k}${appGrp===k?' sel':''}" role="tab" aria-selected="${appGrp===k}" onclick="appGrp='${k}';renderApps()">${l} <b class="num">${k==='closed'?by[k].length+histList().length:by[k].length}</b>${dot(k)&&by[k].length?'<span class="tab-dot" aria-label="מחכה לך"></span>':''}</button>`).join('');
   const nAsk=by.waiting.filter(a=>askOf(a)).length;
   const prepRow=CLOUDM&&S.apps.some(a=>a.status==='saved')?`<div style="margin-bottom:10px">${prepBtn('prep','לעדכן הכל עכשיו','btn btn-sm btn-ghost btn-block')}</div>`:'';
   const f=funnelNums(),line=`<p class="apps-line">${GRP.map(([k,l])=>`${by[k].length} ${l}`).join(' · ')} · ${f.ivs} ראיונות · ${f.offers} הצעות</p>`;
   const col=k=>`<section class="app-group g-${k}${appGrp===k?' on':''}" role="tabpanel"><h3 class="grp-h">${GRP.find(x=>x[0]===k)[1]} <span class="num">${by[k].length}</span></h3>
       ${k==='waiting'&&nAsk?`<button class="review-link" onclick="reviewWaiting()">קיבלת תשובה מאחת החברות? לעדכן ←</button>`:''}
-      ${by[k].map(appCard).join('')||'<p class="grp-empty">אין כאן כרגע</p>'}</section>`;
-  $('appsList').innerHTML=line+prepRow+`<div class="app-groups">${GRP.map(([k])=>col(k)).join('')}</div>`+historyHtml();
+      ${k==='closed'?archiveHtml(by.closed):(by[k].map(appCard).join('')||'<p class="grp-empty">אין כאן כרגע</p>')}</section>`;
+  $('appsList').innerHTML=line+prepRow+`<div class="app-groups">${GRP.map(([k])=>col(k)).join('')}</div>`;
   bindAppSwipes();setTimeout(askFromHash,0);
 }
 /* "מה השלב הבא?": 4 אפשרויות, "מתי?" (אפשר להשאיר ריק), שמירה. אחרי ראיון מוצע ראיון נוסף */
@@ -197,12 +198,11 @@ function paintAppTab(id){
   el.setAttribute('aria-labelledby','tab-'+appTab);
   if(appTab==='details'){
     const fu=followDue(a);
-    el.innerHTML=`${appHead(a,j)}${timelineHtml(a,j)}
+    el.innerHTML=`${appHead(a,j)}${(S.jnotes||{})[a.jobId]?`<p class="j-note">📝 ${escB(S.jnotes[a.jobId])}</p>`:''}${fitFold(j,a.jobId)}${timelineHtml(a,j)}
       <details class="s-sec app-more"><summary>פרטים</summary><div class="s-sec" style="margin-top:12px">
         <div class="kv"><span>שלב</span><button class="status st-${a.status}" onclick="openStatus('${id}')">${STATUSES[a.status]} · שינוי</button></div>
         <div class="kv"><span>${a.status==='saved'?'נשמרה':'הוגשה'}</span><b>${agoTxt(daysSince(a.date))}</b></div>
         ${a.iv?`<div class="kv"><span>ראיון</span><b>${escB(a.iv)}</b></div>`:''}
-        <div class="kv"><span>התאמה</span><b class="num">${j.fit.toFixed(1)} מתוך 5</b></div>
         <div class="kv"><span>שכר</span><b>${escB(salaryTxt(j))}</b></div>
         ${REAL&&a.status==='saved'?`<div class="kv"><span>פתוחה להגשה?</span><b>${openTxt(j)}</b></div>`:''}</div>
       ${fu?`<div class="s-sec"><h4>הודעת המשך</h4><textarea class="textbox" id="fuText" rows="7" aria-label="הודעת המשך">${esc(a.follow||followText(j))}</textarea>
@@ -414,6 +414,7 @@ function renderPrep(){
   const a=apps.find(x=>x.jobId===prepJob),j=JOBS[prepJob],qs=(j.prep&&j.prep.questions)||[],b=j.brief;
   a.answers=a.answers||{};
   $('prepScroll').innerHTML=`
+    ${apps.length>1?`<p class="prep-hint">ההכנה מחולקת לפי משרה · ${apps.findIndex(x=>x.jobId===prepJob)+1} מתוך ${apps.length}. בוחרים משרה כאן ${apps.length>2?'(אפשר לגלול הצידה)':''}</p>`:''}
     <div class="prep-jobs" role="tablist" aria-label="בחירת משרה">${apps.map(x=>`<button role="tab" aria-selected="${x.jobId===prepJob}" onclick="prepJob='${x.jobId}';renderPrep()"><b dir="auto">${escB(JOBS[x.jobId].co)}</b><span>${STATUSES[x.status]}${x.iv?' · '+escB(x.iv):''}</span></button>`).join('')}</div>
 
     <section class="card glass prep-head">${logo(j)}<div style="min-width:0;flex:1"><h2 class="card-h" dir="auto" style="margin:0">${escB(j.title)}</h2><div class="card-sub" style="margin:2px 0 0">${escB(j.co)} · ${STATUSES[a.status]}${a.iv?' · '+escB(a.iv):''}</div></div>
@@ -506,6 +507,18 @@ function restoreApp(jobId){
   S.apps.unshift(h.app||{id:'a-'+jobId,jobId,status:'saved',date:new Date().toISOString(),letter:''});
   S.decisions[jobId]='save';delete S.skipReasons[jobId];if(S.skip)delete S.skip[jobId];save();refreshApps();toast('המשרה חזרה להגשות');
 }
+/* ארכיון: הגשות שנסגרו + משרות שהוסרו או נסגרו למועמדים, עם סינון לפי סיבה */
+let archF='all';
+const ARCH=[['all','הכל'],['rejected','נדחו'],['ghosted','אין מענה'],['withdrew','ויתרתי'],['accepted','התקבלתי'],['closed','נסגרו למועמדים'],['removed','הוסרו']];
+function histList(){return (S.history||[]).filter(h=>JOBS[h.jobId]||h.title)}
+function archiveHtml(closed){const H=histList(),kind=x=>x.status||(x.reason==='removed'?'removed':'closed');
+  const have=new Set([...closed.map(kind),...H.map(kind)]),F=ARCH.filter(([k])=>k==='all'||have.has(k));
+  const ok=x=>archF==='all'||kind(x)===archF;
+  const rows=closed.filter(ok).map(appCard).join('')+H.filter(ok).map(histRow).join('');
+  return `${F.length>2?`<div class="arch-f">${F.map(([k,l])=>`<button class="chip${archF===k?' sel':''}" onclick="archF='${k}';renderApps()">${l}</button>`).join('')}</div>`:''}${rows||'<p class="grp-empty">אין כאן כרגע</p>'}`}
+function histRow(h){const why={closed:'נסגרה למועמדים',removed:'הסרת'};
+  return `<div class="hist-row"><span class="tx"><b dir="auto">${escB(h.title)}</b><span>${escB(h.co)} · ${why[h.reason]||''}${h.why&&h.why!=='נסגרה'?`: ${escB(h.why)}`:''} · ${new Date(h.date).toLocaleDateString('he-IL')}</span></span>
+      ${h.reason==='removed'?`<button class="btn btn-sm btn-ghost" onclick="restoreApp('${h.jobId}')">להחזיר</button>`:h.url?`<a class="btn btn-sm btn-ghost ext" href="${escB(h.url)}" target="_blank" rel="noopener">למודעה${ICO.open}</a>`:''}</div>`}
 function historyHtml(onlyIfAny){
   const H=(S.history||[]).filter(h=>JOBS[h.jobId]||h.title);
   if(!H.length)return'';
@@ -600,6 +613,14 @@ function kitTabHtml(a,j,id){track('kit_open');
     <p class="card-sub" style="margin-top:10px">הסימנייה ממלאת את מה שהיא מזהה ומסמנת בצהוב מה לבדוק. היא לא שולחת. <button class="kc-more" onclick="openFillHelp()">איך מוסיפים אותה</button>${CLOUDM?` · שאלה בטופס? <button class="kc-more" onclick="askAboutJob('${a.jobId}');$('chatInput').value+='בטופס ההגשה שואלים: '">${escB(N('assistant'))} בצ׳אט</button>`:''}</p>
     <div class="s-sec">${appliedBox(a,true)}</div></div>`;
 }
+/* במשרה ששמרת: אותו פירוט התאמה כמו בהצעה (דרישות, למה מתאים, מה חסר), מקופל לשורה אחת */
+function fitFold(j,jid){const d=j.dims||{},rq=Array.isArray(d.req)?d.req:[],met=rq.filter(r=>r[1]).length;
+  const line=`${j.fit.toFixed(1)}/5${rq.length?` · ${met} מתוך ${rq.length} דרישות חובה`:''}${j.gaps.length?` · חסר: ${escB(String(j.gaps[0]).slice(0,40))}`:''}`;
+  return `<details class="fit-fold"><summary><span class="ff-h">ההתאמה שלך</span><span class="ff-l">${line}</span></summary>
+    ${dimsHtml(j)}
+    ${j.reasons.length?`<div class="s-sec"><h4>למה זה מתאים לך</h4>${j.reasons.map(r=>`<div class="jc-r" style="margin-bottom:7px"><span class="ic ok" aria-hidden="true">✓</span><span>${escB(r)}</span></div>`).join('')}</div>`:''}
+    ${j.gaps.length?`<div class="s-sec"><h4>מה חסר</h4>${j.gaps.map(g=>`<div class="jc-r" style="margin-bottom:7px"><span class="ic gap" aria-hidden="true">!</span><span>${escB(g)}</span></div>`).join('')}</div>`:''}
+    <button class="kc-more" onclick="openJobInfo('${jid}')">המודעה המלאה ‹</button></details>`}
 function tailorToggle(jobId,x,on){S.tailorOff=S.tailorOff||{};const L=new Set(S.tailorOff[jobId]||[]);on?L.delete(x):L.add(x);S.tailorOff[jobId]=[...L];save()}
 /* בלשונית הפרטים: רק קיצור. ההתאמות וה-PDF בערכת ההגשה */
 function tailorLink(j,id){const n=((j.tailor||{}).edits||[]).length;if(!n)return'';

@@ -44,7 +44,7 @@ async function cloudLoad(){
     loadJobs(uid),
     SB.from('runs').select('agent,stats,plan,created_at').eq('user_id',uid).order('created_at',{ascending:false}).limit(150)]);
   if(pr){const p=prof();p.first=pr.first||p.first;p.name=pr.name||p.name;p.cv=pr.cv_text||p.cv;p.ans=Object.assign({},pr.answers||{},p.ans||{});
-    if(pr.team&&Object.keys(pr.team).length)S.team=pr.team;const st=pr.state||{};if(st.skip&&typeof st.skip==='object')S.skip=st.skip;if(Array.isArray(st.taste_off))S.taste_off=st.taste_off;['apps','todos','stories'].forEach(k=>{if(Array.isArray(st[k]))S[k]=st[k]});if(st.targets)S.targets=st.targets;if(Array.isArray(st.history))S.history=st.history;if(Array.isArray(st.chat))S.chat=st.chat;if(Array.isArray(st.accepted))S.accepted=st.accepted;if(Array.isArray(st.dismissed))S.dismissed=st.dismissed;if(Array.isArray(st.cvDone))S.cvDone=st.cvDone;if(st.usage)S.usage=st.usage;if(st.ai_key)S.ai_key=st.ai_key;if(Array.isArray(st.feedback))S.feedback=st.feedback;if(Array.isArray(st.my_letters))S.my_letters=st.my_letters;if(st.push)S.push=st.push;if(st.tourDone)S.tourDone=true;if(st.fb_status)S.fb_status=st.fb_status;p.li_text=pr.li_text||'';LI=Object.assign({},pr.li||{},{fixes:((pr.li_fixes||{}).fixes)||[]});if(pr.cv_text)S.onboarded=true}
+    if(pr.team&&Object.keys(pr.team).length)S.team=pr.team;const st=pr.state||{};if(st.skip&&typeof st.skip==='object')S.skip=st.skip;if(Array.isArray(st.taste_off))S.taste_off=st.taste_off;if(st.jnotes&&typeof st.jnotes==='object')S.jnotes=Object.assign({},st.jnotes,S.jnotes||{});['apps','todos','stories'].forEach(k=>{if(Array.isArray(st[k]))S[k]=st[k]});if(st.targets)S.targets=st.targets;if(Array.isArray(st.history))S.history=st.history;if(Array.isArray(st.chat))S.chat=st.chat;if(Array.isArray(st.accepted))S.accepted=st.accepted;if(Array.isArray(st.dismissed))S.dismissed=st.dismissed;if(Array.isArray(st.cvDone))S.cvDone=st.cvDone;if(st.usage)S.usage=st.usage;if(st.ai_key)S.ai_key=st.ai_key;if(Array.isArray(st.feedback))S.feedback=st.feedback;if(Array.isArray(st.my_letters))S.my_letters=st.my_letters;if(st.push)S.push=st.push;if(st.tourDone)S.tourDone=true;if(st.fb_status)S.fb_status=st.fb_status;p.li_text=pr.li_text||'';LI=Object.assign({},pr.li||{},{fixes:((pr.li_fixes||{}).fixes)||[]});if(pr.cv_text)S.onboarded=true}
   prof().key='cloud';
   RUNS=runs||[];
   /* דוחות של בעל המערכת נטענים בנפרד: ביום עמוס הם נדחקים מעבר ל-150 הרשומות האחרונות, וכלי המפתח נעלמו מהתפריט */
@@ -61,7 +61,7 @@ async function cloudLoad(){
   _decSnap=Object.assign({},S.decisions);_profSnap=profRow();
   LS.set(SKEY,S);window.__runsReady=true;if(typeof applyTeam==='function')applyTeam();buildWorkflow();
 }
-function profRow(){const p=prof();return JSON.stringify({first:p.first||'',name:p.name||'',cv_text:p.cv||'',answers:p.ans||{},team:S.team||{},state:{skip:S.skip||{},taste_off:S.taste_off||[],apps:S.apps,todos:S.todos,stories:S.stories,targets:S.targets||{added:[],removed:[]},history:S.history||[],chat:(S.chat||[]).slice(-40),accepted:S.accepted||[],dismissed:S.dismissed||[],cvDone:S.cvDone||[],usage:S.usage||{},ai_key:S.ai_key||'',feedback:(S.feedback||[]).slice(-30),my_letters:(S.my_letters||[]).slice(0,5),push:S.push||null,tourDone:!!S.tourDone,fb_status:S.fb_status||{}},li_text:p.li_text||''})}
+function profRow(){const p=prof();return JSON.stringify({first:p.first||'',name:p.name||'',cv_text:p.cv||'',answers:p.ans||{},team:S.team||{},state:{skip:S.skip||{},taste_off:S.taste_off||[],apps:S.apps,todos:S.todos,stories:S.stories,targets:S.targets||{added:[],removed:[]},history:S.history||[],chat:(S.chat||[]).slice(-40),accepted:S.accepted||[],dismissed:S.dismissed||[],cvDone:S.cvDone||[],jnotes:S.jnotes||{},usage:S.usage||{},ai_key:S.ai_key||'',feedback:(S.feedback||[]).slice(-30),my_letters:(S.my_letters||[]).slice(0,5),push:S.push||null,tourDone:!!S.tourDone,fb_status:S.fb_status||{}},li_text:p.li_text||''})}
 function cloudSync(){clearTimeout(_syncT);_syncT=setTimeout(async()=>{
   if(!ME)return;
   const row=profRow();
@@ -376,7 +376,8 @@ function prepResume(){const p=S.prep;if(!p||_prep)return;
   if(Date.now()-p.t0>(p.scan?30:9)*60e3){delete S.prep;save();return}
   _prep={at:p.at,t0:p.t0,scan:p.scan};prepBar();_prep.timer=setInterval(prepPoll,15000);prepPoll()}
 function prepBtn(kind,label,cls){
-  if(_prep){const pc=Math.min(92,Math.round((Date.now()-_prep.t0)/(_prep.scan?9000:2400)));
+  if(_prep){if(!_prep.started)return `<button class="${cls}" disabled aria-busy="true">${LD('ld-s')} ממתין שהשרת יתחיל…</button>`;
+    const pc=Math.min(92,Math.round((Date.now()-_prep.started)/(_prep.scan?9000:2400)));
     return `<button class="${cls}" disabled aria-busy="true">${LD('ld-s')} הסוכנים עובדים… ${pc}%</button>`}
   return `<span class="prep-wrap"><button class="${cls}" onclick="prepNow(${kind==='scan'?"'scan'":''})">${kind==='scan'?'':(ICO.spark||'')}${label}</button><button class="prep-q" aria-label="מה זה עושה?" onclick="prepHelp('${kind}')">?</button></span>`}
 function prepHelp(kind){openSheet(kind==='scan'
@@ -392,13 +393,15 @@ async function prepNow(kind){kind=kind==='scan'?'scan':'prep';
 }
 function prepBar(done){let b=$('prepBar');if(!b){b=document.createElement('div');b.id='prepBar';b.setAttribute('role','status');document.body.appendChild(b)}
   if(done){b.innerHTML=_prep&&_prep.scan?`<b>מוכן ✓</b><span>המשרות הראשונות מחכות לך במסך המשרות.</span>`:`<b>מוכן ✓</b><span>הכל עודכן. המכתבים, הסקירות וההכנה מחכים בהגשות.</span>`;b.classList.add('done');setTimeout(()=>b.remove(),6000);return}
-  const p=Math.min(92,Math.round((Date.now()-_prep.t0)/(_prep.scan?9000:2400)));
+  if(!_prep.started){const w=Date.now()-_prep.t0>5*60e3;b.innerHTML=`<b>${LD('ld-s')} ממתין שהשרת יתחיל</b><span>${w?'התור עמוס כרגע. זה יתחיל לבד, ואפשר לסגור את האפליקציה.':'בדרך כלל פחות מדקה.'}</span>`;b.classList.remove('done');return}
+  const p=Math.min(92,Math.round((Date.now()-_prep.started)/(_prep.scan?9000:2400)));
   b.innerHTML=_prep.scan?`<b>${LD('ld-s')} ${escB(N('hunter'))} מחפש לך משרות ראשונות</b><span>בדרך כלל 8 עד 15 דקות. אפשר לסגור את האפליקציה, הכל יחכה כאן.</span><i><u style="width:${p}%"></u></i>`
     :`<b>${LD('ld-s')} הסוכנים עובדים בשבילך</b><span>בדרך כלל 2 עד 4 דקות. בסיום הכל יופיע בהגשות ובמשרד.</span><i><u style="width:${p}%"></u></i>`}
 async function prepPoll(){if(!_prep)return;prepBar();
   try{const {data}=await SB.from('runs').select('plan,created_at').eq('user_id',ME.id).eq('agent','assistant').gte('created_at',_prep.at).not('plan','is',null).limit(5);
+    const st=(data||[]).find(x=>x.plan&&x.plan.prep_started);if(st&&!_prep.started){_prep.started=Date.parse(st.plan.prep_started)||Date.now();prepBar();prepRerender()}
     if((data||[]).some(x=>x.plan&&x.plan.prep_done)){clearInterval(_prep.timer);_prep=null;prepClear();await cloudLoad();if(typeof refreshApps==='function')refreshApps();prepBar(true);return}}catch(e){}
-  if(Date.now()-_prep.t0>(_prep.scan?30:9)*60e3){clearInterval(_prep.timer);_prep=null;prepClear();const b=$('prepBar');if(b)b.remove();toast('זה לוקח יותר מהרגיל. התוצאות יופיעו כשהריצה תסתיים');try{await cloudLoad();refreshApps()}catch(e){}}}
+  if(Date.now()-(_prep.started||_prep.t0)>(_prep.started?(_prep.scan?30:9):45)*60e3){clearInterval(_prep.timer);_prep=null;prepClear();const b=$('prepBar');if(b)b.remove();toast('זה לוקח יותר מהרגיל. התוצאות יופיעו כשהריצה תסתיים');try{await cloudLoad();refreshApps()}catch(e){}}}
 
 /* התראות לטלפון (Web Push). המפתח הציבורי של השרת. ריק = עוד לא הוגדר */
 const VAPID_PUB='BIJTs9qVwO1m9UMkTlwH31BdzRQcVen8aESezqiYeSad9bZuaBlyuvSmMQ6hBkLGEOUbH3NiXjyfUsmHULBhJxs';

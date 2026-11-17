@@ -83,7 +83,11 @@ function toast(msg,{undo,chips,ms=3600}={}){
   $('toasts').appendChild(el); tm=setTimeout(kill,ms);
 }
 function face(cv,idx,state){if(cv) drawFace(cv,idx,state||CAREER.agents[idx].state)}
-function logo(j){return`<span class="logo-tile" aria-hidden="true" style="background:linear-gradient(140deg,${j.c[0]},${j.c[1]})">${escB(j.ini)}</span>`}
+/* הלוגו האמיתי של החברה (מ-LinkedIn/Indeed, או סמל האתר שלה) על ריבוע לבן; אם אין או שלא נטען — ראשי תיבות בצפחה */
+function logo(j){const tile=`<span class="logo-tile" aria-hidden="true" style="background:linear-gradient(140deg,${j.c[0]},${j.c[1]})">${escB(j.ini)}</span>`;
+  const src=j.logo||(j.site?`https://www.google.com/s2/favicons?domain=${encodeURIComponent(j.site)}&sz=128`:'');
+  if(!src)return tile;
+  return `<span class="logo-tile logo-img" aria-hidden="true"><img src="${escB(src)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.parentNode.outerHTML=this.parentNode.dataset.f" onload="if(this.naturalWidth<24)this.onerror()"></span>`.replace('class="logo-tile logo-img"',`class="logo-tile logo-img" data-f="${escB(tile)}"`)}
 const pav=n=>`<span class="pav" aria-hidden="true">${escB([...n.trim()][0]||'?')}</span>`;
 const ICO={
   li:'<svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="M8 10v6M8 7.5v.01M12 16v-3.5a2 2 0 014 0V16M12 10v6"/></svg>',
@@ -334,6 +338,7 @@ function openJobInfo(id){
     <div class="s-sec"><h4>פרטים</h4><div class="kv"><span>שכר</span><b>${escB(salaryTxt(j))}</b></div><div class="kv"><span>פורסם</span><b>${escB(j.src)}, ${agoTxt(j.posted)}</b></div></div>
     ${j.url?`<a class="btn btn-ghost" style="margin-top:14px;width:100%" href="${escB(j.url)}" target="_blank" rel="noopener">למודעה המלאה ב-${escB(j.src)} ↗</a>`:''}
     ${CLOUDM?`<button class="btn btn-ghost" style="margin-top:8px;width:100%" onclick="askAboutJob('${id}')">לשאול את ${escB(N('assistant'))} על המשרה</button>`:''}
+    <div class="field" style="margin-top:14px"><label for="jNote">הערה שלך למשרה</label><input id="jNote" value="${escB((S.jnotes||{})[id]||'')}" placeholder="למשל: יש לי מכר שם, לשאול על משמרות" onchange="S.jnotes=S.jnotes||{};S.jnotes['${id}']=this.value.trim();save()"></div>
     ${inDeck?`<div class="duo" style="margin-top:20px"><button class="btn btn-ghost" onclick="closeSheet();decide('skip')">דלג</button><button class="btn btn-primary" style="flex:2" onclick="closeSheet();decide('save')">שמור</button></div>`:''}`);
 }
 

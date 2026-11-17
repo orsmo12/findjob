@@ -286,3 +286,10 @@ def test_management_title_with_my_role_word_stays():
     mech = {"domains": ["הנדסת מכונות"], "titles": ["R&D Mechanical Engineer", "Manufacturing Engineer"]}
     assert not H.off_field({"title": "R&D Project Manager"}, mech)
     assert H.off_field({"title": "Technical Project Manager"}, mech)
+
+
+def test_company_logo_and_site():
+    from agent_core.agents import hunter as H
+    assert H.logo_url("https://media.licdn.com/dms/image/x/company-logo_200_200/0?e=1") .startswith("https://media.licdn.com")
+    assert H.logo_url("http://x/logo.png") == "" and H.logo_url(None) == "" and H.logo_url(float("nan")) == ""
+    assert H.site_domain("https://www.wix.com/jobs") == "wix.com" and H.site_domain("https://il.linkedin.com/company/x") == ""

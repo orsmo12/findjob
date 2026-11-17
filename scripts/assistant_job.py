@@ -40,7 +40,9 @@ def do_kind(kind: str, row: dict, u: dict, cv: str, name: str) -> dict:
         return {"tailor": G.tailor_cv(cv, job)}
     if kind == "letter":   # v4: לולאת LangGraph עם הסקירה של גיל, "המצב שלי" והמכתבים שהמשתמש העלה
         st, a = u.get("state") or {}, u.get("answers") or {}
-        return {"letter": write_letter_v4(cv, job, name, row.get("brief"), str(a.get("now") or "")[:400],
+        note = str(((st.get("jnotes") or {}).get(job.get("id") or row.get("id")) or "")).strip()[:200]   # ההערה של המשתמש למשרה (למשל "יש לי מכר בצוות")
+        status = str(a.get("now") or "")[:400] + (f"\nTHE CANDIDATE'S OWN NOTE ABOUT THIS JOB (true, use it if it helps): {note}" if note else "")
+        return {"letter": write_letter_v4(cv, job, name, row.get("brief"), status,
                                           [str(x) for x in st.get("my_letters") or []][:3], may_reuse=True)}
     if kind == "prep":
         prep = row.get("prep") or prepare(cv, job)
@@ -220,6 +222,7 @@ if (_os.environ.get("ONLY_USER") or "").strip():
     from agent_core.agents.live import check as still_open
     import httpx as _hx
     for u in db.profiles_ready():
+        db.save_memory(u["user_id"], "assistant", {"prep_started": datetime.now(timezone.utc).isoformat()})   # האפליקציה: "רץ" ולא "ממתין בתור"
         act.start(u["user_id"])
         try:
             with _hx.Client(timeout=12, follow_redirects=True, headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/124"}) as cx:
