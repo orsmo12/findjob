@@ -4437,7 +4437,7 @@ function prepResume(){const p=S.prep;if(!p||_prep)return;
   if(Date.now()-p.t0>(p.scan?30:9)*60e3){delete S.prep;save();return}
   _prep={at:p.at,t0:p.t0,scan:p.scan};prepBar();_prep.timer=setInterval(prepPoll,15000);prepPoll()}
 function prepBtn(kind,label,cls){
-  if(_prep){if(!_prep.started)return `<button class="${cls}" disabled aria-busy="true">${LD('ld-s')} ממתין שהשרת יתחיל…</button>`;
+  if(_prep){if(!_prep.started)return `<button class="${cls}" disabled aria-busy="true">${LD('ld-s')} הבקשה לעדכון נשלחה…</button>`;
     const pc=Math.min(92,Math.round((Date.now()-_prep.started)/(_prep.scan?9000:2400)));
     return `<button class="${cls}" disabled aria-busy="true">${LD('ld-s')} הסוכנים עובדים… ${pc}%</button>`}
   return `<span class="prep-wrap"><button class="${cls}" onclick="prepNow(${kind==='scan'?"'scan'":''})">${kind==='scan'?'':(ICO.sync||'')}${label}</button><button class="prep-q" aria-label="מה זה עושה?" onclick="prepHelp('${kind}')">?</button></span>`}
@@ -4454,7 +4454,7 @@ async function prepNow(kind){kind=kind==='scan'?'scan':'prep';
 }
 function prepBar(done){let b=$('prepBar');if(!b){b=document.createElement('div');b.id='prepBar';b.setAttribute('role','status');document.body.appendChild(b)}
   if(done){b.innerHTML=_prep&&_prep.scan?`<b>מוכן ✓</b><span>המשרות הראשונות מחכות לך במסך המשרות.</span>`:`<b>מוכן ✓</b><span>הכל עודכן. המכתבים, הסקירות וההכנה מחכים בהגשות.</span>`;b.classList.add('done');setTimeout(()=>b.remove(),6000);return}
-  if(!_prep.started){const w=Date.now()-_prep.t0>5*60e3;b.innerHTML=`<b>${LD('ld-s')} ממתין שהשרת יתחיל</b><span>${w?'התור עמוס כרגע. זה יתחיל לבד, ואפשר לסגור את האפליקציה.':'בדרך כלל פחות מדקה.'}</span>`;b.classList.remove('done');return}
+  if(!_prep.started){const w=Date.now()-_prep.t0>5*60e3;b.innerHTML=`<b>${LD('ld-s')} הבקשה לעדכון נשלחה</b><span>${w?'התור עמוס כרגע. זה יתחיל לבד, ואפשר לסגור את האפליקציה.':'העדכון יתחיל בדרך כלל תוך דקה.'}</span>`;b.classList.remove('done');return}
   const p=Math.min(92,Math.round((Date.now()-_prep.started)/(_prep.scan?9000:2400)));
   b.innerHTML=_prep.scan?`<b>${LD('ld-s')} ${escB(N('hunter'))} מחפש לך משרות ראשונות</b><span>בדרך כלל 8 עד 15 דקות. אפשר לסגור את האפליקציה, הכל יחכה כאן.</span><i><u style="width:${p}%"></u></i>`
     :`<b>${LD('ld-s')} הסוכנים עובדים בשבילך</b><span>בדרך כלל 2 עד 4 דקות. בסיום הכל יופיע בהגשות ובמשרד.</span><i><u style="width:${p}%"></u></i>`}
