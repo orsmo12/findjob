@@ -1,0 +1,19 @@
+name: "dev: queue check"   # כלי מפתח: האם המשרות שמחכות בתור של משתמש עדיין פתוחות, כפולות או לא מתאימות
+on:
+  workflow_dispatch:
+    inputs:
+      idx: { description: "מספר משתמש לפי סדר הרשמה (ריק = רשימה)", default: "" }
+      apply: { description: "yes = להוריד מהתור משרות שנסגרו וכפולות", default: "no" }
+jobs:
+  check:
+    if: github.repository == 'orsmo12/findjob'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: pip install httpx
+      - run: python -u scripts/queue_check.py "${{ inputs.idx }}" "${{ inputs.apply }}"
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
