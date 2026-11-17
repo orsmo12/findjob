@@ -13,7 +13,7 @@ CHECK = r"""()=>{const out=[];const ok=(n,f)=>{try{f();out.push([n,'ok'])}catch(
   for(const p of ['main','jobs','apps','prep','linkedin','profile','settings'])ok('page:'+p,()=>goPage(p));
   for(const g of ['open','progress','waiting','closed'])ok('apps:'+g,()=>{appGrp=g;renderApps()});
   for(const t of ['details','letter','ref'])ok('app:'+t,()=>{openApp('a-j1',t);if(document.getElementById('sheetBody').innerHTML.length<200)throw new Error('empty')});
-  ok('job info',()=>openJobInfo('j1'));ok('kit help',()=>kitHelp('cv','a-j1'));
+  ok('job info',()=>openJobInfo('j1'));ok('kit help',()=>kitHelp('cv','a-j1'));ok('cv check',()=>cvCheck());
   if(typeof openDev==='function')ok('dev tools',()=>{RUNS=[{created_at:new Date().toISOString(),stats:{usage_report:{rows:[{}],feedback:[{key:'k',name:'#1',at:'x',t:'y'}],funnel:[['a',1]],errors:[['e',1]]}}},{created_at:new Date().toISOString(),stats:{job:'n',failures:[{where:'w',user:'u',error:'e'}]}}];openDev()});ok('cv preview',()=>cvPreview('j1','a-j1'));
   return out}"""
 

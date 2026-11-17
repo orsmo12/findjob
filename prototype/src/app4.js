@@ -110,6 +110,42 @@ function onCvFile(inp){
     save();afterCv()});
   inp.value='';
 }
+/* קריאת PDF לפי מיקום (XY-cut): מוצאים רווח אנכי שעובר לכל גובה האזור = עמודות, וקוראים כל עמודה מלמעלה למטה.
+   כותרת מעל עמודות נחתכת קודם. עמודה צרה (תאריכים מיושרים לצד) לא נחשבת עמודה, כדי שלא ינותקו מהשורה. */
+const CV_HEB=/[֐-׿]/g;
+function cvLines(items){
+  const it=items.filter(o=>o.s&&o.s.trim()).map(o=>({s:o.s,x0:o.x,x1:o.x+Math.max(o.w,1),y:o.y,h:Math.max(o.h||10,4)}));
+  if(!it.length)return'';
+  const heb=s=>(s.match(CV_HEB)||[]).length,rtl=heb(it.map(o=>o.s).join(''))>it.map(o=>o.s).join('').replace(/\s/g,'').length*.3;
+  const W=Math.max(...it.map(o=>o.x1))-Math.min(...it.map(o=>o.x0));
+  const nl=a=>new Set(a.map(o=>Math.round(o.y/3))).size;  // כמה שורות (עמודה אמיתית: 3 לפחות בכל צד, כדי ששורת תפקיד + תאריכים לא תתפצל)
+  /* עמודות אמיתיות ולא טבלה של שורות (תפקיד ← תאריכים): 3 שורות לפחות בכל צד, והצד הקטן לא מקביל שורה-שורה לצד השני,
+     אלא אם בשני הצדדים יש כותרות של חלקים (Skills מול Experience) */
+  const ys=a=>[...new Set(a.map(o=>Math.round(o.y)))];
+  const hd=x=>x.some(o=>/^\s*(experience|education|skills|projects|summary|languages|ניסיון|השכלה|כישורים|פרויקטים|שפות)(?![A-Za-z])/i.test(o.s));
+  const col=(a,b)=>{if(nl(a)<2||nl(b)<2)return false;if(hd(a)&&hd(b))return true;if(nl(a)<3||nl(b)<3)return false;
+    const ya=ys(a),yb=ys(b),[sm,bg]=ya.length<=yb.length?[ya,yb]:[yb,ya];return sm.filter(y=>bg.some(z=>Math.abs(z-y)<=2)).length/sm.length<.8};
+  const vcut=R=>{  // רווח אנכי לכל גובה האזור, ששני צדדיו רחבים מספיק
+    const s=[...R].sort((a,b)=>a.x0-b.x0),lo=s[0].x0,hi=Math.max(...s.map(o=>o.x1));let end=s[0].x1,best=null;
+    for(const o of s){if(o.x0-end>=8){const L=end-lo,Rw=hi-o.x0;if(L>=W*.15&&Rw>=W*.15&&col(s.filter(q=>q.x1<=end+.1),s.filter(q=>q.x0>=o.x0-.1))&&(!best||o.x0-end>best.g))best={at:(end+o.x0)/2,g:o.x0-end}}end=Math.max(end,o.x1)}
+    return best&&best.at};
+  const hgaps=R=>{  // רווחים אופקיים לכל רוחב האזור, מלמעלה למטה (y גדל למעלה ב-PDF)
+    const s=[...R].sort((a,b)=>b.y-a.y),out=[];let bot=s[0].y-s[0].h*.2;
+    for(const o of s){const top=o.y+o.h*.8;if(bot-top>=1)out.push({at:(bot+top)/2,g:bot-top});bot=Math.min(bot,o.y-o.h*.2)}return out};
+  const lines=R=>{const s=[...R].sort((a,b)=>b.y-a.y),L=[];
+    for(const o of s){const l=L[L.length-1];if(l&&Math.abs(l.y-o.y)<=Math.min(l.h,o.h)*.5)l.a.push(o);else L.push({y:o.y,h:o.h,a:[o]})}
+    return L.map(l=>{const a=l.a.sort((p,q)=>p.x0-q.x0),r=heb(a.map(o=>o.s).join(''))>0&&rtl;if(r)a.reverse();
+      let t='',prev=null;for(const o of a){if(prev&&(r?prev.x0-o.x1:o.x0-prev.x1)>1&&!t.endsWith(' ')&&!o.s.startsWith(' '))t+=' ';t+=o.s;prev=o}return t.trim()})};
+  const cut=(R,d)=>{if(d>12||R.length<2)return lines(R);
+    const v=vcut(R);if(v!=null){const a=R.filter(o=>(o.x0+o.x1)/2<v),b=R.filter(o=>(o.x0+o.x1)/2>=v);return[...cut(rtl?b:a,d+1),'',...cut(rtl?a:b,d+1)]}
+    const G=hgaps(R);
+    for(const g of G){const top=R.filter(o=>o.y>g.at),bot=R.filter(o=>o.y<g.at);  // כותרת מעל עמודות
+      if(vcut(bot)!=null||vcut(top)!=null)return[...cut(top,d+1),...cut(bot,d+1)]}
+    return lines(R)};
+  return cut(it,0).join('\n').replace(/\n{3,}/g,'\n\n').trim()}
+/* סימן לערבוב: שתי כותרות של חלקים באותה שורה */
+const CV_HEADS=/\b(experience|education|skills|projects|summary|languages|military service|certifications)\b|ניסיון|השכלה|כישורים|פרויקטים|שירות צבאי|שפות/gi;
+function cvMixed(t){return String(t||'').split('\n').filter(l=>l.length<160&&new Set((l.match(CV_HEADS)||[]).map(x=>x.toLowerCase())).size>=2).length>0}
 /* קריאת קורות חיים בדפדפן: PDF (pdf.js), Word (mammoth), טקסט. הקובץ לא נשלח לשום מקום */
 function loadScript(src){return new Promise((ok,no)=>{if(document.querySelector(`script[src="${src}"]`))return ok();const e=document.createElement('script');e.src=src;e.onload=ok;e.onerror=no;document.head.appendChild(e)})}
 async function readCv(f){try{
@@ -118,8 +154,8 @@ async function readCv(f){try{
     const base='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/';await loadScript(base+'pdf.min.js');
     pdfjsLib.GlobalWorkerOptions.workerSrc=base+'pdf.worker.min.js';
     const doc=await pdfjsLib.getDocument({data:await f.arrayBuffer()}).promise;let out='';
-    for(let i=1;i<=doc.numPages;i++){const c=await (await doc.getPage(i)).getTextContent();let y=null;
-      for(const it of c.items){const ny=it.transform[5];if(y!==null&&Math.abs(ny-y)>3)out+='\n';else if(out&&!out.endsWith(' ')&&!out.endsWith('\n'))out+=' ';out+=it.str;y=ny}out+='\n'}
+    for(let i=1;i<=doc.numPages;i++){const c=await (await doc.getPage(i)).getTextContent();
+      out+=cvLines(c.items.map(o=>({s:o.str,x:o.transform[4],y:o.transform[5],w:o.width,h:o.height||Math.abs(o.transform[3])})))+'\n\n'}
     return out.replace(/[ \t]+\n/g,'\n').replace(/\n{3,}/g,'\n\n')}
   if(/\.docx$/i.test(f.name)){await loadScript('https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js');
     return (await mammoth.extractRawText({arrayBuffer:await f.arrayBuffer()})).value}
@@ -144,7 +180,16 @@ function liHow(){openSheet(`<h3 id="sheetTitle">איך ${escB(N('linkedin'))} ק
   <ol class="how-ol"><li>בפרופיל שלך ב-LinkedIn לוחצים More (או "עוד")</li><li>בוחרים Save to PDF</li><li>כאן לוחצים ${prof().li_text?'"עדכנתי את הפרופיל"':'"להעלות את הפרופיל"'} ובוחרים את הקובץ</li></ol>
   <p class="card-sub">כל פעם שאתה משנה משהו בפרופיל, מעלים עותק חדש, ו${escB(N('linkedin'))} בודק שוב.</p>`)}
 function onLiFile(inp){const f=inp.files[0];if(!f)return;readCv(f).then(t=>{if(t&&t.trim().length>80){prof().li_text=t.slice(0,15000);save();renderProfile();toast(`${N('linkedin')} יעבור על הפרופיל בשעתיים הקרובות`)}else toast('לא הצלחתי לקרוא את הקובץ. ודא שזה ה-PDF ש-LinkedIn מייצר',{ms:4200})});inp.value=''}
-function afterCv(){if($('onb').classList.contains('open'))renderOnb();else{renderProfile();toast(S.cv_err||'קורות החיים עודכנו',{ms:S.cv_err?6000:2400})}}
+function afterCv(){const mx=!S.cv_err&&cvMixed(prof().cv);
+  if($('onb').classList.contains('open')){renderOnb();if(mx)toast('נראה שהסדר בקובץ התבלבל. אחרי ההרשמה כדאי לעבור על הטקסט בפרופיל',{ms:6000})}
+  else{renderProfile();if(S.cv_err)toast(S.cv_err,{ms:6000});else cvCheck()}}
+/* אחרי העלאה: מה הבנו מקורות החיים, כדי שטעות בקריאה תיתפס לפני שהיא מגיעה למכתבים ולהתאמות */
+function cvCheck(){const p=prof(),f=cvFacts(cvEnOr(p)),mx=cvMixed(p.cv),yrs=f.edu_start||f.edu_end?[f.edu_start,f.edu_end].filter(Boolean).join('–'):'';
+  const rows=[['שם באנגלית',f.full_en],['תואר',f.degree],['תחום',f.discipline],['מוסד',f.school],['שנות לימוד',yrs]];
+  openSheet(`<h3 id="sheetTitle">זה מה שהבנו מקורות החיים</h3><div class="sheet-sub">הסוכנים כותבים מכתבים וממלאים טפסים לפי זה</div>
+    ${mx?'<div class="kc-hint" style="margin-top:10px">נראה שהסדר בקובץ התבלבל (שני חלקים באותה שורה). כדאי לעבור על הטקסט ולתקן.</div>':''}
+    <div class="cv-facts">${rows.map(([k,v])=>`<div><b>${k}:</b> <span dir="auto">${v?esc(v):'<span class="card-sub">לא נמצא</span>'}</span></div>`).join('')}</div>
+    <div class="duo" style="margin-top:14px"><button class="btn btn-primary" onclick="closeSheet();toast('קורות החיים עודכנו')">נכון</button><button class="btn btn-ghost" onclick="editCvText()">לעבור על הטקסט</button></div>`)}
 const CV_MIN=80;   // פחות מזה זה לא קורות חיים שאפשר לעבוד איתם
 
 /* ═════════ הגדרות ═════════ */
