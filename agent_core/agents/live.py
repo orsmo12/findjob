@@ -109,8 +109,17 @@ def indeed_check(jk: str, cx: httpx.Client) -> str:
     return "closed" if (res[0].get("job") or {}).get("expired") else "open"
 
 
-def check(url: str, client: httpx.Client | None = None) -> str:
-    """'open' / 'closed' / 'unknown'."""
+# הלוגו של החברה מאותו דף של LinkedIn שכבר נטען לבדיקה (בלי בקשה נוספת). משרות ישנות נשמרו בלי לוגו
+LI_LOGO = re.compile(r'(https://media\.licdn\.com/dms/image/[^"\'\s<>]*company-logo[^"\'\s<>]*)')
+
+
+def li_logo(html: str) -> str:
+    m = LI_LOGO.search(html or "")
+    return m.group(1).replace("&amp;", "&") if m and len(m.group(1)) < 600 else ""
+
+
+def check(url: str, client: httpx.Client | None = None, meta: dict | None = None) -> str:
+    """'open' / 'closed' / 'unknown'. meta (לא חובה) מקבל "logo" כשנמצא בדף של LinkedIn."""
     if not url:
         return "unknown"
     own = client is None
@@ -129,6 +138,8 @@ def check(url: str, client: httpx.Client | None = None) -> str:
             return "closed"
         if r.status_code != 200:
             return "unknown"
+        if m and meta is not None and li_logo(r.text):
+            meta["logo"] = li_logo(r.text)
         if m and ("closed-job" in r.text or CLOSED.search(r.text)):
             return "closed"
         text = re.sub(r"<[^>]+>", " ", r.text[:400000])

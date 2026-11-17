@@ -232,9 +232,10 @@ if (_os.environ.get("ONLY_USER") or "").strip():
         try:
             with _hx.Client(timeout=12, follow_redirects=True, headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/124"}) as cx:
                 for row in db.saved_open(u["user_id"]):
-                    c, st = row["card"], still_open(row["card"].get("url", ""), cx)
+                    meta = {}
+                    c, st = row["card"], still_open(row["card"].get("url", ""), cx, meta)
                     now_iso = datetime.now(timezone.utc).isoformat()
-                    upd = {**c, "check": {"st": st, "at": now_iso, "n": 0}, **({"closed_at": now_iso} if st == "closed" else {})}
+                    upd = {**c, **({"logo": meta["logo"]} if meta.get("logo") and not c.get("logo") else {}), "check": {"st": st, "at": now_iso, "n": 0}, **({"closed_at": now_iso} if st == "closed" else {})}
                     db.update_job(u["user_id"], row["id"], {"card": upd})
                     if st == "closed":
                         db.add_run(u["user_id"], "hunter", f"בדקתי עכשיו: {c['title']} ב-{c['co']} נסגרה למועמדים. העברתי להיסטוריה.")

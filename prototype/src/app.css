@@ -321,8 +321,13 @@ body.drawer-open .burger span:nth-child(3){top:6px;transform:rotate(-45deg)}
 .app.soon{box-shadow:inset -4px 0 0 #F2C46D}
 /* צבע לכל שלב: פס בצד הכרטיס ונקודה בלשונית (משתנים, מוכנים למצב כהה) */
 :root{--st-open:#E9A825;--st-progress:#4C7BD9;--st-waiting:#9AA5B1;--st-closed:#C7CDD3}
-.row-app.g-open{box-shadow:inset -4px 0 0 var(--st-open)}.row-app.g-progress{box-shadow:inset -4px 0 0 var(--st-progress)}
-.row-app.g-waiting{box-shadow:inset -4px 0 0 var(--st-waiting)}.row-app.g-closed{box-shadow:inset -4px 0 0 var(--st-closed)}
+/* צבע לכל שלב בהגשות (18.11): פתוחות צפחה, בתהליך מנטה, ממתינות חימר, ארכיון אפור. פס דק, אותיות ותגית בגוון השלב */
+:root{--sc-open:var(--brand);--sc-progress:var(--mint);--sc-waiting:#A8794F;--sc-closed:#8A959B}
+.row-app{--sc:var(--sc-open);box-shadow:none;border:1px solid rgba(47,72,88,.08);border-radius:12px;position:relative;-webkit-backdrop-filter:none;backdrop-filter:none;background:var(--card)}
+.row-app::before{content:"";position:absolute;inset-inline-start:-1px;top:12px;bottom:12px;width:3px;border-radius:2px;background:var(--sc)}
+.row-app.g-progress{--sc:var(--sc-progress)}.row-app.g-waiting{--sc:var(--sc-waiting)}.row-app.g-closed{--sc:var(--sc-closed)}
+.row-app .logo-tile:not(.logo-img){background:color-mix(in srgb,var(--sc) 12%,var(--card))!important;color:var(--sc);box-shadow:none}
+.row-app .status{background:color-mix(in srgb,var(--sc) 11%,transparent);color:var(--sc)}
 .wk-tag{font-size:11px;font-weight:600;color:#fff;background:var(--st-progress);border-radius:99px;padding:2px 8px;white-space:nowrap}
 .arch-f{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 10px}.arch-f .chip{font-size:12px;padding:4px 10px}
 .app-group .grp-h{padding-top:8px}.app-group.g-open .grp-h{border-top:3px solid var(--st-open)}.app-group.g-progress .grp-h{border-top:3px solid var(--st-progress)}
@@ -1110,17 +1115,15 @@ a.person>svg{flex:0 0 18px;width:18px;height:18px;fill:none;stroke:var(--ink3);s
 .app-group .hist-row{background:var(--card);border:1px solid var(--glass-brd);border-radius:14px;padding:9px 12px;margin-top:8px;box-shadow:inset -4px 0 0 var(--st-closed)}
 .app-group .hist-row .tx b{color:var(--ink2)}
 @media (max-width:1023px){#seg .chip{flex:1 1 0;justify-content:center;padding-inline:6px;font-size:13px;min-width:0;white-space:nowrap}#seg{display:flex;gap:6px}}
-#seg .chip.c-open{border-bottom:3px solid var(--st-open)}#seg .chip.c-progress{border-bottom:3px solid var(--st-progress)}
-#seg .chip.c-waiting{border-bottom:3px solid var(--st-waiting)}#seg .chip.c-closed{border-bottom:3px solid var(--st-closed)}
+#seg .chip{--sc:var(--sc-open);color:var(--sc);background:color-mix(in srgb,var(--sc) 7%,var(--card))}
+#seg .chip.c-progress{--sc:var(--sc-progress)}#seg .chip.c-waiting{--sc:var(--sc-waiting)}#seg .chip.c-closed{--sc:var(--sc-closed)}
+#seg .chip.sel{background:color-mix(in srgb,var(--sc) 18%,var(--card));color:var(--sc);box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--sc) 45%,transparent);font-weight:700}#seg .chip.sel *{color:inherit}
 
 /* ═════ צבעים לפי 60-30-10 ═════
    60% ניטרלי: רקע + כרטיסים לבנים. 30% צפחה (--brand): כותרות, החלון של שי, כפתור ראשי, לשונית נבחרת.
    10% מנטה (--mint / --hi): רק מה שדורש תשומת לב עכשיו — "השבוע", נקודת התראה, שלב "בתהליך", הצעה.
    ענבר ואדום רק כמשמעות (אזהרה / דחייה), לא כקישוט. */
 :root{--st-open:var(--brand);--st-progress:var(--mint);--st-waiting:#A3AFB6;--st-closed:#CBD3D7}
-.row-app.g-open{box-shadow:inset -5px 0 0 var(--st-open)}.row-app.g-progress{box-shadow:inset -5px 0 0 var(--st-progress)}
-.row-app.g-waiting{box-shadow:inset -5px 0 0 var(--st-waiting)}.row-app.g-closed{box-shadow:inset -5px 0 0 var(--st-closed)}
-.row-app.g-progress{background:linear-gradient(270deg,var(--mint-lt),var(--card) 40%)}
 .tab-dot{background:var(--mint)}
 .wk-tag{background:var(--mint)}
 .st-saved,.st-applied,.st-ghosted,.st-withdrew,.st-closed{background:var(--pill);color:var(--ink2)}

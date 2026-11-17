@@ -293,8 +293,12 @@ for u in users:
         closed = []
         with _httpx.Client(timeout=12, follow_redirects=True, headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/124"}) as cx:
             for row in saved:
-                st = still_open(row["card"].get("url", ""), cx)
+                meta = {}
+                st = still_open(row["card"].get("url", ""), cx, meta)
                 c = row["card"]
+                if meta.get("logo") and not c.get("logo"):   # משרה ישנה בלי לוגו: נשמר מהדף שכבר נטען
+                    c = {**c, "logo": meta["logo"]}
+                    db.update_job(u["user_id"], row["id"], {"card": c})
                 act.log("hunter", f"בודק אם {c['title']} ב-{c['co']} עדיין פתוחה: "
                         + {"open": "פתוחה ✓", "closed": "נסגרה ✗", "unknown": "האתר לא ענה, משאיר אותה"}[st])
                 now_iso = datetime.now(timezone.utc).isoformat()
@@ -308,9 +312,13 @@ for u in users:
             from agent_core.agents import live as LV
             gone_q = []
             for row in (LV.stale_pending(db.all_jobs(u["user_id"], days=30), datetime.now(timezone.utc)) if MORNING and LV.QUEUE_LIVE else []):
-                if still_open(row["card"]["url"], cx) == "closed":
-                    db.update_job(u["user_id"], row["id"], {"decision": "filtered", "card": {**row["card"], "filtered_why": "המשרה נסגרה"}})
-                    gone_q.append(row["card"])
+                meta = {}
+                if still_open(row["card"]["url"], cx, meta) != "closed":
+                    if meta.get("logo") and not row["card"].get("logo"):
+                        db.update_job(u["user_id"], row["id"], {"card": {**row["card"], "logo": meta["logo"]}})
+                    continue
+                db.update_job(u["user_id"], row["id"], {"decision": "filtered", "card": {**row["card"], "filtered_why": "המשרה נסגרה"}})
+                gone_q.append(row["card"])
             if gone_q:
                 db.add_run(u["user_id"], "hunter", "הורדתי מהרשימה משרות שנסגרו לפני שהספקת לעבור עליהן: "
                            + "; ".join(f"{c['title']} ב-{c.get('co') or ''}" for c in gone_q) + ".")

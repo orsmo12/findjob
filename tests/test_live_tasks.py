@@ -77,3 +77,17 @@ def test_stale_pending_only_old_undecided_queue_jobs():
             {"id": "z", "created_at": "2026-11-10T06:00:00Z", "decision": None, "card": card}]
     assert [r["id"] for r in L.stale_pending(rows, now)] == ["old", "z"]
     assert L.QUEUE_LIVE is True
+
+
+def test_linkedin_logo_from_the_same_page():
+    """לוגו למשרות ישנות: נלקח מהדף של LinkedIn שכבר נטען לבדיקה. בלי לוגו בדף = כלום."""
+    html = '<img class="artdeco-entity-image" data-delayed-url="https://media.licdn.com/dms/image/v2/C4D0BAQ/company-logo_100_100/0/1?e=2147483647&amp;v=beta&amp;t=abc" alt="Acme"> Apply'
+    cx = httpx.Client(transport=httpx.MockTransport(lambda req: httpx.Response(200, text=html)))
+    meta = {}
+    assert L.check("https://www.linkedin.com/jobs/view/123", cx, meta) == "open"
+    assert meta["logo"].startswith("https://media.licdn.com/") and "&amp;" not in meta["logo"]
+    cx = httpx.Client(transport=httpx.MockTransport(lambda req: httpx.Response(200, text="Apply now")))
+    meta = {}
+    L.check("https://www.linkedin.com/jobs/view/123", cx, meta)
+    assert meta == {}
+    assert L.li_logo('<img src="https://evil.com/company-logo.png">') == ""
