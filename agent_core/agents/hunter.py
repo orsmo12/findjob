@@ -552,7 +552,8 @@ def req_view(r: dict) -> dict:
             "gn": bool(core) and all(_met(c) for c in core)}
 
 
-# מתג חזרה (17.11): לשלוח לדירוג רק את החלקים שקובעים התאמה. כבוי עד ש-calibrate יראה שהציונים לא זזים.
+# מתג (17.11): לשלוח לדירוג רק את החלקים שקובעים התאמה. calibrate 17.11: רק 5% פחות תווים, ההפרדה לא השתנתה (0.35),
+# 6/17 משרות זזו חצי נקודה. נשאר כבוי. TODO: לבדוק שוב רק אם המכסה תהיה צוואר בקבוק.
 AD_CORE = False
 _AD_DROP = re.compile(r"^(about (?!(the |this |our )?(role|job|position|opportunity|you|team)\b)|who we are|our (story|mission|culture|company)|why (join|work)|"
                       r"what we offer|we offer|benefits|perks|compensation( and| &) benefits|equal (employment )?opportunit|eeo|"
