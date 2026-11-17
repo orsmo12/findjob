@@ -379,7 +379,7 @@ function prepBtn(kind,label,cls){
   if(_prep){if(!_prep.started)return `<button class="${cls}" disabled aria-busy="true">${LD('ld-s')} ממתין שהשרת יתחיל…</button>`;
     const pc=Math.min(92,Math.round((Date.now()-_prep.started)/(_prep.scan?9000:2400)));
     return `<button class="${cls}" disabled aria-busy="true">${LD('ld-s')} הסוכנים עובדים… ${pc}%</button>`}
-  return `<span class="prep-wrap"><button class="${cls}" onclick="prepNow(${kind==='scan'?"'scan'":''})">${kind==='scan'?'':(ICO.spark||'')}${label}</button><button class="prep-q" aria-label="מה זה עושה?" onclick="prepHelp('${kind}')">?</button></span>`}
+  return `<span class="prep-wrap"><button class="${cls}" onclick="prepNow(${kind==='scan'?"'scan'":''})">${kind==='scan'?'':(ICO.sync||'')}${label}</button><button class="prep-q" aria-label="מה זה עושה?" onclick="prepHelp('${kind}')">?</button></span>`}
 function prepHelp(kind){openSheet(kind==='scan'
   ?`<h3 id="sheetTitle">לחפש עכשיו</h3><div class="sheet-sub">${escB(N('hunter'))} מריץ סריקה רק בשבילך, בלי לחכות לסריקה הקבועה (פעמיים ביום). בדרך כלל 8 עד 15 דקות. אפשר לסגור את האפליקציה בינתיים.</div>`
   :`<h3 id="sheetTitle">לעדכן הכל עכשיו</h3><div class="sheet-sub">הסוכנים עובדים רק בשבילך, בלי לחכות לריצה הקבועה: מכתב פנייה לכל משרה שמורה שעוד אין לה, סקירת חברה, שאלות הכנה לראיון, התאמת קורות חיים, ובדיקה שהמשרות עדיין פתוחות. בדרך כלל 2 עד 4 דקות. אפשר להפעיל פעם ב-10 דקות.</div>`)}
@@ -473,15 +473,15 @@ function openDev(){const ur=(RUNS||[]).find(x=>x.stats&&x.stats.usage_report),u=
     <div class="dev-sum"><span><b class="num">${u.rows.length}</b> משתמשים</span><span><b class="num">${u.rows.filter(r=>r.days_week).length}</b> פעילים השבוע</span><span><b class="num">${fb.filter(f=>!st[f.key]).length}</b> משובים חדשים</span><span class="${fails.length?'bad':''}"><b class="num">${fails.length}</b> ריצות עם תקלות</span></div>
     <button class="btn btn-sm btn-ghost btn-block" onclick="openUsage()">דוח שימוש מלא</button>
     ${(RUNS||[]).find(x=>x.stats&&x.stats.insights)?`<button class="btn btn-sm btn-ghost btn-block" onclick="openInsights()">תובנות שבועיות על החיפוש</button>`:''}
-    ${(u.funnel||[]).length?`<h4 class="sub-h">משפך: כמה משתמשים הגיעו לכל שלב</h4><div class="dev-fun">${u.funnel.map(([l,n])=>`<div><span>${escB(l)}</span><i style="width:${u.rows.length?Math.round(100*n/u.rows.length):0}%"></i><b class="num">${n}</b></div>`).join('')}</div>`:''}
-    ${(u.errors||[]).length?`<h4 class="sub-h">שגיאות באפליקציה אצל משתמשים</h4><ul class="dev-err">${u.errors.map(([m,n])=>`<li><b class="num">${n}×</b> <span dir="ltr">${escB(m)}</span></li>`).join('')}</ul>`:''}
-    <h4 class="sub-h">משובים ובקשות</h4>
+    ${(u.funnel||[]).length?`<details class="sub-d"><summary>משפך: כמה משתמשים הגיעו לכל שלב</summary><div class="dev-fun">${u.funnel.map(([l,n])=>`<div><span>${escB(l)}</span><i style="width:${u.rows.length?Math.round(100*n/u.rows.length):0}%"></i><b class="num">${n}</b></div>`).join('')}</div></details>`:''}
+    ${(u.errors||[]).length?`<details class="sub-d"><summary>שגיאות באפליקציה אצל משתמשים<span class="cd-s">${u.errors.length}</span></summary><table class="dev-t"><tr><th>פעמים</th><th>שגיאה</th></tr>${u.errors.map(([m,n])=>`<tr><td class="num">${n}</td><td dir="ltr">${escB(m)}</td></tr>`).join('')}</table></details>`:''}
+    <details class="sub-d"${fb.some(f=>!st[f.key])?' open':''}><summary>משובים ובקשות<span class="cd-s">${fb.filter(f=>!st[f.key]).length?fb.filter(f=>!st[f.key]).length+' חדשים':fb.length}</span></summary>
     ${fb.length?fb.map(f=>`<div class="dev-fb"><div><b>${escB(f.name)}</b> · ${escB(f.at)}</div><p>${escB(f.t)}</p>
       <label class="vh" for="fb-${escB(f.key)}">סטטוס</label><select id="fb-${escB(f.key)}" onchange="setFbStatus('${escB(f.key)}',this.value)">${Object.entries(FB_ST).map(([k,l])=>`<option value="${k}"${(st[f.key]||'')===k?' selected':''}>${l}</option>`).join('')}</select></div>`).join('')
       :'<p class="card-sub">אין משובים מהחודש האחרון.</p>'}
-    <p class="card-sub">כשמשנים סטטוס, המשתמש מקבל הודעה בסריקת הבוקר.</p>
-    <h4 class="sub-h">ריצות עם תקלות (14 ימים)</h4>
-    ${fails.length?fails.map(r=>`<div class="dev-fb"><div><b>${escB(r.stats.job||'ריצה')}</b> · ${new Date(r.created_at).toLocaleString('he-IL',{day:'numeric',month:'numeric',hour:'2-digit',minute:'2-digit'})}${r.stats.run?` · <a class="ext" href="${escB(r.stats.run)}" target="_blank" rel="noopener">ליומן</a>`:''}</div>
-      <ul>${r.stats.failures.slice(0,6).map(f=>`<li dir="auto">${escB(f.where)} · ${escB(f.user)} · <span dir="ltr">${escB(f.error)}</span></li>`).join('')}</ul></div>`).join('')
-      :'<p class="card-sub">אין תקלות. הכל רץ.</p>'}`)}
+    <p class="card-sub">כשמשנים סטטוס, המשתמש מקבל הודעה בסריקת הבוקר.</p></details>
+    <details class="sub-d"${fails.length?' open':''}><summary>ריצות עם תקלות (14 ימים)<span class="cd-s">${fails.length||'אין'}</span></summary>
+    ${fails.length?fails.map(r=>`<details class="dev-run"><summary><b>${escB(r.stats.job||'ריצה')}</b> · ${new Date(r.created_at).toLocaleString('he-IL',{day:'numeric',month:'numeric',hour:'2-digit',minute:'2-digit'})}${r.stats.run?` · <a class="ext" href="${escB(r.stats.run)}" target="_blank" rel="noopener">ליומן</a>`:''}
+      <span class="cd-s">${r.stats.failures.length} תקלות</span></summary><table class="dev-t"><tr><th>איפה</th><th>משתמש</th><th>שגיאה</th></tr>${r.stats.failures.slice(0,10).map(f=>`<tr><td dir="auto">${escB(f.where)}</td><td class="num">${escB(f.user)}</td><td dir="ltr">${escB(f.error)}</td></tr>`).join('')}</table></details>`).join('')
+      :'<p class="card-sub">אין תקלות. הכל רץ.</p>'}</details>`)}
 function setFbStatus(k,v){S.fb_status=Object.assign({},S.fb_status);if(v)S.fb_status[k]=v;else delete S.fb_status[k];save();toast('נשמר. המשתמש יקבל עדכון בבוקר')}

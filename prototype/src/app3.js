@@ -198,7 +198,7 @@ function paintAppTab(id){
   el.setAttribute('aria-labelledby','tab-'+appTab);
   if(appTab==='details'){
     const fu=followDue(a);
-    el.innerHTML=`${appHead(a,j)}${(S.jnotes||{})[a.jobId]?`<p class="j-note">📝 ${escB(S.jnotes[a.jobId])}</p>`:''}${fitFold(j,a.jobId)}${timelineHtml(a,j)}
+    el.innerHTML=`${appHead(a,j)}${(S.jnotes||{})[a.jobId]?`<p class="j-note"><b>ההערה שלך:</b> ${escB(S.jnotes[a.jobId])}</p>`:''}${fitFold(j,a.jobId)}${timelineHtml(a,j)}
       <details class="s-sec app-more"><summary>פרטים</summary><div class="s-sec" style="margin-top:12px">
         <div class="kv"><span>שלב</span><button class="status st-${a.status}" onclick="openStatus('${id}')">${STATUSES[a.status]} · שינוי</button></div>
         <div class="kv"><span>${a.status==='saved'?'נשמרה':'הוגשה'}</span><b>${agoTxt(daysSince(a.date))}</b></div>
