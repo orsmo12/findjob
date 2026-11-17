@@ -89,6 +89,7 @@ cd prototype/src && python3 build.py                             # דמו מקו
 | `shadow.yml` | הרצת ניסיון לכללים חדשים, בלי לשמור | `days` |
 | `calibrate.yml` | כיול הניקוד מול משרות שנשמרו ומשרות שדולגו | |
 | `insights.yml` | תובנות אנונימיות על כל המשתמשים | `days` |
+| `queue_check.yml` | המשרות שמחכות בתור של משתמש: פתוחות, נסגרו, כפולות, לא מתאימות (הורדה רק עם apply) | `idx`, `apply` (yes/no) |
 | `user_pause.yml` | השהיית משתמש או החזרתו | `idx`, `state` (on/off) |
 | `letters.yml`, `nightly.yml` | ריצות הסוכנים (גם בתזמון) | `user` |
 | `probe.yml`, `push_test.yml` | למה חברה לא נמצאה, התראת בדיקה | `name` |
