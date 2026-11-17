@@ -1,7 +1,7 @@
 """סבב 7: הסימנייה ממלאת ולא שולחת לעולם. בדיקה סטטית של הקוד שלה."""
 from pathlib import Path
 SRC = (Path(__file__).resolve().parents[1] / "prototype" / "src" / "app3.js").read_text(encoding="utf-8")
-BM = SRC[SRC.index("function fillBookmarklet("):SRC.index("function openFillHelp(")]
+BM = SRC[SRC.index("function fillBookmarklet("):SRC.index("function fillHow(")]
 
 
 def test_bookmarklet_never_submits():

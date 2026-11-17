@@ -1360,6 +1360,12 @@ a.row{color:inherit;text-decoration:none}
 :root:not([data-theme="light"]) :is(.rq-c:not(.no),.dims span:not(.gap)){background:var(--mint-lt);color:#BFEBD9}
 :root:not([data-theme="light"]) .rq-c.ok i{color:#7FD6B4}
 }
+/* מכתב כ-PDF (letterPrint) */
+#printRoot .lp p{margin:0 0 12px;line-height:1.55}#printRoot .lp .lp-c{color:#555;font-size:11px;margin-bottom:22px}
+/* הוספת הסימנייה בתוך כרטיס הטופס (fillHow) */
+.kc-how{margin-top:12px;padding-top:12px;border-top:1px solid var(--glass-edge)}.kc-how .tabs{margin-bottom:10px}
+.kc-how .hw{list-style:none;padding:0;margin:0 0 10px;display:grid;gap:8px;font-size:13.5px}.kc-how .hw li{display:flex;gap:10px;align-items:center}
+.kc-how .hw b{flex:none;width:22px;height:22px;border-radius:50%;background:var(--brand-lt);color:var(--brand);display:grid;place-items:center;font-size:12px}
 
 </style>
 <link rel="manifest" href="/manifest.webmanifest">
@@ -3282,18 +3288,17 @@ function kitTabHtml(a,j,id){track('kit_open');
   const enHint=needEn?`<p class="kc-hint">המודעה באנגלית וקורות החיים שלך בעברית. <button class="kc-more" onclick="closeSheet();goPage('profile')">להעלות גרסה באנגלית</button></p>`:'';
   return `<div class="kit">
     ${card('קורות חיים למשרה',ed.length?(nOn?`${nOn} מסומנות`:`${ed.length} התאמות מוצעות`):'',!!ed.length&&!nOn,enHint+cvBody,
-      `<button class="btn btn-ghost btn-sm${ed.length?(nOn?' is-on':' is-off'):''}" id="cvPdfBtn" onclick="${ed.length?`if(!((S.tailorOn||{})['${a.jobId}']||[]).length){toast('סמן לפחות התאמה אחת, והיא תיכנס ל-PDF');return}`:''}cvPreview('${a.jobId}','${id}')">${ed.length?'קובץ PDF למשרה':'PDF של קורות החיים'}</button>`,'cv')}
+      `<div class="duo"><button class="btn btn-ghost btn-sm" onclick="cvCopy('${a.jobId}')">${ICO.copy}להעתיק</button><button class="btn btn-ghost btn-sm${ed.length?(nOn?' is-on':' is-off'):''}" id="cvPdfBtn" onclick="${ed.length?`if(!((S.tailorOn||{})['${a.jobId}']||[]).length){toast('סמן לפחות התאמה אחת, והיא תיכנס ל-PDF');return}`:''}cvPreview('${a.jobId}','${id}')">${ed.length?'קובץ PDF למשרה':'PDF של קורות החיים'}</button></div>`,'cv')}
     ${card('מכתב פנייה',letter?`מוכן · ${letter.split(/\s+/).filter(Boolean).length} מילים`:'בהכנה',!letter,
       letter?`<p class="kc-pv" dir="ltr">${escB(letter.replace(/\s*\n+\s*/g,' ').slice(0,240))}</p>
         <details class="kc-det"><summary>לקרוא ולערוך</summary><label for="letterBox" class="vh">מכתב פנייה</label><textarea class="textbox letterbox ltr" dir="ltr" id="letterBox" rows="14" spellcheck="false" oninput="appOf('${id}').letter=this.value;save()">${esc(letter)}</textarea>
         ${j.letter&&!j.letter.checked?`<div class="hint-line">חלק מהמשפטים הוסרו כי לא הצלחנו לאמת אותם מול קורות החיים.</div>`:''}</details>`
       :`<p class="card-sub" style="margin:6px 0 0">${escB(N('assistant'))} מכין את המכתב. הוא יופיע כאן תוך שעתיים בערך.</p><textarea id="letterBox" hidden></textarea>`,
-      letter?`<button class="btn btn-ghost btn-sm" onclick="copyText($('letterBox').value,'המכתב הועתק');track('letter_copy')">${ICO.copy}להעתיק</button>`:'','letter')}
+      letter?`<div class="duo"><button class="btn btn-ghost btn-sm" onclick="copyText($('letterBox').value,'המכתב הועתק');track('letter_copy')">${ICO.copy}להעתיק</button><button class="btn btn-ghost btn-sm" onclick="letterPrint(this,'${a.jobId}')">קובץ PDF</button></div>`:'','letter')}
     ${card('מילוי הטופס',missing.length?`${vis.length-missing.length} מוכנים · ${missing.length} חסרים`:`${vis.length} פרטים מוכנים`,!!missing.length,
       `${missing.length?`<p class="card-sub" style="margin:6px 0 0">חסרים: ${escB(missing.map(m=>m[1]).join(', '))}. <button class="kc-more" onclick="openKitEdit()">להשלים</button></p>`:''}
        <details class="kc-det"><summary>תשובות מוכנות להעתקה</summary>${readyAnswersHtml()}</details>`,
-      `<a class="btn btn-primary btn-sm ext" href="${j.url||LI_URL+'jobs/'}" target="_blank" rel="noopener" onclick="copyText($('letterBox').value,'המכתב הועתק. הדבק אותו בשדה המכתב בטופס');track('apply_open')">לפתוח את הטופס ולמלא</a>`,'form')}
-    <p class="card-sub" style="margin-top:10px">הסימנייה ממלאת את מה שהיא מזהה ומסמנת בצהוב מה לבדוק. היא לא שולחת. <button class="kc-more" onclick="openFillHelp()">איך מוסיפים אותה</button>${CLOUDM?` · שאלה בטופס? <button class="kc-more" onclick="askAboutJob('${a.jobId}');$('chatInput').value+='בטופס ההגשה שואלים: '">${escB(N('assistant'))} בצ׳אט</button>`:''}</p>
+      `<a class="btn btn-primary btn-sm ext" href="${j.url||LI_URL+'jobs/'}" target="_blank" rel="noopener" onclick="track('apply_open')">לפתוח את הטופס ולמלא</a>`,'form')}
     <div class="s-sec">${appliedBox(a,true)}</div></div>`;
 }
 /* במשרה ששמרת: אותו פירוט התאמה כמו בהצעה (דרישות, למה מתאים, מה חסר), מקופל לשורה אחת */
@@ -3306,13 +3311,13 @@ function fitFold(j,jid){const d=j.dims||{},rq=Array.isArray(d.req)?d.req:[],met=
     <button class="kc-more" onclick="openJobInfo('${jid}')">המודעה המלאה ‹</button></details>`}
 function kitHelp(k,appId,q){const T={cv:['קורות חיים למשרה',`${escB(N('linkedin'))} מציע ניסוח וסדר למשרה הזו, רק ממה שכבר כתוב אצלך: בלי להוסיף ובלי להשמיט כלים או פרטים. מה שתסמן ייכנס ל-PDF, ואם לא תסמן כלום אפשר להוריד את קורות החיים כמו שהם.`],
   letter:['מכתב פנייה',`${escB(N('assistant'))} כותב מכתב באנגלית לכל משרה שנשמרה, רק מעובדות שבקורות החיים, במודעה ובמה שכתבת על עצמך. אפשר לערוך, ואז להעתיק ולהדביק בשדה המכתב בטופס.`],
-  form:['מילוי הטופס','"לפתוח את הטופס ולמלא" מעתיק את המכתב ופותח את המודעה. שם הסימנייה ממלאת שם, פרטי קשר, השכלה ושאלות כן/לא, ומסמנת בצהוב מה לבדוק. היא לא שולחת. בטלפון, בהגשה המהירה של LinkedIn, משתמשים ב"תשובות מוכנות להעתקה".']}[k];
+  form:['מילוי הטופס','הסימנייה ממלאת את הפרטים בטופס. אתה בודק ושולח.<br><button class="kc-more" style="color:inherit;text-decoration:underline" onclick="fillHow(this)">איך מוסיפים את הסימנייה</button>']}[k];
   /* בועה בתוך הכרטיס, בלי לצאת מערכת ההגשה. נגיעה בחוץ או שוב ב-"?" סוגרת */
   const c=q&&q.closest('.kc'),open=c&&c.querySelector('.kc-bub');document.querySelectorAll('.kc-bub').forEach(x=>x.remove());
   document.querySelectorAll('.kc-q[aria-expanded="true"]').forEach(x=>x.setAttribute('aria-expanded','false'));if(!T||!c||open)return;
   const b=document.createElement('div');b.className='kc-bub';b.setAttribute('role','tooltip');b.innerHTML=`<b>${T[0]}</b><br>${T[1]}`;c.appendChild(b);q.setAttribute('aria-expanded','true');
   const r=q.getBoundingClientRect(),cr=c.getBoundingClientRect();b.style.setProperty('--ax',Math.max(8,cr.right-r.right+r.width/2-18)+'px');
-  setTimeout(()=>document.addEventListener('click',function off(e){if(!e.target.closest('.kc-q')){b.remove();q.setAttribute('aria-expanded','false');document.removeEventListener('click',off,true)}},true))}
+  setTimeout(()=>document.addEventListener('click',function off(e){if(!e.target.closest('.kc-q,.kc-bub')){b.remove();q.setAttribute('aria-expanded','false');document.removeEventListener('click',off,true)}},true))}
 function tailorPick(jobId,x,v,appId){S.tailorOn=S.tailorOn||{};const L=new Set(S.tailorOn[jobId]||[]);v?L.add(x):L.delete(x);S.tailorOn[jobId]=[...L];save();paintAppTab(appId)}
 function tailorToggle(jobId,x,on){S.tailorOff=S.tailorOff||{};const L=new Set(S.tailorOff[jobId]||[]);on?L.delete(x):L.add(x);S.tailorOff[jobId]=[...L];save()}
 /* בלשונית הפרטים: רק קיצור. ההתאמות וה-PDF בערכת ההגשה */
@@ -3339,6 +3344,13 @@ function cvPreview(jobId,appId){const j=JOBS[jobId]||{},on=new Set(((S.tailorOn|
     <div class="cv-page" dir="${rtl?'rtl':'ltr'}">${window.__cvDoc.html}</div>
     <div class="duo"><button class="btn btn-ghost" onclick="openApp('${appId}','letter')">חזרה</button><button class="btn btn-primary" onclick="cvPrint(this)">שמירה כ-PDF</button></div>
     <p class="card-sub" style="margin-top:8px">בחלון ההדפסה בוחרים "שמירה כ-PDF". הקובץ נשמר בשם ${escB(window.__cvDoc.title)}.</p>`)}
+function cvCopy(jobId){const j=JOBS[jobId]||{},on=new Set(((S.tailorOn||{})[jobId])||[]);track('cv_copy');
+  copyText(cvWithEdits(cvFor(j),tailorEdits(j).filter((_,x)=>on.has(x))).text,on.size?'קורות החיים הועתקו, עם ההתאמות שסימנת':'קורות החיים הועתקו')}
+/* מכתב כ-PDF: שם ופרטי קשר בראש הדף, ואז המכתב. אותו מנגנון הדפסה כמו קורות החיים */
+function letterPrint(btn,jobId){const j=JOBS[jobId]||{},d=kitData(),t=($('letterBox')||{}).value||'';if(!t.trim())return;track('letter_pdf');
+  const head=[d.email,d.phone,d.linkedin].filter(Boolean).map(escB).join(' · ');
+  window.__cvDoc={html:`<div class="lp"><h1>${escB(d.full||prof().name||'')}</h1>${head?`<p class="lp-c">${head}</p>`:''}${t.split(/\n\s*\n/).map(x=>`<p>${escB(x.trim()).replace(/\n/g,'<br>')}</p>`).join('')}</div>`,
+    rtl:/[\u0590-\u05FF]/.test(t.slice(0,200)),title:`${d.full||prof().name||''} - Cover Letter - ${j.co||''}`.trim()};cvPrint(btn)}
 function cvPrint(btn){const d=window.__cvDoc;if(!d)return;btnBusy(btn,true);
   let r=$('printRoot');if(!r){r=document.createElement('div');r.id='printRoot';document.body.appendChild(r)}
   r.dir=d.rtl?'rtl':'ltr';r.innerHTML=d.html;const t0=document.title;document.title=d.title;   // שם הקובץ ב-PDF
@@ -3367,7 +3379,7 @@ function openKitEdit(){const k=kitOf(prof()),f=(id,l,v,ph,t)=>`<div class="field
 function saveKit(){track('profile_kit');const p=prof();p.ans=p.ans||{};p.ans.kit={email:$('kEmail').value.trim(),phone:$('kPhone').value.trim(),city:$('kCity').value.trim(),
   site:$('kSite').value.trim(),edu:$('kEdu').value.trim(),auth:$('kAuth').value,bonus:$('kBonus').value};save();closeSheet();if(curPg==='profile')renderProfile();toast('הפרטים נשמרו')}
 
-/* הסימנייה: קוד שרץ בדף הטופס. הפרטים הקבועים בתוכה. המכתב נלקח מהלוח (אחרי "להעתיק את המכתב") */
+/* הסימנייה: קוד שרץ בדף הטופס. הפרטים הקבועים בתוכה. אם המשתמש העתיק את המכתב מהכרטיס שלו, היא מדביקה אותו בשדה המכתב */
 function fillBookmarklet(){
   const D=JSON.stringify(kitData());
   const src=`(async()=>{const D=${D},H=k=>D['h_'+k]||'';
@@ -3421,14 +3433,16 @@ else if(e.required||e.getAttribute('aria-required')==='true'){mark(e,Y);y++}}
 const b=document.createElement('div');b.dir='rtl';b.style.cssText='position:fixed;z-index:2147483647;top:12px;left:12px;right:12px;max-width:420px;margin:auto;background:#2F4858;color:#fff;font:15px/1.5 system-ui,sans-serif;padding:12px 16px;border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.3)';
 b.textContent='findjob מילא '+n+' שדות. '+(y?y+' מסומנים בצהוב: כדאי לבדוק (קובץ קורות חיים, בחירות, מכתב). ':'')+'בדוק הכל ושלח בעצמך. findjob לא שולח.';b.onclick=()=>b.remove();document.body.appendChild(b);setTimeout(()=>b.remove(),12000)})()`;
   return 'javascript:'+encodeURIComponent(src)}
-function openFillHelp(){track('fill_help');const href=fillBookmarklet();
-  openSheet(`<h3 id="sheetTitle">הסימנייה "findjob · מילוי"</h3><div class="sheet-sub">מוסיפים פעם אחת. אחרי שמשנים פרטים בפרופיל, כדאי להוסיף מחדש.</div>
-    <h4 class="sub-h">במחשב</h4><p class="card-sub">גוררים את הכפתור הזה לסרגל הסימניות:</p>
-    <a class="btn btn-primary btn-block" href="${href}" onclick="event.preventDefault();toast('צריך לגרור אותו לסרגל הסימניות')">findjob · מילוי</a>
-    <h4 class="sub-h">בטלפון</h4><ol class="how-ol"><li>להעתיק את הקוד בכפתור למטה</li><li>להוסיף לסימניות דף כלשהו, ולערוך את הסימנייה: שם "findjob מילוי", ובכתובת להדביק את הקוד</li>
-      <li>אנדרואיד (Chrome): בדף הטופס מקלידים בשורת הכתובת "findjob מילוי" ובוחרים את הסימנייה. אייפון (Safari): פותחים את הסימניות ולוחצים עליה</li></ol>
-    <button class="btn btn-ghost btn-block" onclick="copyText(${escB(JSON.stringify(href))},'הקוד הועתק')">${ICO.copy}להעתיק את הקוד</button>
-    <p class="card-sub" style="margin-top:8px">הסימנייה עובדת עם Greenhouse, Lever, Comeet, Workday ורוב הטפסים הרגילים. יש אתרים שחוסמים סימניות כאלה, ושם ממלאים ידנית.</p>`)}
+/* הוספת הסימנייה: נפתח בתוך כרטיס הטופס, בלי לצאת מערכת ההגשה */
+function fillHow(el,dev){track('fill_help');const c=(el&&el.closest('.kc'))||[...document.querySelectorAll('.kc')].pop();if(!c)return;
+  let w=c.querySelector('.kc-how');if(w&&dev===undefined){w.remove();return}document.querySelectorAll('.kc-bub').forEach(x=>x.remove());document.querySelectorAll('.kc-q[aria-expanded="true"]').forEach(x=>x.setAttribute('aria-expanded','false'));
+  const pc=dev!=='pc',href=fillBookmarklet();if(!w){w=document.createElement('div');w.className='kc-how';c.appendChild(w)}
+  w.innerHTML=`<div class="tabs mini" role="tablist"><button role="tab" aria-selected="${pc}" onclick="fillHow(this,'ph')">טלפון</button><button role="tab" aria-selected="${!pc}" onclick="fillHow(this,'pc')">מחשב</button></div>
+    ${pc?`<ol class="hw"><li><b>1</b>להעתיק את הקוד</li><li><b>2</b>לשמור סימנייה ולהדביק את הקוד בכתובת</li><li><b>3</b>בטופס: להקליד "findjob" בשורת הכתובת</li></ol>
+      <button class="btn btn-primary btn-sm btn-block" onclick="copyText(${escB(JSON.stringify(href))},'הקוד הועתק')">${ICO.copy}להעתיק את הקוד</button>`
+    :`<ol class="hw"><li><b>1</b>לגרור את הכפתור לסרגל הסימניות</li><li><b>2</b>בטופס: ללחוץ עליו</li></ol>
+      <a class="btn btn-primary btn-sm btn-block" href="${href}" onclick="event.preventDefault();toast('צריך לגרור אותו לסרגל הסימניות')">findjob · מילוי</a>`}`;
+  if(dev===undefined)w.scrollIntoView({behavior:'smooth',block:'nearest'})}
 
 /* ═════════ ONBOARDING ═════════ */
 let onbStep=0, onbDraft=null, onbSingle=false;
