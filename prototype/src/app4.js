@@ -20,13 +20,13 @@ function renderProfile(){
   const p=prof(),a=ans(),{done,total}=qProgress(),applied=S.apps.filter(x=>x.status!=='saved').length,ivs=S.apps.filter(x=>['interview','offer'].includes(x.status)).length,learned=learnedChips();
   const L={'בכירה מדי':'פחות משרות בכירות','מיקום':'משרות קרובות יותר','טכנולוגיה':'טכנולוגיות שמתאימות לך','לא מעניין אותי':'פחות תפקידים מהסוג שדילגת'};
   $('profScroll').innerHTML=`
-    <div class="p-hero glass"><div class="avatar" aria-hidden="true">${escB(initials(p.first||p.name))}</div><h2 class="p-name">${escB(p.name)}</h2><div class="p-goal">${escB(goalTxt())}</div><button class="btn btn-sm btn-ghost" style="margin-top:12px" onclick="editMe()">עריכת שם</button>
-      <div class="p-stats"><div><b class="num">${Object.keys(S.decisions).length}</b><span>משרות שסקרת</span></div><div><b class="num">${applied}</b><span>הגשות</span></div><div><b class="num">${ivs}</b><span>ראיונות</span></div></div></div>
+    <div class="p-hero glass"><div class="ph-top"><div class="avatar" aria-hidden="true">${escB(initials(p.first||p.name))}</div><div class="ph-id"><h2 class="p-name">${escB(p.name||'השם שלך')}</h2><span dir="auto">${escB(goalTxt())}</span></div><button class="ph-edit" aria-label="עריכת שם" onclick="editMe()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z"/></svg></button></div>
+      ${knowHtml()}</div>
 
     <section class="card glass" aria-labelledby="seekH"><h2 class="card-h" id="seekH">מה אני מחפש</h2>
       ${typeof suggestionsHtml==='function'?suggestionsHtml():''}
       ${seekRows()}
-      ${done<total?`<div class="quota-bar" style="margin:10px 0 6px" aria-hidden="true"><div class="quota-fill" style="width:${Math.round(done/total*100)}%;background:var(--brand)"></div></div><button class="btn btn-sm btn-primary btn-block" onclick="openQuestions()">להשלים את השאלון (${done} מתוך ${total})</button>`:''}
+      ${done<total?`<button class="btn btn-sm btn-ghost btn-block" style="margin-top:10px" onclick="openQuestions()">להשלים את השאלון (${done} מתוך ${total})</button>`:''}
       <details class="sub-d"${S.planOpen?' open':''} ontoggle="S.planOpen=this.open"><summary>איך ${escB(N('strategist'))} מחפש בשבילך${planAlert()}<span class="cd-s">${planTags().slice(-1)}</span></summary>
       <div class="card-sub">${escB(N('strategist'))} בנה את זה מקורות החיים ומהתשובות שלך, ומעדכן בכל שינוי.</div>
       <ul class="plan-list">${planWhy().map(w=>`<li>${escB(w)}</li>`).join('')}</ul>
@@ -48,7 +48,7 @@ function renderProfile(){
       ${(S.targets&&(S.targets.added.length||S.targets.removed.length))?`<button class="link" style="font-size:13px;color:var(--brand);margin-top:8px" onclick="S.targets={added:[],removed:[]};save();renderProfile()">להחזיר לבחירה של ${escB(N('strategist'))}</button>`:''}</details></details></section>
 </section>
 
-    <section class="card glass" data-fold="docH"><details class="card-d"${!(p.cv||p.cvName)?' open':''}><summary><h2 class="card-h" id="docH">המסמכים שלי</h2><span class="cd-s">${escB(p.cv||p.cvName?'קורות חיים ✓':'חסרים קורות חיים')}</span></summary>
+    <section class="card glass" data-fold="docH"><details class="card-d"${!(p.cv||p.cvName)?' open':''}><summary><h2 class="card-h" id="docH">המסמכים שלי</h2><span class="cd-s">${escB(!(p.cv||p.cvName)?'חסרים קורות חיים':isHeb(p.cv||'')&&!(p.ans||{}).cv_en?'חסר: באנגלית':'קורות חיים ✓')}</span></summary>
       <div class="row"><span class="ri">${ROW_IC.doc}</span><span class="rl"><b>${escB(p.cvName||(p.cv?'הודבקו כטקסט':'עוד לא הועלו'))}</b><span>${p.cv||p.cvName?'כל הסוכנים עובדים לפיהם':'בלעדיהם הסוכנים לא יכולים להתאים לך משרות'}</span></span>${p.cv||p.cvName?'<span class="pill-ok">פעיל</span>':'<span class="pill-warn">חסר</span>'}</div>
       <div class="duo"><label for="cvFile" class="btn btn-sm btn-ghost">${p.cvName?'להחליף קובץ':'להעלות קובץ'}</label><button class="btn btn-sm btn-ghost" onclick="editCvText()">לערוך כטקסט</button></div>
       ${CLOUDM&&domainOf(ans())!=='פיתוח תוכנה'?`<div class="field" style="margin-top:12px"><label for="pfIn">קישור לתיק עבודות או לפרויקטים</label><div style="display:flex;gap:8px"><input id="pfIn" class="ltr" type="url" placeholder="https://" value="${escB(kitOf(p).site||'')}" autocomplete="off"><button class="btn btn-sm btn-ghost" onclick="savePortfolio()">שמירה</button></div><div class="help">נכנס לטפסי הגשה ולמכתבים. ב${escB(domainOf(ans()))} תיק עבודות שווה יותר מ-GitHub.</div></div>`:''}
@@ -78,6 +78,19 @@ function renderProfile(){
 }
 function renameAgent(key,v){v=v.trim();const i=CAREER.agents.findIndex(a=>a.key===key);
   if(!v||v===TEAM_DEFAULT[i].name){delete S.team[key]}else S.team[key]=v;save();applyTeam();syncChrome();renderProfile();toast(`נשמר: ${N(key)}, ${AG(key).role}`)}
+/* כמה הסוכנים מכירים אותך: כל מקור שהסוכנים משתמשים בו, לפי משקל. מקור שלא קיים בגרסה (בלי ענן) לא נספר */
+function knowParts(){const p=prof(),a=ans(),{done,total}=qProgress(),d=kitData(),kf=['phone','email','city','edu','auth'],kv=kf.filter(k=>d[k]).length,
+  docs="knowOpen('docH')",P=[['השאלון',40,total?done/total:1,"openQuestions()"],['קורות חיים',25,(p.cv||'').trim().length>=CV_MIN?1:0,docs],
+   ['קורות חיים באנגלית',10,p.cv&&!isHeb(p.cv)||(p.ans||{}).cv_en?1:0,docs],['פרטים לטפסי הגשה',10,kv/kf.length,"openKitEdit()"]];
+  if(CLOUDM)P.push(['מצבי הנוכחי',5,(a.now||'').trim()?1:0,"openLetterPrefs()"],['LinkedIn',5,a.linkedin||p.li_text?1:0,docs],['מכתבים שכתבת',5,(S.my_letters||[]).length?1:0,"openLetterPrefs()"]);
+  return P}
+function knowPct(P){const w=P.reduce((s,x)=>s+x[1],0);return Math.round(100*P.reduce((s,x)=>s+x[1]*x[2],0)/w)}
+function knowHtml(){const P=knowParts(),pct=knowPct(P),w=P.reduce((s,x)=>s+x[1],0),nx=P.filter(x=>x[2]<1).sort((x,y)=>y[1]*(1-y[2])-x[1]*(1-x[2]))[0];
+  return`<div class="know"><div class="know-h"><b>כמה הסוכנים מכירים אותך</b><span class="num">${pct}%</span></div>
+    <div class="quota-bar" aria-hidden="true"><div class="quota-fill" style="width:${pct}%;background:var(--brand)"></div></div>
+    ${nx?`<button class="know-next" onclick="${nx[3]}"><span class="kn-dot" aria-hidden="true"></span><span class="kn-t">הכי שווה עכשיו: <b>${nx[0]}</b></span><span class="num kn-p" dir="ltr">+${Math.max(1,Math.round(100*nx[1]*(1-nx[2])/w))}%</span></button>`
+      :'<div class="card-sub" style="margin:8px 0 0">יש לסוכנים את כל מה שהם צריכים ✓</div>'}</div>`}
+function knowOpen(id){const c=document.querySelector(`[data-fold="${id}"]`);if(!c)return;const d=c.querySelector('details');if(d)d.open=true;c.scrollIntoView({behavior:'smooth',block:'start'})}
 function editMe(){const p=prof();openSheet(`<h3 id="sheetTitle">השם שלך</h3><div class="sheet-sub">כך נפנה אליך באפליקציה ובמכתבים</div>
   <div class="field" style="margin-top:14px"><label for="meFirst">איך לקרוא לך</label><input id="meFirst" value="${escB(p.first)}" maxlength="20"></div>
   <div class="field"><label for="meFull">שם מלא, כמו במכתבים</label><input id="meFull" value="${escB(p.name)}" maxlength="40"></div>
