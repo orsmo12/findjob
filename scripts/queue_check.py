@@ -6,6 +6,7 @@ apply=yes: משרות שנסגרו או כפולות יורדות מהתור (de
   python scripts/queue_check.py [idx] [apply]
 """
 from __future__ import annotations
+import re
 import sys
 from pathlib import Path
 
@@ -48,6 +49,14 @@ def main(idx: str = "", apply: bool = False):
         if why:
             out["unfit"].append((r, f"{name} — {why}"))
         st = live.check(c.get("url") or "", cx)
+        if st == "unknown":   # למה לא ידוע: האתר והקוד שהחזיר (בלי הכתובת המלאה)
+            u_ = c.get("url") or ""
+            m = re.search(r"linkedin\.com/jobs/view/(?:[^/?#]*-)?(\d+)", u_)
+            try:
+                code = cx.get(f"https://www.linkedin.com/jobs-guest/jobs/api/jobPosting/{m.group(1)}" if m else u_).status_code if u_ else "אין קישור"
+            except httpx.HTTPError as e:
+                code = type(e).__name__
+            name += f" [{(re.search(r'//([^/]+)', u_) or [None, '?'])[1]} {code}]"
         out[st].append((r, name))
     print(f"משתמש #{idx}: {len(rows)} מחכות | פתוחות {len(out['open'])} · נסגרו {len(out['closed'])} · לא ידוע {len(out['unknown'])}"
           f" · כפולות {len(out['dup'])} · לא מתאימות {len(out['unfit'])}")
