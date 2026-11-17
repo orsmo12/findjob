@@ -1,4 +1,6 @@
-document.documentElement.setAttribute('data-theme','light');
+/* ערכת צבעים: בהיר (ברירת מחדל) / כהה / לפי המכשיר. נשמר במכשיר, נקבע לפני הציור הראשון */
+(()=>{let t='light';try{t=localStorage.getItem('fj_theme')||'light'}catch(e){}if(t==='auto')document.documentElement.removeAttribute('data-theme');else document.documentElement.setAttribute('data-theme',t)})();
+function setTheme(t){try{localStorage.setItem('fj_theme',t)}catch(e){}if(t==='auto')document.documentElement.removeAttribute('data-theme');else document.documentElement.setAttribute('data-theme',t);if(typeof renderSettings==='function'&&curPg==='settings')renderSettings()}
 
 /* ═════════ helpers ═════════ */
 const $=id=>document.getElementById(id);

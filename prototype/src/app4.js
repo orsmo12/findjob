@@ -162,6 +162,8 @@ function renderSettings(){
       <div class="card-sub" style="margin-top:6px">בתוך האפליקציה: מספר על התפריט ובכותרת הלשונית כשיש משרות חדשות.</div></section>
 
     <section class="card glass" aria-labelledby="gnH"><h2 class="card-h" id="gnH">כללי</h2>
+      ${(()=>{let t='light';try{t=localStorage.getItem('fj_theme')||'light'}catch(e){}return `<div class="row" style="flex-wrap:wrap"><span class="rl"><b>מראה</b><span>כהה נוח בערב. "לפי המכשיר" מתחלף לבד</span></span>
+        <div class="tabs mini" role="radiogroup" aria-label="מראה" style="width:100%;margin:8px 0 0">${[['light','בהיר'],['dark','כהה'],['auto','לפי המכשיר']].map(([k,l])=>`<button role="radio" aria-checked="${t===k}" onclick="setTheme('${k}')">${l}</button>`).join('')}</div></div>`})()}
       <div class="row"><span class="ri">${ROW_IC.globe}</span><span class="rl"><b>שפה</b><span>עברית</span></span></div>
       <button class="row" onclick="openOnb(0)"><span class="ri">${ROW_IC.replay}</span><span class="rl"><b>להתחיל את ההיכרות מחדש</b><span>קורות חיים, שאלון וחיבור</span></span><span class="chev" aria-hidden="true"></span></button>
       <a class="row ext" href="/privacy.html" target="_blank" rel="noopener"><span class="ri">${ROW_IC.globe}</span><span class="rl"><b>פרטיות</b><span>מה נשמר, למה, ואיך מוחקים</span></span><span class="chev" aria-hidden="true"></span></a>
