@@ -58,9 +58,11 @@ function renderProfile(){
       ${typeof cvSuggestHtml==='function'?cvSuggestHtml():''}
       ${CLOUDM?`<details class="sub-d"><summary>LinkedIn<span class="cd-s">${escB((p.ans||{}).linkedin?'קישור נשמר ✓':'אין קישור')}</span></summary>
       <div class="field"><label for="liUrl">הקישור לפרופיל שלך</label><div style="display:flex;gap:8px"><input id="liUrl" class="ltr" type="url" placeholder="https://www.linkedin.com/in/…" value="${escB((p.ans||{}).linkedin||'')}" autocomplete="off"><button class="btn btn-sm btn-ghost" onclick="saveLinkedin()">שמירה</button></div></div>
-      <div class="card-sub" style="margin-top:10px">${p.li_text?`${escB(N('linkedin'))} בודק את הפרופיל, והשיפורים במסך LinkedIn.`:`${escB(N('linkedin'))} יציע שיפורים לפרופיל אחרי שתעלה אותו.`} <button class="link" style="color:var(--brand);font-weight:600" onclick="liHow()">איך?</button></div>
-      <label for="liFile" class="btn btn-sm ${p.li_text?'btn-ghost':'btn-primary'} btn-block">${p.li_text?'עדכנתי את הפרופיל':'להעלות את הפרופיל'}</label>
-      <input type="file" id="liFile" class="vh" accept=".pdf,application/pdf" onchange="onLiFile(this)"></details>`:''}</details></section>
+       <div class="card-sub" style="margin-top:6px">הקישור נכנס לטפסים ולמכתבים.</div>
+       <details class="sub-d"${p.li_text?'':''}><summary>ניתוח הפרופיל (לא חובה)<span class="cd-s">${p.li_text?'הועלה ✓':''}</span></summary>
+       <div class="card-sub">LinkedIn לא מאפשר לקרוא פרופיל מקישור. כדי ש${escB(N('linkedin'))} יציע שיפורים, מעלים עותק PDF של הפרופיל. <button class="link" style="color:var(--brand);font-weight:600" onclick="liHow()">איך?</button></div>
+      <label for="liFile" class="btn btn-sm btn-ghost btn-block">${p.li_text?'עדכנתי את הפרופיל':'להעלות PDF של הפרופיל'}</label>
+      <input type="file" id="liFile" class="vh" accept=".pdf,application/pdf" onchange="onLiFile(this)"></details></details>`:''}</details></section>
 
     <section class="card glass" aria-labelledby="forH"><h2 class="card-h" id="forH">להגשות ולמכתבים</h2>
       ${(()=>{const d=kitData(),m=['phone','email','city','edu','auth'].filter(k=>!d[k]).length;return `<button class="row" onclick="openKitEdit()"><span class="ri">${ROW_IC.doc}</span><span class="rl"><small class="rlab">פרטים לטפסי הגשה</small><b>${m?`חסרים ${m} פרטים`:'מוכן ✓'}</b><span>טלפון, מייל, עיר, השכלה, אישור עבודה. הטופס מתמלא מהם</span></span><span class="chev" aria-hidden="true"></span></button>`})()}

@@ -2903,6 +2903,7 @@ function renderLinkedInInner(){
     <div class="sec-h"><h2>הפוסט של השבוע</h2><span>${L.posts?'פורסם ✓':'טיוטה'}</span></div>
     <section class="card-solid"><label for="postDraft" class="vh">טיוטת פוסט</label><textarea class="textbox" id="postDraft" rows="10" oninput="S.li.postText=this.value;save()">${esc(L.postText||POST_DRAFT)}</textarea>
       <div class="duo"><button class="btn btn-ghost" onclick="copyText($('postDraft').value,'הפוסט הועתק')">${ICO.copy}העתק</button><a class="btn btn-primary ext" href="${LI_URL}feed/" target="_blank" rel="noopener" onclick="copyText($('postDraft').value,'הפוסט הועתק. הדבק אותו בפוסט חדש')">פתח את LinkedIn${ICO.open}</a></div>
+      <p class="card-sub" style="margin:8px 0 0">כדאי לפרסם ביום עבודה, בבוקר. השורה הראשונה היא מה שרואים לפני "עוד", אז היא צריכה לבד להסביר על מה הפוסט. findjob לא מפרסם ולא מגיב בשמך.</p>
       <div class="done-row" style="margin-top:10px"><span>פרסמת?</span><button class="mark" onclick="S.li.posts=S.li.posts?0:1;save();renderLinkedIn();syncChrome()">${L.posts?'בטל סימון':'פרסמתי ✓'}</button></div></section>`;
 }
 function postCard(p){
@@ -3709,9 +3710,11 @@ function renderProfile(){
       ${typeof cvSuggestHtml==='function'?cvSuggestHtml():''}
       ${CLOUDM?`<details class="sub-d"><summary>LinkedIn<span class="cd-s">${escB((p.ans||{}).linkedin?'קישור נשמר ✓':'אין קישור')}</span></summary>
       <div class="field"><label for="liUrl">הקישור לפרופיל שלך</label><div style="display:flex;gap:8px"><input id="liUrl" class="ltr" type="url" placeholder="https://www.linkedin.com/in/…" value="${escB((p.ans||{}).linkedin||'')}" autocomplete="off"><button class="btn btn-sm btn-ghost" onclick="saveLinkedin()">שמירה</button></div></div>
-      <div class="card-sub" style="margin-top:10px">${p.li_text?`${escB(N('linkedin'))} בודק את הפרופיל, והשיפורים במסך LinkedIn.`:`${escB(N('linkedin'))} יציע שיפורים לפרופיל אחרי שתעלה אותו.`} <button class="link" style="color:var(--brand);font-weight:600" onclick="liHow()">איך?</button></div>
-      <label for="liFile" class="btn btn-sm ${p.li_text?'btn-ghost':'btn-primary'} btn-block">${p.li_text?'עדכנתי את הפרופיל':'להעלות את הפרופיל'}</label>
-      <input type="file" id="liFile" class="vh" accept=".pdf,application/pdf" onchange="onLiFile(this)"></details>`:''}</details></section>
+       <div class="card-sub" style="margin-top:6px">הקישור נכנס לטפסים ולמכתבים.</div>
+       <details class="sub-d"${p.li_text?'':''}><summary>ניתוח הפרופיל (לא חובה)<span class="cd-s">${p.li_text?'הועלה ✓':''}</span></summary>
+       <div class="card-sub">LinkedIn לא מאפשר לקרוא פרופיל מקישור. כדי ש${escB(N('linkedin'))} יציע שיפורים, מעלים עותק PDF של הפרופיל. <button class="link" style="color:var(--brand);font-weight:600" onclick="liHow()">איך?</button></div>
+      <label for="liFile" class="btn btn-sm btn-ghost btn-block">${p.li_text?'עדכנתי את הפרופיל':'להעלות PDF של הפרופיל'}</label>
+      <input type="file" id="liFile" class="vh" accept=".pdf,application/pdf" onchange="onLiFile(this)"></details></details>`:''}</details></section>
 
     <section class="card glass" aria-labelledby="forH"><h2 class="card-h" id="forH">להגשות ולמכתבים</h2>
       ${(()=>{const d=kitData(),m=['phone','email','city','edu','auth'].filter(k=>!d[k]).length;return `<button class="row" onclick="openKitEdit()"><span class="ri">${ROW_IC.doc}</span><span class="rl"><small class="rlab">פרטים לטפסי הגשה</small><b>${m?`חסרים ${m} פרטים`:'מוכן ✓'}</b><span>טלפון, מייל, עיר, השכלה, אישור עבודה. הטופס מתמלא מהם</span></span><span class="chev" aria-hidden="true"></span></button>`})()}

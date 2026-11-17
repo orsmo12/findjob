@@ -96,8 +96,9 @@ POST by {author}:
 CANDIDATE CV:
 {cv}
 
-Decide if the post is relevant for a junior/student developer looking for work in Israel (hiring, career advice, tech in Israel).
-Write 2 comment options in the SAME language as the post (Hebrew or English), each 1-3 sentences, natural, no hashtags, no "Great post!" openers:
+Decide if the post is relevant for this candidate: {who}, looking for work in Israel (hiring, career advice, their field in Israel).
+Write 2 comment options in the SAME language as the post (Hebrew or English), each 1-3 sentences, natural, no hashtags, no emoji,
+no "Great post!" / "Thanks for sharing" openers, no em dashes, none of these words: passionate, leverage, delve, game-changer, excited to share:
  - "ניסיון אישי": relates one concrete thing from the CV to the post
  - "שאלה": a genuine question that adds to the discussion
 Use ONLY facts from the CV. Return JSON only:
@@ -111,11 +112,12 @@ def hot_posts(plan: dict, cv: str, limit: int = 5) -> list[dict]:
         if len(out) >= limit or len(p["text"]) < 60:
             continue
         d = _json(chat("linkedin", "comment_drafts", [{"role": "user", "content": POST_PROMPT.format(
-            author=p["author"], text=p["text"], cv=cv[:3000])}], tier="write", max_tokens=1200))
+            author=p["author"], text=p["text"], cv=cv[:3000], who=who(plan))}], tier="write", max_tokens=1200))
         if not d.get("relevant"):
             act.log("linkedin", f"פוסט של {p['author']}: לא רלוונטי לחיפוש שלך. מדלג.")
             continue
-        drafts = [x for x in (d.get("drafts") or [])[:2] if grounded(str(x.get("t", "")), cv + " " + p["text"] + " " + p["author"])]
+        drafts = [{**x, "t": unslop(str(x.get("t", "")))} for x in (d.get("drafts") or [])[:2]
+                  if grounded(str(x.get("t", "")), cv + " " + p["text"] + " " + p["author"]) and not slop_in(str(x.get("t", "")))]
         if drafts:
             act.log("linkedin", f"פוסט של {p['author']}: {str(d.get('why', ''))[:60]}. הכנתי {len(drafts)} הצעות תגובה.")
             out.append({**p, "why": str(d.get("why", ""))[:90], "lang": "he" if d.get("lang") == "he" else "en",
@@ -124,18 +126,53 @@ def hot_posts(plan: dict, cv: str, limit: int = 5) -> list[dict]:
 
 
 # ── קובי: טיוטת פוסט שבועית ───────────────────────────────────────────────────
-DRAFT_PROMPT = """Write a short LinkedIn post (60-110 words) in Hebrew for this candidate, "building in public" style,
-about ONE project from the CV: what it does, one real challenge, one lesson, and end with a question to readers.
-Keep technology names in English. Use ONLY facts written in the CV. No hashtags spam (max 2). Output only the post.
+DRAFT_PROMPT = """Write a short LinkedIn post (60-110 words) in Hebrew for this candidate ({who}), "building in public" style,
+about ONE project or experience from the CV: what it does, one real challenge, one lesson, and end with a question to readers.
+The FIRST LINE is the hook and must be one of: a concrete number or result from the CV, a short problem statement, or a lesson
+said plainly. Never open with "I'm excited/proud to share", "שמח לשתף", an emoji or a question.
+Keep technology names in English. Use ONLY facts written in the CV. No emoji, no em dashes, at most 2 hashtags at the end.
+Output only the post.
 
 CV:
 {cv}"""
+LI_UNSLOP = True   # מתג חזרה (17.11): בלי ניסוחי AI בפוסטים ובתגובות
 
 
-def weekly_draft(cv: str) -> str:
+def who(plan: dict | None) -> str:
+    """מי המועמד, לפי השאלון (ולא "ג'וניור מפתח" לכולם — סטודנט מכונות קיבל ניסוח של מפתח)."""
+    p = plan or {}
+    roles = ", ".join((p.get("titles") or [])[:3]) or "a job seeker"
+    dom = ", ".join(p.get("domains") or [p.get("domain") or ""]).strip(", ")
+    return f"{roles}{' in ' + dom if dom else ''}"
+
+
+def slop_in(t: str) -> list[str]:
+    from agent_core.agents.letter_graph import SLOP
+    low = t.lower()
+    bad = [x for x in SLOP + ["excited to share", "proud to share", "שמח לשתף", "גאה לשתף", "thanks for sharing", "great post"] if x in low]
+    return bad if LI_UNSLOP else []
+
+
+def unslop(t: str) -> str:
+    """ניקוי מכני: מקפים ארוכים לפסיק, בלי אימוג'י, בלי רווחים כפולים."""
+    if not LI_UNSLOP:
+        return t
+    t = re.sub(r"\s*[—–]\s*", ", ", t)
+    t = re.sub(r"[\U0001F300-\U0001FAFF\u2600-\u27BF]", "", t)
+    return re.sub(r"[ \t]{2,}", " ", t).strip()
+
+
+def weekly_draft(cv: str, plan: dict | None = None) -> str:
     act.log("linkedin", "כותב טיוטת פוסט שבועית על אחד הפרויקטים שלך")
-    t = chat("linkedin", "weekly_post", [{"role": "user", "content": DRAFT_PROMPT.format(cv=cv[:4000])}], tier="write", max_tokens=600)
-    parts = re.split(r"(?<=[.!?])\s+", t.strip())
+    msgs = [{"role": "user", "content": DRAFT_PROMPT.format(cv=cv[:4000], who=who(plan))}]
+    t = chat("linkedin", "weekly_post", msgs, tier="write", max_tokens=600)
+    bad = slop_in(t)
+    if bad:   # פעם אחת: כותבים מחדש בלי הניסוחים האלה
+        act.log("linkedin", f"בטיוטה היו ניסוחים של AI ({', '.join(bad[:3])}). כותב מחדש.")
+        t = chat("linkedin", "weekly_post_fix", msgs + [{"role": "assistant", "content": t},
+                 {"role": "user", "content": f"Rewrite without these phrases: {', '.join(bad)}. Same facts, same length. Output only the post."}],
+                 tier="write", max_tokens=600)
+    parts = re.split(r"(?<=[.!?])\s+", unslop(t).strip())
     return " ".join(p for p in parts if grounded(p, cv)).strip()
 
 

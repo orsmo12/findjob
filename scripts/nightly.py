@@ -321,7 +321,7 @@ for u in users:
         li["posts"] = K.hot_posts(plan, u["cv_text"])
         old = li.get("draft_at")
         if not li.get("draft") or not old or datetime.fromisoformat(old) < datetime.now(timezone.utc) - timedelta(days=7):
-            li["draft"] = K.weekly_draft(u["cv_text"]); li["draft_at"] = datetime.now(timezone.utc).isoformat()
+            li["draft"] = K.weekly_draft(u["cv_text"], plan); li["draft_at"] = datetime.now(timezone.utc).isoformat()
         li["updated"] = datetime.now(timezone.utc).isoformat()
         db.update_profile(u["user_id"], {"li": li})
         n = len(li["posts"])

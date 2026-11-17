@@ -37,3 +37,20 @@ def test_grounding_allows_plain_words_blocks_known_names():
     assert K.grounded("Aspiring Full-Stack Developer | Seeking Junior Roles | React · OpenCV", src)
     assert not K.grounded("Experienced with Kubernetes and React", src)
     assert not K.grounded("Led a team of 12 engineers", src)
+
+
+def test_linkedin_unslop_and_who():
+    """17.11: פוסטים ותגובות בלי ניסוחי AI, ומותאמים לתחום של כל משתמש (לא "ג'וניור מפתח" לכולם)."""
+    from agent_core.agents import linkedin_coach as K
+    assert "Mechanical Engineer" in K.who({"titles": ["Mechanical Engineer"], "domains": ["הנדסת מכונות"]})
+    assert K.unslop("Built it — fast 🚀  done") == "Built it, fast done"
+    assert K.slop_in("I'm excited to share my project") and not K.slop_in("Built a scanner in Python")
+    calls = []
+    def fake(agent, kind, msgs, **k):
+        calls.append(kind); return "Excited to share: I built findjob in Python." if kind == "weekly_post" else "I built findjob in Python."
+    old = K.chat; K.chat = fake
+    try:
+        out = K.weekly_draft("Built findjob in Python", {"titles": ["Backend Developer"]})
+    finally:
+        K.chat = old
+    assert calls == ["weekly_post", "weekly_post_fix"] and "xcited" not in out
