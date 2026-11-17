@@ -37,6 +37,8 @@ def main() -> None:
         check("cron: דוחה בלי הסוד (401)", rr.status_code == 401, str(rr.status_code))
         rr = cx.post(SITE + "/api/chat", json={"token": "x", "messages": []})
         check("צ׳אט: דוחה בלי התחברות", rr.status_code in (401, 400), str(rr.status_code))
+        rr = cx.post(SITE + "/api/cvorder", json={"token": "x", "lines": ["a", "b", "c"]})
+        check("סידור קורות חיים: דוחה בלי התחברות", rr.status_code == 401, str(rr.status_code))
 
         # ── Supabase ──
         from agent_core import cloud_store as db

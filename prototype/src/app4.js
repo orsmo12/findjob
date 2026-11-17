@@ -96,13 +96,13 @@ function saveStory(id){const t=$('stT').value.trim(),b=$('stB').value;if(!t){$('
   if(id){Object.assign(S.stories.find(x=>x.id===id),{t,b})}else S.stories.push({id:'s'+Date.now(),t,b});save();closeSheet();curPg==='prep'?renderPrep():renderProfile();toast('הסיפור נשמר')}
 function editCvText(){openSheet(`<h3 id="sheetTitle">קורות חיים כטקסט</h3><div class="sheet-sub">הסוכנים עובדים לפי הטקסט הזה</div><div class="field" style="margin-top:14px"><label for="cvEdit" class="vh">קורות חיים</label><textarea id="cvEdit" rows="12">${esc(prof().cv)}</textarea></div><button class="btn btn-primary btn-block" onclick="prof().cv=$('cvEdit').value;save();closeSheet();renderProfile();toast('קורות החיים נשמרו')">שמירה</button>`)}
 function onCvEnFile(inp){const f=inp.files[0];if(!f)return;toast('קורא את הקובץ…');
-  readCv(f).then(x=>{if(x&&x.trim().length>=CV_MIN){if(isHeb(x)){toast('הקובץ הזה בעברית. צריך את הגרסה באנגלית');return}
+  readCv(f).then(cvFix).then(x=>{if(x&&x.trim().length>=CV_MIN){if(isHeb(x)){toast('הקובץ הזה בעברית. צריך את הגרסה באנגלית');return}
     const p=prof();p.ans=p.ans||{};p.ans.cv_en=x.slice(0,15000);save();track('cv_en');renderProfile();toast('נשמר. ההתאמות למשרות באנגלית ייכתבו מחדש מהגרסה הזו')}
     else toast('לא הצלחתי לקרוא את הקובץ. אפשר PDF או docx')})}
 function onCvFile(inp){
   const f=inp.files[0];if(!f)return;
   const tw=document.createElement('div');tw.className='cv-wait';inp.insertAdjacentElement('afterend',tw);const stop=stages(tw,['קורא את הקובץ…','מחלץ את הטקסט מקורות החיים…'],2500);
-  readCv(f).then(t=>{stop();tw.remove();
+  readCv(f).then(cvFix).then(t=>{stop();tw.remove();
     if(t&&t.trim().length>=CV_MIN){prof().cv=t.slice(0,20000);prof().cvName=f.name;S.cv_err='';track('cv_ok')}
     else{S.cv_err=/\.doc$/i.test(f.name)?'קובץ Word ישן (.doc) לא נקרא כאן. שמור אותו כ-PDF או כ-.docx והעלה שוב, או הדבק את הטקסט למטה.'
       :/\.(jpe?g|png|heic|webp)$/i.test(f.name)?'זו תמונה, ואי אפשר לקרוא ממנה טקסט. העלה PDF או Word, או הדבק את הטקסט למטה.'
@@ -113,7 +113,7 @@ function onCvFile(inp){
 /* קריאת PDF לפי מיקום (XY-cut): מוצאים רווח אנכי שעובר לכל גובה האזור = עמודות, וקוראים כל עמודה מלמעלה למטה.
    כותרת מעל עמודות נחתכת קודם. עמודה צרה (תאריכים מיושרים לצד) לא נחשבת עמודה, כדי שלא ינותקו מהשורה. */
 const CV_HEB=/[֐-׿]/g;
-function cvLines(items){
+function cvLines(items,force){
   const it=items.filter(o=>o.s&&o.s.trim()).map(o=>({s:o.s,x0:o.x,x1:o.x+Math.max(o.w,1),y:o.y,h:Math.max(o.h||10,4)}));
   if(!it.length)return'';
   const heb=s=>(s.match(CV_HEB)||[]).length,rtl=heb(it.map(o=>o.s).join(''))>it.map(o=>o.s).join('').replace(/\s/g,'').length*.3;
@@ -123,7 +123,7 @@ function cvLines(items){
      אלא אם בשני הצדדים יש כותרות של חלקים (Skills מול Experience) */
   const ys=a=>[...new Set(a.map(o=>Math.round(o.y)))];
   const hd=x=>x.some(o=>/^\s*(experience|education|skills|projects|summary|languages|ניסיון|השכלה|כישורים|פרויקטים|שפות)(?![A-Za-z])/i.test(o.s));
-  const col=(a,b)=>{if(nl(a)<2||nl(b)<2)return false;if(hd(a)&&hd(b))return true;if(nl(a)<3||nl(b)<3)return false;
+  const col=(a,b)=>{if(nl(a)<2||nl(b)<2)return false;if(force||hd(a)&&hd(b))return true;if(nl(a)<3||nl(b)<3)return false;
     const ya=ys(a),yb=ys(b),[sm,bg]=ya.length<=yb.length?[ya,yb]:[yb,ya];return sm.filter(y=>bg.some(z=>Math.abs(z-y)<=2)).length/sm.length<.8};
   const vcut=R=>{  // רווח אנכי לכל גובה האזור, ששני צדדיו רחבים מספיק
     const s=[...R].sort((a,b)=>a.x0-b.x0),lo=s[0].x0,hi=Math.max(...s.map(o=>o.x1));let end=s[0].x1,best=null;
@@ -155,11 +155,20 @@ async function readCv(f){try{
     pdfjsLib.GlobalWorkerOptions.workerSrc=base+'pdf.worker.min.js';
     const doc=await pdfjsLib.getDocument({data:await f.arrayBuffer()}).promise;let out='';
     for(let i=1;i<=doc.numPages;i++){const c=await (await doc.getPage(i)).getTextContent();
-      out+=cvLines(c.items.map(o=>({s:o.str,x:o.transform[4],y:o.transform[5],w:o.width,h:o.height||Math.abs(o.transform[3])})))+'\n\n'}
+      const it=c.items.map(o=>({s:o.str,x:o.transform[4],y:o.transform[5],w:o.width,h:o.height||Math.abs(o.transform[3])}));
+      let t=cvLines(it);if(cvMixed(t)){const t2=cvLines(it,true);if(!cvMixed(t2))t=t2}out+=t+'\n\n'}
     return out.replace(/[ \t]+\n/g,'\n').replace(/\n{3,}/g,'\n\n')}
   if(/\.docx$/i.test(f.name)){await loadScript('https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js');
     return (await mammoth.extractRawText({arrayBuffer:await f.arrayBuffer()})).value}
 }catch(e){console.warn(e)}return''}
+/* כשהקריאה עדיין מעורבבת: ה-AI מחזיר רק סדר של מספרי שורות. הטקסט נבנה מהשורות שלנו, ולכן אי אפשר להוסיף או לשנות מילה.
+   סדר לא תקין (שורה חסרה או כפולה) = נשארים עם הקריאה שלנו. הקובץ עצמו לא יוצא מהדפדפן */
+function cvApplyOrder(lines,order){if(!Array.isArray(order)||order.length!==lines.length)return null;const seen=new Set();
+  for(const i of order){if(!Number.isInteger(i)||i<0||i>=lines.length||seen.has(i))return null;seen.add(i)}return order.map(i=>lines[i]).join('\n')}
+async function cvFix(t){if(!t||!cvMixed(t)||typeof SB==='undefined')return t;
+  try{const lines=t.split('\n').filter(l=>l.trim());if(lines.length>220)return t;const {data:{session}}=await SB.auth.getSession();if(!session)return t;
+    const r=await fetch('/api/cvorder',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({lines,token:session.access_token})});
+    const fixed=r.ok?cvApplyOrder(lines,(await r.json()).order):null;return fixed&&!cvMixed(fixed)?fixed:t}catch(e){return t}}
 function openLetterPrefs(){const p=prof();
   openSheet(`<h3 id="sheetTitle">למכתבים של ${escB(N('assistant'))}</h3><div class="sheet-sub">${escB(N('assistant'))} כותב כל מכתב לפי המצב שלך היום, ובסגנון של מכתבים שכתבת. משתמשים רק בעובדות שלך.</div>
     <div class="field" style="margin-top:12px"><label for="lpNow">המצב שלי היום</label><textarea id="lpNow" class="textbox" rows="3" placeholder="למשל: מחכה לציון אחרון בתואר, ממוצע 85. זמין להתחיל מיד.">${esc((p.ans||{}).now||'')}</textarea>
@@ -179,17 +188,8 @@ function liHow(){openSheet(`<h3 id="sheetTitle">איך ${escB(N('linkedin'))} ק
   <div class="sheet-sub">findjob לא נכנס לחשבון ה-LinkedIn שלך. ${escB(N('linkedin'))} קורא עותק שאתה שומר:</div>
   <ol class="how-ol"><li>בפרופיל שלך ב-LinkedIn לוחצים More (או "עוד")</li><li>בוחרים Save to PDF</li><li>כאן לוחצים ${prof().li_text?'"עדכנתי את הפרופיל"':'"להעלות את הפרופיל"'} ובוחרים את הקובץ</li></ol>
   <p class="card-sub">כל פעם שאתה משנה משהו בפרופיל, מעלים עותק חדש, ו${escB(N('linkedin'))} בודק שוב.</p>`)}
-function onLiFile(inp){const f=inp.files[0];if(!f)return;readCv(f).then(t=>{if(t&&t.trim().length>80){prof().li_text=t.slice(0,15000);save();renderProfile();toast(`${N('linkedin')} יעבור על הפרופיל בשעתיים הקרובות`)}else toast('לא הצלחתי לקרוא את הקובץ. ודא שזה ה-PDF ש-LinkedIn מייצר',{ms:4200})});inp.value=''}
-function afterCv(){const mx=!S.cv_err&&cvMixed(prof().cv);
-  if($('onb').classList.contains('open')){renderOnb();if(mx)toast('נראה שהסדר בקובץ התבלבל. אחרי ההרשמה כדאי לעבור על הטקסט בפרופיל',{ms:6000})}
-  else{renderProfile();if(S.cv_err)toast(S.cv_err,{ms:6000});else cvCheck()}}
-/* אחרי העלאה: מה הבנו מקורות החיים, כדי שטעות בקריאה תיתפס לפני שהיא מגיעה למכתבים ולהתאמות */
-function cvCheck(){const p=prof(),f=cvFacts(cvEnOr(p)),mx=cvMixed(p.cv),yrs=f.edu_start||f.edu_end?[f.edu_start,f.edu_end].filter(Boolean).join('–'):'';
-  const rows=[['שם באנגלית',f.full_en],['תואר',f.degree],['תחום',f.discipline],['מוסד',f.school],['שנות לימוד',yrs]];
-  openSheet(`<h3 id="sheetTitle">זה מה שהבנו מקורות החיים</h3><div class="sheet-sub">הסוכנים כותבים מכתבים וממלאים טפסים לפי זה</div>
-    ${mx?'<div class="kc-hint" style="margin-top:10px">נראה שהסדר בקובץ התבלבל (שני חלקים באותה שורה). כדאי לעבור על הטקסט ולתקן.</div>':''}
-    <div class="cv-facts">${rows.map(([k,v])=>`<div><b>${k}:</b> <span dir="auto">${v?esc(v):'<span class="card-sub">לא נמצא</span>'}</span></div>`).join('')}</div>
-    <div class="duo" style="margin-top:14px"><button class="btn btn-primary" onclick="closeSheet();toast('קורות החיים עודכנו')">נכון</button><button class="btn btn-ghost" onclick="editCvText()">לעבור על הטקסט</button></div>`)}
+function onLiFile(inp){const f=inp.files[0];if(!f)return;readCv(f).then(cvFix).then(t=>{if(t&&t.trim().length>80){prof().li_text=t.slice(0,15000);save();renderProfile();toast(`${N('linkedin')} יעבור על הפרופיל בשעתיים הקרובות`)}else toast('לא הצלחתי לקרוא את הקובץ. ודא שזה ה-PDF ש-LinkedIn מייצר',{ms:4200})});inp.value=''}
+function afterCv(){if($('onb').classList.contains('open'))renderOnb();else{renderProfile();toast(S.cv_err||'קורות החיים עודכנו',{ms:S.cv_err?6000:2400})}}
 const CV_MIN=80;   // פחות מזה זה לא קורות חיים שאפשר לעבוד איתם
 
 /* ═════════ הגדרות ═════════ */

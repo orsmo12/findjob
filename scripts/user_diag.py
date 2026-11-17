@@ -3,6 +3,7 @@ user_diag.py — כלי מפתח: למה משתמש מסוים מקבל את ה�
 בלי שמות, בלי מייל, בלי קורות חיים. משתמש לפי מספר הסדר בהרשמה (0 = הראשון). ברירת מחדל: האחרון שנרשם.
   python scripts/user_diag.py [מספר] [ימים=10]
 """
+import re
 import sys
 from collections import Counter
 from datetime import date, datetime, timedelta, timezone
@@ -12,6 +13,14 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from agent_core import cloud_store as db
 from agent_core.profile import normalize_answers, build_search_plan
 from scripts.insights import get
+
+
+# כמו cvMixed באפליקציה: שתי כותרות של חלקים באותה שורה = הקריאה של קורות החיים התערבבה
+_CV_HEADS = re.compile(r"\b(experience|education|skills|projects|summary|languages|military service|certifications)\b|ניסיון|השכלה|כישורים|פרויקטים|שירות צבאי|שפות", re.I)
+
+
+def cv_mixed(t) -> bool:
+    return any(len(l) < 160 and len({x.group(0).lower() for x in _CV_HEADS.finditer(l)}) >= 2 for l in str(t or "").split("\n"))
 
 
 def age(p):
@@ -38,7 +47,7 @@ def main(idx=None, days=10):
     uid = u["id"]
     p = (get("profiles", select="answers,state,cv_text", user_id=f"eq.{uid}") or [{}])[0]
     st, a = p.get("state") or {}, normalize_answers(p.get("answers") or {})
-    print(f"\nמשתמש #{users.index(u)}: onboarded={st.get('onboarded')} | קו״ח {len(p.get('cv_text') or '')} תווים | מפתח אישי {'כן' if st.get('ai_key') else 'לא'}")
+    print(f"\nמשתמש #{users.index(u)}: onboarded={st.get('onboarded')} | קו״ח {len(p.get('cv_text') or '')} תווים{' (נשאר ערבוב בקריאה)' if cv_mixed(p.get('cv_text')) else ''} | מפתח אישי {'כן' if st.get('ai_key') else 'לא'}")
     for k in ("study", "year", "work", "exp", "scope", "domains", "field", "roles", "custom_roles", "locs", "mode", "track", "status"):
         if a.get(k):
             print(f"   {k}: {a.get(k)}")

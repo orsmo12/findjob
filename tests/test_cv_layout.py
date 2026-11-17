@@ -69,3 +69,35 @@ def test_mixed_flag():
     r = run(col(50, ["Experience Skills", "Python"]) )
     if r:
         assert r["m"] is True
+
+
+def _order(lines, order):
+    if not shutil.which("node"):
+        return "skip"
+    js = CODE + "\n" + SRC[SRC.index("function cvApplyOrder("):SRC.index("async function cvFix(")] + \
+        "\nconst I=JSON.parse(require('fs').readFileSync(0,'utf8'));process.stdout.write(JSON.stringify(cvApplyOrder(I[0],I[1])))"
+    r = subprocess.run(["node", "-e", js], input=json.dumps([lines, order]), capture_output=True, text=True, timeout=20)
+    assert r.returncode == 0, r.stderr
+    return json.loads(r.stdout)
+
+
+def test_ai_order_only_reorders_our_lines():
+    """סידור מה-AI: רק סדר שלם של השורות שלנו מתקבל. שורה חסרה, כפולה או מספר לא חוקי = נשארים עם הקריאה שלנו."""
+    L = ["Skills", "Experience", "Python", "Engineer at Acme"]
+    if _order(L, [0, 1]) == "skip":
+        return
+    assert _order(L, [1, 3, 0, 2]) == "Experience\nEngineer at Acme\nSkills\nPython"
+    for bad in ([1, 3, 0], [1, 1, 0, 2], [1, 3, 0, 9], [1, 3, 0, "2"], None, [0.5, 1, 2, 3]):
+        assert _order(L, bad) is None, bad
+
+
+def test_force_cuts_aligned_columns():
+    """ניסיון שני כשנשאר ערבוב: עמודות מקבילות שורה-שורה נחתכות בכל זאת."""
+    if not shutil.which("node"):
+        return
+    a = col(50, ["Built APIs in Python", "Led a team of 4", "Wrote tests in Jest"])
+    b = col(330, ["Python, Go", "Docker, AWS", "Hebrew, English"])
+    js = CODE + "\nconst I=JSON.parse(require('fs').readFileSync(0,'utf8'));process.stdout.write(JSON.stringify([cvLines(I),cvLines(I,true)]))"
+    r = json.loads(subprocess.run(["node", "-e", js], input=json.dumps(a + b), capture_output=True, text=True, timeout=20).stdout)
+    assert "Built APIs in Python Python, Go" in r[0]          # בלי force: שורה-שורה (כמו תאריכים בצד)
+    order_ok(r[1], ["Built APIs in Python", "Led a team of 4", "Wrote tests in Jest"], ["Python, Go", "Docker, AWS", "Hebrew, English"])

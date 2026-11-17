@@ -138,6 +138,9 @@ def run(uid, email):
                 "to move forward with other candidates. We wish you the best of luck. Dana, Talent team")
         m = httpx.post(SITE + "/api/mailparse", json={"token": token, "text": mail, "co": "Acme", "title": "Mechanical Engineer"}, timeout=60).json()
         check("   הדבקת מייל: שי מזהה דחייה ולא ממציא תאריך", m.get("kind") == "rejection" and not m.get("when"), str(m)[:160])
+        mixed = ["Experience", "Skills", "Mechanical Engineer at Acme 2020-2024", "SolidWorks, AutoCAD", "Designed HVAC systems", "Languages", "Education", "Hebrew, English", "B.Sc. Mechanical Engineering, Technion"]
+        o = httpx.post(SITE + "/api/cvorder", json={"token": token, "lines": mixed}, timeout=60).json().get("order") or []
+        check("   קורות חיים מעורבבים: ה-AI מחזיר סדר שלם של השורות", sorted(o) == list(range(len(mixed))), " | ".join(mixed[i] for i in o if isinstance(i, int) and 0 <= i < len(mixed))[:160])
 
     # ── שלב ב: דורון סורק. מחכים לסיום ──
     done = res.get("prep_ok") and wait_prep_done(uid, since, 32)
