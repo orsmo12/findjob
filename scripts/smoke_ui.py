@@ -18,19 +18,33 @@ CHECK = r"""()=>{const out=[];const ok=(n,f)=>{try{f();out.push([n,'ok'])}catch(
   return out}"""
 
 
+LIGHT_IN_DARK = r"""async()=>{const out=new Set();const scan=()=>document.querySelectorAll('body *').forEach(e=>{const r=e.getBoundingClientRect();
+  if(r.width<60||r.height<24||!e.offsetParent||r.top>=innerHeight||r.bottom<=0||e.closest('.cv-page'))return;/* דף קורות החיים הוא נייר לבן בכוונה */const m=getComputedStyle(e).backgroundColor.match(/[\d.]+/g);if(!m)return;
+  const [R,G,B,A=1]=m.map(Number);if(A>.4&&(R+G+B)/3>200)out.add(e.tagName.toLowerCase()+'.'+[...e.classList].join('.')+(e.classList.length?'':' in .'+[...(e.parentElement.classList)].join('.')+' "'+e.textContent.trim().slice(0,30)+'"'))});
+  for(const pg of ['main','jobs','apps','profile','settings','linkedin']){try{closeSheet()}catch(e){}goPage(pg);await new Promise(r=>setTimeout(r,250));scan()}
+  try{goPage('apps');openApp('a-j1','letter');await new Promise(r=>setTimeout(r,400));scan();openApp('a-j1','details');await new Promise(r=>setTimeout(r,300));scan()}catch(e){}
+  try{closeSheet();openJobInfo('j1');await new Promise(r=>setTimeout(r,300));scan()}catch(e){}
+  return [...out]}"""
+
+
 async def main(path):
     async with async_playwright() as p:
         exe = "/usr/bin/google-chrome" if os.path.exists("/usr/bin/google-chrome") else None
         b = await p.chromium.launch(executable_path=exe, args=["--no-sandbox"])
         bad = []
-        for w in (390, 1440):
+        for w, theme in ((390, "light"), (1440, "light"), (390, "dark")):
             pg = await b.new_page(viewport={"width": w, "height": 900})
             errs = []
             pg.on("pageerror", lambda e: errs.append(str(e)))
             await pg.goto("file://" + os.path.abspath(path))
             await pg.wait_for_timeout(1200)
+            if theme == "dark":
+                await pg.evaluate("setTheme('dark')")
             res = await pg.evaluate(CHECK)
-            bad += [f"{w}px {n}: {r}" for n, r in res if r != "ok"]
+            bad += [f"{w}px {theme} {n}: {r}" for n, r in res if r != "ok"]
+            if theme == "dark":   # במצב כהה: אין משטח בהיר גדול (נשאר לבן מהעיצוב הבהיר)
+                light = await pg.evaluate(LIGHT_IN_DARK)
+                bad += [f"{w}px dark: משטח בהיר {x}" for x in light]
             # שגיאות שקשורות לשרת האמיתי (אין רשת בבדיקה) לא נחשבות
             bad += [f"{w}px pageerror: {e}" for e in errs if not any(x in e for x in ("supabase", "fetch", "Failed to"))]
         await b.close()
