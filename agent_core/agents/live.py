@@ -9,6 +9,7 @@ live.py — דורון בודק בכל סריקה אם המשרות ששמרת �
 """
 from __future__ import annotations
 import re
+import time
 
 import httpx
 
@@ -64,6 +65,50 @@ def ats_check(url: str, cx: httpx.Client) -> str | None:
     return None
 
 
+# LinkedIn מחזיר 429 כשבודקים מהר מדי (17.11: 17 מתוך 19 בבדיקה רצופה). קצב קבוע + ניסיון חוזר אחרי המתנה.
+LI_GAP, LI_WAIT, LI_TRIES = 2.5, 20.0, 3
+_li_last = [0.0]
+_sleep = time.sleep
+
+
+def _li_get(cx: httpx.Client, url: str) -> httpx.Response:
+    for i in range(LI_TRIES):
+        wait = _li_last[0] + LI_GAP - time.monotonic()
+        if wait > 0:
+            _sleep(wait)
+        r = cx.get(url)
+        _li_last[0] = time.monotonic()
+        if r.status_code != 429 or i == LI_TRIES - 1:
+            return r
+        try:
+            ra = float(r.headers.get("retry-after") or 0)
+        except ValueError:
+            ra = 0
+        _sleep(min(max(ra, LI_WAIT * (i + 1)), 60))
+    return r
+
+
+# Indeed חוסם את דף המשרה (401). בודקים דרך ה-API של האפליקציה שלהם, כמו JobSpy שאוסף משם (המפתח מהספרייה, לא שלנו).
+INDEED = re.compile(r"indeed\.com/.*[?&]jk=([0-9a-f]{8,})", re.I)
+INDEED_Q = 'query {{ jobData(jobKeys: ["{}"]) {{ results {{ job {{ key expired }} }} }} }}'
+
+
+def indeed_check(jk: str, cx: httpx.Client) -> str:
+    try:
+        from jobspy.indeed.constant import headers
+    except ImportError:
+        return "unknown"
+    try:
+        r = cx.post("https://apis.indeed.com/graphql", headers=headers, json={"query": INDEED_Q.format(jk)})
+        d = r.json() if r.status_code == 200 else {}
+    except (httpx.HTTPError, ValueError):
+        return "unknown"
+    res = ((d.get("data") or {}).get("jobData") or {}).get("results")
+    if d.get("errors") or not res:
+        return "unknown"   # TODO: אם יתברר שמשרה שנמחקה מחזירה רשימה ריקה — לסמן "נסגרה"
+    return "closed" if (res[0].get("job") or {}).get("expired") else "open"
+
+
 def check(url: str, client: httpx.Client | None = None) -> str:
     """'open' / 'closed' / 'unknown'."""
     if not url:
@@ -74,9 +119,12 @@ def check(url: str, client: httpx.Client | None = None) -> str:
         st = ats_check(url, cx)
         if st:
             return st
+        mi = INDEED.search(url)
+        if mi:
+            return indeed_check(mi.group(1), cx)
         m = re.search(r"linkedin\.com/jobs/view/(?:[^/?#]*-)?(\d+)", url)
         target = f"https://www.linkedin.com/jobs-guest/jobs/api/jobPosting/{m.group(1)}" if m else url
-        r = cx.get(target)
+        r = _li_get(cx, target) if m else cx.get(target)
         if r.status_code in (404, 410):
             return "closed"
         if r.status_code != 200:
@@ -90,3 +138,23 @@ def check(url: str, client: httpx.Client | None = None) -> str:
     finally:
         if own:
             cx.close()
+
+
+# מתג חזרה (17.11): בסריקת הבוקר בודקים גם משרות שמחכות בתור יותר מ-QUEUE_DAYS (לא שמורות), ונסגרות יורדות מהתור
+QUEUE_LIVE = True
+QUEUE_DAYS = 3
+
+
+def stale_pending(rows: list[dict], now, days: int = QUEUE_DAYS) -> list[dict]:
+    """משרות בתור (בלי החלטה) שמחכות יותר מ-days ימים. שמורות, מדולגות ומסוננות לא נכללות."""
+    from datetime import datetime, timedelta
+    out = []
+    for r in rows:
+        c = r.get("card") or {}
+        try:
+            t = datetime.fromisoformat(str(r.get("created_at")).replace("Z", "+00:00"))
+        except ValueError:
+            continue
+        if not r.get("decision") and c.get("title") and c.get("url") and now - t > timedelta(days=days):
+            out.append(r)
+    return out

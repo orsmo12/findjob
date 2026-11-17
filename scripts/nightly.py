@@ -304,6 +304,17 @@ for u in users:
                 elif (c.get("check") or {}).get("st") != st or st == "unknown":   # "לא הצלחתי לבדוק" מוצג באפליקציה
                     n = ((c.get("check") or {}).get("n") or 0) + 1 if st == "unknown" else 0
                     db.update_job(u["user_id"], row["id"], {"card": {**c, "check": {"st": st, "at": now_iso, "n": n}}})
+            # משרות שמחכות בתור כמה ימים (משתמש שלא נכנס): נסגרו = יורדות מהתור, בלי לגעת בשמורות
+            from agent_core.agents import live as LV
+            gone_q = []
+            for row in (LV.stale_pending(db.all_jobs(u["user_id"], days=30), datetime.now(timezone.utc)) if MORNING and LV.QUEUE_LIVE else []):
+                if still_open(row["card"]["url"], cx) == "closed":
+                    db.update_job(u["user_id"], row["id"], {"decision": "filtered", "card": {**row["card"], "filtered_why": "המשרה נסגרה"}})
+                    gone_q.append(row["card"])
+            if gone_q:
+                db.add_run(u["user_id"], "hunter", "הורדתי מהרשימה משרות שנסגרו לפני שהספקת לעבור עליהן: "
+                           + "; ".join(f"{c['title']} ב-{c.get('co') or ''}" for c in gone_q) + ".")
+                print(f"{u['user_id'][:8]}: {len(gone_q)} משרות בתור נסגרו")
         if closed:
             db.add_run(u["user_id"], "hunter", ("המשרות האלה נסגרו ולא מקבלות יותר מועמדים: " if len(closed) > 1 else "המשרה הזו נסגרה ולא מקבלת יותר מועמדים: ")
                        + "; ".join(f"{c['title']} ב-{c['co']}" for c in closed) + ". הוצאתי מההגשות, והיא בהיסטוריה.")

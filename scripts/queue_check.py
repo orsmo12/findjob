@@ -56,6 +56,11 @@ def main(idx: str = "", apply: bool = False):
                 code = cx.get(f"https://www.linkedin.com/jobs-guest/jobs/api/jobPosting/{m.group(1)}" if m else u_).status_code if u_ else "אין קישור"
             except httpx.HTTPError as e:
                 code = type(e).__name__
+            mi = live.INDEED.search(u_)
+            if mi:   # מה ה-API של Indeed החזיר
+                from jobspy.indeed.constant import headers
+                rr = cx.post("https://apis.indeed.com/graphql", headers=headers, json={"query": live.INDEED_Q.format(mi.group(1))})
+                code = f"api {rr.status_code} {rr.text[:140]}"
             name += f" [{(re.search(r'//([^/]+)', u_) or [None, '?'])[1]} {code}]"
         out[st].append((r, name))
     print(f"משתמש #{idx}: {len(rows)} מחכות | פתוחות {len(out['open'])} · נסגרו {len(out['closed'])} · לא ידוע {len(out['unknown'])}"
