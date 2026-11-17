@@ -123,3 +123,14 @@ def test_tailor_never_drops_tools_or_facts():
     assert [e["after"] for e in out] == ["Tools: Playwright, Git, Linux, VS Code"]
     assert lost_terms("Tools: Git, Linux, VS Code", "Tools: Git") == ["Code", "Linux", "VS"]
     assert H.missing_for_saved({"brief": {"x": 1}, "tailor": {"edits": [], "v": 1}, "prep": {"tasks": []}, "letter": {"v": H.LETTER_V}}) == ["tailor"]
+
+
+def test_english_cv_used_for_english_ads_and_letters():
+    """17.11: מי שהעלה גם קורות חיים באנגלית — ההתאמות, ה-PDF והמכתבים למודעה באנגלית נבנים מהם. מודעה בעברית: הראשיים."""
+    he, en = "אור — מפתח תוכנה", "Or — Software Developer"
+    ans = {"cv_en": en}
+    assert H.cv_src(ans, "We are looking for a backend developer") == "en" and H.cv_src(ans, "דרוש/ה מפתח/ת צד שרת לחברה מובילה") == "main"
+    assert H.cv_src({}, "We are looking") == "main"
+    assert H.cv_for(he, ans, "We are hiring") == en and H.cv_for(he, ans, "דרוש מפתח לחברה מובילה בתל אביב") == he and H.cv_for(he, ans, "", english=True) == en
+    row = {"brief": {"x": 1}, "card": {"desc": "We are hiring"}, "tailor": {"edits": [], "v": 2, "src": "main"}, "prep": {"tasks": []}, "letter": {"v": H.LETTER_V}}
+    assert H.missing_for_saved(row, ans) == ["tailor"] and H.missing_for_saved(row, {}) == []

@@ -33,14 +33,31 @@ def _tailor_v() -> int:
     return TAILOR_V
 
 
-def missing_for_saved(row: dict) -> list[str]:
+def cv_src(answers: dict | None, ad: str = "") -> str:
+    """איזה קורות חיים מתאימים למשרה: 'en' (הגרסה באנגלית שהמשתמש העלה) למודעה שאינה בעברית, אחרת 'main'."""
+    from agent_core.agents.letters import ad_language
+    has_en = bool(((answers or {}).get("cv_en") or "").strip())
+    return "en" if has_en and ad_language(ad or "") != "Hebrew" else "main"
+
+
+def cv_for(cv: str, answers: dict | None, ad: str = "", english: bool = False) -> str:
+    """הטקסט של קורות החיים למשרה. מכתבים (תמיד באנגלית) מקבלים english=True."""
+    en = ((answers or {}).get("cv_en") or "").strip()
+    if en and (english or cv_src(answers, ad) == "en"):
+        return en
+    return cv
+
+
+def missing_for_saved(row: dict, answers: dict | None = None) -> list[str]:
     """מה חסר במשרה ששמרת, לפי סדר העבודה."""
     out = []
     if not row.get("brief"):
         out.append("brief")
     tl = row.get("tailor")
-    if not tl or (not tl.get("no_ad") and (tl.get("v") or _tailor_v()) < _tailor_v()):   # גרסה ישנה (מחקה כלים) נכתבת מחדש
-        out.append("tailor")
+    card = row.get("card") or {}
+    want = cv_src(answers, card.get("ad") or card.get("desc") or "")
+    if not tl or (not tl.get("no_ad") and ((tl.get("v") or _tailor_v()) < _tailor_v() or (tl.get("src") or "main") != want)):
+        out.append("tailor")   # גרסה ישנה (מחקה כלים), או שהועלו קורות חיים באנגלית: נכתבת מחדש מהגרסה הנכונה
     p = row.get("prep")
     if not p or p.get("tasks") is None or p.get("more_tasks"):
         out.append("prep")

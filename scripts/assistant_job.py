@@ -36,13 +36,18 @@ def do_kind(kind: str, row: dict, u: dict, cv: str, name: str) -> dict:
     job = row["card"]
     if kind == "brief":
         return {"brief": brief(job["co"], job["title"], cv)}
-    if kind == "tailor":
-        return {"tailor": G.tailor_cv(cv, job)}
+    if kind == "tailor":   # מקורות החיים בשפת המודעה (גרסה באנגלית אם הועלתה), כדי שההתאמות יתאימו ל-PDF
+        ans = u.get("answers") or {}
+        ad = job.get("ad") or job.get("desc") or ""
+        tl = G.tailor_cv(H.cv_for(cv, ans, ad), job)
+        if isinstance(tl, dict):
+            tl["src"] = H.cv_src(ans, ad)
+        return {"tailor": tl}
     if kind == "letter":   # v4: לולאת LangGraph עם הסקירה של גיל, "המצב שלי" והמכתבים שהמשתמש העלה
         st, a = u.get("state") or {}, u.get("answers") or {}
         note = str(((st.get("jnotes") or {}).get(job.get("id") or row.get("id")) or "")).strip()[:200]   # ההערה של המשתמש למשרה (למשל "יש לי מכר בצוות")
         status = str(a.get("now") or "")[:400] + (f"\nTHE CANDIDATE'S OWN NOTE ABOUT THIS JOB (true, use it if it helps): {note}" if note else "")
-        return {"letter": write_letter_v4(cv, job, name, row.get("brief"), status,
+        return {"letter": write_letter_v4(H.cv_for(cv, a, english=True), job, name, row.get("brief"), status,
                                           [str(x) for x in st.get("my_letters") or []][:3], may_reuse=True)}
     if kind == "prep":
         prep = row.get("prep") or prepare(cv, job)
@@ -72,7 +77,7 @@ def work_by_tasks(u: dict, cv: str, name: str, done: dict) -> None:
     uid = u["user_id"]
     # יואב מתאם: מה חסר במשרות ששמרת, ולמי זה הולך
     existing = H._open(uid)
-    for row, miss in H.cap_upgrades([(r, H.missing_for_saved(r)) for r in db.saved_jobs(uid)]):
+    for row, miss in H.cap_upgrades([(r, H.missing_for_saved(r, u.get("answers"))) for r in db.saved_jobs(uid)]):
         if miss:
             H.request_for_job(uid, "strategist", {**row["card"], "id": row["id"]}, miss, "נשמרה משרה", existing)
     act.flush()

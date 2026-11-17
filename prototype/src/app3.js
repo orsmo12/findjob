@@ -546,6 +546,11 @@ function bindAppSwipes(){
 /* ═════════ ערכת הגשה: מה שצריך כדי למלא טופס, במקום אחד ═════════
    הפרטים הקבועים נשמרים בפרופיל (ans.kit). כפתור המילוי ממלא שדות לפי התוויות שלהם, מסמן בצהוב מה שלא בטוח,
    ולעולם לא לוחץ "שלח". את ההגשה עושה המשתמש. */
+/* קורות חיים באנגלית (אם הועלו): לטפסים, למכתבים ולמשרות באנגלית. אותו כלל כמו בשרת (handoffs.cv_src) */
+const isHeb=t=>{t=String(t||'');return (t.match(/[\u0590-\u05FF]/g)||[]).length>(t.match(/[A-Za-z]/g)||[]).length};   // יותר אותיות עבריות מלטיניות
+function cvEnOr(p){const e=((p.ans||{}).cv_en||'').trim();return e||p.cv||''}
+const adHeb=t=>{t=String(t||'');return (t.match(/[\u0590-\u05FF]/g)||[]).length>t.length*0.3};   // בדיוק כמו letters.ad_language בשרת
+function cvFor(j){const e=((prof().ans||{}).cv_en||'').trim();return e&&!adHeb(j&&(j.desc||j.ad))?e:prof().cv}
 /* פרטים לטופס מתוך קורות החיים (באנגלית, כמו בטפסים): שם, תואר, תחום, מוסד, שנים. רק מה שכתוב שם, בלי ניחוש */
 const SCHOOL_EN={'HIT':'Holon Institute of Technology','Technion':'Technion - Israel Institute of Technology','Tel Aviv University':'Tel Aviv University',
   'Hebrew University':'The Hebrew University of Jerusalem','Bar-Ilan':'Bar-Ilan University','Ben-Gurion':'Ben-Gurion University of the Negev','Reichman':'Reichman University',
@@ -566,17 +571,17 @@ function cvFacts(cv){cv=String(cv||'');const L=cv.split('\n').map(x=>x.trim()).f
 function salaryNums(t){const m=String(t||'').match(/(\d+)(?:\s*[–-]\s*(\d+))?\s*K/i);if(!m)return null;const lo=+m[1]*1000,hi=m[2]?+m[2]*1000:lo*1.2;
   const mid=/^עד/.test(t)?lo:Math.round((lo+hi)/2);return{monthly:mid,annual:mid*12}}
 const KIT_FIELDS=[
-  ['full','שם מלא',p=>cvFacts(p.cv).full_en||p.name||''],['first','שם פרטי',p=>cvFacts(p.cv).first_en||p.first||(p.name||'').split(' ')[0]||''],['last','שם משפחה',p=>cvFacts(p.cv).last_en||(p.name||'').split(' ').slice(1).join(' ')],
+  ['full','שם מלא',p=>cvFacts(cvEnOr(p)).full_en||p.name||''],['first','שם פרטי',p=>cvFacts(cvEnOr(p)).first_en||p.first||(p.name||'').split(' ')[0]||''],['last','שם משפחה',p=>cvFacts(cvEnOr(p)).last_en||(p.name||'').split(' ').slice(1).join(' ')],
   ['email','מייל',p=>kitOf(p).email||((typeof ME!=='undefined'&&ME&&ME.email)||'')],['phone','טלפון',p=>kitOf(p).phone||''],
   ['city','עיר',p=>kitOf(p).city||''],['linkedin','LinkedIn',p=>(p.ans||{}).linkedin||''],
   ['github','GitHub',p=>{const g=((p.ans||{}).github||'').trim();return g?(g.startsWith('http')?g:'https://github.com/'+g.replace(/^@/,'')):''}],
-  ['site','אתר / תיק עבודות',p=>kitOf(p).site||''],['edu','השכלה',p=>kitOf(p).edu||((f=>[[f.degree,f.discipline&&'in '+f.discipline].filter(Boolean).join(' '),f.school,f.edu_end].filter(Boolean).join(', '))(cvFacts(p.cv)))],
+  ['site','אתר / תיק עבודות',p=>kitOf(p).site||''],['edu','השכלה',p=>kitOf(p).edu||((f=>[[f.degree,f.discipline&&'in '+f.discipline].filter(Boolean).join(' '),f.school,f.edu_end].filter(Boolean).join(', '))(cvFacts(cvEnOr(p))))],
   ['salary','ציפיות שכר',p=>{const a=p.ans||{},n=salaryNums(a.salary);return n?`${n.monthly} ILS gross per month (${n.annual} per year)`:(a.salaryH||'')}],
   ['auth','אישור עבודה בישראל',p=>kitOf(p).auth||''],
   ['start','זמינות',p=>(p.ans||{}).start||''],
 ];
 /* שדות מוסתרים: לא מוצגים ברשימת "חסר", רק עוזרים לסימנייה ולתשובות המוכנות */
-function kitHidden(p){const f=cvFacts(p.cv),a=p.ans||{},n=salaryNums(a.salary);
+function kitHidden(p){const f=cvFacts(cvEnOr(p)),a=p.ans||{},n=salaryNums(a.salary);
   return {school:f.school||'',degree:f.degree||'',discipline:f.discipline||'',edu_start:f.edu_start||'',edu_end:f.edu_end||'',
     salary_annual:n?String(n.annual):'',bonus:kitOf(p).bonus||'0-4%',sponsor:'No',authorized:kitOf(p).auth==='אשרת עבודה'?'':'Yes',
     onsite:a.mode==='מהבית'?'No':'Yes',locs:(a.locs||[]).join(', '),country:'Israel',hear:'LinkedIn',
@@ -596,8 +601,10 @@ function kitTabHtml(a,j,id){track('kit_open');
     :`${t.order?`<p class="card-sub">↑ ${escB(t.order)}</p>`:''}
       ${ed.map((e,x)=>`<label class="kc-ed"><input type="checkbox" ${on.has(x)?'checked':''} onchange="tailorPick('${a.jobId}',${x},this.checked,'${id}')"><span dir="ltr"><s>${escB(e.before)}</s><b>${escB(e.after)}</b>${e.why?`<small dir="rtl">${escB(e.why)}</small>`:''}</span></label>`).join('')}`;
   const nOn=ed.filter((_,x)=>on.has(x)).length;
+  const needEn=REAL&&isHeb(prof().cv)&&!((prof().ans||{}).cv_en)&&!adHeb(j.desc||j.title);
+  const enHint=needEn?`<p class="kc-hint">המודעה באנגלית וקורות החיים שלך בעברית. <button class="kc-more" onclick="closeSheet();goPage('profile')">להעלות גרסה באנגלית</button></p>`:'';
   return `<div class="kit">${a.status==='saved'?`<p class="kit-now">${escB(nowTxt(a))}</p>`:''}
-    ${card('קורות חיים למשרה',ed.length?(nOn?`${nOn} מסומנות`:`${ed.length} התאמות מוצעות`):'',!!ed.length&&!nOn,cvBody,
+    ${card('קורות חיים למשרה',ed.length?(nOn?`${nOn} מסומנות`:`${ed.length} התאמות מוצעות`):'',!!ed.length&&!nOn,enHint+cvBody,
       `<button class="btn btn-ghost btn-sm${ed.length?(nOn?' is-on':' is-off'):''}" id="cvPdfBtn" onclick="${ed.length?`if(!((S.tailorOn||{})['${a.jobId}']||[]).length){toast('סמן לפחות התאמה אחת, והיא תיכנס ל-PDF');return}`:''}cvPreview('${a.jobId}','${id}')">${ed.length?'קובץ PDF למשרה':'PDF של קורות החיים'}</button>`,'cv')}
     ${card('מכתב פנייה',letter?`מוכן · ${letter.split(/\s+/).filter(Boolean).length} מילים`:'בהכנה',!letter,
       letter?`<p class="kc-pv" dir="ltr">${escB(letter.replace(/\s*\n+\s*/g,' ').slice(0,240))}</p>
@@ -643,8 +650,8 @@ function lostTerms(b,a){const first=new Set([...String(b).matchAll(/(?:^|[.:;•
 function tailorEdits(j){return (((j||{}).tailor||{}).edits||[]).filter(e=>!lostTerms(e.before,e.after).length)}
 /* PDF למשרה: תצוגה מקדימה במקום (מיידית, בלי שרת ובלי AI), ואז "שמירה כ-PDF" מאותו מסך. בלי חלון או לשונית חדשה */
 function cvPreview(jobId,appId){const j=JOBS[jobId]||{},on=new Set(((S.tailorOn||{})[jobId])||[]),ed=tailorEdits(j).filter((_,x)=>on.has(x));
-  const {text,miss}=cvWithEdits(prof().cv,ed),rtl=/[֐-׿]/.test(text.slice(0,400));track('cv_pdf');
-  window.__cvDoc={html:cvHtml(text),rtl,title:`${cvFacts(prof().cv).full_en||prof().name||'CV'} - CV - ${j.co||''}`.trim()};
+  const {text,miss}=cvWithEdits(cvFor(j),ed),rtl=/[֐-׿]/.test(text.slice(0,400));track('cv_pdf');
+  window.__cvDoc={html:cvHtml(text),rtl,title:`${cvFacts(cvEnOr(prof())).full_en||prof().name||'CV'} - CV - ${j.co||''}`.trim()};
   openSheet(`<h3 id="sheetTitle">קורות חיים ל-${escB(j.co||'')}</h3>
     <div class="sheet-sub">${ed.length?`עם ${ed.length} התאמות של ${escB(N('linkedin'))}`:'כמו בפרופיל'}${miss?` · ${miss} לא נכנסו כי הטקסט בקורות החיים השתנה`:''}</div>
     <div class="cv-page" dir="${rtl?'rtl':'ltr'}">${window.__cvDoc.html}</div>

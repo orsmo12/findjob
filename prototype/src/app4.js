@@ -53,6 +53,7 @@ function renderProfile(){
       <div class="duo"><label for="cvFile" class="btn btn-sm btn-ghost">${p.cvName?'להחליף קובץ':'להעלות קובץ'}</label><button class="btn btn-sm btn-ghost" onclick="editCvText()">לערוך כטקסט</button></div>
       ${CLOUDM&&domainOf(ans())!=='פיתוח תוכנה'?`<div class="field" style="margin-top:12px"><label for="pfIn">קישור לתיק עבודות או לפרויקטים</label><div style="display:flex;gap:8px"><input id="pfIn" class="ltr" type="url" placeholder="https://" value="${escB(kitOf(p).site||'')}" autocomplete="off"><button class="btn btn-sm btn-ghost" onclick="savePortfolio()">שמירה</button></div><div class="help">נכנס לטפסי הגשה ולמכתבים. ב${escB(domainOf(ans()))} תיק עבודות שווה יותר מ-GitHub.</div></div>`:''}
       ${CLOUDM&&domainOf(ans())==='פיתוח תוכנה'?`<div class="field" style="margin-top:12px"><label for="ghIn">שם המשתמש שלך ב-GitHub</label><div style="display:flex;gap:8px"><input id="ghIn" class="ltr" placeholder="username" value="${escB((p.ans||{}).github||'')}" autocomplete="off"><button class="btn btn-sm btn-ghost" onclick="saveGithub()">שמירה</button></div></div>`:''}
+      ${(p.cv&&isHeb(p.cv))||(p.ans||{}).cv_en?`<div class="row"><span class="ri">${ROW_IC.doc}</span><span class="rl"><b>קורות חיים באנגלית</b><span>${(p.ans||{}).cv_en?'הועלו ✓ משמשים לטפסים, למכתבים ולמשרות באנגלית':'רוב המשרות והטפסים באנגלית. גרסה באנגלית תיכנס ל-PDF ולמכתבים'}</span></span><label for="cvEnFile" class="btn btn-sm btn-ghost">${(p.ans||{}).cv_en?'להחליף':'להעלות'}</label></div><input type="file" id="cvEnFile" class="vh" accept=".pdf,.docx,.txt,application/pdf" onchange="onCvEnFile(this)">`:''}
       ${CLOUDM?`<button class="row" style="margin-top:8px" onclick="openLetterPrefs()"><span class="ri">${ROW_IC.doc}</span><span class="rl"><b>מכתבים שכתבת בעבר</b><span>${(S.my_letters||[]).length?`${S.my_letters.length} מכתבים. שי לומד מהם את הסגנון שלך`:'לא חובה. שי ילמד מהם את הסגנון שלך'}</span></span><span class="chev" aria-hidden="true"></span></button>`:''}
       ${typeof cvSuggestHtml==='function'?cvSuggestHtml():''}
       ${CLOUDM?`<details class="sub-d"><summary>LinkedIn<span class="cd-s">${escB((p.ans||{}).linkedin?'קישור נשמר ✓':'אין קישור')}</span></summary>
@@ -92,6 +93,10 @@ function editStory(id){
 function saveStory(id){const t=$('stT').value.trim(),b=$('stB').value;if(!t){$('stT').focus();toast('צריך כותרת לסיפור');return}
   if(id){Object.assign(S.stories.find(x=>x.id===id),{t,b})}else S.stories.push({id:'s'+Date.now(),t,b});save();closeSheet();curPg==='prep'?renderPrep():renderProfile();toast('הסיפור נשמר')}
 function editCvText(){openSheet(`<h3 id="sheetTitle">קורות חיים כטקסט</h3><div class="sheet-sub">הסוכנים עובדים לפי הטקסט הזה</div><div class="field" style="margin-top:14px"><label for="cvEdit" class="vh">קורות חיים</label><textarea id="cvEdit" rows="12">${esc(prof().cv)}</textarea></div><button class="btn btn-primary btn-block" onclick="prof().cv=$('cvEdit').value;save();closeSheet();renderProfile();toast('קורות החיים נשמרו')">שמירה</button>`)}
+function onCvEnFile(inp){const f=inp.files[0];if(!f)return;toast('קורא את הקובץ…');
+  readCv(f).then(x=>{if(x&&x.trim().length>=CV_MIN){if(isHeb(x)){toast('הקובץ הזה בעברית. צריך את הגרסה באנגלית');return}
+    const p=prof();p.ans=p.ans||{};p.ans.cv_en=x.slice(0,15000);save();track('cv_en');renderProfile();toast('נשמר. ההתאמות למשרות באנגלית ייכתבו מחדש מהגרסה הזו')}
+    else toast('לא הצלחתי לקרוא את הקובץ. אפשר PDF או docx')})}
 function onCvFile(inp){
   const f=inp.files[0];if(!f)return;
   const tw=document.createElement('div');tw.className='cv-wait';inp.insertAdjacentElement('afterend',tw);const stop=stages(tw,['קורא את הקובץ…','מחלץ את הטקסט מקורות החיים…'],2500);
