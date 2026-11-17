@@ -148,8 +148,8 @@ function afterRejectUndo(a,prev){const j=JOBS[a.jobId];
 function snoozeAsk(id){const a=appOf(id);a.snooze=new Date(Date.now()+7*DAY).toISOString();save();refreshApps();
   toast('בסדר, אשאל שוב בעוד שבוע',{undo:()=>{delete a.snooze;save();refreshApps()},ms:6000})}
 /* חלון משרה (סבב 2): כותרת + "עכשיו" + פעולה אחת, ציר זמן (בלי שמות סוכנים: פעולה + אייקון), הערה לכל שלב */
-function appHead(a,j){const act=a.status==='saved'?`<div class="duo"><a class="btn btn-primary ext" href="${j.url||LI_URL+'jobs/'}" target="_blank" rel="noopener">פתח והגש${ICO.open}</a>${appliedBox(a,true)}</div>`
-    :['screening','task','interview'].includes(a.status)?`<button class="btn btn-primary btn-block" onclick="${REAL?`closeSheet();openPrep('${a.jobId}')`:`appTab='prep';paintAppTab('${a.id}')`}">להכנה עם ${escB(N('coach'))}</button>`
+function appHead(a,j){if(a.status==='saved')return askHtml(a);   // שמרתי / מכתב מוכן / פתח והגש — בערכת ההגשה, לא בפרטים
+  const act=['screening','task','interview'].includes(a.status)?`<button class="btn btn-primary btn-block" onclick="${REAL?`closeSheet();openPrep('${a.jobId}')`:`appTab='prep';paintAppTab('${a.id}')`}">להכנה עם ${escB(N('coach'))}</button>`
     :a.status==='offer'&&CLOUDM?`<button class="btn btn-primary btn-block" onclick="askAboutJob('${a.jobId}')">בדיקת ההצעה עם ${escB(N('assistant'))}</button>`:'';
   return`<div class="app-head"><div><span class="status st-${a.status}">${stLabel(a)}</span></div><p class="app-now">${escB(nowTxt(a))}</p>${act}${askHtml(a)}</div>`}
 const STEP_TXT={saved:'נשמרה',applied:'הוגשה',screening:'שיחה ראשונה',task:'מטלה או מבחן',interview:'ראיון',offer:'הצעה',accepted:'התקבלתי',rejected:'לא ממשיכים',ghosted:'אין מענה',withdrew:'ויתרתי',closed:'המשרה נסגרה'};
@@ -184,7 +184,7 @@ let appTab='details';
 function openApp(id,tab){
   const a=appOf(id);if(!a)return;
   const hasPrep=!REAL&&(a.status==='interview'||a.status==='screening');
-  appTab=tab==='prep'&&!hasPrep?'details':(tab||'details');
+  appTab=tab==='prep'&&!hasPrep?'details':(tab||(a.status==='saved'?'letter':'details'));   // משרה שעוד לא הוגשה נפתחת בערכת ההגשה
   const j=JOBS[a.jobId];
   const tabs=[['details','פרטים'],['letter','ערכת הגשה'],['ref','קשרים'],...(hasPrep?[['prep',a.status==='interview'?'הכנה':'סינון']]:[])];
   openSheet(`<div style="display:flex;gap:13px;align-items:center">${logo(j)}<div style="min-width:0"><h3 id="sheetTitle" dir="${dirOf(j.title)||'auto'}" style="text-align:right">${escB(j.title)}</h3><div class="sheet-sub">${escB(j.co)} · ${escB(j.loc)}</div></div></div>
@@ -590,19 +590,18 @@ function kitTabHtml(a,j,id){track('kit_open');
   const p=prof(),d=kitData(),vis=KIT_FIELDS.filter(([k])=>!['first','last'].includes(k)),missing=vis.filter(([k])=>!d[k]);
   const letter=a.letter||(j.letter&&j.letter.text)||(REAL?'':letterFor(j)),t=j.tailor,ed=tailorEdits(j),off=new Set(((S.tailorOff||{})[a.jobId])||[]);
   const card=(title,chip,amb,body,acts)=>`<section class="kc"><div class="kc-h"><h4>${title}</h4>${chip?`<span class="kc-chip${amb?' amb':''}">${chip}</span>`:''}</div>${body}${acts?`<div class="kc-acts">${acts}</div>`:''}</section>`;
+  const on=new Set(((S.tailorOn||{})[a.jobId])||[]);   // ברירת מחדל: לא מסומן. מסמנים מה נכנס ל-PDF
   const cvBody=!REAL||!t?`<p class="card-sub" style="margin:6px 0 0">${REAL?`${escB(N('linkedin'))} יציע התאמות למשרה הזו אחרי הריצה הקרובה. בינתיים: קורות החיים מהפרופיל.`:'קורות החיים מהפרופיל.'}</p>`
     :!ed.length?`<p class="card-sub" style="margin:6px 0 0">${t.no_ad?`אין מודעה מלאה, אז ${escB(N('linkedin'))} לא הציע שינויים.`:`${escB(N('linkedin'))} בדק: קורות החיים כבר מדגישים את מה שהמשרה מבקשת.`}</p>`
-    :`<p class="kc-diff" dir="auto"><s>${escB(ed[0].before)}</s><br><b>${escB(ed[0].after)}</b></p>
-      <details class="kc-det kc-eds"><summary>${ed.length>1?`כל ההתאמות (${ed.length})`:'לבחור אם ייכנס ל-PDF'}</summary>
-        <p class="card-sub">רק ניסוח וסדר של מה שכבר כתוב אצלך. מה שמסומן ייכנס ל-PDF.</p>${t.order?`<p class="card-sub">↑ ${escB(t.order)}</p>`:''}
-        ${ed.map((e,x)=>`<label class="kc-ed"><input type="checkbox" ${off.has(x)?'':'checked'} onchange="tailorToggle('${a.jobId}',${x},this.checked)"><span dir="auto"><s>${escB(e.before)}</s><b>${escB(e.after)}</b>${e.why?`<small>${escB(e.why)}</small>`:''}</span></label>`).join('')}</details>`;
-  const nOn=ed.filter((_,x)=>!off.has(x)).length;
-  return `<div class="kit">
-    ${card('קורות חיים למשרה',ed.length?`${nOn===ed.length?'':nOn+' מתוך '}${ed.length} התאמות`:'',!!ed.length,cvBody,
-      `<button class="btn btn-ghost btn-sm" onclick="cvPreview('${a.jobId}','${id}')">${ed.length?'PDF למשרה':'PDF של קורות החיים'}</button>`)}
+    :`<p class="card-sub" style="margin:6px 0 4px">${escB(N('linkedin'))} מציע ניסוח וסדר למשרה הזו, רק ממה שכבר כתוב אצלך. מה שתסמן ייכנס ל-PDF.</p>${t.order?`<p class="card-sub">↑ ${escB(t.order)}</p>`:''}
+      ${ed.map((e,x)=>`<label class="kc-ed"><input type="checkbox" ${on.has(x)?'checked':''} onchange="tailorPick('${a.jobId}',${x},this.checked,'${id}')"><span dir="ltr"><s>${escB(e.before)}</s><b>${escB(e.after)}</b>${e.why?`<small dir="rtl">${escB(e.why)}</small>`:''}</span></label>`).join('')}`;
+  const nOn=ed.filter((_,x)=>on.has(x)).length;
+  return `<div class="kit">${a.status==='saved'?`<p class="kit-now">${escB(nowTxt(a))}</p>`:''}
+    ${card('קורות חיים למשרה',ed.length?(nOn?`${nOn} מסומנות`:`${ed.length} התאמות מוצעות`):'',!!ed.length&&!nOn,cvBody,
+      `<button class="btn btn-ghost btn-sm${ed.length&&!nOn?' is-off':''}" id="cvPdfBtn" onclick="${ed.length?`if(!((S.tailorOn||{})['${a.jobId}']||[]).length){toast('סמן לפחות התאמה אחת, והיא תיכנס ל-PDF');return}`:''}cvPreview('${a.jobId}','${id}')">${ed.length?'קובץ PDF למשרה':'PDF של קורות החיים'}</button>`)}
     ${card('מכתב פנייה',letter?`מוכן · ${letter.split(/\s+/).filter(Boolean).length} מילים`:'בהכנה',!letter,
-      letter?`<p class="kc-pv" dir="auto">${escB(letter.replace(/\s*\n+\s*/g,' ').slice(0,240))}</p>
-        <details class="kc-det"><summary>לקרוא ולערוך</summary><label for="letterBox" class="vh">מכתב פנייה</label><textarea class="textbox letterbox${/[֐-׿]/.test(letter.slice(0,300))?'':' ltr'}" id="letterBox" rows="14" spellcheck="false" oninput="appOf('${id}').letter=this.value;save()">${esc(letter)}</textarea>
+      letter?`<p class="kc-pv" dir="ltr">${escB(letter.replace(/\s*\n+\s*/g,' ').slice(0,240))}</p>
+        <details class="kc-det"><summary>לקרוא ולערוך</summary><label for="letterBox" class="vh">מכתב פנייה</label><textarea class="textbox letterbox ltr" dir="ltr" id="letterBox" rows="14" spellcheck="false" oninput="appOf('${id}').letter=this.value;save()">${esc(letter)}</textarea>
         ${j.letter&&!j.letter.checked?`<div class="hint-line">חלק מהמשפטים הוסרו כי לא הצלחנו לאמת אותם מול קורות החיים.</div>`:''}</details>`
       :`<p class="card-sub" style="margin:6px 0 0">${escB(N('assistant'))} מכין את המכתב. הוא יופיע כאן תוך שעתיים בערך.</p><textarea id="letterBox" hidden></textarea>`,
       letter?`<button class="btn btn-ghost btn-sm" onclick="copyText($('letterBox').value,'המכתב הועתק');track('letter_copy')">${ICO.copy}להעתיק</button>`:'')}
@@ -621,6 +620,7 @@ function fitFold(j,jid){const d=j.dims||{},rq=Array.isArray(d.req)?d.req:[],met=
     ${j.reasons.length?`<div class="s-sec"><h4>למה זה מתאים לך</h4>${j.reasons.map(r=>`<div class="jc-r" style="margin-bottom:7px"><span class="ic ok" aria-hidden="true">✓</span><span>${escB(r)}</span></div>`).join('')}</div>`:''}
     ${j.gaps.length?`<div class="s-sec"><h4>מה חסר</h4>${j.gaps.map(g=>`<div class="jc-r" style="margin-bottom:7px"><span class="ic gap" aria-hidden="true">!</span><span>${escB(g)}</span></div>`).join('')}</div>`:''}
     <button class="kc-more" onclick="openJobInfo('${jid}')">המודעה המלאה ‹</button></details>`}
+function tailorPick(jobId,x,v,appId){S.tailorOn=S.tailorOn||{};const L=new Set(S.tailorOn[jobId]||[]);v?L.add(x):L.delete(x);S.tailorOn[jobId]=[...L];save();paintAppTab(appId)}
 function tailorToggle(jobId,x,on){S.tailorOff=S.tailorOff||{};const L=new Set(S.tailorOff[jobId]||[]);on?L.delete(x):L.add(x);S.tailorOff[jobId]=[...L];save()}
 /* בלשונית הפרטים: רק קיצור. ההתאמות וה-PDF בערכת ההגשה */
 function tailorLink(j,id){const n=((j.tailor||{}).edits||[]).length;if(!n)return'';
@@ -638,7 +638,7 @@ function lostTerms(b,a){const first=new Set([...String(b).matchAll(/(?:^|[.:;•
   return [...new Set((String(b).match(/[A-Za-z0-9][A-Za-z0-9+#./-]*/g)||[]).filter(w=>/[A-Z0-9]/.test(w)&&!first.has(w)).map(w=>w.replace(/[.,]+$/,'')))].filter(w=>w&&!low.includes(w.toLowerCase()))}
 function tailorEdits(j){return (((j||{}).tailor||{}).edits||[]).filter(e=>!lostTerms(e.before,e.after).length)}
 /* PDF למשרה: תצוגה מקדימה במקום (מיידית, בלי שרת ובלי AI), ואז "שמירה כ-PDF" מאותו מסך. בלי חלון או לשונית חדשה */
-function cvPreview(jobId,appId){const j=JOBS[jobId]||{},off=new Set(((S.tailorOff||{})[jobId])||[]),ed=tailorEdits(j).filter((_,x)=>!off.has(x));
+function cvPreview(jobId,appId){const j=JOBS[jobId]||{},on=new Set(((S.tailorOn||{})[jobId])||[]),ed=tailorEdits(j).filter((_,x)=>on.has(x));
   const {text,miss}=cvWithEdits(prof().cv,ed),rtl=/[֐-׿]/.test(text.slice(0,400));track('cv_pdf');
   window.__cvDoc={html:cvHtml(text),rtl,title:`${cvFacts(prof().cv).full_en||prof().name||'CV'} - CV - ${j.co||''}`.trim()};
   openSheet(`<h3 id="sheetTitle">קורות חיים ל-${escB(j.co||'')}</h3>

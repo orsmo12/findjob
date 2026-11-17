@@ -19,6 +19,7 @@ from typing import TypedDict
 
 from agent_core.llm_router import chat
 from agent_core import activity as act
+from agent_core.handoffs import LETTER_V
 from agent_core.agents.letters import ad_language, unsupported, _drop_bad_sentences, write_letter, shape_letter
 
 MAX_ROUNDS = 2
@@ -84,6 +85,9 @@ def _brief_text(b: dict | None) -> str:
 
 
 # ── צמתים ────────────────────────────────────────────────────────────────────
+LETTERS_EN_ONLY = True   # מתג חזרה (17.11): כל המכתבים באנגלית. מודעה בעברית יצרה פנייה בעברית וגוף באנגלית
+
+
 def need(st: S) -> dict:
     """מה החברה צריכה, ואיזה פרויקטים מקורות החיים עונים על זה."""
     j = st["job"]
@@ -106,7 +110,7 @@ CV:
     d["reserve"] = bool(RESERVE.search(st["cv"] + " " + (st.get("status") or "")))   # מילואים: רק אם כתוב אצל המשתמש
     act.log("assistant", f"{j['co']}: החברה מחפשת {', '.join((d.get('requirements') or [])[:3]) or 'לא ברור מהמודעה'}. "
             + (f"הפרויקטים שהכי עונים: {', '.join(d['projects'])}." if d["projects"] else "לא מצאתי פרויקט שעונה ישירות."))
-    return {"need": d, "lang": ad_language(_ad(st)) if _ad(st) else "English", "rounds": 0}
+    return {"need": d, "lang": "English" if LETTERS_EN_ONLY else (ad_language(_ad(st)) if _ad(st) else "English"), "rounds": 0}
 
 
 def _style_block(st: S) -> str:
@@ -312,5 +316,5 @@ def write_letter_v4(cv: str, job: dict, name: str, brief: dict | None = None, st
     out = _graph.invoke({"cv": cv, "job": job, "name": name, "brief": brief or {}, "status": status,
                          "own_letters": own_letters or [], "may_reuse": may_reuse}, {"recursion_limit": 25})
     pr = (out.get("need") or {}).get("projects") or []
-    return {"text": out["text"], "lang": out.get("lang") or "English", "v": 6, "checked": bool(out.get("checked")),
+    return {"text": out["text"], "lang": out.get("lang") or "English", "v": LETTER_V, "checked": bool(out.get("checked")),
             "rounds": out.get("rounds") or 0, "projects": pr, "score": letter_score(out["text"], job, cv, pr)}

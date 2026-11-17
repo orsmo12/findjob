@@ -26,7 +26,7 @@ def test_loop_fixes_slop_and_grounding():
     })
     assert calls[:3] == ["letter_need", "letter_draft", "letter_critique"]
     assert calls.count("letter_rewrite") == 2                 # פעם בגלל הביקורת, פעם בגלל בדיקת האמת
-    assert out["v"] == 6 and out["checked"] and "Kubernetes" not in out["text"] and out["projects"] == ["findjob"]
+    assert out["v"] == LG.LETTER_V and out["checked"] and "Kubernetes" not in out["text"] and out["projects"] == ["findjob"]
 
 
 def test_gives_up_after_two_rounds_and_drops_bad_sentence():
@@ -109,3 +109,13 @@ def test_code_rule_failures_reach_the_rewrite():
         assert LG.critique({"text": txt, "job": JOB})["issues"] == []
     finally:
         LG.CODE_RULES_IN_CRITIQUE = True
+
+
+def test_letters_always_english_and_no_cut_after_degree():
+    """17.11: מודעה בעברית יצרה פנייה בעברית וגוף באנגלית, ומחיקת משפט נחתכה אחרי B.Sc. והשאירה שבר משפט."""
+    from agent_core.agents.letters import _sentences, _drop_bad_sentences
+    assert LG.need.__globals__["LETTERS_EN_ONLY"] is True
+    p = "I am pursuing a B.Sc. in Computer Science at HIT. I built findjob."
+    assert _sentences(p) == ["I am pursuing a B.Sc. in Computer Science at HIT.", "I built findjob."]
+    out = _drop_bad_sentences("Dear X team,\n\n" + p, ["HIT"])
+    assert "in Computer Science" not in out and "I built findjob." in out

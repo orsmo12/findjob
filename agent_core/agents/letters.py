@@ -82,8 +82,18 @@ GREET = re.compile(r"^\s*((dear|hi|hello)\b[^\n.!?]{0,90}?,|(שלום|לכבוד
 SIGN = re.compile(r"(best regards|kind regards|warm regards|regards|sincerely|בברכה|תודה רבה)\s*,?", re.I)
 
 
+_ABBR = re.compile(r"\b(?:B\.Sc|M\.Sc|B\.A|M\.A|Ph\.D|B\.Eng|e\.g|i\.e|etc|vs|Inc|Ltd|Dr|Mr|Ms|No)\.$", re.I)
+
+
 def _sentences(p: str) -> list[str]:
-    return [s for s in re.split(r"(?<=[.!?])\s+", p.strip()) if s]
+    """משפטים. לא חותכים אחרי קיצור (B.Sc., e.g.) — חיתוך כזה השאיר "in Computer Science at HIT." בלי תחילת המשפט."""
+    out = []
+    for part in re.split(r"(?<=[.!?])\s+", p.strip()):
+        if out and _ABBR.search(out[-1]):
+            out[-1] += " " + part
+        elif part:
+            out.append(part)
+    return out
 
 
 def _paragraphs(body: str) -> list[str]:
@@ -143,7 +153,7 @@ def _drop_bad_sentences(letter: str, bad: list[str]) -> str:
 
 def write_letter(cv: str, job: dict, name: str) -> dict:
     ad = job.get("ad") or job.get("desc") or ""
-    lang = ad_language(ad) if ad else "English"
+    lang = "English"   # 17.11: כל המכתבים באנגלית (ad_language נשאר למקרה שנחזיר)
     prompt = PROMPT.format(lang=lang, name=name or "", cv=cv[:5000], title=job["title"], company=job["co"], ad=ad[:3500] or "(no description)")
     act.log("assistant", f"כותב מכתב פנייה ל-{job['co']} ({'אנגלית' if lang == 'English' else 'עברית'}, כשפת המודעה)")
     text = chat("assistant", "cover_letter", [{"role": "user", "content": prompt}], tier="write", max_tokens=1500)
