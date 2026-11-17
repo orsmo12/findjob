@@ -552,8 +552,37 @@ def req_view(r: dict) -> dict:
             "gn": bool(core) and all(_met(c) for c in core)}
 
 
+# מתג חזרה (17.11): לשלוח לדירוג רק את החלקים שקובעים התאמה. כבוי עד ש-calibrate יראה שהציונים לא זזים.
+AD_CORE = False
+_AD_DROP = re.compile(r"^(about (?!(the |this |our )?(role|job|position|opportunity|you|team)\b)|who we are|our (story|mission|culture|company)|why (join|work)|"
+                      r"what we offer|we offer|benefits|perks|compensation( and| &) benefits|equal (employment )?opportunit|eeo|"
+                      r"privacy|diversity|life at|על החברה|מי אנחנו|מה אנחנו מציעים|אנחנו מציעים|הטבות|למה (לעבוד|להצטרף))", re.I)
+_AD_HEAD = re.compile(r"^[^.!?]{2,60}:?$")
+_AD_EEO = re.compile(r"equal opportunity employer|without regard to (race|religion)|reasonable accommodation", re.I)
+
+
+def ad_core(desc: str) -> str:
+    """המודעה בלי "על החברה", הטבות והצהרות משפטיות. כותרת שנשמטת מוחקת את החלק עד הכותרת הבאה.
+    אם נשאר מעט מדי (פחות מ-200 תווים) — המודעה המקורית, כדי לא לאבד דרישות."""
+    desc = desc or ""
+    out, drop, cut = [], False, False
+    for ln in desc.split("\n"):
+        t = ln.strip().strip("*#•-– ").strip()
+        bullet = re.match(r"\s*([-•–]|\*(?!\*)|\d+[.)])\s", ln)  # שורת רשימה היא לא כותרת
+        if t and not bullet and _AD_HEAD.match(t) and len(t.split()) <= 7:
+            drop = bool(_AD_DROP.match(t))
+        if drop or _AD_EEO.search(t):
+            cut = True
+            continue
+        out.append(ln)
+    core = re.sub(r"\n{3,}", "\n\n", "\n".join(out)).strip()
+    return core if cut and len(core) >= 200 else desc
+
+
 def rate(job: dict, cv: str, prefs: str) -> dict | None:
     desc = job.get("description", "")
+    if AD_CORE:
+        desc = ad_core(desc)
     prompt = RANK_PROMPT.format(cv=cv[:5000], prefs=prefs, title=job["title"], company=job["company"],
                                 location=job["location"], desc=(desc[:3500] or "(no description available)"))
     r = parse_rating(chat("hunter", "rate_job", [{"role": "user", "content": prompt}], tier="judge", max_tokens=2200, temperature=0))

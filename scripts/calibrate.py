@@ -3,6 +3,7 @@ calibrate.py — כלי מפתח: כיול הניקוד על מודעות אמי
 לוקח עד 15 משרות של המשתמש הראשון (שמורות ומחכות, עם מודעה מלאה), מדרג אותן בשיטה החדשה ומשווה לציון שנשמר.
 מדפיס רק כותרת, חברה ומספרים. בלי קורות חיים ובלי תוכן אישי.
   python scripts/calibrate.py
+  AD_CORE=compare: כל משרה מדורגת פעמיים, עם המודעה המלאה ועם המודעה המקוצרת (hunter.ad_core), ומודפס ההפרש.
 """
 import os
 import sys
@@ -33,11 +34,19 @@ rows = ([r for r in allj if r.get("decision") in ("save", "applied") and ok_ad(r
         + [r for r in allj if r.get("decision") == "skip" and ok_ad(r) and (skips.get((r["card"] or {}).get("id")) or {}).get("r") == "לא עומד בדרישות"][:9])
 print(f"{'לפני':>5} {'אחרי':>5}  {'שנים':>4} {'רמה':<7} {'כישורים':<6} {'פער':<6}  משרה")
 moved = 0
+CMP = os.environ.get("AD_CORE") == "compare"
+chars = [0, 0]
+if CMP:
+    print("השוואה: לפני = מודעה מלאה, אחרי = מודעה מקוצרת\n")
 avg = {"save": [[], []], "skip": [[], []]}
 for row in rows:
     c = row["card"]
     j = {"title": c.get("title", ""), "company": c.get("co", ""), "location": c.get("loc", ""), "description": c["ad"]}
     try:
+        if CMP:
+            h.AD_CORE = False
+            r0 = h.rate(j, prof["cv_text"], h.prefs_text(plan))
+            h.AD_CORE = True
         r = h.rate(j, prof["cv_text"], h.prefs_text(plan))
     except h.BudgetDeferred:
         print("מכסה נגמרה"); break
@@ -45,7 +54,11 @@ for row in rows:
         continue
     h.level_cap(r, plan, j["title"])
     work = [x["req"][:40] for x in r["core"] if x.get("kind") == "work" and not h._met(x)]
-    old = float(c.get("fit") or 0)
+    if CMP and r0:
+        h.level_cap(r0, plan, j["title"])
+    old = float(r0["fit"]) if CMP and r0 else float(c.get("fit") or 0)
+    if CMP:
+        chars[0] += len(j["description"]); chars[1] += len(h.ad_core(j["description"]))
     moved += abs(old - r["fit"]) >= 0.5
     g = avg["skip" if row.get("decision") == "skip" else "save"]; g[0].append(old); g[1].append(r["fit"])
     print(f"{old:>5.1f} {r['fit']:>5.1f}  {r.get('required_years') or 0:>4} {r.get('level') or '?':<7} {r['dims']['skills']:<6} {r['dims']['level']:<6}  "
@@ -54,4 +67,6 @@ print(f"\n{len(rows)} משרות, {moved} זזו בחצי נקודה או יות
 m = lambda x: sum(x) / len(x) if x else 0
 for k, (a, b) in avg.items():
     print(f"ממוצע {('שמורות' if k == 'save' else 'דולגו בגלל דרישות')}: לפני {m(a):.2f} → אחרי {m(b):.2f} ({len(a)})")
+if CMP and chars[0]:
+    print(f"תווים למודעה: {chars[0] // max(len(rows), 1)} → {chars[1] // max(len(rows), 1)} ({100 - 100 * chars[1] // chars[0]}% פחות)")
 print(f"הפרדה (שמורות פחות דולגו): לפני {m(avg['save'][0]) - m(avg['skip'][0]):.2f} → אחרי {m(avg['save'][1]) - m(avg['skip'][1]):.2f}")
