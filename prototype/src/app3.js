@@ -589,26 +589,26 @@ function kitData(){const p=prof(),o={};KIT_FIELDS.forEach(([k,,f])=>{const v=f(p
 function kitTabHtml(a,j,id){track('kit_open');
   const p=prof(),d=kitData(),vis=KIT_FIELDS.filter(([k])=>!['first','last'].includes(k)),missing=vis.filter(([k])=>!d[k]);
   const letter=a.letter||(j.letter&&j.letter.text)||(REAL?'':letterFor(j)),t=j.tailor,ed=tailorEdits(j),off=new Set(((S.tailorOff||{})[a.jobId])||[]);
-  const card=(title,chip,amb,body,acts)=>`<section class="kc"><div class="kc-h"><h4>${title}</h4>${chip?`<span class="kc-chip${amb?' amb':''}">${chip}</span>`:''}</div>${body}${acts?`<div class="kc-acts">${acts}</div>`:''}</section>`;
+  const card=(title,chip,amb,body,acts,help)=>`<section class="kc"><div class="kc-h"><h4>${title}</h4>${help?`<button class="kc-q" aria-label="מה זה?" onclick="kitHelp('${help}','${id}')">?</button>`:''}${chip?`<span class="kc-chip${amb?' amb':''}">${chip}</span>`:''}</div>${body}${acts?`<div class="kc-acts">${acts}</div>`:''}</section>`;
   const on=new Set(((S.tailorOn||{})[a.jobId])||[]);   // ברירת מחדל: לא מסומן. מסמנים מה נכנס ל-PDF
   const cvBody=!REAL||!t?`<p class="card-sub" style="margin:6px 0 0">${REAL?`${escB(N('linkedin'))} יציע התאמות למשרה הזו אחרי הריצה הקרובה. בינתיים: קורות החיים מהפרופיל.`:'קורות החיים מהפרופיל.'}</p>`
     :!ed.length?`<p class="card-sub" style="margin:6px 0 0">${t.no_ad?`אין מודעה מלאה, אז ${escB(N('linkedin'))} לא הציע שינויים.`:`${escB(N('linkedin'))} בדק: קורות החיים כבר מדגישים את מה שהמשרה מבקשת.`}</p>`
-    :`<p class="card-sub" style="margin:6px 0 4px">${escB(N('linkedin'))} מציע ניסוח וסדר למשרה הזו, רק ממה שכבר כתוב אצלך. מה שתסמן ייכנס ל-PDF.</p>${t.order?`<p class="card-sub">↑ ${escB(t.order)}</p>`:''}
+    :`${t.order?`<p class="card-sub">↑ ${escB(t.order)}</p>`:''}
       ${ed.map((e,x)=>`<label class="kc-ed"><input type="checkbox" ${on.has(x)?'checked':''} onchange="tailorPick('${a.jobId}',${x},this.checked,'${id}')"><span dir="ltr"><s>${escB(e.before)}</s><b>${escB(e.after)}</b>${e.why?`<small dir="rtl">${escB(e.why)}</small>`:''}</span></label>`).join('')}`;
   const nOn=ed.filter((_,x)=>on.has(x)).length;
   return `<div class="kit">${a.status==='saved'?`<p class="kit-now">${escB(nowTxt(a))}</p>`:''}
     ${card('קורות חיים למשרה',ed.length?(nOn?`${nOn} מסומנות`:`${ed.length} התאמות מוצעות`):'',!!ed.length&&!nOn,cvBody,
-      `<button class="btn btn-ghost btn-sm${ed.length&&!nOn?' is-off':''}" id="cvPdfBtn" onclick="${ed.length?`if(!((S.tailorOn||{})['${a.jobId}']||[]).length){toast('סמן לפחות התאמה אחת, והיא תיכנס ל-PDF');return}`:''}cvPreview('${a.jobId}','${id}')">${ed.length?'קובץ PDF למשרה':'PDF של קורות החיים'}</button>`)}
+      `<button class="btn btn-ghost btn-sm${ed.length?(nOn?' is-on':' is-off'):''}" id="cvPdfBtn" onclick="${ed.length?`if(!((S.tailorOn||{})['${a.jobId}']||[]).length){toast('סמן לפחות התאמה אחת, והיא תיכנס ל-PDF');return}`:''}cvPreview('${a.jobId}','${id}')">${ed.length?'קובץ PDF למשרה':'PDF של קורות החיים'}</button>`,'cv')}
     ${card('מכתב פנייה',letter?`מוכן · ${letter.split(/\s+/).filter(Boolean).length} מילים`:'בהכנה',!letter,
       letter?`<p class="kc-pv" dir="ltr">${escB(letter.replace(/\s*\n+\s*/g,' ').slice(0,240))}</p>
         <details class="kc-det"><summary>לקרוא ולערוך</summary><label for="letterBox" class="vh">מכתב פנייה</label><textarea class="textbox letterbox ltr" dir="ltr" id="letterBox" rows="14" spellcheck="false" oninput="appOf('${id}').letter=this.value;save()">${esc(letter)}</textarea>
         ${j.letter&&!j.letter.checked?`<div class="hint-line">חלק מהמשפטים הוסרו כי לא הצלחנו לאמת אותם מול קורות החיים.</div>`:''}</details>`
       :`<p class="card-sub" style="margin:6px 0 0">${escB(N('assistant'))} מכין את המכתב. הוא יופיע כאן תוך שעתיים בערך.</p><textarea id="letterBox" hidden></textarea>`,
-      letter?`<button class="btn btn-ghost btn-sm" onclick="copyText($('letterBox').value,'המכתב הועתק');track('letter_copy')">${ICO.copy}להעתיק</button>`:'')}
+      letter?`<button class="btn btn-ghost btn-sm" onclick="copyText($('letterBox').value,'המכתב הועתק');track('letter_copy')">${ICO.copy}להעתיק</button>`:'','letter')}
     ${card('מילוי הטופס',missing.length?`${vis.length-missing.length} מוכנים · ${missing.length} חסרים`:`${vis.length} פרטים מוכנים`,!!missing.length,
       `${missing.length?`<p class="card-sub" style="margin:6px 0 0">חסרים: ${escB(missing.map(m=>m[1]).join(', '))}. <button class="kc-more" onclick="openKitEdit()">להשלים</button></p>`:''}
        <details class="kc-det"><summary>תשובות מוכנות להעתקה</summary>${readyAnswersHtml()}</details>`,
-      `<a class="btn btn-primary btn-sm ext" href="${j.url||LI_URL+'jobs/'}" target="_blank" rel="noopener" onclick="copyText($('letterBox').value,'המכתב הועתק. הדבק אותו בשדה המכתב בטופס');track('apply_open')">לפתוח את הטופס ולמלא</a>`)}
+      `<a class="btn btn-primary btn-sm ext" href="${j.url||LI_URL+'jobs/'}" target="_blank" rel="noopener" onclick="copyText($('letterBox').value,'המכתב הועתק. הדבק אותו בשדה המכתב בטופס');track('apply_open')">לפתוח את הטופס ולמלא</a>`,'form')}
     <p class="card-sub" style="margin-top:10px">הסימנייה ממלאת את מה שהיא מזהה ומסמנת בצהוב מה לבדוק. היא לא שולחת. <button class="kc-more" onclick="openFillHelp()">איך מוסיפים אותה</button>${CLOUDM?` · שאלה בטופס? <button class="kc-more" onclick="askAboutJob('${a.jobId}');$('chatInput').value+='בטופס ההגשה שואלים: '">${escB(N('assistant'))} בצ׳אט</button>`:''}</p>
     <div class="s-sec">${appliedBox(a,true)}</div></div>`;
 }
@@ -620,6 +620,10 @@ function fitFold(j,jid){const d=j.dims||{},rq=Array.isArray(d.req)?d.req:[],met=
     ${j.reasons.length?`<div class="s-sec"><h4>למה זה מתאים לך</h4>${j.reasons.map(r=>`<div class="jc-r" style="margin-bottom:7px"><span class="ic ok" aria-hidden="true">✓</span><span>${escB(r)}</span></div>`).join('')}</div>`:''}
     ${j.gaps.length?`<div class="s-sec"><h4>מה חסר</h4>${j.gaps.map(g=>`<div class="jc-r" style="margin-bottom:7px"><span class="ic gap" aria-hidden="true">!</span><span>${escB(g)}</span></div>`).join('')}</div>`:''}
     <button class="kc-more" onclick="openJobInfo('${jid}')">המודעה המלאה ‹</button></details>`}
+function kitHelp(k,appId){const T={cv:['קורות חיים למשרה',`${escB(N('linkedin'))} מציע ניסוח וסדר למשרה הזו, רק ממה שכבר כתוב אצלך: בלי להוסיף ובלי להשמיט כלים או פרטים. מה שתסמן ייכנס ל-PDF, ואם לא תסמן כלום אפשר להוריד את קורות החיים כמו שהם.`],
+  letter:['מכתב פנייה',`${escB(N('assistant'))} כותב מכתב באנגלית לכל משרה שנשמרה, רק מעובדות שבקורות החיים, במודעה ובמה שכתבת על עצמך. אפשר לערוך, ואז להעתיק ולהדביק בשדה המכתב בטופס.`],
+  form:['מילוי הטופס','"לפתוח את הטופס ולמלא" מעתיק את המכתב ופותח את המודעה. שם הסימנייה ממלאת שם, פרטי קשר, השכלה ושאלות כן/לא, ומסמנת בצהוב מה לבדוק. היא לא שולחת. בטלפון, בהגשה המהירה של LinkedIn, משתמשים ב"תשובות מוכנות להעתקה".']}[k];
+  if(T)openSheet(`<h3 id="sheetTitle">${T[0]}</h3><div class="sheet-sub">${T[1]}</div><button class="btn btn-ghost btn-block" style="margin-top:14px" onclick="openApp('${appId}','letter')">הבנתי</button>`)}
 function tailorPick(jobId,x,v,appId){S.tailorOn=S.tailorOn||{};const L=new Set(S.tailorOn[jobId]||[]);v?L.add(x):L.delete(x);S.tailorOn[jobId]=[...L];save();paintAppTab(appId)}
 function tailorToggle(jobId,x,on){S.tailorOff=S.tailorOff||{};const L=new Set(S.tailorOff[jobId]||[]);on?L.delete(x):L.add(x);S.tailorOff[jobId]=[...L];save()}
 /* בלשונית הפרטים: רק קיצור. ההתאמות וה-PDF בערכת ההגשה */

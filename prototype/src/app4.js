@@ -9,6 +9,13 @@ const ROW_IC={doc:'<svg viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 00-2 2v14a2 2
   trash:'<svg viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>',
   book:'<svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 016.5 17H20V3H6.5A2.5 2.5 0 004 5.5z"/><path d="M4 19.5A2.5 2.5 0 006.5 22H20v-5"/></svg>'};
 function learnedChips(){const c={};Object.values(S.skipReasons).forEach(r=>c[r]=(c[r]||0)+1);return Object.entries(c)}
+/* "מה אני מחפש": כל התשובות בשורות עם כותרת, כל שורה פותחת את השאלה שלה */
+function seekRows(){const a=ans(),j=x=>[].concat(x||[]).filter(v=>v&&v!==OTHER).join(', ');
+  const R=[['תפקידים',j(a.roles)+(a.roles_other?` + ${a.roles_other}`:''),'roles'],['תחום',j(domainsOf(a)),'domains'],
+    ['לימודים וניסיון',[a.study===OTHER?a.study_other:a.study,a.year,a.work===OTHER?a.work_other:a.work,a.exp&&('ניסיון: '+a.exp)].filter(Boolean).join(' · '),'study'],
+    ['איפה ומתי',[j(a.locs),a.mode,a.start&&('התחלה '+a.start),j(a.scope)].filter(Boolean).join(' · '),'locs'],
+    ['שכר',a.salary?`${a.salary} ברוטו לחודש`:'','salary']];
+  return R.map(([l,v,q])=>`<button class="row seek" onclick="openQuestions('${q}')"><span class="rl"><small class="rlab">${l}</small><b dir="auto">${escB(v||'עוד לא ענית')}</b></span><span class="chev" aria-hidden="true"></span></button>`).join('')}
 function renderProfile(){
   const p=prof(),a=ans(),{done,total}=qProgress(),applied=S.apps.filter(x=>x.status!=='saved').length,ivs=S.apps.filter(x=>['interview','offer'].includes(x.status)).length,learned=learnedChips();
   const L={'בכירה מדי':'פחות משרות בכירות','מיקום':'משרות קרובות יותר','טכנולוגיה':'טכנולוגיות שמתאימות לך','לא מעניין אותי':'פחות תפקידים מהסוג שדילגת'};
@@ -16,32 +23,11 @@ function renderProfile(){
     <div class="p-hero glass"><div class="avatar" aria-hidden="true">${escB(initials(p.first||p.name))}</div><h2 class="p-name">${escB(p.name)}</h2><div class="p-goal">${escB(goalTxt())}</div><button class="btn btn-sm btn-ghost" style="margin-top:12px" onclick="editMe()">עריכת שם</button>
       <div class="p-stats"><div><b class="num">${Object.keys(S.decisions).length}</b><span>משרות שסקרת</span></div><div><b class="num">${applied}</b><span>הגשות</span></div><div><b class="num">${ivs}</b><span>ראיונות</span></div></div></div>
 
-    <section class="card glass" data-fold="cvH"><details class="card-d"${!(p.cv||p.cvName)?' open':''}><summary><h2 class="card-h" id="cvH">קורות חיים</h2><span class="cd-s">${escB(p.cv||p.cvName?'הועלו ✓':'חסר')}</span></summary>
-      <div class="row"><span class="ri">${ROW_IC.doc}</span><span class="rl"><b>${escB(p.cvName||(p.cv?'הודבקו כטקסט':'עוד לא הועלו'))}</b><span>${p.cv||p.cvName?'כל הסוכנים עובדים לפיהם':'בלעדיהם הסוכנים לא יכולים להתאים לך משרות'}</span></span>${p.cv||p.cvName?'<span class="pill-ok">פעיל</span>':'<span class="pill-warn">חסר</span>'}</div>
-      <div class="duo"><label for="cvFile" class="btn btn-sm btn-ghost">${p.cvName?'להחליף קובץ':'להעלות קובץ'}</label><button class="btn btn-sm btn-ghost" onclick="editCvText()">לערוך כטקסט</button></div>
-      ${CLOUDM&&domainOf(ans())!=='פיתוח תוכנה'?`<div class="field" style="margin-top:12px"><label for="pfIn">קישור לתיק עבודות או לפרויקטים</label><div style="display:flex;gap:8px"><input id="pfIn" class="ltr" type="url" placeholder="https://" value="${escB(kitOf(p).site||'')}" autocomplete="off"><button class="btn btn-sm btn-ghost" onclick="savePortfolio()">שמירה</button></div><div class="help">נכנס לטפסי הגשה ולמכתבים. ב${escB(domainOf(ans()))} תיק עבודות שווה יותר מ-GitHub.</div></div>`:''}
-      ${CLOUDM&&domainOf(ans())==='פיתוח תוכנה'?`<div class="field" style="margin-top:12px"><label for="ghIn">שם המשתמש שלך ב-GitHub</label><div style="display:flex;gap:8px"><input id="ghIn" class="ltr" placeholder="username" value="${escB((p.ans||{}).github||'')}" autocomplete="off"><button class="btn btn-sm btn-ghost" onclick="saveGithub()">שמירה</button></div></div>`:''}
-      ${CLOUDM?`<button class="row" style="margin-top:8px" onclick="openLetterPrefs()"><span class="ri">${ROW_IC.doc}</span><span class="rl"><b>מכתבים שכתבת בעבר</b><span>${(S.my_letters||[]).length?`${S.my_letters.length} מכתבים. שי לומד מהם את הסגנון שלך`:'לא חובה. שי ילמד מהם את הסגנון שלך'}</span></span><span class="chev" aria-hidden="true"></span></button>`:''}
-      ${typeof cvSuggestHtml==='function'?cvSuggestHtml():''}</details></section>
-    ${CLOUDM?`<section class="card glass" data-fold="liH"><details class="card-d"${false?' open':''}><summary><h2 class="card-h" id="liH">פרופיל LinkedIn</h2><span class="cd-s">${escB((p.ans||{}).linkedin?'קישור נשמר ✓':'אין קישור')}</span></summary>
-      <div class="field"><label for="liUrl">הקישור לפרופיל שלך</label><div style="display:flex;gap:8px"><input id="liUrl" class="ltr" type="url" placeholder="https://www.linkedin.com/in/…" value="${escB((p.ans||{}).linkedin||'')}" autocomplete="off"><button class="btn btn-sm btn-ghost" onclick="saveLinkedin()">שמירה</button></div></div>
-      <div class="card-sub" style="margin-top:10px">${p.li_text?`${escB(N('linkedin'))} בודק את הפרופיל, והשיפורים במסך LinkedIn.`:`${escB(N('linkedin'))} יציע שיפורים לפרופיל אחרי שתעלה אותו.`} <button class="link" style="color:var(--brand);font-weight:600" onclick="liHow()">איך?</button></div>
-      <label for="liFile" class="btn btn-sm ${p.li_text?'btn-ghost':'btn-primary'} btn-block">${p.li_text?'עדכנתי את הפרופיל':'להעלות את הפרופיל'}</label>
-      <input type="file" id="liFile" class="vh" accept=".pdf,application/pdf" onchange="onLiFile(this)"></details></section>`:''}
-    <section class="card glass" aria-labelledby="qH"><h2 class="card-h" id="qH">עליי</h2>
-      <div class="card-sub">${done<total?`ענית על ${done} מתוך ${total} שאלות. כל תשובה עוזרת לסוכנים לדייק.`:'ענית על כל השאלות. אפשר לעדכן בכל רגע.'}</div>
-      <div class="quota-bar" style="margin-bottom:6px" aria-hidden="true"><div class="quota-fill" style="width:${Math.round(done/total*100)}%;background:linear-gradient(90deg,var(--brand2),var(--brand-hi))"></div></div>
-      <button class="row" onclick="openQuestions('study')"><span class="ri">${ROW_IC.target}</span><span class="rl"><b>${escB([a.study===OTHER?a.study_other:a.study,a.year].filter(Boolean).join(', ')||'לימודים ועבודה')}</b><span>${escB([a.work===OTHER?a.work_other:a.work,(a.scope||[]).join(' + '),a.exp&&('ניסיון: '+a.exp)].filter(Boolean).join(' · ')||'עוד לא ענית')}</span></span><span class="chev" aria-hidden="true"></span></button>
-      <button class="row" onclick="openQuestions('roles')"><span class="ri">${ROW_IC.doc}</span><span class="rl"><b lang="en">${escB((a.roles||[]).filter(r=>r!==OTHER).join(', ')||'תפקידים')}</b><span>${escB([domainsOf(a).join(', '),[].concat(a.field||[]).map(x=>x===OTHER?a.field_other:x).filter(Boolean).join(', ')].filter(Boolean).join(' · ')||'רקע מקצועי: עוד לא ענית')}</span></span><span class="chev" aria-hidden="true"></span></button>
-      <button class="row" onclick="openQuestions('locs')"><span class="ri">${ROW_IC.pin}</span><span class="rl"><b>${escB((a.locs||[]).join(', ')||'אזור עבודה')}</b><span>${escB([a.mode,a.start&&('התחלה: '+a.start)].filter(Boolean).join(' · ')||'עוד לא ענית')}</span></span><span class="chev" aria-hidden="true"></span></button>
-      ${CLOUDM?`<button class="row" onclick="openLetterPrefs()"><span class="ri">${ROW_IC.target}</span><span class="rl"><b>המצב שלי עכשיו</b><span>${escB((p.ans||{}).now?String(p.ans.now).slice(0,60):'מה קורה אצלך היום (לימודים, מילואים, עבודה). נכנס למכתבים')}</span></span><span class="chev" aria-hidden="true"></span></button>`:''}
-      ${(()=>{const d=kitData(),m=['phone','email','city','edu','auth'].filter(k=>!d[k]).length;return `<button class="row" onclick="openKitEdit()"><span class="ri">${ROW_IC.doc}</span><span class="rl"><b>פרטים לטפסי הגשה</b><span>${m?`חסרים ${m}: טלפון, עיר, השכלה… איתם הטופס מתמלא כמעט לבד`:'מוכן. הטפסים מתמלאים מהם'}</span></span>${m?'<span class="kc-chip amb">'+m+'</span>':''}<span class="chev" aria-hidden="true"></span></button>`})()}
-      <button class="btn btn-sm ${done<total?'btn-primary':'btn-ghost'} btn-block" style="margin-top:8px" onclick="openQuestions()">${done<total?'להמשיך את השאלון':'לעבור על כל התשובות'}</button></section>
-
-    <section class="card glass" id="planCard" aria-labelledby="plH">
+    <section class="card glass" aria-labelledby="seekH"><h2 class="card-h" id="seekH">מה אני מחפש</h2>
       ${typeof suggestionsHtml==='function'?suggestionsHtml():''}
-      <details class="plan-d"${S.planOpen?' open':''} ontoggle="S.planOpen=this.open">
-      <summary><span><h2 class="card-h" id="plH">מה מחפשים בשבילך</h2><span class="plan-tags">${planTags().map(t=>`<i>${escB(t)}</i>`).join('')}</span>${planAlert()}</span><span class="chev" aria-hidden="true"></span></summary>
+      ${seekRows()}
+      ${done<total?`<div class="quota-bar" style="margin:10px 0 6px" aria-hidden="true"><div class="quota-fill" style="width:${Math.round(done/total*100)}%;background:var(--brand)"></div></div><button class="btn btn-sm btn-primary btn-block" onclick="openQuestions()">להשלים את השאלון (${done} מתוך ${total})</button>`:''}
+      <details class="sub-d"${S.planOpen?' open':''} ontoggle="S.planOpen=this.open"><summary>איך ${escB(N('strategist'))} מחפש בשבילך${planAlert()}<span class="cd-s">${planTags().slice(-1)}</span></summary>
       <div class="card-sub">${escB(N('strategist'))} בנה את זה מקורות החיים ומהתשובות שלך, ומעדכן בכל שינוי.</div>
       <ul class="plan-list">${planWhy().map(w=>`<li>${escB(w)}</li>`).join('')}</ul>
       <details class="sub-d"><summary>מה למדנו מהשימוש שלך<span class="cd-s">${learned.length?learned.length+" סיבות":""}</span></summary>${tasteHtml()}
@@ -60,6 +46,24 @@ function renderProfile(){
       ${(()=>{const rt=realTargets();return rt?targetsHtml(rt):`<div class="learned">${targetCompanies().map(c=>`<span class="chip" title="${escB(c.why.join(' · '))}">${escB(c.name)}<button aria-label="להסיר את ${escB(c.name)}" onclick="removeTarget('${escB(c.name).replace(/'/g,"\\'")}')">×</button></span>`).join('')}</div>`})()}
       <div class="todo-foot" style="padding:12px 0 0;border:0"><label for="tgIn" class="vh">חברה להוספה</label><input id="tgIn" placeholder="להוסיף חברה" onkeydown="if(event.key==='Enter')addTarget()"><button class="btn btn-sm btn-ghost" onclick="addTarget()">הוסף</button></div>
       ${(S.targets&&(S.targets.added.length||S.targets.removed.length))?`<button class="link" style="font-size:13px;color:var(--brand);margin-top:8px" onclick="S.targets={added:[],removed:[]};save();renderProfile()">להחזיר לבחירה של ${escB(N('strategist'))}</button>`:''}</details></details></section>
+</section>
+
+    <section class="card glass" data-fold="docH"><details class="card-d"${!(p.cv||p.cvName)?' open':''}><summary><h2 class="card-h" id="docH">המסמכים שלי</h2><span class="cd-s">${escB(p.cv||p.cvName?'קורות חיים ✓':'חסרים קורות חיים')}</span></summary>
+      <div class="row"><span class="ri">${ROW_IC.doc}</span><span class="rl"><b>${escB(p.cvName||(p.cv?'הודבקו כטקסט':'עוד לא הועלו'))}</b><span>${p.cv||p.cvName?'כל הסוכנים עובדים לפיהם':'בלעדיהם הסוכנים לא יכולים להתאים לך משרות'}</span></span>${p.cv||p.cvName?'<span class="pill-ok">פעיל</span>':'<span class="pill-warn">חסר</span>'}</div>
+      <div class="duo"><label for="cvFile" class="btn btn-sm btn-ghost">${p.cvName?'להחליף קובץ':'להעלות קובץ'}</label><button class="btn btn-sm btn-ghost" onclick="editCvText()">לערוך כטקסט</button></div>
+      ${CLOUDM&&domainOf(ans())!=='פיתוח תוכנה'?`<div class="field" style="margin-top:12px"><label for="pfIn">קישור לתיק עבודות או לפרויקטים</label><div style="display:flex;gap:8px"><input id="pfIn" class="ltr" type="url" placeholder="https://" value="${escB(kitOf(p).site||'')}" autocomplete="off"><button class="btn btn-sm btn-ghost" onclick="savePortfolio()">שמירה</button></div><div class="help">נכנס לטפסי הגשה ולמכתבים. ב${escB(domainOf(ans()))} תיק עבודות שווה יותר מ-GitHub.</div></div>`:''}
+      ${CLOUDM&&domainOf(ans())==='פיתוח תוכנה'?`<div class="field" style="margin-top:12px"><label for="ghIn">שם המשתמש שלך ב-GitHub</label><div style="display:flex;gap:8px"><input id="ghIn" class="ltr" placeholder="username" value="${escB((p.ans||{}).github||'')}" autocomplete="off"><button class="btn btn-sm btn-ghost" onclick="saveGithub()">שמירה</button></div></div>`:''}
+      ${CLOUDM?`<button class="row" style="margin-top:8px" onclick="openLetterPrefs()"><span class="ri">${ROW_IC.doc}</span><span class="rl"><b>מכתבים שכתבת בעבר</b><span>${(S.my_letters||[]).length?`${S.my_letters.length} מכתבים. שי לומד מהם את הסגנון שלך`:'לא חובה. שי ילמד מהם את הסגנון שלך'}</span></span><span class="chev" aria-hidden="true"></span></button>`:''}
+      ${typeof cvSuggestHtml==='function'?cvSuggestHtml():''}
+      ${CLOUDM?`<details class="sub-d"><summary>LinkedIn<span class="cd-s">${escB((p.ans||{}).linkedin?'קישור נשמר ✓':'אין קישור')}</span></summary>
+      <div class="field"><label for="liUrl">הקישור לפרופיל שלך</label><div style="display:flex;gap:8px"><input id="liUrl" class="ltr" type="url" placeholder="https://www.linkedin.com/in/…" value="${escB((p.ans||{}).linkedin||'')}" autocomplete="off"><button class="btn btn-sm btn-ghost" onclick="saveLinkedin()">שמירה</button></div></div>
+      <div class="card-sub" style="margin-top:10px">${p.li_text?`${escB(N('linkedin'))} בודק את הפרופיל, והשיפורים במסך LinkedIn.`:`${escB(N('linkedin'))} יציע שיפורים לפרופיל אחרי שתעלה אותו.`} <button class="link" style="color:var(--brand);font-weight:600" onclick="liHow()">איך?</button></div>
+      <label for="liFile" class="btn btn-sm ${p.li_text?'btn-ghost':'btn-primary'} btn-block">${p.li_text?'עדכנתי את הפרופיל':'להעלות את הפרופיל'}</label>
+      <input type="file" id="liFile" class="vh" accept=".pdf,application/pdf" onchange="onLiFile(this)"></details>`:''}</details></section>
+
+    <section class="card glass" aria-labelledby="forH"><h2 class="card-h" id="forH">להגשות ולמכתבים</h2>
+      ${(()=>{const d=kitData(),m=['phone','email','city','edu','auth'].filter(k=>!d[k]).length;return `<button class="row" onclick="openKitEdit()"><span class="ri">${ROW_IC.doc}</span><span class="rl"><small class="rlab">פרטים לטפסי הגשה</small><b>${m?`חסרים ${m} פרטים`:'מוכן ✓'}</b><span>טלפון, מייל, עיר, השכלה, אישור עבודה. הטופס מתמלא מהם</span></span><span class="chev" aria-hidden="true"></span></button>`})()}
+      ${CLOUDM?`<button class="row" onclick="openLetterPrefs()"><span class="ri">${ROW_IC.target}</span><span class="rl"><small class="rlab">מצבי הנוכחי</small><b>${escB((p.ans||{}).now?String(p.ans.now).slice(0,48):'עוד לא כתבת')}</b><span>משפט על המצב שלך היום. ${escB(N('assistant'))} משלב אותו במכתבים</span></span><span class="chev" aria-hidden="true"></span></button>`:''}</section>
 
     <section class="card glass" data-fold="tmH"><details class="card-d"${false?' open':''}><summary><h2 class="card-h" id="tmH">הצוות שלי</h2><span class="cd-s">${'שמות הסוכנים'}</span></summary>
       <div class="card-sub">אפשר לתת לכל סוכן שם אחר. התפקיד נשאר אותו תפקיד.</div>

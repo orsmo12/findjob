@@ -154,7 +154,7 @@ function renderQ(){try{const q=visibleQs()[qi];if(q)track('onb_q',{q:q.id})}catc
   $('onbBody').innerHTML=`
     <div class="q-top"><button class="q-back" aria-label="חזרה" onclick="qBack()"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>
       <div class="q-prog" aria-hidden="true"><i style="width:${Math.round(qi/Math.max(v.length,qTotal())*100)}%"></i></div>
-      <button class="q-later" onclick="qLater()">המשך אחר כך</button></div>
+      <button class="q-later" onclick="qLater()">${S.onboarded?'שמירה':'המשך אחר כך'}</button></div>
     <div class="q-count num">שאלה ${qi+1} מתוך ${Math.max(v.length,qTotal())}</div>
     <h1 class="q-title">${escB(q.t)}</h1>${q.sub?`<p class="q-sub">${escB(q.sub)}</p>`:''}
     <div class="q-card" role="${q.multi?'group':'radiogroup'}" aria-label="${escB(q.t)}">${q.o.map((o,i)=>`<button class="q-opt${sel(o)?' sel':''}" role="${q.multi?'checkbox':'radio'}" aria-checked="${sel(o)}" onclick="qPick(${i})"><span>${escB(o)}</span><span class="${q.multi?'cb':'rd'}"></span></button>`).join('')}</div>

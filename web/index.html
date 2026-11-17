@@ -677,7 +677,7 @@ body.pg-jobs #toasts{bottom:calc(120px + env(safe-area-inset-bottom,0px))}
 .q-prog i{display:block;height:100%;border-radius:3px;background:var(--q-fill,linear-gradient(90deg,var(--brand2),var(--brand)));transition:width .4s cubic-bezier(.2,.9,.3,1)}
 .q-later{font-size:13.5px;font-weight:500;color:var(--brand);padding:8px 2px;white-space:nowrap}
 .q-count{font-size:13px;color:var(--ink3);margin:30px 0 8px}
-.q-title{font-size:30px!important;font-weight:700;letter-spacing:-.025em;line-height:1.15!important;margin-bottom:8px!important}
+.q-title{font-size:22px!important;font-weight:600;letter-spacing:0;line-height:1.3!important;margin-bottom:6px!important}
 .q-sub{font-size:14.5px;color:var(--ink2);line-height:1.55}
 .q-card{margin-top:22px;border-radius:22px;background:rgba(255,255,255,.88);border:1px solid var(--glass-brd);box-shadow:var(--g-shadow);overflow:hidden}
 .q-opt{display:flex;align-items:center;gap:14px;width:100%;min-height:62px;padding:16px 18px;font-size:16.5px;line-height:1.35;text-align:right;border-top:1px solid var(--glass-edge);transition:background .15s}
@@ -1283,6 +1283,17 @@ a.person>svg{flex:0 0 18px;width:18px;height:18px;fill:none;stroke:var(--ink3);s
 .btn.is-off{opacity:.5}
 .kit-now{font-size:13px;color:var(--ink2);margin:2px 2px 0}
 .kc-ed span[dir=ltr]{text-align:left}
+
+/* שאלון: גודל קריא ולא צועק */
+.q-opt{min-height:52px;padding:12px 16px;font-size:15px}
+.q-sub{font-size:13.5px}
+/* פרופיל: שורה עם כותרת קטנה מעל הערך */
+.rlab{display:block;font-size:11.5px;color:var(--ink3);font-weight:500;margin-bottom:1px}
+.row.seek .rl b{font-weight:500;font-size:14px;line-height:1.4}
+.row.seek{padding-block:10px}
+/* ערכת הגשה: "?" קטן ליד כותרת כרטיס, וכפתור PDF במנטה כשיש התאמה מסומנת */
+.kc-q{flex:none;width:20px;height:20px;border-radius:50%;border:1px solid var(--glass-brd);background:#fff;color:var(--ink3);font:600 11.5px/18px var(--font);cursor:pointer;padding:0}
+.btn.is-on{background:var(--mint);color:#fff;border-color:var(--mint)}
 
 </style>
 <link rel="manifest" href="/manifest.webmanifest">
@@ -3185,26 +3196,26 @@ function kitData(){const p=prof(),o={};KIT_FIELDS.forEach(([k,,f])=>{const v=f(p
 function kitTabHtml(a,j,id){track('kit_open');
   const p=prof(),d=kitData(),vis=KIT_FIELDS.filter(([k])=>!['first','last'].includes(k)),missing=vis.filter(([k])=>!d[k]);
   const letter=a.letter||(j.letter&&j.letter.text)||(REAL?'':letterFor(j)),t=j.tailor,ed=tailorEdits(j),off=new Set(((S.tailorOff||{})[a.jobId])||[]);
-  const card=(title,chip,amb,body,acts)=>`<section class="kc"><div class="kc-h"><h4>${title}</h4>${chip?`<span class="kc-chip${amb?' amb':''}">${chip}</span>`:''}</div>${body}${acts?`<div class="kc-acts">${acts}</div>`:''}</section>`;
+  const card=(title,chip,amb,body,acts,help)=>`<section class="kc"><div class="kc-h"><h4>${title}</h4>${help?`<button class="kc-q" aria-label="מה זה?" onclick="kitHelp('${help}','${id}')">?</button>`:''}${chip?`<span class="kc-chip${amb?' amb':''}">${chip}</span>`:''}</div>${body}${acts?`<div class="kc-acts">${acts}</div>`:''}</section>`;
   const on=new Set(((S.tailorOn||{})[a.jobId])||[]);   // ברירת מחדל: לא מסומן. מסמנים מה נכנס ל-PDF
   const cvBody=!REAL||!t?`<p class="card-sub" style="margin:6px 0 0">${REAL?`${escB(N('linkedin'))} יציע התאמות למשרה הזו אחרי הריצה הקרובה. בינתיים: קורות החיים מהפרופיל.`:'קורות החיים מהפרופיל.'}</p>`
     :!ed.length?`<p class="card-sub" style="margin:6px 0 0">${t.no_ad?`אין מודעה מלאה, אז ${escB(N('linkedin'))} לא הציע שינויים.`:`${escB(N('linkedin'))} בדק: קורות החיים כבר מדגישים את מה שהמשרה מבקשת.`}</p>`
-    :`<p class="card-sub" style="margin:6px 0 4px">${escB(N('linkedin'))} מציע ניסוח וסדר למשרה הזו, רק ממה שכבר כתוב אצלך. מה שתסמן ייכנס ל-PDF.</p>${t.order?`<p class="card-sub">↑ ${escB(t.order)}</p>`:''}
+    :`${t.order?`<p class="card-sub">↑ ${escB(t.order)}</p>`:''}
       ${ed.map((e,x)=>`<label class="kc-ed"><input type="checkbox" ${on.has(x)?'checked':''} onchange="tailorPick('${a.jobId}',${x},this.checked,'${id}')"><span dir="ltr"><s>${escB(e.before)}</s><b>${escB(e.after)}</b>${e.why?`<small dir="rtl">${escB(e.why)}</small>`:''}</span></label>`).join('')}`;
   const nOn=ed.filter((_,x)=>on.has(x)).length;
   return `<div class="kit">${a.status==='saved'?`<p class="kit-now">${escB(nowTxt(a))}</p>`:''}
     ${card('קורות חיים למשרה',ed.length?(nOn?`${nOn} מסומנות`:`${ed.length} התאמות מוצעות`):'',!!ed.length&&!nOn,cvBody,
-      `<button class="btn btn-ghost btn-sm${ed.length&&!nOn?' is-off':''}" id="cvPdfBtn" onclick="${ed.length?`if(!((S.tailorOn||{})['${a.jobId}']||[]).length){toast('סמן לפחות התאמה אחת, והיא תיכנס ל-PDF');return}`:''}cvPreview('${a.jobId}','${id}')">${ed.length?'קובץ PDF למשרה':'PDF של קורות החיים'}</button>`)}
+      `<button class="btn btn-ghost btn-sm${ed.length?(nOn?' is-on':' is-off'):''}" id="cvPdfBtn" onclick="${ed.length?`if(!((S.tailorOn||{})['${a.jobId}']||[]).length){toast('סמן לפחות התאמה אחת, והיא תיכנס ל-PDF');return}`:''}cvPreview('${a.jobId}','${id}')">${ed.length?'קובץ PDF למשרה':'PDF של קורות החיים'}</button>`,'cv')}
     ${card('מכתב פנייה',letter?`מוכן · ${letter.split(/\s+/).filter(Boolean).length} מילים`:'בהכנה',!letter,
       letter?`<p class="kc-pv" dir="ltr">${escB(letter.replace(/\s*\n+\s*/g,' ').slice(0,240))}</p>
         <details class="kc-det"><summary>לקרוא ולערוך</summary><label for="letterBox" class="vh">מכתב פנייה</label><textarea class="textbox letterbox ltr" dir="ltr" id="letterBox" rows="14" spellcheck="false" oninput="appOf('${id}').letter=this.value;save()">${esc(letter)}</textarea>
         ${j.letter&&!j.letter.checked?`<div class="hint-line">חלק מהמשפטים הוסרו כי לא הצלחנו לאמת אותם מול קורות החיים.</div>`:''}</details>`
       :`<p class="card-sub" style="margin:6px 0 0">${escB(N('assistant'))} מכין את המכתב. הוא יופיע כאן תוך שעתיים בערך.</p><textarea id="letterBox" hidden></textarea>`,
-      letter?`<button class="btn btn-ghost btn-sm" onclick="copyText($('letterBox').value,'המכתב הועתק');track('letter_copy')">${ICO.copy}להעתיק</button>`:'')}
+      letter?`<button class="btn btn-ghost btn-sm" onclick="copyText($('letterBox').value,'המכתב הועתק');track('letter_copy')">${ICO.copy}להעתיק</button>`:'','letter')}
     ${card('מילוי הטופס',missing.length?`${vis.length-missing.length} מוכנים · ${missing.length} חסרים`:`${vis.length} פרטים מוכנים`,!!missing.length,
       `${missing.length?`<p class="card-sub" style="margin:6px 0 0">חסרים: ${escB(missing.map(m=>m[1]).join(', '))}. <button class="kc-more" onclick="openKitEdit()">להשלים</button></p>`:''}
        <details class="kc-det"><summary>תשובות מוכנות להעתקה</summary>${readyAnswersHtml()}</details>`,
-      `<a class="btn btn-primary btn-sm ext" href="${j.url||LI_URL+'jobs/'}" target="_blank" rel="noopener" onclick="copyText($('letterBox').value,'המכתב הועתק. הדבק אותו בשדה המכתב בטופס');track('apply_open')">לפתוח את הטופס ולמלא</a>`)}
+      `<a class="btn btn-primary btn-sm ext" href="${j.url||LI_URL+'jobs/'}" target="_blank" rel="noopener" onclick="copyText($('letterBox').value,'המכתב הועתק. הדבק אותו בשדה המכתב בטופס');track('apply_open')">לפתוח את הטופס ולמלא</a>`,'form')}
     <p class="card-sub" style="margin-top:10px">הסימנייה ממלאת את מה שהיא מזהה ומסמנת בצהוב מה לבדוק. היא לא שולחת. <button class="kc-more" onclick="openFillHelp()">איך מוסיפים אותה</button>${CLOUDM?` · שאלה בטופס? <button class="kc-more" onclick="askAboutJob('${a.jobId}');$('chatInput').value+='בטופס ההגשה שואלים: '">${escB(N('assistant'))} בצ׳אט</button>`:''}</p>
     <div class="s-sec">${appliedBox(a,true)}</div></div>`;
 }
@@ -3216,6 +3227,10 @@ function fitFold(j,jid){const d=j.dims||{},rq=Array.isArray(d.req)?d.req:[],met=
     ${j.reasons.length?`<div class="s-sec"><h4>למה זה מתאים לך</h4>${j.reasons.map(r=>`<div class="jc-r" style="margin-bottom:7px"><span class="ic ok" aria-hidden="true">✓</span><span>${escB(r)}</span></div>`).join('')}</div>`:''}
     ${j.gaps.length?`<div class="s-sec"><h4>מה חסר</h4>${j.gaps.map(g=>`<div class="jc-r" style="margin-bottom:7px"><span class="ic gap" aria-hidden="true">!</span><span>${escB(g)}</span></div>`).join('')}</div>`:''}
     <button class="kc-more" onclick="openJobInfo('${jid}')">המודעה המלאה ‹</button></details>`}
+function kitHelp(k,appId){const T={cv:['קורות חיים למשרה',`${escB(N('linkedin'))} מציע ניסוח וסדר למשרה הזו, רק ממה שכבר כתוב אצלך: בלי להוסיף ובלי להשמיט כלים או פרטים. מה שתסמן ייכנס ל-PDF, ואם לא תסמן כלום אפשר להוריד את קורות החיים כמו שהם.`],
+  letter:['מכתב פנייה',`${escB(N('assistant'))} כותב מכתב באנגלית לכל משרה שנשמרה, רק מעובדות שבקורות החיים, במודעה ובמה שכתבת על עצמך. אפשר לערוך, ואז להעתיק ולהדביק בשדה המכתב בטופס.`],
+  form:['מילוי הטופס','"לפתוח את הטופס ולמלא" מעתיק את המכתב ופותח את המודעה. שם הסימנייה ממלאת שם, פרטי קשר, השכלה ושאלות כן/לא, ומסמנת בצהוב מה לבדוק. היא לא שולחת. בטלפון, בהגשה המהירה של LinkedIn, משתמשים ב"תשובות מוכנות להעתקה".']}[k];
+  if(T)openSheet(`<h3 id="sheetTitle">${T[0]}</h3><div class="sheet-sub">${T[1]}</div><button class="btn btn-ghost btn-block" style="margin-top:14px" onclick="openApp('${appId}','letter')">הבנתי</button>`)}
 function tailorPick(jobId,x,v,appId){S.tailorOn=S.tailorOn||{};const L=new Set(S.tailorOn[jobId]||[]);v?L.add(x):L.delete(x);S.tailorOn[jobId]=[...L];save();paintAppTab(appId)}
 function tailorToggle(jobId,x,on){S.tailorOff=S.tailorOff||{};const L=new Set(S.tailorOff[jobId]||[]);on?L.delete(x):L.add(x);S.tailorOff[jobId]=[...L];save()}
 /* בלשונית הפרטים: רק קיצור. ההתאמות וה-PDF בערכת ההגשה */
@@ -3489,7 +3504,7 @@ function renderQ(){try{const q=visibleQs()[qi];if(q)track('onb_q',{q:q.id})}catc
   $('onbBody').innerHTML=`
     <div class="q-top"><button class="q-back" aria-label="חזרה" onclick="qBack()"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>
       <div class="q-prog" aria-hidden="true"><i style="width:${Math.round(qi/Math.max(v.length,qTotal())*100)}%"></i></div>
-      <button class="q-later" onclick="qLater()">המשך אחר כך</button></div>
+      <button class="q-later" onclick="qLater()">${S.onboarded?'שמירה':'המשך אחר כך'}</button></div>
     <div class="q-count num">שאלה ${qi+1} מתוך ${Math.max(v.length,qTotal())}</div>
     <h1 class="q-title">${escB(q.t)}</h1>${q.sub?`<p class="q-sub">${escB(q.sub)}</p>`:''}
     <div class="q-card" role="${q.multi?'group':'radiogroup'}" aria-label="${escB(q.t)}">${q.o.map((o,i)=>`<button class="q-opt${sel(o)?' sel':''}" role="${q.multi?'checkbox':'radio'}" aria-checked="${sel(o)}" onclick="qPick(${i})"><span>${escB(o)}</span><span class="${q.multi?'cb':'rd'}"></span></button>`).join('')}</div>
@@ -3628,6 +3643,13 @@ const ROW_IC={doc:'<svg viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 00-2 2v14a2 2
   trash:'<svg viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>',
   book:'<svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 016.5 17H20V3H6.5A2.5 2.5 0 004 5.5z"/><path d="M4 19.5A2.5 2.5 0 006.5 22H20v-5"/></svg>'};
 function learnedChips(){const c={};Object.values(S.skipReasons).forEach(r=>c[r]=(c[r]||0)+1);return Object.entries(c)}
+/* "מה אני מחפש": כל התשובות בשורות עם כותרת, כל שורה פותחת את השאלה שלה */
+function seekRows(){const a=ans(),j=x=>[].concat(x||[]).filter(v=>v&&v!==OTHER).join(', ');
+  const R=[['תפקידים',j(a.roles)+(a.roles_other?` + ${a.roles_other}`:''),'roles'],['תחום',j(domainsOf(a)),'domains'],
+    ['לימודים וניסיון',[a.study===OTHER?a.study_other:a.study,a.year,a.work===OTHER?a.work_other:a.work,a.exp&&('ניסיון: '+a.exp)].filter(Boolean).join(' · '),'study'],
+    ['איפה ומתי',[j(a.locs),a.mode,a.start&&('התחלה '+a.start),j(a.scope)].filter(Boolean).join(' · '),'locs'],
+    ['שכר',a.salary?`${a.salary} ברוטו לחודש`:'','salary']];
+  return R.map(([l,v,q])=>`<button class="row seek" onclick="openQuestions('${q}')"><span class="rl"><small class="rlab">${l}</small><b dir="auto">${escB(v||'עוד לא ענית')}</b></span><span class="chev" aria-hidden="true"></span></button>`).join('')}
 function renderProfile(){
   const p=prof(),a=ans(),{done,total}=qProgress(),applied=S.apps.filter(x=>x.status!=='saved').length,ivs=S.apps.filter(x=>['interview','offer'].includes(x.status)).length,learned=learnedChips();
   const L={'בכירה מדי':'פחות משרות בכירות','מיקום':'משרות קרובות יותר','טכנולוגיה':'טכנולוגיות שמתאימות לך','לא מעניין אותי':'פחות תפקידים מהסוג שדילגת'};
@@ -3635,32 +3657,11 @@ function renderProfile(){
     <div class="p-hero glass"><div class="avatar" aria-hidden="true">${escB(initials(p.first||p.name))}</div><h2 class="p-name">${escB(p.name)}</h2><div class="p-goal">${escB(goalTxt())}</div><button class="btn btn-sm btn-ghost" style="margin-top:12px" onclick="editMe()">עריכת שם</button>
       <div class="p-stats"><div><b class="num">${Object.keys(S.decisions).length}</b><span>משרות שסקרת</span></div><div><b class="num">${applied}</b><span>הגשות</span></div><div><b class="num">${ivs}</b><span>ראיונות</span></div></div></div>
 
-    <section class="card glass" data-fold="cvH"><details class="card-d"${!(p.cv||p.cvName)?' open':''}><summary><h2 class="card-h" id="cvH">קורות חיים</h2><span class="cd-s">${escB(p.cv||p.cvName?'הועלו ✓':'חסר')}</span></summary>
-      <div class="row"><span class="ri">${ROW_IC.doc}</span><span class="rl"><b>${escB(p.cvName||(p.cv?'הודבקו כטקסט':'עוד לא הועלו'))}</b><span>${p.cv||p.cvName?'כל הסוכנים עובדים לפיהם':'בלעדיהם הסוכנים לא יכולים להתאים לך משרות'}</span></span>${p.cv||p.cvName?'<span class="pill-ok">פעיל</span>':'<span class="pill-warn">חסר</span>'}</div>
-      <div class="duo"><label for="cvFile" class="btn btn-sm btn-ghost">${p.cvName?'להחליף קובץ':'להעלות קובץ'}</label><button class="btn btn-sm btn-ghost" onclick="editCvText()">לערוך כטקסט</button></div>
-      ${CLOUDM&&domainOf(ans())!=='פיתוח תוכנה'?`<div class="field" style="margin-top:12px"><label for="pfIn">קישור לתיק עבודות או לפרויקטים</label><div style="display:flex;gap:8px"><input id="pfIn" class="ltr" type="url" placeholder="https://" value="${escB(kitOf(p).site||'')}" autocomplete="off"><button class="btn btn-sm btn-ghost" onclick="savePortfolio()">שמירה</button></div><div class="help">נכנס לטפסי הגשה ולמכתבים. ב${escB(domainOf(ans()))} תיק עבודות שווה יותר מ-GitHub.</div></div>`:''}
-      ${CLOUDM&&domainOf(ans())==='פיתוח תוכנה'?`<div class="field" style="margin-top:12px"><label for="ghIn">שם המשתמש שלך ב-GitHub</label><div style="display:flex;gap:8px"><input id="ghIn" class="ltr" placeholder="username" value="${escB((p.ans||{}).github||'')}" autocomplete="off"><button class="btn btn-sm btn-ghost" onclick="saveGithub()">שמירה</button></div></div>`:''}
-      ${CLOUDM?`<button class="row" style="margin-top:8px" onclick="openLetterPrefs()"><span class="ri">${ROW_IC.doc}</span><span class="rl"><b>מכתבים שכתבת בעבר</b><span>${(S.my_letters||[]).length?`${S.my_letters.length} מכתבים. שי לומד מהם את הסגנון שלך`:'לא חובה. שי ילמד מהם את הסגנון שלך'}</span></span><span class="chev" aria-hidden="true"></span></button>`:''}
-      ${typeof cvSuggestHtml==='function'?cvSuggestHtml():''}</details></section>
-    ${CLOUDM?`<section class="card glass" data-fold="liH"><details class="card-d"${false?' open':''}><summary><h2 class="card-h" id="liH">פרופיל LinkedIn</h2><span class="cd-s">${escB((p.ans||{}).linkedin?'קישור נשמר ✓':'אין קישור')}</span></summary>
-      <div class="field"><label for="liUrl">הקישור לפרופיל שלך</label><div style="display:flex;gap:8px"><input id="liUrl" class="ltr" type="url" placeholder="https://www.linkedin.com/in/…" value="${escB((p.ans||{}).linkedin||'')}" autocomplete="off"><button class="btn btn-sm btn-ghost" onclick="saveLinkedin()">שמירה</button></div></div>
-      <div class="card-sub" style="margin-top:10px">${p.li_text?`${escB(N('linkedin'))} בודק את הפרופיל, והשיפורים במסך LinkedIn.`:`${escB(N('linkedin'))} יציע שיפורים לפרופיל אחרי שתעלה אותו.`} <button class="link" style="color:var(--brand);font-weight:600" onclick="liHow()">איך?</button></div>
-      <label for="liFile" class="btn btn-sm ${p.li_text?'btn-ghost':'btn-primary'} btn-block">${p.li_text?'עדכנתי את הפרופיל':'להעלות את הפרופיל'}</label>
-      <input type="file" id="liFile" class="vh" accept=".pdf,application/pdf" onchange="onLiFile(this)"></details></section>`:''}
-    <section class="card glass" aria-labelledby="qH"><h2 class="card-h" id="qH">עליי</h2>
-      <div class="card-sub">${done<total?`ענית על ${done} מתוך ${total} שאלות. כל תשובה עוזרת לסוכנים לדייק.`:'ענית על כל השאלות. אפשר לעדכן בכל רגע.'}</div>
-      <div class="quota-bar" style="margin-bottom:6px" aria-hidden="true"><div class="quota-fill" style="width:${Math.round(done/total*100)}%;background:linear-gradient(90deg,var(--brand2),var(--brand-hi))"></div></div>
-      <button class="row" onclick="openQuestions('study')"><span class="ri">${ROW_IC.target}</span><span class="rl"><b>${escB([a.study===OTHER?a.study_other:a.study,a.year].filter(Boolean).join(', ')||'לימודים ועבודה')}</b><span>${escB([a.work===OTHER?a.work_other:a.work,(a.scope||[]).join(' + '),a.exp&&('ניסיון: '+a.exp)].filter(Boolean).join(' · ')||'עוד לא ענית')}</span></span><span class="chev" aria-hidden="true"></span></button>
-      <button class="row" onclick="openQuestions('roles')"><span class="ri">${ROW_IC.doc}</span><span class="rl"><b lang="en">${escB((a.roles||[]).filter(r=>r!==OTHER).join(', ')||'תפקידים')}</b><span>${escB([domainsOf(a).join(', '),[].concat(a.field||[]).map(x=>x===OTHER?a.field_other:x).filter(Boolean).join(', ')].filter(Boolean).join(' · ')||'רקע מקצועי: עוד לא ענית')}</span></span><span class="chev" aria-hidden="true"></span></button>
-      <button class="row" onclick="openQuestions('locs')"><span class="ri">${ROW_IC.pin}</span><span class="rl"><b>${escB((a.locs||[]).join(', ')||'אזור עבודה')}</b><span>${escB([a.mode,a.start&&('התחלה: '+a.start)].filter(Boolean).join(' · ')||'עוד לא ענית')}</span></span><span class="chev" aria-hidden="true"></span></button>
-      ${CLOUDM?`<button class="row" onclick="openLetterPrefs()"><span class="ri">${ROW_IC.target}</span><span class="rl"><b>המצב שלי עכשיו</b><span>${escB((p.ans||{}).now?String(p.ans.now).slice(0,60):'מה קורה אצלך היום (לימודים, מילואים, עבודה). נכנס למכתבים')}</span></span><span class="chev" aria-hidden="true"></span></button>`:''}
-      ${(()=>{const d=kitData(),m=['phone','email','city','edu','auth'].filter(k=>!d[k]).length;return `<button class="row" onclick="openKitEdit()"><span class="ri">${ROW_IC.doc}</span><span class="rl"><b>פרטים לטפסי הגשה</b><span>${m?`חסרים ${m}: טלפון, עיר, השכלה… איתם הטופס מתמלא כמעט לבד`:'מוכן. הטפסים מתמלאים מהם'}</span></span>${m?'<span class="kc-chip amb">'+m+'</span>':''}<span class="chev" aria-hidden="true"></span></button>`})()}
-      <button class="btn btn-sm ${done<total?'btn-primary':'btn-ghost'} btn-block" style="margin-top:8px" onclick="openQuestions()">${done<total?'להמשיך את השאלון':'לעבור על כל התשובות'}</button></section>
-
-    <section class="card glass" id="planCard" aria-labelledby="plH">
+    <section class="card glass" aria-labelledby="seekH"><h2 class="card-h" id="seekH">מה אני מחפש</h2>
       ${typeof suggestionsHtml==='function'?suggestionsHtml():''}
-      <details class="plan-d"${S.planOpen?' open':''} ontoggle="S.planOpen=this.open">
-      <summary><span><h2 class="card-h" id="plH">מה מחפשים בשבילך</h2><span class="plan-tags">${planTags().map(t=>`<i>${escB(t)}</i>`).join('')}</span>${planAlert()}</span><span class="chev" aria-hidden="true"></span></summary>
+      ${seekRows()}
+      ${done<total?`<div class="quota-bar" style="margin:10px 0 6px" aria-hidden="true"><div class="quota-fill" style="width:${Math.round(done/total*100)}%;background:var(--brand)"></div></div><button class="btn btn-sm btn-primary btn-block" onclick="openQuestions()">להשלים את השאלון (${done} מתוך ${total})</button>`:''}
+      <details class="sub-d"${S.planOpen?' open':''} ontoggle="S.planOpen=this.open"><summary>איך ${escB(N('strategist'))} מחפש בשבילך${planAlert()}<span class="cd-s">${planTags().slice(-1)}</span></summary>
       <div class="card-sub">${escB(N('strategist'))} בנה את זה מקורות החיים ומהתשובות שלך, ומעדכן בכל שינוי.</div>
       <ul class="plan-list">${planWhy().map(w=>`<li>${escB(w)}</li>`).join('')}</ul>
       <details class="sub-d"><summary>מה למדנו מהשימוש שלך<span class="cd-s">${learned.length?learned.length+" סיבות":""}</span></summary>${tasteHtml()}
@@ -3679,6 +3680,24 @@ function renderProfile(){
       ${(()=>{const rt=realTargets();return rt?targetsHtml(rt):`<div class="learned">${targetCompanies().map(c=>`<span class="chip" title="${escB(c.why.join(' · '))}">${escB(c.name)}<button aria-label="להסיר את ${escB(c.name)}" onclick="removeTarget('${escB(c.name).replace(/'/g,"\\'")}')">×</button></span>`).join('')}</div>`})()}
       <div class="todo-foot" style="padding:12px 0 0;border:0"><label for="tgIn" class="vh">חברה להוספה</label><input id="tgIn" placeholder="להוסיף חברה" onkeydown="if(event.key==='Enter')addTarget()"><button class="btn btn-sm btn-ghost" onclick="addTarget()">הוסף</button></div>
       ${(S.targets&&(S.targets.added.length||S.targets.removed.length))?`<button class="link" style="font-size:13px;color:var(--brand);margin-top:8px" onclick="S.targets={added:[],removed:[]};save();renderProfile()">להחזיר לבחירה של ${escB(N('strategist'))}</button>`:''}</details></details></section>
+</section>
+
+    <section class="card glass" data-fold="docH"><details class="card-d"${!(p.cv||p.cvName)?' open':''}><summary><h2 class="card-h" id="docH">המסמכים שלי</h2><span class="cd-s">${escB(p.cv||p.cvName?'קורות חיים ✓':'חסרים קורות חיים')}</span></summary>
+      <div class="row"><span class="ri">${ROW_IC.doc}</span><span class="rl"><b>${escB(p.cvName||(p.cv?'הודבקו כטקסט':'עוד לא הועלו'))}</b><span>${p.cv||p.cvName?'כל הסוכנים עובדים לפיהם':'בלעדיהם הסוכנים לא יכולים להתאים לך משרות'}</span></span>${p.cv||p.cvName?'<span class="pill-ok">פעיל</span>':'<span class="pill-warn">חסר</span>'}</div>
+      <div class="duo"><label for="cvFile" class="btn btn-sm btn-ghost">${p.cvName?'להחליף קובץ':'להעלות קובץ'}</label><button class="btn btn-sm btn-ghost" onclick="editCvText()">לערוך כטקסט</button></div>
+      ${CLOUDM&&domainOf(ans())!=='פיתוח תוכנה'?`<div class="field" style="margin-top:12px"><label for="pfIn">קישור לתיק עבודות או לפרויקטים</label><div style="display:flex;gap:8px"><input id="pfIn" class="ltr" type="url" placeholder="https://" value="${escB(kitOf(p).site||'')}" autocomplete="off"><button class="btn btn-sm btn-ghost" onclick="savePortfolio()">שמירה</button></div><div class="help">נכנס לטפסי הגשה ולמכתבים. ב${escB(domainOf(ans()))} תיק עבודות שווה יותר מ-GitHub.</div></div>`:''}
+      ${CLOUDM&&domainOf(ans())==='פיתוח תוכנה'?`<div class="field" style="margin-top:12px"><label for="ghIn">שם המשתמש שלך ב-GitHub</label><div style="display:flex;gap:8px"><input id="ghIn" class="ltr" placeholder="username" value="${escB((p.ans||{}).github||'')}" autocomplete="off"><button class="btn btn-sm btn-ghost" onclick="saveGithub()">שמירה</button></div></div>`:''}
+      ${CLOUDM?`<button class="row" style="margin-top:8px" onclick="openLetterPrefs()"><span class="ri">${ROW_IC.doc}</span><span class="rl"><b>מכתבים שכתבת בעבר</b><span>${(S.my_letters||[]).length?`${S.my_letters.length} מכתבים. שי לומד מהם את הסגנון שלך`:'לא חובה. שי ילמד מהם את הסגנון שלך'}</span></span><span class="chev" aria-hidden="true"></span></button>`:''}
+      ${typeof cvSuggestHtml==='function'?cvSuggestHtml():''}
+      ${CLOUDM?`<details class="sub-d"><summary>LinkedIn<span class="cd-s">${escB((p.ans||{}).linkedin?'קישור נשמר ✓':'אין קישור')}</span></summary>
+      <div class="field"><label for="liUrl">הקישור לפרופיל שלך</label><div style="display:flex;gap:8px"><input id="liUrl" class="ltr" type="url" placeholder="https://www.linkedin.com/in/…" value="${escB((p.ans||{}).linkedin||'')}" autocomplete="off"><button class="btn btn-sm btn-ghost" onclick="saveLinkedin()">שמירה</button></div></div>
+      <div class="card-sub" style="margin-top:10px">${p.li_text?`${escB(N('linkedin'))} בודק את הפרופיל, והשיפורים במסך LinkedIn.`:`${escB(N('linkedin'))} יציע שיפורים לפרופיל אחרי שתעלה אותו.`} <button class="link" style="color:var(--brand);font-weight:600" onclick="liHow()">איך?</button></div>
+      <label for="liFile" class="btn btn-sm ${p.li_text?'btn-ghost':'btn-primary'} btn-block">${p.li_text?'עדכנתי את הפרופיל':'להעלות את הפרופיל'}</label>
+      <input type="file" id="liFile" class="vh" accept=".pdf,application/pdf" onchange="onLiFile(this)"></details>`:''}</details></section>
+
+    <section class="card glass" aria-labelledby="forH"><h2 class="card-h" id="forH">להגשות ולמכתבים</h2>
+      ${(()=>{const d=kitData(),m=['phone','email','city','edu','auth'].filter(k=>!d[k]).length;return `<button class="row" onclick="openKitEdit()"><span class="ri">${ROW_IC.doc}</span><span class="rl"><small class="rlab">פרטים לטפסי הגשה</small><b>${m?`חסרים ${m} פרטים`:'מוכן ✓'}</b><span>טלפון, מייל, עיר, השכלה, אישור עבודה. הטופס מתמלא מהם</span></span><span class="chev" aria-hidden="true"></span></button>`})()}
+      ${CLOUDM?`<button class="row" onclick="openLetterPrefs()"><span class="ri">${ROW_IC.target}</span><span class="rl"><small class="rlab">מצבי הנוכחי</small><b>${escB((p.ans||{}).now?String(p.ans.now).slice(0,48):'עוד לא כתבת')}</b><span>משפט על המצב שלך היום. ${escB(N('assistant'))} משלב אותו במכתבים</span></span><span class="chev" aria-hidden="true"></span></button>`:''}</section>
 
     <section class="card glass" data-fold="tmH"><details class="card-d"${false?' open':''}><summary><h2 class="card-h" id="tmH">הצוות שלי</h2><span class="cd-s">${'שמות הסוכנים'}</span></summary>
       <div class="card-sub">אפשר לתת לכל סוכן שם אחר. התפקיד נשאר אותו תפקיד.</div>

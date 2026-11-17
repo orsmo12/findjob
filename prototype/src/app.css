@@ -530,7 +530,7 @@ body.pg-jobs #toasts{bottom:calc(120px + env(safe-area-inset-bottom,0px))}
 .q-prog i{display:block;height:100%;border-radius:3px;background:var(--q-fill,linear-gradient(90deg,var(--brand2),var(--brand)));transition:width .4s cubic-bezier(.2,.9,.3,1)}
 .q-later{font-size:13.5px;font-weight:500;color:var(--brand);padding:8px 2px;white-space:nowrap}
 .q-count{font-size:13px;color:var(--ink3);margin:30px 0 8px}
-.q-title{font-size:30px!important;font-weight:700;letter-spacing:-.025em;line-height:1.15!important;margin-bottom:8px!important}
+.q-title{font-size:22px!important;font-weight:600;letter-spacing:0;line-height:1.3!important;margin-bottom:6px!important}
 .q-sub{font-size:14.5px;color:var(--ink2);line-height:1.55}
 .q-card{margin-top:22px;border-radius:22px;background:rgba(255,255,255,.88);border:1px solid var(--glass-brd);box-shadow:var(--g-shadow);overflow:hidden}
 .q-opt{display:flex;align-items:center;gap:14px;width:100%;min-height:62px;padding:16px 18px;font-size:16.5px;line-height:1.35;text-align:right;border-top:1px solid var(--glass-edge);transition:background .15s}
@@ -1136,3 +1136,14 @@ a.person>svg{flex:0 0 18px;width:18px;height:18px;fill:none;stroke:var(--ink3);s
 .btn.is-off{opacity:.5}
 .kit-now{font-size:13px;color:var(--ink2);margin:2px 2px 0}
 .kc-ed span[dir=ltr]{text-align:left}
+
+/* שאלון: גודל קריא ולא צועק */
+.q-opt{min-height:52px;padding:12px 16px;font-size:15px}
+.q-sub{font-size:13.5px}
+/* פרופיל: שורה עם כותרת קטנה מעל הערך */
+.rlab{display:block;font-size:11.5px;color:var(--ink3);font-weight:500;margin-bottom:1px}
+.row.seek .rl b{font-weight:500;font-size:14px;line-height:1.4}
+.row.seek{padding-block:10px}
+/* ערכת הגשה: "?" קטן ליד כותרת כרטיס, וכפתור PDF במנטה כשיש התאמה מסומנת */
+.kc-q{flex:none;width:20px;height:20px;border-radius:50%;border:1px solid var(--glass-brd);background:#fff;color:var(--ink3);font:600 11.5px/18px var(--font);cursor:pointer;padding:0}
+.btn.is-on{background:var(--mint);color:#fff;border-color:var(--mint)}
