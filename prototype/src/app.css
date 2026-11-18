@@ -1222,3 +1222,11 @@ a.row{color:inherit;text-decoration:none}
 .kc-how{margin-top:12px;padding-top:12px;border-top:1px solid var(--glass-edge)}.kc-how .tabs{margin-bottom:10px}
 .kc-how .hw{list-style:none;padding:0;margin:0 0 10px;display:grid;gap:8px;font-size:13.5px}.kc-how .hw li{display:flex;gap:10px;align-items:center}
 .kc-how .hw b{flex:none;width:22px;height:22px;border-radius:50%;background:var(--brand-lt);color:var(--brand);display:grid;place-items:center;font-size:12px}
+/* מסלול בכרטיס הגשה (pathHtml) */
+.path{padding:0 14px 12px;pointer-events:none}
+.stp{display:flex;align-items:center;margin:4px 2px 0}.stp i{width:9px;height:9px;border-radius:50%;background:color-mix(in srgb,var(--ink3) 35%,transparent);flex:none}
+.stp i.d{background:var(--sc)}.stp i.n{background:var(--sc);box-shadow:0 0 0 3px color-mix(in srgb,var(--sc) 22%,transparent)}
+.stp em{flex:1;height:2px;background:color-mix(in srgb,var(--ink3) 22%,transparent)}.stp em.d{background:var(--sc)}
+.stl{display:flex;justify-content:space-between;font-size:11px;color:var(--ink3);margin:4px 0 0}.stl span{width:0;display:flex;justify-content:center;white-space:nowrap}
+.stl span:first-child{justify-content:flex-start}.stl span:last-child{justify-content:flex-end}.stl .on{color:var(--sc);font-weight:700}
+.nxt{font-size:12.5px;color:var(--sc);font-weight:600;margin-top:8px;text-align:right}

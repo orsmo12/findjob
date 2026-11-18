@@ -82,11 +82,17 @@ function groupOf(a){if(CLOSED.includes(a.status))return'closed';
   if(a.status==='saved')return'open';
   return'waiting'}
 function soonOf(a){const w=a.when&&new Date(a.when);return !!(w&&w>=new Date(new Date().toDateString())&&(w-new Date())<7*DAY)}
+/* מסלול קטן בכרטיס: נשמרה → הוגשה → (שיחה/מטלה/ראיון) → הצעה, ושורה של מה הלאה. ארכיון בלי */
+const PATH_I={saved:0,applied:1,screening:2,task:2,interview:2,offer:3,accepted:3};
+function pathHtml(a){const n=PATH_I[a.status]??0,L=['נשמרה','הוגשה',n===2?stLabel(a):'ראיון','הצעה'];
+  return`<div class="path" role="img" aria-label="שלב ${n+1} מתוך 4: ${escB(L[n])}"><div class="stp">${L.map((_,i)=>`<i class="${i<n?'d':''}${i===n?' n':''}"></i>${i<3?`<em class="${i<n?'d':''}"></em>`:''}`).join('')}</div>
+    <div class="stl">${L.map((l,i)=>`<span class="${i===n?'on':''}">${escB(l)}</span>`).join('')}</div><div class="nxt">${escB(nowTxt(a))}</div></div>`}
 function appCard(a){const j=JOBS[a.jobId],g=groupOf(a),k=askOf(a);
   return`<div class="swipe" data-id="${a.id}"><div class="swipe-bg" aria-hidden="true"><span>הסרה</span><span>הסרה</span></div><article class="app glass row-app g-${g}${CLOSED.includes(a.status)?' dim':''}">
     <button class="app-top" style="width:100%;text-align:right" onclick="openApp('${a.id}')" aria-label="${escB(j.title)} ב-${escB(j.co)}, ${stLabel(a)}, ${escB(nowTxt(a))}">
-      ${logo(j)}<span class="app-info"><span class="app-title" dir="${dirOf(j.title)||'auto'}" style="display:block;text-align:right">${escB(j.title)}</span><span class="app-sub" style="display:block">${escB(j.co)} · ${escB(nowTxt(a))}${j.closed_at&&!CLOSED.includes(a.status)?' · המשרה נסגרה':''}</span></span>
-      ${soonOf(a)&&!CLOSED.includes(a.status)?'<span class="wk-tag">השבוע</span>':''}<span class="status st-${a.status}">${stLabel(a)}</span></button>
+      ${logo(j)}<span class="app-info"><span class="app-title" dir="${dirOf(j.title)||'auto'}" style="display:block;text-align:right">${escB(j.title)}</span><span class="app-sub" style="display:block">${escB(j.co)}${g==='closed'?` · ${escB(nowTxt(a))}`:''}${j.closed_at&&!CLOSED.includes(a.status)?' · המשרה נסגרה':''}</span></span>
+      ${soonOf(a)&&!CLOSED.includes(a.status)?'<span class="wk-tag">השבוע</span>':''}${g==='closed'?`<span class="status st-${a.status}">${stLabel(a)}</span>`:''}</button>
+    ${g==='closed'?'':pathHtml(a)}
     ${k&&g!=='waiting'?`<button class="ask-tag" onclick="openAsk('${a.id}')">${escB(k.q)} ←</button>`:''}
   </article></div>`}
 /* המספרים: בלוח הבקרה (משפך) ובשורה אחת במחשב. מסקנות רק מ-8 הגשות ו-4 תשובות */
