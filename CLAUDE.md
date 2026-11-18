@@ -90,6 +90,8 @@ cd prototype/src && python3 build.py                             # דמו מקו
 | `calibrate.yml` | כיול הניקוד מול משרות שנשמרו ומשרות שדולגו | |
 | `insights.yml` | תובנות אנונימיות על כל המשתמשים | `days` |
 | `queue_check.yml` | המשרות שמחכות בתור של משתמש: פתוחות, נסגרו, כפולות, לא מתאימות (הורדה רק עם apply) | `idx`, `apply` (yes/no) |
+| `letter_shadow.yml` | הרצת ניסיון למכתבים: מכתב שלם מול בחלקים, בלי לשמור (מדדים בלבד) | `idx`, `n` |
+| `letters_refresh.yml` | מכתבים קיימים נכתבים מחדש בהדרגה (שמורות שלא הוגשו) | `idx` (רשימה), `apply` (yes/no) |
 | `user_pause.yml` | השהיית משתמש או החזרתו | `idx`, `state` (on/off) |
 | `letters.yml`, `nightly.yml` | ריצות הסוכנים (גם בתזמון) | `user` |
 | `probe.yml`, `push_test.yml` | למה חברה לא נמצאה, התראת בדיקה | `name` |
