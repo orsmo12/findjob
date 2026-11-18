@@ -12,6 +12,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from agent_core import cloud_store as db, handoffs as H  # noqa: E402
 from agent_core.agents import letter_graph as LG  # noqa: E402
 from scripts.insights import get  # noqa: E402
+from agent_core.budget_guard import BudgetDeferred  # noqa: E402
+import time  # noqa: E402
 
 
 def main(idx: int, n: int = 3):
@@ -27,8 +29,15 @@ def main(idx: int, n: int = 3):
         sc, why, rounds, words = Counter(), Counter(), Counter(), []
         for r in rows:
             job = r["card"]
-            out = LG.write_letter_v4(H.cv_for(p.get("cv_text") or "", a, english=True), job, p.get("name") or p.get("first") or "",
-                                     r.get("brief"), str(a.get("now") or "")[:400], [str(x) for x in st.get("my_letters") or []][:3], may_reuse=True)
+            for t in range(4):   # מכסה לדקה: מחכים ומנסים שוב, כדי לא לתפוס את המכסה של המשתמשים בבת אחת
+                try:
+                    out = LG.write_letter_v4(H.cv_for(p.get("cv_text") or "", a, english=True), job, p.get("name") or p.get("first") or "",
+                                             r.get("brief"), str(a.get("now") or "")[:400], [str(x) for x in st.get("my_letters") or []][:3], may_reuse=True)
+                    break
+                except BudgetDeferred:
+                    time.sleep(75)
+            else:
+                print("  המכסה תפוסה — מדלג"); continue
             sc.update(k for k, v in (out.get("score") or {}).items() if v)
             why.update(c for c in LG.letter_why(out["text"], job) if c.startswith(("opening", "closing", "clean")))
             rounds[out.get("rounds") or 0] += 1
