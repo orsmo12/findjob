@@ -121,3 +121,38 @@ def test_letters_always_english_and_no_cut_after_degree():
     assert _sentences(p) == ["I am pursuing a B.Sc. in Computer Science at HIT.", "I built findjob."]
     out = _drop_bad_sentences("Dear X team,\n\n" + p, ["HIT"])
     assert "in Computer Science" not in out and "I built findjob." in out
+
+
+def test_parts_fix_only_the_failing_part_and_keep_it_through_rewrite():
+    """18.11: מכתב בחלקים. סגירה בלי שם החברה נכתבת מחדש לבד; שכתוב מלא שמאבד את הסגירה לא נשמר."""
+    parts = ('{"opening": "I am applying for the AI Engineer role in Tel Aviv, in my final semester of a B.Sc. at HIT.", '
+             '"body": ["findjob is my multi-agent job search system in Python with Supabase, which turns messy ads into structured data for ranking, and ships a mobile app that real users open every day."], '
+             '"closing": "I would be glad to talk."}')
+    LG.LETTER_PARTS = True
+    out, calls = run_with({
+        "letter_need": '{"requirements": ["Python"], "projects": ["findjob"], "gaps": []}',
+        "letter_draft": parts,
+        "letter_part": "I would be glad to talk with the Acme team in Tel Aviv.",
+        "letter_critique": ['{"fail": [7], "issues": ["paragraphs do not connect"]}', '{"issues": []}', '{"issues": []}'],
+        "letter_rewrite": "Dear Acme team,\n\nI am applying for the AI Engineer role, B.Sc. at HIT.\n\nfindjob is in Python with Supabase.\n\nThanks.\n\nBest regards,\nDana Levi",
+    })
+    assert calls.count("letter_part") == 1                      # רק הסגירה נכתבה מחדש
+    assert "Acme team in Tel Aviv" in out["text"]               # השכתוב המלא איבד את הסגירה, ולכן לא נשמר
+    assert out["text"].startswith("Dear Acme team,\n\n") and out["text"].endswith("Best regards,\nDana Levi")
+    LG.LETTER_PARTS, LG._graph = False, None
+
+
+def test_part_issues_in_code():
+    j = {"title": "Backend Developer", "co": "Wix", "loc": "Tel Aviv"}
+    good = {"opening": "Applying for the Backend Developer role, finishing my B.Sc. at HIT.", "body": ["x " * 30], "closing": "Glad to meet the Wix team."}
+    assert LG.part_issues(good, j) == []
+    assert LG.part_issues({**good, "opening": "Applying for the Backend Developer role."}, j) == ["opening"]
+    assert LG.part_issues({**good, "closing": "Thanks!"}, j) == ["closing"]
+    assert LG.part_issues({**good, "opening": "Mechanical engineer with 8 years in design, applying for the Backend Developer role."}, j) == []
+
+
+def test_job_location_is_not_an_invented_fact():
+    """18.11: בדיקת האמת לא כללה את מיקום המשרה, ולכן מחקה את משפט הסגירה (שחייב לכלול את המיקום)."""
+    st = {"job": JOB, "cv": CV, "name": "Dana Levi", "status": "", "brief": {},
+          "text": "Dear Acme team,\n\nfindjob is in Python.\n\nI would be glad to meet the Acme team in Tel Aviv.\n\nBest regards,\nDana Levi"}
+    assert LG.ground(st)["bad"] == []

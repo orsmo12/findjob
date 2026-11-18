@@ -63,7 +63,7 @@ RULES = ["Opening: the role, the location and the candidate's current status (de
 
 class S(TypedDict, total=False):
     cv: str; job: dict; name: str; brief: dict; status: str; own_letters: list[str]; may_reuse: bool
-    lang: str; need: dict; text: str; issues: list[str]; rounds: int; bad: list[str]; checked: bool
+    lang: str; need: dict; text: str; issues: list[str]; rounds: int; bad: list[str]; checked: bool; parts: dict
 
 
 def _j(raw: str) -> dict:
@@ -229,6 +229,7 @@ def critique(st: S) -> dict:
 Return JSON only: {{"fail": [numbers of rules that clearly fail], "issues": [one concrete fix per failed rule]}}.
 If every rule passes, return {{"fail": [], "issues": []}}. Do not suggest anything outside the 6 rules (no style polishing).
 Rule 3 passes when the CV covers the important requirements. Rule 4 passes when the CV has no military or earlier experience.
+Also check rule 7: the letter reads as one connected text (no repeated points, the paragraphs follow each other). Fail it only if clearly broken.
 
 JOB: {st['job']['title']} at {st['job']['co']} ({st['job'].get('loc') or ''})
 AD (short): {_ad(st)[:1200]}
@@ -260,11 +261,18 @@ AD:
 {_ad(st)[:2500]}
 LETTER:
 {st['text']}"""}], tier="write", max_tokens=1600)
-    return {"text": text.strip(), "rounds": (st.get("rounds") or 0) + 1, "issues": [], "bad": []}
+    text = text.strip()
+    if LETTER_PARTS and st.get("parts"):   # שכתוב המכתב המלא לא מקלקל פתיחה או סגירה שכבר עברו בבדיקת החלקים
+        lost = {c.split(":")[0] for c in letter_why(text, st["job"]) if c.startswith(("opening:no_title", "closing:"))} - \
+               {c.split(":")[0] for c in letter_why(st["text"], st["job"]) if c.startswith(("opening:no_title", "closing:"))}
+        if lost:   # גם בשכתוב בגלל בדיקת אמת: המשפטים הלא מבוססים יימחקו בסוף (finalize)
+            act.log("assistant", f"{st['job']['co']}: השכתוב איבד את {', '.join(sorted(lost))}. נשאר עם הגרסה הקודמת.")
+            text = st["text"]
+    return {"text": text, "rounds": (st.get("rounds") or 0) + 1, "issues": [], "bad": []}
 
 
 def ground(st: S) -> dict:
-    src_extra = " ".join([_ad(st), st["job"]["title"], st.get("status") or "", _brief_text(st.get("brief"))])
+    src_extra = " ".join([_ad(st), st["job"]["title"], st["job"].get("loc") or "", st.get("status") or "", _brief_text(st.get("brief"))])
     bad = unsupported(st["text"], st["cv"], src_extra, st["job"]["co"], st.get("name") or "")
     if bad:
         act.log("assistant", f"בבדיקת אמת: {', '.join(bad[:3])} לא מופיעים אצלך או במודעה.")
@@ -277,8 +285,108 @@ def finalize(st: S) -> dict:
         act.log("assistant", "עדיין היו פרטים לא מבוססים. מחקתי את המשפטים האלה.")
         text = _drop_bad_sentences(text, st["bad"])
     text = shape_letter(text, st["job"]["co"], st.get("name") or "", st.get("lang") or "English")
-    src_extra = " ".join([_ad(st), st["job"]["title"], st.get("status") or "", _brief_text(st.get("brief"))])
+    src_extra = " ".join([_ad(st), st["job"]["title"], st["job"].get("loc") or "", st.get("status") or "", _brief_text(st.get("brief"))])
     return {"text": text, "checked": not unsupported(text, st["cv"], src_extra, st["job"]["co"], st.get("name") or "")}
+
+
+# ── מכתב בחלקים (18.11) ───────────────────────────────────────────────────────
+# מדידה 18.11: פתיחה 7/24, סגירה 6/24 גם אחרי 2 סבבי תיקון למכתב שלם. מודל חינמי מתקן משפט אחד טוב יותר ממכתב שלם:
+# כותבים פתיחה / גוף / סגירה כשדות, בודקים כל חלק בקוד, ומשכתבים רק את החלק שנכשל. אחר כך המכתב המלא עובר את כל הבדיקות.
+LETTER_PARTS = False   # מתג חזרה. נדלק אחרי letter_shadow.yml
+STATUS_RE = r"b\.?sc|degree|graduat|student|תואר|\d+\+? years|experienced|engineer with|developer with"
+
+
+def part_issues(parts: dict, job: dict) -> list[str]:
+    """מה חסר בכל חלק, בקוד. מחזיר שמות חלקים: opening / closing / body."""
+    op, cl = (parts.get("opening") or "").lower(), (parts.get("closing") or "").lower()
+    title_w = re.findall(r"[a-z]{3,}", (job.get("title") or "").lower())[:3]
+    co = (job.get("co") or "").lower()[:12]
+    loc = re.split(r"[,·|-]", job.get("loc") or "")[0].strip().lower()
+    out = []
+    if not (op and any(w in op for w in title_w) and re.search(STATUS_RE, op)):
+        out.append("opening")
+    if not (cl and (co and co in cl or (loc and loc in cl))):
+        out.append("closing")
+    if not [b for b in parts.get("body") or [] if len(b.split()) >= 25]:
+        out.append("body")
+    return out
+
+
+PART_RULE = {
+    "opening": lambda j: (f'1-2 sentences. Must name the role "{j["title"]}"' + (f' and {j["loc"]}' if j.get("loc") else "")
+                          + " and the candidate's current status (degree or studies, or current role and years, from CURRENT STATUS or the CV)."),
+    "body": lambda j: ("1-2 short paragraphs: the main project in the job's own terms tied to requirements in the ad; an honest gap with "
+                       "self-learning proof if there is a gap; earlier (military/work) experience only if linked to the job."),
+    "closing": lambda j: (f'1-2 sentences. Must name {j["co"]}' + (f' and {j["loc"]}' if j.get("loc") else "") + ". No generic thanks."),
+}
+
+
+def _parts_prompt(st: S) -> str:
+    j, n = st["job"], st.get("need") or {}
+    return f"""WHAT THE COMPANY NEEDS: {', '.join(n.get('requirements') or []) or '(see ad)'}
+COMPANY DOMAIN: {n.get('domain') or '(see ad)'}
+PROJECTS TO FEATURE: {', '.join(n.get('projects') or []) or '(choose from the CV)'}
+GAPS TO ADDRESS HONESTLY: {', '.join(n.get('gaps') or []) or 'none'}
+{RESERVE_NOTE if n.get('reserve') else ''}
+CURRENT STATUS: {st.get('status') or '(not given; use the CV)'}
+{_style_block(st)}
+
+JOB: {j['title']} at {j['co']} ({j.get('loc') or ''})
+AD:
+{_ad(st)[:3000]}
+CV:
+{st['cv'][:4500]}"""
+
+
+def _join(parts: dict, st: S) -> str:
+    body = [b.strip() for b in parts.get("body") or [] if b and b.strip()]
+    paras = [parts.get("opening", "").strip()] + body + [parts.get("closing", "").strip()]
+    return f"Dear {st['job']['co']} team,\n\n" + "\n\n".join(p for p in paras if p) + f"\n\nBest regards,\n{st.get('name') or ''}"
+
+
+def draft_parts(st: S) -> dict:
+    j = st["job"]
+    raw = chat("assistant", "letter_draft", [{"role": "user", "content": f"""Write a cover letter in English for this job, as three parts.
+{QUALITY}
+Return JSON only: {{"opening": "...", "body": ["paragraph", "paragraph"], "closing": "..."}}
+- opening: {PART_RULE['opening'](j)}
+- body: {PART_RULE['body'](j)}
+- closing: {PART_RULE['closing'](j)}
+No greeting and no sign-off inside the parts. 120-190 words in total. Use ONLY facts from the CV and CURRENT STATUS.
+
+{_parts_prompt(st)}"""}], tier="write", max_tokens=1600)
+    d = _j(raw)
+    if not d.get("opening") or not d.get("body"):
+        return {"text": (raw or "").strip()}   # המודל לא החזיר JSON: הטקסט כמכתב רגיל, בלי קריאה נוספת
+    parts = {"opening": str(d.get("opening") or ""), "body": [str(b) for b in (d.get("body") or [])][:3], "closing": str(d.get("closing") or "")}
+    return {"parts": parts, "text": _join(parts, st)}
+
+
+def fix_parts(st: S) -> dict:
+    """משכתב רק את החלקים שנכשלו, עם שאר המכתב כהקשר. עד 2 ניסיונות לכל חלק."""
+    parts = dict(st.get("parts") or {})
+    if not parts:
+        return {}
+    for _ in range(2):
+        bad = part_issues(parts, st["job"])
+        if not bad:
+            break
+        for k in bad:
+            cur = parts.get(k) if k != "body" else "\n\n".join(parts.get("body") or [])
+            new = chat("assistant", "letter_part", [{"role": "user", "content": f"""Rewrite ONLY the {k} of this cover letter. {PART_RULE[k](st['job'])}
+It must flow with the rest of the letter (below) and not repeat it. Use ONLY facts from the CV and CURRENT STATUS.
+Output only the new {k}{' (paragraphs separated by a blank line)' if k == 'body' else ''}, no greeting, no sign-off.
+
+CURRENT {k.upper()}: {cur}
+THE WHOLE LETTER:
+{_join(parts, st)}
+
+{_parts_prompt(st)}"""}], tier="write", max_tokens=600).strip()
+            if new:
+                parts[k] = [b for b in re.split(r"\n\s*\n", new) if b.strip()][:3] if k == "body" else new
+    left = part_issues(parts, st["job"])
+    act.log("assistant", f"{st['job']['co']}: פתיחה, גוף וסגירה " + ("עברו את הבדיקה" if not left else f"— עדיין חסר: {', '.join(left)}"))
+    return {"parts": parts, "text": _join(parts, st)}
 
 
 # ── הגרף ───────────────────────────────────────────────────────────────────
@@ -293,11 +401,13 @@ def after_ground(st: S) -> str:
 def build():
     from langgraph.graph import StateGraph, END
     g = StateGraph(S)
-    for n, f in (("need", need), ("draft", draft), ("critique", critique), ("rewrite", rewrite), ("ground", ground), ("finalize", finalize)):
+    for n, f in (("need", need), ("draft", draft_parts if LETTER_PARTS else draft), ("parts", fix_parts), ("critique", critique),
+                 ("rewrite", rewrite), ("ground", ground), ("finalize", finalize)):
         g.add_node(n, f)
     g.set_entry_point("need")
     g.add_edge("need", "draft")
-    g.add_edge("draft", "critique")
+    g.add_edge("draft", "parts")
+    g.add_edge("parts", "critique")
     g.add_conditional_edges("critique", after_critique, {"rewrite": "rewrite", "ground": "ground"})
     g.add_edge("rewrite", "critique")
     g.add_conditional_edges("ground", after_ground, {"rewrite": "rewrite", "finalize": "finalize"})

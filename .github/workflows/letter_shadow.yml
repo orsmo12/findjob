@@ -1,0 +1,21 @@
+name: "dev: letter shadow"   # כלי מפתח: מכתבים בשתי הדרכים (שלם / בחלקים) למשרות שמורות, בלי לשמור. מדדים בלבד
+on:
+  workflow_dispatch:
+    inputs:
+      idx: { description: "מספר משתמש לפי סדר הרשמה", default: "0" }
+      n: { description: "כמה משרות", default: "3" }
+jobs:
+  shadow:
+    if: github.repository == 'orsmo12/findjob'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: pip install groq httpx langgraph
+      - run: python -u scripts/letter_shadow.py "${{ inputs.idx }}" "${{ inputs.n }}"
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
