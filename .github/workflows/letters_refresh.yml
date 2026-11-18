@@ -1,0 +1,19 @@
+name: "dev: letters refresh"   # כלי מפתח: לכתוב מחדש מכתבים קיימים של משתמשים נבחרים (בהדרגה, בריצה הרגילה)
+on:
+  workflow_dispatch:
+    inputs:
+      idx: { description: "מספרי משתמשים לפי סדר הרשמה, מופרדים בפסיק", default: "" }
+      apply: { description: "yes = לסמן. אחרת רק לספור", default: "no" }
+jobs:
+  refresh:
+    if: github.repository == 'orsmo12/findjob'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: pip install httpx
+      - run: python -u scripts/letters_refresh.py "${{ inputs.idx }}" "${{ inputs.apply }}"
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
