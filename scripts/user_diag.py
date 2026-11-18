@@ -131,6 +131,12 @@ def main(idx=None, days=10):
         why = Counter(c for j in lrows if (j["letter"].get("v") or 0) >= LETTER_V
                       for c in letter_why(j["letter"]["text"], {"title": cards.get(j.get("id"), {}).get("title"), "co": cards.get(j.get("id"), {}).get("co"), "loc": cards.get(j.get("id"), {}).get("loc")}))
         print(f"   למה נכשל (קודים): {dict(why.most_common(12))}")
+        for j in lrows:   # מבנה לכל מכתב שנכשל בפתיחה/סגירה: פסקאות, איפה החברה והתואר, מילים לפסקה (בלי טקסט)
+            if (j["letter"].get("v") or 0) >= LETTER_V:
+                c = cards.get(j.get("id"), {})
+                w = letter_why(j["letter"]["text"], {"title": c.get("title"), "co": c.get("co"), "loc": c.get("loc")})
+                if any(x.startswith(("closing", "opening")) for x in w):
+                    print("     " + " ".join(w))
     if lt:
         wc = [len(x["text"].split()) for x in lt]
         paras = [x["text"].strip().split("\n\n") for x in lt]

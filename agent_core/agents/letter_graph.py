@@ -188,6 +188,10 @@ def letter_why(text: str, job: dict) -> list[str]:
     if slop_in(text or ""):
         out.append("clean:slop")
     out.append(f"paras:{len(paras)}")
+    co = (job.get("co") or "").lower()[:12]   # באיזו פסקה החברה והתואר (מבנה בלבד, בלי טקסט)
+    out.append("co_p:" + ",".join(str(i) for i, p in enumerate(paras) if co and co in p.lower()))
+    out.append("deg_p:" + ",".join(str(i) for i, p in enumerate(paras) if re.search(deg, p.lower())))
+    out.append("w_p:" + ",".join(str(len(p.split())) for p in paras))
     return out
 
 
