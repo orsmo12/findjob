@@ -156,3 +156,10 @@ def test_job_location_is_not_an_invented_fact():
     st = {"job": JOB, "cv": CV, "name": "Dana Levi", "status": "", "brief": {},
           "text": "Dear Acme team,\n\nfindjob is in Python.\n\nI would be glad to meet the Acme team in Tel Aviv.\n\nBest regards,\nDana Levi"}
     assert LG.ground(st)["bad"] == []
+
+
+def test_opening_needs_the_degree_when_the_cv_has_one():
+    j = {"title": "Mechanical Engineer", "co": "Acme", "loc": "Haifa"}
+    p = {"opening": "Mechanical engineer with 8 years in design, applying for the Mechanical Engineer role.", "body": ["x " * 30], "closing": "Acme in Haifa"}
+    assert LG.part_issues(p, j, "B.Sc. Mechanical Engineering, Technion") == ["opening"]
+    assert LG.part_issues({**p, "opening": "With a B.Sc. in Mechanical Engineering and 8 years in design, I am applying for the Mechanical Engineer role."}, j, "B.Sc. Mechanical Engineering") == []

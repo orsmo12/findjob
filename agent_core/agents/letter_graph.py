@@ -296,14 +296,19 @@ LETTER_PARTS = False   # מתג חזרה. נדלק אחרי letter_shadow.yml
 STATUS_RE = r"b\.?sc|degree|graduat|student|תואר|\d+\+? years|experienced|engineer with|developer with"
 
 
-def part_issues(parts: dict, job: dict) -> list[str]:
-    """מה חסר בכל חלק, בקוד. מחזיר שמות חלקים: opening / closing / body."""
+DEG_RE = r"b\.?sc|m\.?sc|b\.?a\b|degree|graduat|student|תואר|engineer(ing)? \(|practical engineer|הנדסאי"
+
+
+def part_issues(parts: dict, job: dict, cv: str = "") -> list[str]:
+    """מה חסר בכל חלק, בקוד. מחזיר שמות חלקים: opening / closing / body.
+    פתיחה: התפקיד והמצב. כשבקורות החיים יש תואר, המצב חייב לכלול אותו (כלל 1, הרצת ניסיון 18.11)."""
     op, cl = (parts.get("opening") or "").lower(), (parts.get("closing") or "").lower()
     title_w = re.findall(r"[a-z]{3,}", (job.get("title") or "").lower())[:3]
     co = (job.get("co") or "").lower()[:12]
     loc = re.split(r"[,·|-]", job.get("loc") or "")[0].strip().lower()
     out = []
-    if not (op and any(w in op for w in title_w) and re.search(STATUS_RE, op)):
+    need_deg = bool(re.search(DEG_RE, cv or "", re.I))
+    if not (op and any(w in op for w in title_w) and re.search(DEG_RE if need_deg else STATUS_RE, op)):
         out.append("opening")
     if not (cl and (co and co in cl or (loc and loc in cl))):
         out.append("closing")
@@ -314,7 +319,8 @@ def part_issues(parts: dict, job: dict) -> list[str]:
 
 PART_RULE = {
     "opening": lambda j: (f'1-2 sentences. Must name the role "{j["title"]}"' + (f' and {j["loc"]}' if j.get("loc") else "")
-                          + " and the candidate's current status (degree or studies, or current role and years, from CURRENT STATUS or the CV)."),
+                          + " and the candidate's current status: the degree or studies as written in the CV (e.g. B.Sc. in ...),"
+                            " plus current role and years if the CV has work experience."),
     "body": lambda j: ("1-2 short paragraphs: the main project in the job's own terms tied to requirements in the ad; an honest gap with "
                        "self-learning proof if there is a gap; earlier (military/work) experience only if linked to the job."),
     "closing": lambda j: (f'1-2 sentences. Must name {j["co"]}' + (f' and {j["loc"]}' if j.get("loc") else "") + ". No generic thanks."),
@@ -368,7 +374,7 @@ def fix_parts(st: S) -> dict:
     if not parts:
         return {}
     for _ in range(2):
-        bad = part_issues(parts, st["job"])
+        bad = part_issues(parts, st["job"], st.get("cv") or "")
         if not bad:
             break
         for k in bad:
@@ -384,7 +390,7 @@ THE WHOLE LETTER:
 {_parts_prompt(st)}"""}], tier="write", max_tokens=600).strip()
             if new:
                 parts[k] = [b for b in re.split(r"\n\s*\n", new) if b.strip()][:3] if k == "body" else new
-    left = part_issues(parts, st["job"])
+    left = part_issues(parts, st["job"], st.get("cv") or "")
     act.log("assistant", f"{st['job']['co']}: פתיחה, גוף וסגירה " + ("עברו את הבדיקה" if not left else f"— עדיין חסר: {', '.join(left)}"))
     return {"parts": parts, "text": _join(parts, st)}
 
