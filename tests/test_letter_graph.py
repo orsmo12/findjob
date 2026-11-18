@@ -103,12 +103,14 @@ def test_code_rule_failures_reach_the_rewrite():
     got = LG.code_issues(txt, JOB)
     assert any("AI Engineer" in x for x in got) and any("degree" in x for x in got) and any("Acme" in x and "Tel Aviv" in x for x in got)
     LG.chat, LG.act.log = (lambda *a, **k: '{"fail": [], "issues": []}'), (lambda *a, **k: None)
-    assert len(LG.critique({"text": txt, "job": JOB})["issues"]) >= 3
-    LG.CODE_RULES_IN_CRITIQUE = False
+    old = LG.CODE_RULES_IN_CRITIQUE
     try:
+        LG.CODE_RULES_IN_CRITIQUE = True
+        assert len(LG.critique({"text": txt, "job": JOB})["issues"]) >= 3
+        LG.CODE_RULES_IN_CRITIQUE = False   # כבוי מ-18.11
         assert LG.critique({"text": txt, "job": JOB})["issues"] == []
     finally:
-        LG.CODE_RULES_IN_CRITIQUE = True
+        LG.CODE_RULES_IN_CRITIQUE = old
 
 
 def test_letters_always_english_and_no_cut_after_degree():

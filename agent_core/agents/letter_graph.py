@@ -200,7 +200,7 @@ def slop_in(text: str) -> list[str]:
     return [p for p in SLOP if p in t]
 
 
-CODE_RULES_IN_CRITIQUE = True   # מתג חזרה (16.11)
+CODE_RULES_IN_CRITIQUE = False   # מתג (16.11). כובה 18.11: פתיחה 7/24, סגירה 6/24 — לא השתפר, וכל מכתב הגיע ל-2 סבבי תיקון. TODO: מכתב במבנה (פתיחה/גוף/סגירה) עם בדיקה לכל חלק
 
 
 def code_issues(text: str, job: dict) -> list[str]:
