@@ -92,6 +92,7 @@ cd prototype/src && python3 build.py                             # דמו מקו
 | `queue_check.yml` | המשרות שמחכות בתור של משתמש: פתוחות, נסגרו, כפולות, לא מתאימות (הורדה רק עם apply) | `idx`, `apply` (yes/no) |
 | `letter_shadow.yml` | הרצת ניסיון למכתבים: מכתב שלם מול בחלקים, בלי לשמור (מדדים בלבד) | `idx`, `n` |
 | `letters_refresh.yml` | מכתבים קיימים נכתבים מחדש בהדרגה (שמורות שלא הוגשו) | `idx` (רשימה), `apply` (yes/no) |
+| `domain_dry.yml` | הרצה יבשה לתחום חדש עם קורות חיים מומצאים: תוכנית, איסוף, סינון ודירוג, בלי לשמור | `kind`, `rate_n` |
 | `user_pause.yml` | השהיית משתמש או החזרתו | `idx`, `state` (on/off) |
 | `letters.yml`, `nightly.yml` | ריצות הסוכנים (גם בתזמון) | `user` |
 | `probe.yml`, `push_test.yml` | למה חברה לא נמצאה, התראת בדיקה | `name` |
