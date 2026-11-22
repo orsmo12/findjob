@@ -83,13 +83,17 @@ function normAns(a){
 const SOFT_ROLES=['Backend','Frontend','Full-Stack','Data / BI','AI / ML','QA ואוטומציה','DevOps / Cloud','סייבר','Embedded'];
 const PACKS={'פיתוח תוכנה':{field:['מדעי המחשב','הנדסת תוכנה','הנדסת חשמל או מחשבים','מערכות מידע','מדעי הנתונים או סטטיסטיקה','בוטקאמפ או לימוד עצמי'],roles:SOFT_ROLES,work:'בפיתוח'},
   'הנדסת מכונות':{field:['הנדסת מכונות','הנדסאי מכונות','הנדסת תעשייה וניהול','הנדסה אווירונאוטית','הנדסת חומרים'],
-    roles:['תכנון מכני','ייצור ותהליכים','R&D ופיתוח מוצר','איכות','ניהול פרויקטים הנדסיים','סימולציות ו-CAE','אחזקה ותפעול','מערכות ואינטגרציה'],work:'בהנדסה'}};
+    roles:['תכנון מכני','ייצור ותהליכים','R&D ופיתוח מוצר','איכות','ניהול פרויקטים הנדסיים','סימולציות ו-CAE','אחזקה ותפעול','מערכות ואינטגרציה'],work:'בהנדסה'},
+  'עיצוב UI/UX וגרפי':{field:['תקשורת חזותית','עיצוב גרפי','UX/UI (קורס או בוטקאמפ)','עיצוב תעשייתי','לימוד עצמי'],
+    roles:['UI/UX','Product Design','עיצוב גרפי','מיתוג','מחקר משתמשים','Motion','עיצוב אתרים','UX Writing'],work:'בעיצוב'}};
 const MECH_W=['solidworks','autocad','ansys','catia','creo','inventor','gd&t','cnc','mechanical engineering','הנדסת מכונות','תיכון מכני','fea','thermodynamics','שרטוט'],
-  SOFT_W=['python','javascript','react','java','sql','developer','node','typescript','git','backend','frontend'];
-function cvDomain(cv){const t=(cv||'').toLowerCase(),m=MECH_W.filter(w=>t.includes(w)).length,sw=SOFT_W.filter(w=>t.includes(w)).length;return m>=2&&m>=sw?'הנדסת מכונות':sw>=2?'פיתוח תוכנה':''}
+  SOFT_W=['python','javascript','react','java','sql','developer','node','typescript','git','backend','frontend'],
+  DES_W=['figma','adobe xd','illustrator','photoshop','indesign','after effects','wireframe','prototyp','typography','user research','ui/ux','ux/ui','b.des','visual communication','תקשורת חזותית','עיצוב גרפי','behance','dribbble'];
+function cvDomain(cv){const t=(cv||'').toLowerCase(),m=MECH_W.filter(w=>t.includes(w)).length,sw=SOFT_W.filter(w=>t.includes(w)).length,ds=DES_W.filter(w=>t.includes(w)).length;
+  if(ds>=3&&ds>=sw&&ds>=m)return 'עיצוב UI/UX וגרפי';return m>=2&&m>=sw?'הנדסת מכונות':sw>=2?'פיתוח תוכנה':''}
 function domainsOf(a){const d=(a.domains||[]).filter(Boolean);return d.length?d:[a.domain||cvDomain(prof().cv)||'פיתוח תוכנה']}
 function domainOf(a){return domainsOf(a)[0]}
-function domKey(a){const d=domainOf(a);return d==='פיתוח תוכנה'?'software':d==='הנדסת מכונות'?'mechanical':'other'}
+function domKey(a){const d=domainOf(a);return d==='פיתוח תוכנה'?'software':d==='הנדסת מכונות'?'mechanical':d==='עיצוב UI/UX וגרפי'?'design':'other'}
 function packOf(a,d){if(PACKS[d])return PACKS[d];const p=(a.packs||{})[d]||(a.pack&&a.pack.label===d?a.pack:null);
   return p?{field:(p.field||[]).filter(x=>x&&x!==OTHER),roles:(p.roles||[]).map(r=>r.label),work:'בתחום'}:{field:[],roles:[],work:'בתחום'}}
 /* האיחוד של כל התחומים שנבחרו: רקע, תפקידים (וגם תפקידים שהמשתמש תיאר בעצמו) */
@@ -115,7 +119,7 @@ const QS=[
   {id:'work',t:'ומה המצב שלך בעבודה?',o:['לא עובד/ת כרגע','עובד/ת בתחום','עובד/ת בתחום אחר','משתחרר/ת משירות',OTHER],other:'ספר בקצרה'},
   {id:'scope',multi:true,t:'איזה היקף משרה אתה מחפש?',sub:'אפשר לבחור את שתיהן.',o:['משרה מלאה','משרה חלקית / משרת סטודנט']},
   {id:'domains',multi:true,t:'באיזה תחומים אתה מחפש עבודה?',sub:'זיהינו מקורות החיים. אפשר לבחור כמה ולהוסיף תחום משלך.',
-    o:a=>[...new Set(['פיתוח תוכנה','הנדסת מכונות',...Object.keys(a.packs||{}),...(a.domains||[])])].filter(x=>x&&x!=='תחום אחר').concat([OTHER]),
+    o:a=>[...new Set(['פיתוח תוכנה','הנדסת מכונות','עיצוב UI/UX וגרפי',...Object.keys(a.packs||{}),...(a.domains||[])])].filter(x=>x&&x!=='תחום אחר').concat([OTHER]),
     other:'איזה תחום? למשל: הנדסה כימית, שיווק דיגיטלי',build:'domain',
     note:a=>(a.domains||[]).length>=4?'טיפ: חיפוש ממוקד בכמה תחומים מוצא משרות מדויקות יותר.':''},
   {id:'field',multi:true,t:'מה הרקע המקצועי שלך?',sub:'אפשר לבחור כמה.',o:a=>[...pack(a).field,OTHER],other:'מה עוד ברקע שלך?'},

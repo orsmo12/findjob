@@ -223,11 +223,15 @@ FIELD_WORDS = {
     "mechanical": r"\b(mechanical|mechanic|cad|solidworks|hvac|mechatronics|manufacturing|production engineer|tooling|thermal|structural|"
                   r"מכונות|מכני|מכנית|ייצור|תיכון|שרטט|הנדסאי)\b",
     "electrical": r"\b(electrical|electronics|hardware|asic|fpga|rf|pcb|vlsi|analog|chip|board design|חשמל|אלקטרוניקה|חומרה)\b",
+    "design": r"\b(designer|graphic|art director|creative director)\b|מעצב|מעצבת|גרפיקאי|גרפיקאית|אינפוגרפיקאי",
     "business": r"\b(sales|account executive|account manager|business development|marketing|recruiter|talent|hr|human resources|finance|"
                 r"accountant|controller|bookkeeper|customer success|customer support|legal|lawyer|paralegal|procurement|buyer|office manager|"
                 r"secretary|receptionist|מכירות|שיווק|גיוס|משאבי אנוש|הנהלת חשבונות|רואה חשבון|מזכיר|מזכירה|שירות לקוחות|נציג)\b",
 }
-DOMAIN_FIELD = {"פיתוח תוכנה": "software", "הנדסת מכונות": "mechanical"}
+DOMAIN_FIELD = {"פיתוח תוכנה": "software", "הנדסת מכונות": "mechanical", "עיצוב UI/UX וגרפי": "design"}
+# "Designer" לבד לא מספיק לעיצוב: Mechanical Designer, Board Design, UI Developer, Game/Fashion/Interior Designer הם מקצוע אחר
+DESIGN_MINE = FIELD_WORDS["design"] + r"|\b(ux|ui|visual|motion|researcher)\b|עיצוב"   # למעצב: גם UX Researcher, UX Writer
+DESIGN_NOT = r"\b(engineer|developer|mechanical|industrial|hardware|board|chip|asic|fpga|rf|electrical|interior design\w*|fashion designer|games? designer|level designer|instructional)\b|כימ"
 # סבב ב (16.11): ניהול, לקוחות ולוגיסטיקה הגיעו לסטודנט מכונות (Head of Account Management, Logistic SME, Technical PM).
 # לא מסונן כשבכותרת יש מילה מהתחום של המשתמש או מהתפקידים שבחר
 OFF_FIELD_MGMT = True   # מתג חזרה
@@ -242,7 +246,9 @@ def off_field(job: dict, plan: dict) -> bool:
     if None in mine:
         return False
     t = (job.get("title") or "").lower()
-    if any(re.search(FIELD_WORDS[f], t) for f in mine):
+    if mine == {"design"} and re.search(DESIGN_NOT, t):
+        return True
+    if any(re.search(DESIGN_MINE if f == "design" else FIELD_WORDS[f], t) for f in mine):
         return False
     if any(w for w in (plan.get("titles") or []) if w.lower() in t):
         return False

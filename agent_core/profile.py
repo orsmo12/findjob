@@ -46,7 +46,21 @@ DOMAINS = {
         "אחזקה ותפעול":          ["Maintenance Engineer", "Reliability Engineer"],
         "מערכות ואינטגרציה":     ["Systems Engineer", "Integration Engineer"],
     }, "he_queries": ["מהנדס מכונות", "מהנדס מכונות ג'וניור", "מהנדס ייצור"]},
+    # 22.11: תחום שלישי. הרצה יבשה (domain_dry.yml) עם קורות חיים מומצאים: בלי זה התחום זוהה "פיתוח תוכנה"
+    # ו-"מתחום אחר" לא סינן כלום (Mechanical Designer, Board Design, Front-end Developer עברו)
+    "עיצוב UI/UX וגרפי": {"key": "design", "roles": {
+        "UI/UX":            ["UI/UX Designer", "UX Designer", "UI Designer"],
+        "Product Design":   ["Product Designer"],
+        "עיצוב גרפי":        ["Graphic Designer", "Visual Designer"],
+        "מיתוג":            ["Brand Designer"],
+        "מחקר משתמשים":     ["UX Researcher"],
+        "Motion":           ["Motion Designer"],
+        "עיצוב אתרים":      ["Web Designer"],
+        "UX Writing":       ["UX Writer"],
+    }, "he_queries": ["מעצב UX UI", "מעצב/ת גרפי/ת", "מעצב מוצר"]},
 }
+DESIGN_WORDS = ("figma", "adobe xd", "illustrator", "photoshop", "indesign", "after effects", "wireframe", "prototyp", "typography",
+                "user research", "ui/ux", "ux/ui", "b.des", "visual communication", "תקשורת חזותית", "עיצוב גרפי", "behance", "dribbble")
 MECH_WORDS = ("solidworks", "autocad", "ansys", "catia", "creo", "inventor", "gd&t", "cnc", "mechanical engineering",
               "הנדסת מכונות", "תיכון מכני", "fea", "thermodynamics", "שרטוט")
 SOFT_WORDS = ("python", "javascript", "react", "java", "sql", "developer", "node", "typescript", "git", "backend", "frontend")
@@ -97,7 +111,9 @@ def domain_of(profile: dict) -> str:
     if a.get("domain"):
         return a["domain"]
     t = (profile.get("cv_text") or "").lower()
-    m, sw = sum(w in t for w in MECH_WORDS), sum(w in t for w in SOFT_WORDS)
+    m, sw, ds = sum(w in t for w in MECH_WORDS), sum(w in t for w in SOFT_WORDS), sum(w in t for w in DESIGN_WORDS)
+    if ds >= 3 and ds >= sw and ds >= m:
+        return "עיצוב UI/UX וגרפי"
     return "הנדסת מכונות" if m >= 2 and m >= sw else "פיתוח תוכנה"
 
 
@@ -361,6 +377,8 @@ def select_targets(plan: SearchPlan, profile: dict, catalog: list[dict] | None =
     region_cities = {c.lower() for c in (plan.area_cities or plan.locations)}
     scored = []
     dkeys = {(DOMAINS.get(d) or {}).get("key", "other") for d in (plan.domains or [plan.domain])}   # כל התחומים שבחר
+    if "design" in dkeys:
+        dkeys.add("software")   # מעצבי UI/UX עובדים בחברות התוכנה שבקטלוג
     for c in catalog:
         if c["name"].lower() in removed or not dkeys & set(c.get("domains", ["software"])):
             continue
