@@ -212,6 +212,7 @@ def active_recently(state: dict | None, days: int = INACTIVE_DAYS) -> bool:
 SCAN_PENDING_MAX = 25   # מתג: מעל 25 משרות שמחכות → סריקה אחת ביום (0 = כבוי)
 SCAN_SLOW_DAYS = 3      # לא נכנס 3 ימים → סריקה אחת ביום
 SCAN_PAUSE_DAYS = 7     # לא נכנס 7 ימים → עוצרים עד שיחזור (0 = כבוי)
+SCAN_QUEUE_FULL = 30    # מתג (22.11): 30 משרות מחכות → לא סורקים עד שיעבור עליהן. בדיקת הפתיחה ממשיכה (0 = כבוי)
 
 
 def days_away(state: dict | None, now=None) -> float:
@@ -232,9 +233,11 @@ def pending_jobs(rows: list[dict]) -> int:
 
 
 def scan_mode(state: dict | None, pending: int, morning: bool, now=None) -> str:
-    """'full' (פעמיים ביום) / 'skip' (היום כבר סרקנו פעם אחת) / 'paused' (לא נכנס 7 ימים)."""
+    """'full' (פעמיים ביום) / 'skip' (היום כבר סרקנו פעם אחת) / 'paused' (לא נכנס 7 ימים) / 'queue_full' (30 מחכות)."""
     away = days_away(state, now)
     if SCAN_PAUSE_DAYS and away >= SCAN_PAUSE_DAYS:
         return "paused"
+    if SCAN_QUEUE_FULL and pending >= SCAN_QUEUE_FULL:
+        return "queue_full"
     slow = away >= SCAN_SLOW_DAYS or (SCAN_PENDING_MAX and pending >= SCAN_PENDING_MAX)
     return "skip" if slow and not morning else "full"

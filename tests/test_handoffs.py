@@ -102,6 +102,8 @@ def test_scan_mode_slows_and_pauses():
     assert H.scan_mode(st(4), 0, morning=False, now=now) == "skip" and H.scan_mode(st(4), 0, morning=True, now=now) == "full"
     assert H.scan_mode(st(8), 0, morning=True, now=now) == "paused"
     assert H.scan_mode({}, 0, morning=False, now=now) == "full"          # משתמש חדש
+    assert H.scan_mode(st(0), 30, morning=True, now=now) == "queue_full"   # 22.11: תור מלא = לא סורקים בכלל
+    assert H.scan_mode(st(0), 29, morning=True, now=now) == "full"
     assert H.pending_jobs([{"decision": None}, {"decision": "save"}, {"decision": None, "card": {"closed_at": "x"}}]) == 1
     old = H.SCAN_PAUSE_DAYS; H.SCAN_PAUSE_DAYS = 0
     try:

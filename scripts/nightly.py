@@ -83,13 +83,14 @@ for u in users:
         plan["taste"] = learn_taste(db.all_jobs(u["user_id"], days=60), ustate.get("skip") or {}, ustate.get("taste_off") or [], role_words(plan))
     except Exception as e:  # noqa: BLE001
         print(f"טעם אישי: {e}")
+    skip_scan = False
     if not (os.environ.get("ONLY_USER") or "").strip():   # סריקה שהמשתמש הפעיל בעצמו לא מואטת
         try:
             from agent_core.handoffs import scan_mode, pending_jobs, days_away
             waiting = pending_jobs(db.all_jobs(u["user_id"], days=30))
             mode = scan_mode(ustate, waiting, MORNING)
             if mode != "full":
-                print(f"{u['user_id'][:8]}: {'מושהה (לא נכנס 7 ימים)' if mode == 'paused' else 'סריקה אחת ביום'} — {waiting} משרות מחכות")
+                print(f"{u['user_id'][:8]}: {({'paused': 'מושהה (לא נכנס 7 ימים)', 'queue_full': 'התור מלא, לא סורקים'}).get(mode, 'סריקה אחת ביום')} — {waiting} משרות מחכות")
                 if mode == "paused":   # התראה אחת לכל היעדרות: "יש לך N משרות, נמשיך כשתחזור"
                     mem = db.latest_plan(u["user_id"], "scan_pause") or {}
                     last = ((ustate.get("usage") or {}).get("last")) or ""
@@ -98,195 +99,196 @@ for u in users:
                         P.send(ustate.get("push"), {"title": "findjob", "tag": "scan-pause", "url": "/#jobs",
                                                     "body": (f"יש לך {waiting} משרות שמחכות. " if waiting else "") + "עצרנו את החיפוש עד שתחזור, ונמשיך מאיפה שהפסקנו."})
                         db.save_memory(u["user_id"], "scan_pause", {"since": last, "at": datetime.now(timezone.utc).isoformat(), "waiting": waiting})
-                continue
+                skip_scan = True   # בלי סריקה, אבל המשרות שמחכות עדיין נבדקות (נסגרו = יורדות מהתור)
         except Exception as e:  # noqa: BLE001
             print(f"קצב סריקה: {type(e).__name__}")
-    if (os.environ.get("ONLY_USER") or "").strip():   # סריקה שהמשתמש הפעיל: האפליקציה מראה "רץ" ולא "ממתין בתור"
-        db.save_memory(u["user_id"], "assistant", {"prep_started": datetime.now(timezone.utc).isoformat()})
-    act.start(u["user_id"])
-    try:  # דורון: דירוג מחדש של משרות בפיד שדורגו בלי מודעה מלאה או בשיטה ישנה
-        todo = db.to_rerate(u["user_id"], RATING_V)[:12]
-        if todo:
-            act.log("hunter", f"בודק שוב {len(todo)} משרות שמחכות לך: קורא את המודעה המלאה ומדרג מחדש")
-        gone = []
-        for row in todo:
-            c = row["card"]
-            saved = row.get("decision") == "save"
-            try:
-                st, new, why_ = rerate(c, prof, plan, min_fit=0 if saved else 3.5)
-            except BudgetDeferred:
-                act.log("hunter", "הגעתי למכסת ה-AI. את השאר אבדוק בסריקה הבאה."); break
-            act.log("hunter", f"{c['title']} ב-{c['co']}: " + {"ok": f"דירוג מעודכן {why_}", "filtered": f"הורדתי מהרשימה ({why_})",
-                                                              "later": f"{why_}, אנסה שוב בסריקה הבאה"}[st])
-            if st == "ok":
-                db.update_job(u["user_id"], row["id"], {"card": {**new, **{k: c[k] for k in ("closed_at",) if c.get(k)}}, "fit": new["fit"]})
-            elif st == "filtered" and saved:  # משרה ששמרת לא נמחקת. רק מסמנים שלא נדרג אותה שוב
-                db.update_job(u["user_id"], row["id"], {"card": {**c, "rv": RATING_V, "warn": why_}})
-            elif st == "filtered":
-                db.update_job(u["user_id"], row["id"], {"decision": "filtered", "card": {**c, "filtered_why": why_}})
-                gone.append(f"{c['title']} ב-{c['co']}")
-        from agent_core.agents.hunter import QUEUE_REFILTER, hands_on, off_field, is_post
-        if QUEUE_REFILTER:   # סבב ב: כללי סינון חדשים חלים גם על משרות שכבר מחכות בתור (לא על משרות ששמרת)
-            for row in db.all_jobs(u["user_id"], days=30):
-                c = row.get("card") or {}
-                if row.get("decision") or not c.get("title"):
-                    continue
-                j_ = {"title": c["title"]}
-                why_ = "מפעיל/טכנאי" if hands_on(j_, plan) else "לא מהתחום" if off_field(j_, plan) else "פוסט ולא משרה" if is_post(j_) else ""
-                if why_:
+    if not skip_scan:
+        if (os.environ.get("ONLY_USER") or "").strip():   # סריקה שהמשתמש הפעיל: האפליקציה מראה "רץ" ולא "ממתין בתור"
+            db.save_memory(u["user_id"], "assistant", {"prep_started": datetime.now(timezone.utc).isoformat()})
+        act.start(u["user_id"])
+        try:  # דורון: דירוג מחדש של משרות בפיד שדורגו בלי מודעה מלאה או בשיטה ישנה
+            todo = db.to_rerate(u["user_id"], RATING_V)[:12]
+            if todo:
+                act.log("hunter", f"בודק שוב {len(todo)} משרות שמחכות לך: קורא את המודעה המלאה ומדרג מחדש")
+            gone = []
+            for row in todo:
+                c = row["card"]
+                saved = row.get("decision") == "save"
+                try:
+                    st, new, why_ = rerate(c, prof, plan, min_fit=0 if saved else 3.5)
+                except BudgetDeferred:
+                    act.log("hunter", "הגעתי למכסת ה-AI. את השאר אבדוק בסריקה הבאה."); break
+                act.log("hunter", f"{c['title']} ב-{c['co']}: " + {"ok": f"דירוג מעודכן {why_}", "filtered": f"הורדתי מהרשימה ({why_})",
+                                                                  "later": f"{why_}, אנסה שוב בסריקה הבאה"}[st])
+                if st == "ok":
+                    db.update_job(u["user_id"], row["id"], {"card": {**new, **{k: c[k] for k in ("closed_at",) if c.get(k)}}, "fit": new["fit"]})
+                elif st == "filtered" and saved:  # משרה ששמרת לא נמחקת. רק מסמנים שלא נדרג אותה שוב
+                    db.update_job(u["user_id"], row["id"], {"card": {**c, "rv": RATING_V, "warn": why_}})
+                elif st == "filtered":
                     db.update_job(u["user_id"], row["id"], {"decision": "filtered", "card": {**c, "filtered_why": why_}})
-                    gone.append(f"{c['title']} ב-{c.get('co') or ''}")
-        if gone:
-            db.add_run(u["user_id"], "hunter", "קראתי שוב את המודעות המלאות והורדתי מהרשימה משרות שלא מתאימות לך: "
-                       + "; ".join(gone) + ".")
-        act.flush()
-    except Exception as e:  # noqa: BLE001
-        print(f"{u['user_id'][:8]}: דירוג מחדש נכשל: {type(e).__name__}: {e}")
-        RR.fail("דירוג מחדש", u["user_id"], e)
-        act.flush()
-    act.start(u["user_id"])
-    try:
-        why = plan.get("why") or []
-        act.log("strategist", "קורא את קורות החיים ואת התשובות שלך לשאלון")
-        for w in why[:4]:
-            act.log("strategist", w)
-        act.log("strategist", f"תחפש: {', '.join(plan['queries'][:6])}. אזורים: {', '.join(plan['locations'][:2])}."
-                + (f" עד {plan['max_years']} שנות ניסיון." if plan.get("max_years") else ""), to="hunter")
-        plan_obj = build_search_plan(prof)
-        tc = ustate.get("targets") or {}
-        targets = select_targets(plan_obj, {"target_companies": tc}, load_catalog())
-        removed = {x.lower() for x in tc.get("removed") or []}
-        have = {t["name"].lower() for t in targets}
-        for a in learned.get("auto_targets") or []:  # חברות שהצוות הוסיף לבד (אפשר להסיר בפרופיל)
-            if a["name"].lower() not in removed and a["name"].lower() not in have:
-                targets.append({"name": a["name"], "why": [a.get("why", "הצוות הוסיף")], "auto": True})
-        conf, rej = tc.get("boards") or {}, tc.get("reject") or {}
-        for t in targets:   # מה שאישרת או דחית בפרופיל ("זו החברה?")
-            k = next((n for n in conf if n.lower() == t["name"].lower()), None)
-            if k:
-                t["board"] = conf[k]
-            t["reject"] = next((v for n, v in rej.items() if n.lower() == t["name"].lower()), [])
-        act.log("strategist", f"גם לבדוק ישירות את דפי הקריירה של {len(targets)} חברות יעד: {', '.join(t['name'] for t in targets[:6])}…", to="hunter")
-        cache = db.latest_plan(u["user_id"], "boards").get("cache") or {}
-        direct, boards, cache = collect_targets(targets, plan, cache)
-        # חברות בלי לוח ציבורי: חיפוש לפי השם (קודם אלה שהוספת בעצמך), כולל תיקון שם
-        week_ago = (datetime.now(timezone.utc) - timedelta(days=7)).isoformat()
-        for b in boards:  # שם שלא נמצא — לא מחפשים שוב כל סריקה, רק פעם בשבוע
-            nf = (cache.get(b["name"].lower()) or {}).get("nf")
-            if b["status"] == "by_name" and nf and nf > week_ago:
-                b["status"] = "not_found"
-        by_name = sorted([b for b in boards if b["status"] == "by_name"], key=lambda b: 0 if "הוספת בעצמך" in b["why"] else 1)
-        named = []
-        for b in by_name[:3]:
-            alias = (cache.get(b["name"].lower()) or {}).get("as") or b["name"]
-            got = collect({"queries": [alias], "locations": ["Israel"], "remote_only": plan.get("remote_only")}, per_search=25, budget=1)
-            real = name_matches(got, alias)
-            if real:
-                words = {w.lower() for t in plan.get("titles", []) + plan.get("extra_titles", []) for w in re.findall(r"[A-Za-z]+", t)} - {"developer", "engineer"}
-                words |= {"software", "developer", "engineer", "student", "junior", "intern", "graduate"}
-                mine = [j for j in got if same_company(alias, j["company"]) and any(w in j["title"].lower() for w in words)]
-                named += mine
-                b.update(status="by_name_ok", found_as=real if real.lower() != b["name"].lower() else None, n=len(mine))
-                cache.setdefault(b["name"].lower(), {"b": None, "at": datetime.now(timezone.utc).isoformat()})["as"] = real
-                act.log("hunter", f"{b['name']}: אין לה לוח ציבורי, אז חיפשתי לפי השם" + (f". במודעות היא מופיעה בשם {real}" if b.get("found_as") else "")
-                        + f": {len(mine)} משרות בישראל")
-            else:
-                # חברה מהקטלוג קיימת בוודאות: החיפוש פשוט לא החזיר אותה הפעם. רק שם שהוספת בעצמך אולי לא מדויק
-                # חברה מוכרת (קטלוג) או שמצאנו את האתר הרשמי שלה: היא קיימת, פשוט אין עכשיו משרות. רק שם שהוספת ולא נמצא בשום מקום — אולי לא מדויק
-                b.update(status="not_found" if "הוספת בעצמך" in b["why"] and not b.get("official") else "by_name_miss")
-                if b["status"] == "not_found":  # אולי שגיאת כתיב: השם הכי קרוב מבין החברות שהחיפוש החזיר ומהקטלוג
-                    import difflib
-                    pool = {j["company"]: j["company"] for j in got if j.get("company")}
-                    pool.update({c["name"]: c["name"] for c in load_catalog()})
-                    keyed = {re.sub(r"[^a-z0-9]", "", k.lower()): v for k, v in pool.items()}
-                    m = difflib.get_close_matches(re.sub(r"[^a-z0-9]", "", alias.lower()), list(keyed), n=1, cutoff=0.7)
-                    if m:
-                        b["suggest"] = keyed[m[0]]
-                if b["status"] == "not_found":
-                    cache.setdefault(b["name"].lower(), {"b": None, "at": datetime.now(timezone.utc).isoformat()})["nf"] = datetime.now(timezone.utc).isoformat()
-                act.log("hunter", f"{b['name']}: " + ("לא מצאתי משרות בשם הזה. אולי השם לא מדויק?" if b["status"] == "not_found"
-                                                      else (f"מצאתי את האתר שלה ({b['official']}), אבל כרגע אין בו רשימת משרות שאפשר לקרוא, והחיפוש לפי השם לא החזיר משרות. אנסה שוב בסריקה הבאה."
-                                                            if b.get("official") else "החיפוש לפי השם לא החזיר הפעם משרות שלה. אנסה שוב בסריקה הבאה.")))
-        if any(b.get("found_as") or b["status"] == "not_found" for b in by_name[:3] if "הוספת בעצמך" in b["why"]):
-            fixed = [b for b in by_name[:3] if "הוספת בעצמך" in b["why"]]
-            db.add_run(u["user_id"], "hunter", " ".join(
-                (f"חיפשתי את {b['name']}: היא מפרסמת משרות בשם {b['found_as']}, ואני מחפש לפי השם הזה." if b.get("found_as")
-                 else (f"לא מצאתי חברה בשם {b['name']}." + (f" התכוונת ל-{b['suggest']}? אפשר לתקן בפרופיל ‹ חברות יעד." if b.get("suggest") else " כדאי לבדוק את השם בפרופיל ‹ חברות יעד.")) if b["status"] == "not_found" else "")
-                for b in fixed).strip())
-        asked = {b["name"].lower() for r in db.recent_runs(u["user_id"], "hunter", days=10)[:1]
-                 for b in ((r.get("stats") or {}).get("boards") or []) if b.get("status") == "confirm"}
-        new_conf = [b for b in boards if b["status"] == "confirm" and b["name"].lower() not in asked]
-        if new_conf:
-            db.add_run(u["user_id"], "hunter", " ".join(f"חיפשתי את {b['name']} ומצאתי דף קריירה באתר {b['found']['host']}. "
-                                                       "אני לא בטוח שזו אותה חברה, אז לא סרקתי אותו." for b in new_conf)
-                       + " אפשר לאשר או לדחות בפרופיל ‹ חברות יעד.")
-        db.save_memory(u["user_id"], "boards", {"cache": cache})
-        ok = [b for b in boards if b["status"] == "board"]
-        print(f"{u['user_id'][:8]}: לוחות חברה: {len(ok)} מתוך {len(targets)} ({', '.join(b['name'] + ' ' + b['board'] for b in ok[:12])}), {len(direct)} משרות רלוונטיות")
-        tg = []
-        try:   # ערוצי טלגרם ציבוריים: מה שהוספת, או ברירת המחדל לתוכנה
-            from agent_core.agents import telegram as TG
-            chans = [c for c in (TG.channel_name(x) for x in (prof["answers"].get("telegram") or [])) if c] \
-                or (TG.DEFAULT_CHANNELS if "פיתוח תוכנה" in (plan.get("domains") or [plan.get("domain", "פיתוח תוכנה")]) else [])
-            tg = TG.collect(chans) if chans else []
-        except BudgetDeferred:
-            act.log("hunter", "מכסת ה-AI נגמרה לפני הטלגרם. אקרא אותו בסריקה הבאה.")
-        except Exception as e:  # noqa: BLE001
-            RR.fail("טלגרם", u["user_id"], e)
-        seen_ = db.seen_ids(u["user_id"])
-        rt = fair_rate_top(u)
-        if not seen_:   # סריקה ראשונה של משתמש חדש: הרושם הראשון. מדרגים יותר (נמצא בבדיקה: 15 מתוך 98 → רק 3 משרות)
-            rt = max(rt, 35 if user_key(u) else 25)
-        if user_key(u) and len(plan.get("domains") or []) > 1:   # מפתח אישי: כל תחום נוסף מקבל עוד דירוגים, עד 50
-            rt = min(50, rt + 10 * (len(plan["domains"]) - 1))
-        feed = run(prof, plan, raw=collect(plan) + direct + named + tg, seen=seen_, persist=False, rate_top=rt)
-        feed["stats"]["direct_boards"] = len(ok)
-        feed["stats"]["boards"] = boards
-        if feed["jobs"]:
-            act.log("hunter", f"{len(feed['jobs'])} משרות חדשות מחכות ל{u.get('first') or 'משתמש'}. כשתישמר משרה — שי, גיל ומאיה, היא שלכם.", to="assistant")
-        act.flush()
-        db.save_feed(u["user_id"], feed)
-        if feed["stats"].get("shown"):   # התראה לטלפון, רק למי שהפעיל
-            from agent_core import push as P
-            team = u.get("team") or {}
-            r_ = P.send(ustate.get("push"), P.message(feed["stats"]["shown"], str(team.get("hunter") or "דורון")))
-            if r_ != "skip":
-                print(f"{u['user_id'][:8]}: התראה {r_}")
-            if r_ == "gone":   # המנוי פג: האפליקציה מחדשת אותו בשקט בפתיחה הבאה (pushCheck ב-cloud.js)
-                db.save_memory(u["user_id"], "push_gone", {"at": datetime.now(timezone.utc).isoformat()})
-        try:   # מסלול הגשה: "שמעת מ-X?" עם כפתורים. מקסימום אחת ביום, רק 09:00–20:00 שעון ישראל
-            from datetime import datetime as _dt
-            from zoneinfo import ZoneInfo
-            from agent_core import push as P
-            now_il = _dt.now(ZoneInfo("Asia/Jerusalem"))
-            if ustate.get("push") and 9 <= now_il.hour < 20:
-                mem = db.latest_plan(u["user_id"], "push_ask") or {}
-                today = now_il.date().isoformat()
-                if mem.get("last") != today:
-                    cards = {r["id"]: r.get("card") or {} for r in db.all_jobs(u["user_id"], days=90)}
-                    pay, aid = P.ask_payload(ustate.get("apps") or [], cards, mem.get("asked") or {}, today)
-                    res = P.send(ustate.get("push"), pay) if pay else "skip"
-                    if res == "gone":
-                        db.save_memory(u["user_id"], "push_gone", {"at": _dt.now(ZoneInfo("UTC")).isoformat()})
-                    if res == "sent":
-                        db.save_memory(u["user_id"], "push_ask", {"last": today, "asked": {**(mem.get("asked") or {}), aid: today}})
-        except Exception as e:  # noqa: BLE001
-            print(f"התראת הגשה: {type(e).__name__}")
-        if H.available():  # דורון: משרה בציון גבוה מאוד — גיל וקובי מתחילים לעבוד עליה מיד
-            existing = H._open(u["user_id"])
-            for j in H.high_fit(feed["jobs"]):
-                H.request_for_job(u["user_id"], "hunter", j, ["brief", "tailor"], f"מצאתי משרה בציון {j['fit']:.1f}", existing)
+                    gone.append(f"{c['title']} ב-{c['co']}")
+            from agent_core.agents.hunter import QUEUE_REFILTER, hands_on, off_field, is_post
+            if QUEUE_REFILTER:   # סבב ב: כללי סינון חדשים חלים גם על משרות שכבר מחכות בתור (לא על משרות ששמרת)
+                for row in db.all_jobs(u["user_id"], days=30):
+                    c = row.get("card") or {}
+                    if row.get("decision") or not c.get("title"):
+                        continue
+                    j_ = {"title": c["title"]}
+                    why_ = "מפעיל/טכנאי" if hands_on(j_, plan) else "לא מהתחום" if off_field(j_, plan) else "פוסט ולא משרה" if is_post(j_) else ""
+                    if why_:
+                        db.update_job(u["user_id"], row["id"], {"decision": "filtered", "card": {**c, "filtered_why": why_}})
+                        gone.append(f"{c['title']} ב-{c.get('co') or ''}")
+            if gone:
+                db.add_run(u["user_id"], "hunter", "קראתי שוב את המודעות המלאות והורדתי מהרשימה משרות שלא מתאימות לך: "
+                           + "; ".join(gone) + ".")
             act.flush()
-        s = feed["stats"]
-        print(f"{u['user_id'][:8]}: נאספו {s['collected']}, בכירות מדי {s['too_senior']}, מתחום אחר {s.get('off_field', 0)}, כבר נראו {s['already_seen']}, "
-              f"דורגו {s['rated']} (מתוכם {s.get('ai_senior', 0)} בכירות לפי הדירוג), ציונים {sorted(s.get('fits', []), reverse=True)}, "
-              f"בלי מודעה מלאה {s.get('no_desc', 0)}, נדחו למכסה {s.get('deferred', 0)}, מוצגות {s['shown']}")
-    except Exception as e:  # משתמש אחד שנכשל לא עוצר את האחרים
-        import traceback; traceback.print_exc()
-        print(f"{u['user_id'][:8]}: חיפוש נכשל: {type(e).__name__}: {e}")
-        RR.fail("חיפוש", u["user_id"], e)
-        act.log("hunter", "החיפוש נעצר בגלל תקלה. אנסה שוב בריצה הבאה.")
-        act.flush()
+        except Exception as e:  # noqa: BLE001
+            print(f"{u['user_id'][:8]}: דירוג מחדש נכשל: {type(e).__name__}: {e}")
+            RR.fail("דירוג מחדש", u["user_id"], e)
+            act.flush()
+        act.start(u["user_id"])
+        try:
+            why = plan.get("why") or []
+            act.log("strategist", "קורא את קורות החיים ואת התשובות שלך לשאלון")
+            for w in why[:4]:
+                act.log("strategist", w)
+            act.log("strategist", f"תחפש: {', '.join(plan['queries'][:6])}. אזורים: {', '.join(plan['locations'][:2])}."
+                    + (f" עד {plan['max_years']} שנות ניסיון." if plan.get("max_years") else ""), to="hunter")
+            plan_obj = build_search_plan(prof)
+            tc = ustate.get("targets") or {}
+            targets = select_targets(plan_obj, {"target_companies": tc}, load_catalog())
+            removed = {x.lower() for x in tc.get("removed") or []}
+            have = {t["name"].lower() for t in targets}
+            for a in learned.get("auto_targets") or []:  # חברות שהצוות הוסיף לבד (אפשר להסיר בפרופיל)
+                if a["name"].lower() not in removed and a["name"].lower() not in have:
+                    targets.append({"name": a["name"], "why": [a.get("why", "הצוות הוסיף")], "auto": True})
+            conf, rej = tc.get("boards") or {}, tc.get("reject") or {}
+            for t in targets:   # מה שאישרת או דחית בפרופיל ("זו החברה?")
+                k = next((n for n in conf if n.lower() == t["name"].lower()), None)
+                if k:
+                    t["board"] = conf[k]
+                t["reject"] = next((v for n, v in rej.items() if n.lower() == t["name"].lower()), [])
+            act.log("strategist", f"גם לבדוק ישירות את דפי הקריירה של {len(targets)} חברות יעד: {', '.join(t['name'] for t in targets[:6])}…", to="hunter")
+            cache = db.latest_plan(u["user_id"], "boards").get("cache") or {}
+            direct, boards, cache = collect_targets(targets, plan, cache)
+            # חברות בלי לוח ציבורי: חיפוש לפי השם (קודם אלה שהוספת בעצמך), כולל תיקון שם
+            week_ago = (datetime.now(timezone.utc) - timedelta(days=7)).isoformat()
+            for b in boards:  # שם שלא נמצא — לא מחפשים שוב כל סריקה, רק פעם בשבוע
+                nf = (cache.get(b["name"].lower()) or {}).get("nf")
+                if b["status"] == "by_name" and nf and nf > week_ago:
+                    b["status"] = "not_found"
+            by_name = sorted([b for b in boards if b["status"] == "by_name"], key=lambda b: 0 if "הוספת בעצמך" in b["why"] else 1)
+            named = []
+            for b in by_name[:3]:
+                alias = (cache.get(b["name"].lower()) or {}).get("as") or b["name"]
+                got = collect({"queries": [alias], "locations": ["Israel"], "remote_only": plan.get("remote_only")}, per_search=25, budget=1)
+                real = name_matches(got, alias)
+                if real:
+                    words = {w.lower() for t in plan.get("titles", []) + plan.get("extra_titles", []) for w in re.findall(r"[A-Za-z]+", t)} - {"developer", "engineer"}
+                    words |= {"software", "developer", "engineer", "student", "junior", "intern", "graduate"}
+                    mine = [j for j in got if same_company(alias, j["company"]) and any(w in j["title"].lower() for w in words)]
+                    named += mine
+                    b.update(status="by_name_ok", found_as=real if real.lower() != b["name"].lower() else None, n=len(mine))
+                    cache.setdefault(b["name"].lower(), {"b": None, "at": datetime.now(timezone.utc).isoformat()})["as"] = real
+                    act.log("hunter", f"{b['name']}: אין לה לוח ציבורי, אז חיפשתי לפי השם" + (f". במודעות היא מופיעה בשם {real}" if b.get("found_as") else "")
+                            + f": {len(mine)} משרות בישראל")
+                else:
+                    # חברה מהקטלוג קיימת בוודאות: החיפוש פשוט לא החזיר אותה הפעם. רק שם שהוספת בעצמך אולי לא מדויק
+                    # חברה מוכרת (קטלוג) או שמצאנו את האתר הרשמי שלה: היא קיימת, פשוט אין עכשיו משרות. רק שם שהוספת ולא נמצא בשום מקום — אולי לא מדויק
+                    b.update(status="not_found" if "הוספת בעצמך" in b["why"] and not b.get("official") else "by_name_miss")
+                    if b["status"] == "not_found":  # אולי שגיאת כתיב: השם הכי קרוב מבין החברות שהחיפוש החזיר ומהקטלוג
+                        import difflib
+                        pool = {j["company"]: j["company"] for j in got if j.get("company")}
+                        pool.update({c["name"]: c["name"] for c in load_catalog()})
+                        keyed = {re.sub(r"[^a-z0-9]", "", k.lower()): v for k, v in pool.items()}
+                        m = difflib.get_close_matches(re.sub(r"[^a-z0-9]", "", alias.lower()), list(keyed), n=1, cutoff=0.7)
+                        if m:
+                            b["suggest"] = keyed[m[0]]
+                    if b["status"] == "not_found":
+                        cache.setdefault(b["name"].lower(), {"b": None, "at": datetime.now(timezone.utc).isoformat()})["nf"] = datetime.now(timezone.utc).isoformat()
+                    act.log("hunter", f"{b['name']}: " + ("לא מצאתי משרות בשם הזה. אולי השם לא מדויק?" if b["status"] == "not_found"
+                                                          else (f"מצאתי את האתר שלה ({b['official']}), אבל כרגע אין בו רשימת משרות שאפשר לקרוא, והחיפוש לפי השם לא החזיר משרות. אנסה שוב בסריקה הבאה."
+                                                                if b.get("official") else "החיפוש לפי השם לא החזיר הפעם משרות שלה. אנסה שוב בסריקה הבאה.")))
+            if any(b.get("found_as") or b["status"] == "not_found" for b in by_name[:3] if "הוספת בעצמך" in b["why"]):
+                fixed = [b for b in by_name[:3] if "הוספת בעצמך" in b["why"]]
+                db.add_run(u["user_id"], "hunter", " ".join(
+                    (f"חיפשתי את {b['name']}: היא מפרסמת משרות בשם {b['found_as']}, ואני מחפש לפי השם הזה." if b.get("found_as")
+                     else (f"לא מצאתי חברה בשם {b['name']}." + (f" התכוונת ל-{b['suggest']}? אפשר לתקן בפרופיל ‹ חברות יעד." if b.get("suggest") else " כדאי לבדוק את השם בפרופיל ‹ חברות יעד.")) if b["status"] == "not_found" else "")
+                    for b in fixed).strip())
+            asked = {b["name"].lower() for r in db.recent_runs(u["user_id"], "hunter", days=10)[:1]
+                     for b in ((r.get("stats") or {}).get("boards") or []) if b.get("status") == "confirm"}
+            new_conf = [b for b in boards if b["status"] == "confirm" and b["name"].lower() not in asked]
+            if new_conf:
+                db.add_run(u["user_id"], "hunter", " ".join(f"חיפשתי את {b['name']} ומצאתי דף קריירה באתר {b['found']['host']}. "
+                                                           "אני לא בטוח שזו אותה חברה, אז לא סרקתי אותו." for b in new_conf)
+                           + " אפשר לאשר או לדחות בפרופיל ‹ חברות יעד.")
+            db.save_memory(u["user_id"], "boards", {"cache": cache})
+            ok = [b for b in boards if b["status"] == "board"]
+            print(f"{u['user_id'][:8]}: לוחות חברה: {len(ok)} מתוך {len(targets)} ({', '.join(b['name'] + ' ' + b['board'] for b in ok[:12])}), {len(direct)} משרות רלוונטיות")
+            tg = []
+            try:   # ערוצי טלגרם ציבוריים: מה שהוספת, או ברירת המחדל לתוכנה
+                from agent_core.agents import telegram as TG
+                chans = [c for c in (TG.channel_name(x) for x in (prof["answers"].get("telegram") or [])) if c] \
+                    or (TG.DEFAULT_CHANNELS if "פיתוח תוכנה" in (plan.get("domains") or [plan.get("domain", "פיתוח תוכנה")]) else [])
+                tg = TG.collect(chans) if chans else []
+            except BudgetDeferred:
+                act.log("hunter", "מכסת ה-AI נגמרה לפני הטלגרם. אקרא אותו בסריקה הבאה.")
+            except Exception as e:  # noqa: BLE001
+                RR.fail("טלגרם", u["user_id"], e)
+            seen_ = db.seen_ids(u["user_id"])
+            rt = fair_rate_top(u)
+            if not seen_:   # סריקה ראשונה של משתמש חדש: הרושם הראשון. מדרגים יותר (נמצא בבדיקה: 15 מתוך 98 → רק 3 משרות)
+                rt = max(rt, 35 if user_key(u) else 25)
+            if user_key(u) and len(plan.get("domains") or []) > 1:   # מפתח אישי: כל תחום נוסף מקבל עוד דירוגים, עד 50
+                rt = min(50, rt + 10 * (len(plan["domains"]) - 1))
+            feed = run(prof, plan, raw=collect(plan) + direct + named + tg, seen=seen_, persist=False, rate_top=rt)
+            feed["stats"]["direct_boards"] = len(ok)
+            feed["stats"]["boards"] = boards
+            if feed["jobs"]:
+                act.log("hunter", f"{len(feed['jobs'])} משרות חדשות מחכות ל{u.get('first') or 'משתמש'}. כשתישמר משרה — שי, גיל ומאיה, היא שלכם.", to="assistant")
+            act.flush()
+            db.save_feed(u["user_id"], feed)
+            if feed["stats"].get("shown"):   # התראה לטלפון, רק למי שהפעיל
+                from agent_core import push as P
+                team = u.get("team") or {}
+                r_ = P.send(ustate.get("push"), P.message(feed["stats"]["shown"], str(team.get("hunter") or "דורון")))
+                if r_ != "skip":
+                    print(f"{u['user_id'][:8]}: התראה {r_}")
+                if r_ == "gone":   # המנוי פג: האפליקציה מחדשת אותו בשקט בפתיחה הבאה (pushCheck ב-cloud.js)
+                    db.save_memory(u["user_id"], "push_gone", {"at": datetime.now(timezone.utc).isoformat()})
+            try:   # מסלול הגשה: "שמעת מ-X?" עם כפתורים. מקסימום אחת ביום, רק 09:00–20:00 שעון ישראל
+                from datetime import datetime as _dt
+                from zoneinfo import ZoneInfo
+                from agent_core import push as P
+                now_il = _dt.now(ZoneInfo("Asia/Jerusalem"))
+                if ustate.get("push") and 9 <= now_il.hour < 20:
+                    mem = db.latest_plan(u["user_id"], "push_ask") or {}
+                    today = now_il.date().isoformat()
+                    if mem.get("last") != today:
+                        cards = {r["id"]: r.get("card") or {} for r in db.all_jobs(u["user_id"], days=90)}
+                        pay, aid = P.ask_payload(ustate.get("apps") or [], cards, mem.get("asked") or {}, today)
+                        res = P.send(ustate.get("push"), pay) if pay else "skip"
+                        if res == "gone":
+                            db.save_memory(u["user_id"], "push_gone", {"at": _dt.now(ZoneInfo("UTC")).isoformat()})
+                        if res == "sent":
+                            db.save_memory(u["user_id"], "push_ask", {"last": today, "asked": {**(mem.get("asked") or {}), aid: today}})
+            except Exception as e:  # noqa: BLE001
+                print(f"התראת הגשה: {type(e).__name__}")
+            if H.available():  # דורון: משרה בציון גבוה מאוד — גיל וקובי מתחילים לעבוד עליה מיד
+                existing = H._open(u["user_id"])
+                for j in H.high_fit(feed["jobs"]):
+                    H.request_for_job(u["user_id"], "hunter", j, ["brief", "tailor"], f"מצאתי משרה בציון {j['fit']:.1f}", existing)
+                act.flush()
+            s = feed["stats"]
+            print(f"{u['user_id'][:8]}: נאספו {s['collected']}, בכירות מדי {s['too_senior']}, מתחום אחר {s.get('off_field', 0)}, כבר נראו {s['already_seen']}, "
+                  f"דורגו {s['rated']} (מתוכם {s.get('ai_senior', 0)} בכירות לפי הדירוג), ציונים {sorted(s.get('fits', []), reverse=True)}, "
+                  f"בלי מודעה מלאה {s.get('no_desc', 0)}, נדחו למכסה {s.get('deferred', 0)}, מוצגות {s['shown']}")
+        except Exception as e:  # משתמש אחד שנכשל לא עוצר את האחרים
+            import traceback; traceback.print_exc()
+            print(f"{u['user_id'][:8]}: חיפוש נכשל: {type(e).__name__}: {e}")
+            RR.fail("חיפוש", u["user_id"], e)
+            act.log("hunter", "החיפוש נעצר בגלל תקלה. אנסה שוב בריצה הבאה.")
+            act.flush()
     act.start(u["user_id"])
     try:  # דורון: האם המשרות ששמרת עדיין פתוחות להגשה (פעם ביום, בסריקת הבוקר)
         saved = db.saved_open(u["user_id"]) if MORNING else []
@@ -331,6 +333,8 @@ for u in users:
         print(f"{u['user_id'][:8]}: בדיקת משרות נכשלה: {type(e).__name__}: {e}")
         RR.fail("בדיקת משרות", u["user_id"], e)
         act.flush()
+    if skip_scan:
+        continue
     act.start(u["user_id"])
     try:  # קובי: פוסטים חמים וטיוטת פוסט, פעם בשבוע
         li = dict(u.get("li") or {})
