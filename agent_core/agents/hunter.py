@@ -452,8 +452,8 @@ Return JSON only:
   "wrong_field": true/false (true only if the job is in a different profession than the CV, e.g. sales, cyber research, hardware),
   "fit": number 1.0-5.0 with one decimal,
   "required_years": integer,
-  "reasons": [up to 3 short reasons, each naming a concrete CV fact (project, course, tool) that matches a CORE requirement],
-  "gaps": [up to 2 short items: CORE requirements written in the ad that the CV does not show; only nice-to-have if no core gaps],
+  "reasons": [up to 3 short reasons. Each names ONE fact that is written in the CV (a project name, job, course or tool) and the requirement it matches. No praise and no claims the CV does not state],
+  "gaps": [up to 2 CORE requirements written in the ad that the CV does not show; only nice-to-have if no core gaps. Write ONLY the requirement as a short noun phrase (e.g. "ניסיון ב-Java", "Design Patterns"), never a sentence about the CV or the candidate],
   "seniority_ok": true/false (false if the ad clearly needs more work experience than the candidate has)}}
 Write reasons and gaps in natural, fluent Hebrew (as a native Israeli recruiter would), max 12 words each.
 Keep technology, project and company names in English, spelled exactly as they appear in the CV or ad.
@@ -603,6 +603,9 @@ def rate(job: dict, cv: str, prefs: str) -> dict | None:
               f"reasons={r['reasons']} gaps={r['gaps']} desc_len={len(desc)}")
         r["reasons"] = grounded(r["reasons"], cv)        # סיבה = עובדה מקורות החיים
         r["gaps"] = grounded(r["gaps"], desc)             # חסר = דרישה שכתובה במודעה
+        if CLEAN_REASONS:
+            r["reasons"] = [x for x in r["reasons"] if cites_cv(x, cv)]
+            r["gaps"] = [g for g in (gap_text(x) for x in r["gaps"]) if g]
         r["partial"] = len(desc) < 300
         if r["partial"]:
             r["gaps"] = []  # בלי המודעה המלאה אין לנו דרישות אמיתיות להשוות אליהן
@@ -610,6 +613,31 @@ def rate(job: dict, cv: str, prefs: str) -> dict | None:
 
 
 LATIN = re.compile(r"[A-Za-z][A-Za-z0-9+#.\-]{2,}")
+
+# מתג חזרה (22.11): "חסר" = שם הדרישה בלבד, וסיבה חייבת לצטט משהו שכתוב בקורות החיים.
+# נמצא: "חסר: הקודמת לא מציינת ידע בתבניות עיצוב", "סיבה: פורטפוליו חזק עם מותגים" (לא כתוב בקורות החיים)
+CLEAN_REASONS = True
+_GAP_LEAD = re.compile(r"^\s*(?:חסר[:\s]+|חוסר\s+|אין\s+(?:ל[וה]\s+)?|"
+                       r"(?:קורות החיים|קו\"ח|הקודמת|המועמד(?:ת)?|היא|הוא|לא)\s+(?:לא\s+|אינ[והם]\s+)?(?:מציינ\w*|מרא\w*|מזכיר\w*|כולל\w*|מפרט\w*|מופיע\w*)\s+(?:על\s+)?)")
+_HE_WORD = re.compile(r"[\u0590-\u05FF]{4,}")
+
+
+def gap_text(g: str) -> str:
+    """'הקודמת לא מציינת ידע בתבניות עיצוב' → 'ידע בתבניות עיצוב'. 'חוסר ניסיון ב-X' → 'ניסיון ב-X'."""
+    g = str(g or "").strip().rstrip(".")
+    for _ in range(3):
+        n = _GAP_LEAD.sub("", g, count=1).strip()
+        if n == g:
+            break
+        g = n
+    return g
+
+
+def cites_cv(reason: str, cv: str) -> bool:
+    """סיבה טובה מזכירה משהו שכתוב בקורות החיים: מונח באנגלית, או מילה בעברית שמופיעה בהם."""
+    low = (cv or "").lower()
+    return any(w.lower().strip(".-,;:()") in low for w in LATIN.findall(reason or "")) or \
+        any(w in (cv or "") for w in _HE_WORD.findall(reason or ""))
 
 
 def _norm_term(w: str) -> str:

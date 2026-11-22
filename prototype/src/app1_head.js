@@ -135,8 +135,11 @@ let FEEDD=(typeof FEED!=='undefined'&&FEED)?FEED:null;
 const REAL=CLOUDM||!!(FEEDD&&Array.isArray(FEEDD.jobs));
 const PALETTE=[['#2F4858','#4A7084'],['#3B5A6C','#5C7F92'],['#34505F','#56788A'],['#2B4250','#4E6C7D'],['#3E5C6A','#6A8B9A'],['#294352','#47697B']];   // גווני צפחה (ה-30%). צבע רק למבטא
 function coIni(n){const w=String(n||'?').replace(/[^A-Za-z0-9\u0590-\u05FF ]/g,'').trim().split(/\s+/);return (w.length>1?w[0][0]+w[1][0]:w[0].slice(0,2))||'?'}
+/* כמו hunter.gap_text: "חסר" = שם הדרישה בלבד (גם למשרות שדורגו לפני 22.11) */
+const GAP_LEAD=/^\s*(?:חסר[:\s]+|חוסר\s+|אין\s+(?:ל[וה]\s+)?|(?:קורות החיים|קו"ח|הקודמת|המועמד(?:ת)?|היא|הוא|לא)\s+(?:לא\s+|אינ[והם]\s+)?(?:מציינ\S*|מרא\S*|מזכיר\S*|כולל\S*|מפרט\S*|מופיע\S*)\s+(?:על\s+)?)/;
+function gapTxt(g){g=String(g||'').trim().replace(/\.$/,'');for(let k=0;k<3;k++){const n=g.replace(GAP_LEAD,'').trim();if(n===g)break;g=n}return g}
 function fromFeed(f){const o={};f.jobs.forEach((j,i)=>{let h=0;for(const ch of j.co)h=(h*31+ch.charCodeAt(0))>>>0;
-  o[j.id]={co:j.co,ini:coIni(j.co),c:PALETTE[h%PALETTE.length],title:j.title,loc:j.loc,fit:j.fit,reasons:j.reasons||[],gaps:j.gaps||[],
+  o[j.id]={co:j.co,ini:coIni(j.co),c:PALETTE[h%PALETTE.length],title:j.title,loc:j.loc,fit:j.fit,reasons:j.reasons||[],gaps:(j.gaps||[]).map(gapTxt).filter(Boolean),
     partial:!!j.partial,tags:j.tags||[],src:j.src,posted:j.posted_days,salary:j.salary||'',desc:String(j.desc||'').replace(/[*#_`>\\]/g,'').replace(/\s+/g,' ').trim(),url:j.url,logo:j.logo||'',site:j.site||'',letter:j.letter||null,brief:j.brief||null,prep:j.prep||null,tailor:j.tailor||null,lvl:j.level_gap||'',dims:j.dims||null,check:j.check||null,closed_at:j.closed_at||null,warn:j.warn||'',deck:true}});return o}
 let JOBS=CLOUDM?{}:FEEDD?fromFeed(FEEDD):DEMO_JOBS;
 function feedWhen(){if(!FEEDD||!FEEDD.generated_at)return'';const d=new Date(FEEDD.generated_at),h=Math.round((Date.now()-d)/36e5);
