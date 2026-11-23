@@ -91,8 +91,8 @@ def work_by_tasks(u: dict, cv: str, name: str, done: dict) -> None:
                 H.finish(t, True, {"skip": "כבר מוכן"}); continue
             try:
                 upd = do_kind(t["kind"], row, u, cv, name)
-            except BudgetDeferred:
-                print("מכסה: ממשיכים בריצה הבאה")
+            except BudgetDeferred as e:
+                print(f"{uid[:8]}: מכסה: ממשיכים בריצה הבאה — {str(e)[:300]}")   # למה: בגבול / 429 / מפתח שלא עובד
                 act.log(agent, "הגעתי למכסת ה-AI. את המשימות שנשארו אעשה בריצה הבאה.")
                 act.flush()
                 if not done.get("_quota"):   # הודעה אחת למשתמש, לא אחת לכל משימה
