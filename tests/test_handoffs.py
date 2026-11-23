@@ -136,3 +136,11 @@ def test_english_cv_used_for_english_ads_and_letters():
     assert H.cv_for(he, ans, "We are hiring") == en and H.cv_for(he, ans, "דרוש מפתח לחברה מובילה בתל אביב") == he and H.cv_for(he, ans, "", english=True) == en
     row = {"brief": {"x": 1}, "card": {"desc": "We are hiring"}, "tailor": {"edits": [], "v": 2, "src": "main"}, "prep": {"tasks": []}, "letter": {"v": H.LETTER_V}}
     assert H.missing_for_saved(row, ans) == ["tailor"] and H.missing_for_saved(row, {}) == []
+
+
+def test_portfolio_joins_the_cv_once():
+    a = {"kit": {"site": "https://noa.design"}}
+    assert H.with_portfolio("CV text", a).endswith("Portfolio: https://noa.design")
+    assert H.with_portfolio("CV noa.design", a) == "CV noa.design"          # כבר כתוב
+    assert H.with_portfolio("CV text", {}) == "CV text"
+    assert H.cv_for("CV text", a).endswith("Portfolio: https://noa.design")

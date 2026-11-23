@@ -68,7 +68,8 @@ for u in users:
     use_key(user_key(u))
     ustate = u.get("state") or {}
     learned = db.latest_plan(u["user_id"], "meeting")          # מה יואב והצוות למדו בישיבה האחרונה
-    prof = {"first": u.get("first", ""), "name": u.get("name", ""), "cv_text": u["cv_text"], "answers": u.get("answers") or {},
+    from agent_core.handoffs import with_portfolio
+    prof = {"first": u.get("first", ""), "name": u.get("name", ""), "cv_text": with_portfolio(u["cv_text"], u.get("answers")), "answers": u.get("answers") or {},
             "extra_titles": [x["value"] for x in ustate.get("accepted") or [] if x.get("type") == "role"],  # תפקידים שאישרת
             "drop_queries": learned.get("drop_queries") or [], "learned_queries": learned.get("add_queries") or [],
             "skip_reasons": {k: v.get("r") for k, v in (ustate.get("skip") or {}).items() if isinstance(v, dict)}}

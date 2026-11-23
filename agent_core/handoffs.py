@@ -40,12 +40,21 @@ def cv_src(answers: dict | None, ad: str = "") -> str:
     return "en" if has_en and ad_language(ad or "") != "Hebrew" else "main"
 
 
+def with_portfolio(cv: str, answers: dict | None) -> str:
+    """תיק עבודות מ"פרטים לטפסים" נכנס לקורות החיים שהסוכנים קוראים (22.11, תחום עיצוב):
+    דרישת Portfolio במודעה נחשבת "יש", והמכתב יכול להפנות אליו. לא מוסיפים אם הקישור כבר כתוב."""
+    site = str(((answers or {}).get("kit") or {}).get("site") or "").strip()
+    if not site or site.lower().split("//")[-1].rstrip("/") in (cv or "").lower():
+        return cv
+    return f"{cv}\nPortfolio: {site}"
+
+
 def cv_for(cv: str, answers: dict | None, ad: str = "", english: bool = False) -> str:
     """הטקסט של קורות החיים למשרה. מכתבים (תמיד באנגלית) מקבלים english=True."""
     en = ((answers or {}).get("cv_en") or "").strip()
     if en and (english or cv_src(answers, ad) == "en"):
-        return en
-    return cv
+        return with_portfolio(en, answers)
+    return with_portfolio(cv, answers)
 
 
 def missing_for_saved(row: dict, answers: dict | None = None) -> list[str]:

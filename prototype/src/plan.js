@@ -7,7 +7,7 @@ const REGION_CITIES={'תל אביב':['Tel Aviv'],'גוש דן והמרכז':['T
 function planTags(){const a=ans(),rt=realTargets(),n=rt?rt.length:targetCompanies().length;
   return [...(a.roles&&a.roles.length?a.roles.slice(0,3):[domainOf(a)]),...(a.locs||[]).slice(0,2),a.mode&&a.mode!=='לא משנה'?a.mode:'',n?`${n} חברות יעד`:''].filter(Boolean)}
 function planAlert(){const rt=realTargets()||[],k=rt.filter(b=>b.status==='confirm'||b.status==='not_found').length;
-  return k?`<span class="plan-alert">${k===1?'חברה אחת צריכה בדיקה שלך':k+' חברות צריכות בדיקה שלך'}</span>`:''}
+  return k?`<span class="plan-alert">${k===1?'חברה אחת לבדיקה':k+' חברות לבדיקה'}</span>`:''}
 function planWhy(){
   const a=ans(),w=[];
   w.push(a.status==='סטודנט/ית'?(a.track==='משרה מלאה אחרי התואר'?'משרות ג׳וניור למשרה מלאה אחרי התואר':'משרות סטודנט, התמחויות וג׳וניור')

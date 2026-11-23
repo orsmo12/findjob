@@ -139,6 +139,7 @@ GAPS TO ADDRESS HONESTLY: {', '.join(n.get('gaps') or []) or 'none'}
 {RESERVE_NOTE if n.get('reserve') else ''}
 CURRENT STATUS: {st.get('status') or '(not given; use the CV)'}
 {_style_block(st)}
+{'PORTFOLIO: the CV has a Portfolio link. The closing invites them to see it, in one short clause.' if 'Portfolio:' in st['cv'] else ''}
 
 JOB: {j['title']} at {j['co']} ({j.get('loc') or ''})
 AD:

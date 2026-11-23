@@ -849,7 +849,8 @@ a.person>svg{flex:0 0 18px;width:18px;height:18px;fill:none;stroke:var(--ink3);s
 .plan-d[open]>summary{margin-bottom:10px}
 .plan-tags{display:flex;flex-wrap:wrap;gap:5px}
 .plan-tags i{font-style:normal;font-size:12px;padding:3px 9px;border-radius:9px;background:var(--brand-lt);color:var(--brand)}
-.plan-alert{font-size:12.5px;font-weight:600;color:var(--hi-ink);background:var(--hi-lt);padding:3px 9px;border-radius:9px;align-self:flex-start}
+/* "חברה אחת לבדיקה": שורה משלה מתחת לכותרת, לא דחוסה בין הכותרת למספר */
+.sub-d>summary:has(.plan-alert){flex-wrap:wrap}.plan-alert{order:3;flex-basis:100%;margin-top:6px;font-size:12.5px;font-weight:600;color:var(--hi-ink)}.plan-alert::before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--mint);margin-inline-end:6px;vertical-align:1px}
 .how-ol{margin:12px 22px 12px 0;display:flex;flex-direction:column;gap:6px;font-size:14px}
 .chk-btn{display:inline-flex;align-items:center;gap:8px;padding:7px 12px;border-radius:12px;border:1px solid var(--glass-edge);background:var(--solid);font-size:13.5px;font-weight:600;color:var(--ink)}
 .chk-btn.wide{width:100%;justify-content:center;padding:11px}

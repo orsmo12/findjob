@@ -48,7 +48,7 @@ function renderProfile(){
       ${(S.targets&&(S.targets.added.length||S.targets.removed.length))?`<button class="link" style="font-size:13px;color:var(--brand);margin-top:8px" onclick="S.targets={added:[],removed:[]};save();renderProfile()">להחזיר לבחירה של ${escB(N('strategist'))}</button>`:''}</details></details></section>
 </section>
 
-    <section class="card glass" data-fold="docH"><details class="card-d"${!(p.cv||p.cvName)?' open':''}><summary><h2 class="card-h" id="docH">המסמכים שלי</h2><span class="cd-s">${escB(!(p.cv||p.cvName)?'חסרים קורות חיים':isHeb(p.cv||'')&&!(p.ans||{}).cv_en?'חסר: באנגלית':'קורות חיים ✓')}</span></summary>
+    <section class="card glass" data-fold="docH"><details class="card-d"${!(p.cv||p.cvName)?' open':''}><summary><h2 class="card-h" id="docH">המסמכים שלי</h2><span class="cd-s">${escB(!(p.cv||p.cvName)?'חסרים קורות חיים':isHeb(p.cv||'')&&!(p.ans||{}).cv_en?'חסר: באנגלית':domainOf(ans())!=='פיתוח תוכנה'&&!kitOf(p).site?'חסר: תיק עבודות':'קורות חיים ✓')}</span></summary>
       <div class="row"><span class="ri">${ROW_IC.doc}</span><span class="rl"><b>${escB(p.cvName||(p.cv?'הודבקו כטקסט':'עוד לא הועלו'))}</b><span>${p.cv||p.cvName?'כל הסוכנים עובדים לפיהם':'בלעדיהם הסוכנים לא יכולים להתאים לך משרות'}</span></span>${p.cv||p.cvName?'<span class="pill-ok">פעיל</span>':'<span class="pill-warn">חסר</span>'}</div>
       <div class="duo"><label for="cvFile" class="btn btn-sm btn-ghost">${p.cvName?'להחליף קובץ':'להעלות קובץ'}</label><button class="btn btn-sm btn-ghost" onclick="editCvText()">לערוך כטקסט</button></div>
       ${CLOUDM&&domainOf(ans())!=='פיתוח תוכנה'?`<div class="field" style="margin-top:12px"><label for="pfIn">קישור לתיק עבודות או לפרויקטים</label><div style="display:flex;gap:8px"><input id="pfIn" class="ltr" type="url" placeholder="https://" value="${escB(kitOf(p).site||'')}" autocomplete="off"><button class="btn btn-sm btn-ghost" onclick="savePortfolio()">שמירה</button></div><div class="help">נכנס לטפסי הגשה ולמכתבים. ב${escB(domainOf(ans()))} תיק עבודות שווה יותר מ-GitHub.</div></div>`:''}
@@ -82,6 +82,7 @@ function renameAgent(key,v){v=v.trim();const i=CAREER.agents.findIndex(a=>a.key=
 function knowParts(){const p=prof(),a=ans(),{done,total}=qProgress(),d=kitData(),kf=['phone','email','city','edu','auth'],kv=kf.filter(k=>d[k]).length,
   docs="knowOpen('docH')",P=[['השאלון',40,total?done/total:1,"openQuestions()"],['קורות חיים',25,(p.cv||'').trim().length>=CV_MIN?1:0,docs],
    ['קורות חיים באנגלית',10,p.cv&&!isHeb(p.cv)||(p.ans||{}).cv_en?1:0,docs],['פרטים לטפסי הגשה',10,kv/kf.length,"openKitEdit()"]];
+  if(domainOf(ans())!=='פיתוח תוכנה')P.push(['תיק עבודות',10,kitOf(p).site?1:0,docs]);   // בעיצוב ובתחומים אחרים: שווה יותר מ-GitHub
   if(CLOUDM)P.push(['מצבי הנוכחי',5,(a.now||'').trim()?1:0,"openLetterPrefs()"],['LinkedIn',5,a.linkedin||p.li_text?1:0,docs],['מכתבים שכתבת',5,(S.my_letters||[]).length?1:0,"openLetterPrefs()"]);
   return P}
 function knowPct(P){const w=P.reduce((s,x)=>s+x[1],0);return Math.round(100*P.reduce((s,x)=>s+x[1]*x[2],0)/w)}
