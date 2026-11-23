@@ -109,3 +109,39 @@ def test_clean_key_handles_paste_mistakes():
     from agent_core.llm_router import clean_key
     assert clean_key(' "gsk_abc"\n', "GROQ_API_KEY") == "gsk_abc"
     assert clean_key("GROQ_API_KEY=gsk_abc", "GROQ_API_KEY") == "gsk_abc"
+
+
+class AuthErr(Exception):
+    status_code = 401
+    def __init__(self):
+        super().__init__("Error code: 401 - {'error': {'message': 'Invalid API Key', 'code': 'expired_api_key'}}")
+
+
+def test_expired_personal_groq_key_falls_back_to_shared_once():
+    """23.11: מפתח Groq אישי שפג נראה כמו "מכסה" בכל ריצה. עכשיו: נופלים למשותף, ומסמנים שהמפתח לא עובד."""
+    import os
+    personal, shared = FakeGroq(), FakeGroq()
+    def boom(**kw):
+        personal.calls.append(kw["model"]); raise AuthErr()
+    personal.chat.completions.with_raw_response.create = boom
+    old_client, old_env = lr._groq_client, os.environ.get("GROQ_API_KEY")
+    os.environ["GROQ_API_KEY"] = "gsk_shared_test"
+    lr._groq_client = lambda: personal if lr._key else shared
+    try:
+        if bg.STATE_FILE.exists():
+            bg.STATE_FILE.unlink()
+        lr.KEY_FAILED.clear()
+        lr.use_key("gsk_" + "p" * 40)
+        lr._live = []
+        assert lr.chat("assistant", "letter", [{"role": "user", "content": "q"}], tier="write").startswith("ok from")
+        assert lr.key_failed() and len(personal.calls) == 1          # ניסיון אחד עם המפתח האישי, לא אחד לכל מודל
+        lr.chat("assistant", "letter", [{"role": "user", "content": "q"}], tier="write")
+        assert len(personal.calls) == 1 and len(shared.calls) == 2   # הקריאה הבאה ישר למשותף
+    finally:
+        lr._groq_client = old_client
+        lr.use_key(None)
+        lr.KEY_FAILED.clear()
+        if old_env is None:
+            os.environ.pop("GROQ_API_KEY", None)
+        else:
+            os.environ["GROQ_API_KEY"] = old_env

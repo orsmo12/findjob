@@ -334,6 +334,8 @@ for u in users:
         print(f"{u['user_id'][:8]}: בדיקת משרות נכשלה: {type(e).__name__}: {e}")
         RR.fail("בדיקת משרות", u["user_id"], e)
         act.flush()
+    from agent_core.handoffs import report_bad_key
+    report_bad_key(u["user_id"])
     if skip_scan:
         continue
     act.start(u["user_id"])

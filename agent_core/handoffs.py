@@ -19,7 +19,7 @@ KINDS = {  # סוג משימה → מי מבצע ומה זה
     "prep":   ("coach",      "שאלות הכנה ומטלות"),
     "letter": ("assistant",  "מכתב פנייה"),
 }
-ORDER = ["researcher", "linkedin", "coach", "assistant"]   # הסדר שבו הסוכנים עובדים בריצה: מכתב בסוף, אחרי הסקירה
+ORDER = ["researcher", "linkedin", "assistant", "coach"]   # הסדר בריצה. 23.11: מכתב לפני הכנה לראיון (קודם מגישים), עדיין אחרי הסקירה
 HIGH_FIT = 4.5          # משרה חדשה בציון הזה ומעלה: גיל וקובי מתחילים לעבוד עליה עוד לפני שנשמרה
 HIGH_FIT_MAX = 3        # לכל היותר כך וכך משרות כאלה בכל סריקה, כדי לא לבזבז מכסה על משרות שתדלג עליהן
 
@@ -250,3 +250,17 @@ def scan_mode(state: dict | None, pending: int, morning: bool, now=None) -> str:
         return "queue_full"
     slow = away >= SCAN_SLOW_DAYS or (SCAN_PENDING_MAX and pending >= SCAN_PENDING_MAX)
     return "skip" if slow and not morning else "full"
+
+
+def report_bad_key(uid: str) -> None:
+    """המפתח האישי נדחה בריצה הזו: הודעה אחת ביום ב"מה חדש" (agent=key_bad), והאפליקציה מציגה אותה בהגדרות.
+    הסוכנים ממשיכים בינתיים במפתח המשותף."""
+    from datetime import date
+    from agent_core import cloud_store as db, llm_router as R
+    if not R.key_failed():
+        return
+    last = db.latest_plan(uid, "key_bad")
+    if last.get("day") == date.today().isoformat():
+        return
+    db.add_run(uid, "key_bad", "המפתח האישי שלך ל-AI לא עובד (פג תוקף או בוטל). בינתיים הסוכנים עובדים במכסה המשותפת. "
+               "כדאי ליצור מפתח חדש ולהדביק אותו בהגדרות.", plan={"day": date.today().isoformat()})

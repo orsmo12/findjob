@@ -173,6 +173,7 @@ function briefItems(closed,sug){
   ((typeof RUNS!=='undefined'&&RUNS)||[]).forEach(r=>{const st=r.stats||{};
     if(!st.msg||st.memory||st.failures||st.usage_report||new Date(r.created_at)<day)return;
     if(r.agent==='hunter'&&st.shown!=null)return;   // "מצאתי X משרות" כבר בצעדים הבאים
+    if(r.agent==='key_bad'){if(typeof keyBad==='function'&&keyBad()&&!seen.has('kb')){seen.add('kb');out.unshift({ic:ICO.spark,t:`${N('assistant')}: המפתח האישי שלך ל-AI לא עובד. בינתיים עובדים במכסה המשותפת.`,go:"goPage('settings')"})}return}
     const t=st.msg.split(/(?<=\.)\s/)[0];if(seen.has(t))return;seen.add(t);
     out.push({ic:ICO[BR_IC[r.agent]||'spark'],t:`${N(r.agent||'assistant')}: ${t}`})});
   closed.forEach(h=>out.unshift({ic:ICO.jobs,t:`${h.title} ב-${h.co} נסגרה למועמדים ועברה להיסטוריה.`}));

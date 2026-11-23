@@ -44,7 +44,7 @@ async function cloudLoad(){
     loadJobs(uid),
     SB.from('runs').select('agent,stats,plan,created_at').eq('user_id',uid).order('created_at',{ascending:false}).limit(150)]);
   if(pr){const p=prof();p.first=pr.first||p.first;p.name=pr.name||p.name;p.cv=pr.cv_text||p.cv;p.ans=Object.assign({},pr.answers||{},p.ans||{});
-    if(pr.team&&Object.keys(pr.team).length)S.team=pr.team;const st=pr.state||{};if(st.skip&&typeof st.skip==='object')S.skip=st.skip;if(Array.isArray(st.taste_off))S.taste_off=st.taste_off;if(st.jnotes&&typeof st.jnotes==='object')S.jnotes=Object.assign({},st.jnotes,S.jnotes||{});['apps','todos','stories'].forEach(k=>{if(Array.isArray(st[k]))S[k]=st[k]});if(st.targets)S.targets=st.targets;if(Array.isArray(st.history))S.history=st.history;if(Array.isArray(st.chat))S.chat=st.chat;if(Array.isArray(st.accepted))S.accepted=st.accepted;if(Array.isArray(st.dismissed))S.dismissed=st.dismissed;if(Array.isArray(st.cvDone))S.cvDone=st.cvDone;if(st.usage)S.usage=st.usage;if(st.ai_key)S.ai_key=st.ai_key;if(Array.isArray(st.feedback))S.feedback=st.feedback;if(Array.isArray(st.my_letters))S.my_letters=st.my_letters;if(st.push)S.push=st.push;if(st.tourDone)S.tourDone=true;if(st.fb_status)S.fb_status=st.fb_status;p.li_text=pr.li_text||'';LI=Object.assign({},pr.li||{},{fixes:((pr.li_fixes||{}).fixes)||[]});if(pr.cv_text)S.onboarded=true}
+    if(pr.team&&Object.keys(pr.team).length)S.team=pr.team;const st=pr.state||{};if(st.skip&&typeof st.skip==='object')S.skip=st.skip;if(Array.isArray(st.taste_off))S.taste_off=st.taste_off;if(st.jnotes&&typeof st.jnotes==='object')S.jnotes=Object.assign({},st.jnotes,S.jnotes||{});['apps','todos','stories'].forEach(k=>{if(Array.isArray(st[k]))S[k]=st[k]});if(st.targets)S.targets=st.targets;if(Array.isArray(st.history))S.history=st.history;if(Array.isArray(st.chat))S.chat=st.chat;if(Array.isArray(st.accepted))S.accepted=st.accepted;if(Array.isArray(st.dismissed))S.dismissed=st.dismissed;if(Array.isArray(st.cvDone))S.cvDone=st.cvDone;if(st.usage)S.usage=st.usage;if(st.ai_key)S.ai_key=st.ai_key;if(st.ai_key_at)S.ai_key_at=st.ai_key_at;if(Array.isArray(st.feedback))S.feedback=st.feedback;if(Array.isArray(st.my_letters))S.my_letters=st.my_letters;if(st.push)S.push=st.push;if(st.tourDone)S.tourDone=true;if(st.fb_status)S.fb_status=st.fb_status;p.li_text=pr.li_text||'';LI=Object.assign({},pr.li||{},{fixes:((pr.li_fixes||{}).fixes)||[]});if(pr.cv_text)S.onboarded=true}
   prof().key='cloud';
   RUNS=runs||[];
   /* דוחות של בעל המערכת נטענים בנפרד: ביום עמוס הם נדחקים מעבר ל-150 הרשומות האחרונות, וכלי המפתח נעלמו מהתפריט */
@@ -61,7 +61,7 @@ async function cloudLoad(){
   _decSnap=Object.assign({},S.decisions);_profSnap=profRow();
   LS.set(SKEY,S);window.__runsReady=true;if(typeof applyTeam==='function')applyTeam();buildWorkflow();
 }
-function profRow(){const p=prof();return JSON.stringify({first:p.first||'',name:p.name||'',cv_text:p.cv||'',answers:p.ans||{},team:S.team||{},state:{skip:S.skip||{},taste_off:S.taste_off||[],apps:S.apps,todos:S.todos,stories:S.stories,targets:S.targets||{added:[],removed:[]},history:S.history||[],chat:(S.chat||[]).slice(-40),accepted:S.accepted||[],dismissed:S.dismissed||[],cvDone:S.cvDone||[],jnotes:S.jnotes||{},usage:S.usage||{},ai_key:S.ai_key||'',feedback:(S.feedback||[]).slice(-30),my_letters:(S.my_letters||[]).slice(0,5),push:S.push||null,tourDone:!!S.tourDone,fb_status:S.fb_status||{}},li_text:p.li_text||''})}
+function profRow(){const p=prof();return JSON.stringify({first:p.first||'',name:p.name||'',cv_text:p.cv||'',answers:p.ans||{},team:S.team||{},state:{skip:S.skip||{},taste_off:S.taste_off||[],apps:S.apps,todos:S.todos,stories:S.stories,targets:S.targets||{added:[],removed:[]},history:S.history||[],chat:(S.chat||[]).slice(-40),accepted:S.accepted||[],dismissed:S.dismissed||[],cvDone:S.cvDone||[],jnotes:S.jnotes||{},usage:S.usage||{},ai_key:S.ai_key||'',ai_key_at:S.ai_key_at||'',feedback:(S.feedback||[]).slice(-30),my_letters:(S.my_letters||[]).slice(0,5),push:S.push||null,tourDone:!!S.tourDone,fb_status:S.fb_status||{}},li_text:p.li_text||''})}
 function cloudSync(){clearTimeout(_syncT);_syncT=setTimeout(async()=>{
   if(!ME)return;
   const row=profRow();
@@ -358,11 +358,14 @@ async function saveAiKey(next){const v=(($('akIn')||{}).value||'').trim();if(!v&
     const r=await fetch('/api/checkkey',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:v,token:session&&session.access_token})});const d=await r.json();
     stop();btnBusy(kb,false);if(!d.ok){h.textContent=d.why==='invalid'?`${c.n} לא מכיר את המפתח הזה. כדאי להעתיק אותו שוב`:d.why==='format'?'זה לא נראה כמו מפתח':'לא הצלחתי לבדוק כרגע. נסה שוב בעוד רגע';return}}
   catch(e){stop();btnBusy(kb,false);h.textContent='אין חיבור כרגע. נסה שוב';return}
-  S.ai_key=v;S.ak_pending=0;track('ai_key',{p:akProvOf(v)});save();toast(`המפתח נשמר. מעכשיו הסוכנים שלך עובדים במכסה משלך ב-${c.n}`);
+  S.ai_key=v;S.ai_key_at=new Date().toISOString();S.ak_pending=0;track('ai_key',{p:akProvOf(v)});save();toast(`המפתח נשמר. מעכשיו הסוכנים שלך עובדים במכסה משלך ב-${c.n}`);
   if(next&&$('onb').classList.contains('open')){onbSingle?closeOnb():onbGo(1)}if(typeof renderSettings==='function')renderSettings()}
+/* השרת מצא שהמפתח האישי נדחה (key_bad), אחרי הפעם האחרונה שהמשתמש הדביק מפתח */
+function keyBad(){const r=(RUNS||[]).filter(x=>x.agent==='key_bad').sort((a,b)=>new Date(b.created_at)-new Date(a.created_at))[0];
+  return !!(r&&S.ai_key&&new Date(r.created_at)>new Date(S.ai_key_at||0))}
 function removeAiKey(){S.ai_key='';save();renderSettings();toast('המפתח הוסר. הסוכנים יעבדו במכסה המשותפת')}
 function aiKeyCard(){return `<section class="card glass" aria-labelledby="akH"><h2 class="card-h" id="akH">מפתח AI אישי</h2>
-  ${S.ai_key?`<div class="row"><span class="rl"><b dir="ltr" style="text-align:right">${escB(maskKey(S.ai_key))}</b><span>הסוכנים שלך עובדים במכסה משלך ב-${escB((AK[akProvOf(S.ai_key)]||AK.groq).n)}</span></span><span class="pill-ok">פעיל</span></div>
+  ${S.ai_key?`<div class="row"><span class="rl"><b dir="ltr" style="text-align:right">${escB(maskKey(S.ai_key))}</b><span${keyBad()?' style="white-space:normal"':''}>${keyBad()?'המפתח לא עובד (פג תוקף או בוטל). בינתיים הסוכנים עובדים במכסה המשותפת. כדאי ליצור מפתח חדש ולהדביק אותו כאן.':'הסוכנים שלך עובדים במכסה משלך ב-'+escB((AK[akProvOf(S.ai_key)]||AK.groq).n)}</span></span>${keyBad()?'<span class="pill-warn">לא עובד</span>':'<span class="pill-ok">פעיל</span>'}</div>
     <div class="duo"><button class="btn btn-sm btn-ghost" onclick="openOnb(3)">להחליף</button><button class="btn btn-sm btn-ghost" onclick="removeAiKey()">להסיר</button></div>`
   :`<div class="card-sub">בלי מפתח אישי, הסוכנים עובדים במכסה משותפת ומוגבלת. מפתח חינמי (Groq או Gemini) לוקח דקה, ואפשר גם Claude או OpenAI.</div>
     <button class="btn btn-sm btn-primary btn-block" onclick="openOnb(3)">להוסיף מפתח</button>`}</section>`}

@@ -146,6 +146,7 @@ for u in db.profiles_ready():
         print(f"{u['user_id'][:8]}: משימות נכשלו: {type(e).__name__}: {e}")
         RR.fail("משימות", u["user_id"], e)
     act.flush()
+    H.report_bad_key(u["user_id"])   # המפתח האישי נדחה: הודעה אחת ביום, והעבודה המשיכה במפתח המשותף
     names = lambda xs: ", ".join(xs[:3]) + (f" ועוד {len(xs) - 3}" if len(xs) > 3 else "")
     if done.get("letter"):
         db.add_run(u["user_id"], "assistant", f"מכתב פנייה מוכן ל-{names(done['letter'])}. כל פרט בו נבדק מול קורות החיים.")

@@ -233,7 +233,27 @@ def chat(agent: str, task: str, messages: list, tier: str = "judge",
         return _chat_once(agent, task, messages, tier, max_tokens, temperature, json_mode)
 
 
+KEY_FAILED: set = set()   # מפתחות אישיים שנדחו בריצה הזו (401). הסקריפט מדווח למשתמש, והקריאות ממשיכות במפתח המשותף
+
+
+def _is_auth(err) -> bool:
+    t = f"{type(err).__name__} {err}".lower()
+    return "authentication" in t or "401" in t or "invalid api key" in t or "expired_api_key" in t
+
+
+def key_failed() -> bool:
+    """המפתח האישי הנוכחי נדחה (פג תוקף, בוטל, שגוי)."""
+    return bool(_key) and _key in KEY_FAILED
+
+
 def _chat_once(agent, task, messages, tier, max_tokens, temperature, json_mode) -> str:
+    if key_failed() and os.environ.get("GROQ_API_KEY"):   # המפתח האישי כבר נדחה בריצה הזו: ישר למשותף
+        own = _key
+        use_key(None)
+        try:
+            return _chat_once(agent, task, messages, tier, max_tokens, temperature, json_mode)
+        finally:
+            use_key(own)
     if temperature is None:
         temperature = {"light": 0.1, "judge": 0.2, "write": 0.6}[tier]
     tried = []
@@ -255,6 +275,8 @@ def _chat_once(agent, task, messages, tier, max_tokens, temperature, json_mode) 
                     tried.append(f"{model}: 429")
                 else:
                     tried.append(f"{model}: {str(err)[:160]}")
+                    if _is_auth(err):
+                        KEY_FAILED.add(_key)
             continue
         try:
             kwargs = dict(model=model, messages=messages, temperature=temperature, max_tokens=max_tokens)
@@ -282,8 +304,11 @@ def _chat_once(agent, task, messages, tier, max_tokens, temperature, json_mode) 
                 tried.append(f"{model}: 429")
                 continue
             tried.append(f"{model}: {type(err).__name__}: {str(err)[:160]}")
+            if _key and _is_auth(err):   # 23.11: מפתח Groq אישי שפג (expired_api_key) נראה כמו "מכסה" בכל ריצה. עכשיו נופל למשותף
+                KEY_FAILED.add(_key)
+                break
             continue
-    if prov != "groq" and os.environ.get("GROQ_API_KEY"):
+    if (prov != "groq" or key_failed()) and _key and os.environ.get("GROQ_API_KEY"):
         # המפתח האישי לא עבד (נגמר הקרדיט, מפתח שבוטל): לא משאירים את המשתמש בלי כלום — המפתח המשותף לקריאה הזו
         own = _key
         use_key(None)
